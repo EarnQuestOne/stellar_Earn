@@ -1,9 +1,9 @@
 #![no_std]
 
 mod payout;
-mod storage;
+pub mod storage;
 pub mod types;
-mod errors;
+pub mod errors;
 mod events;
 mod reputation;
 
@@ -107,15 +107,14 @@ impl EarnQuestContract {
             return Err(Error::Unauthorized);
         }
         
-        let mut submission = storage::get_submission(&env, &quest_id, &submitter)?;
-        
+        let submission = storage::get_submission(&env, &quest_id, &submitter)?;
+
         // Only Pending can be approved
         if submission.status != SubmissionStatus::Pending {
             return Err(Error::InvalidSubmissionStatus);
         }
-        
-        submission.status = SubmissionStatus::Approved;
-        storage::set_submission(&env, &quest_id, &submitter, &submission);
+
+        storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Approved)?;
         
         // EMIT EVENT: SubmissionApproved
         events::submission_approved(&env, quest_id, submitter, verifier);
@@ -133,8 +132,8 @@ impl EarnQuestContract {
         submitter.require_auth();
 
         // 2. Data Retrieval
-        let mut quest = storage::get_quest(&env, &quest_id)?;
-        let mut submission = storage::get_submission(&env, &quest_id, &submitter)?;
+        let quest = storage::get_quest(&env, &quest_id)?;
+        let submission = storage::get_submission(&env, &quest_id, &submitter)?;
 
         // 3. Validation
         if submission.status == SubmissionStatus::Paid {
@@ -147,18 +146,15 @@ impl EarnQuestContract {
         // 4. Payout
         // Logic handled in payout module (includes balance check)
         payout::transfer_reward(
-            &env, 
-            &quest.reward_asset, 
-            &submitter, 
+            &env,
+            &quest.reward_asset,
+            &submitter,
             quest.reward_amount
         )?;
 
         // 5. State Update
-        submission.status = SubmissionStatus::Paid;
-        storage::set_submission(&env, &quest_id, &submitter, &submission);
-
-        quest.total_claims += 1;
-        storage::set_quest(&env, &quest_id, &quest);
+        storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Paid)?;
+        storage::increment_quest_claims(&env, &quest_id)?;
 
         // EMIT EVENT: RewardClaimed
         events::reward_claimed(

@@ -8,6 +8,7 @@ pub enum Error {
     QuestAlreadyExists = 1,
     QuestNotFound = 2,
     InvalidRewardAmount = 3,
+    QuestStillActive = 4,
     
     // Auth Errors
     Unauthorized = 10,

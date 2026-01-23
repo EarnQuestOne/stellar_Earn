@@ -1,4 +1,4 @@
-use soroban_sdk::{Env, Address, Vec};
+use soroban_sdk::{Env, Address};
 use crate::types::{UserStats, Badge};
 use crate::storage;
 use crate::errors::Error;
@@ -11,12 +11,7 @@ const LEVEL_5_XP: u64 = 1500;
 
 /// Award XP to a user upon quest completion
 pub fn award_xp(env: &Env, user: &Address, xp_amount: u64) -> Result<UserStats, Error> {
-    let mut stats = storage::get_user_stats(env, user).unwrap_or_else(|_| UserStats {
-        xp: 0,
-        level: 1,
-        quests_completed: 0,
-        badges: Vec::new(env),
-    });
+    let mut stats = storage::get_user_stats_or_default(env, user);
     
     stats.xp += xp_amount;
     stats.quests_completed += 1;
@@ -54,13 +49,8 @@ pub fn calculate_level(xp: u64) -> u32 {
 /// Grant a badge to a user (admin-authorized)
 pub fn grant_badge(env: &Env, admin: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
     admin.require_auth();
-    
-    let mut stats = storage::get_user_stats(env, user).unwrap_or_else(|_| UserStats {
-        xp: 0,
-        level: 1,
-        quests_completed: 0,
-        badges: Vec::new(env),
-    });
+
+    let mut stats = storage::get_user_stats_or_default(env, user);
     
     if !stats.badges.contains(&badge) {
         stats.badges.push_back(badge.clone());
@@ -73,10 +63,5 @@ pub fn grant_badge(env: &Env, admin: &Address, user: &Address, badge: Badge) -> 
 
 /// Get user reputation stats
 pub fn get_user_stats(env: &Env, user: &Address) -> UserStats {
-    storage::get_user_stats(env, user).unwrap_or_else(|_| UserStats {
-        xp: 0,
-        level: 1,
-        quests_completed: 0,
-        badges: Vec::new(env),
-    })
+    storage::get_user_stats_or_default(env, user)
 }
