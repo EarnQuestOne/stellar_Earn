@@ -8,10 +8,10 @@ import { UnauthorizedException } from '@nestjs/common';
  * @returns Challenge message to be signed
  */
 export function generateChallengeMessage(
-    stellarAddress: string,
-    timestamp: number,
+  stellarAddress: string,
+  timestamp: number,
 ): string {
-    return `StellarEarn Authentication\n\nSign this message to authenticate with your Stellar wallet.\n\nAddress: ${stellarAddress}\nTimestamp: ${timestamp}\n\nThis signature will not trigger any blockchain transaction or cost any fees.`;
+  return `StellarEarn Authentication\n\nSign this message to authenticate with your Stellar wallet.\n\nAddress: ${stellarAddress}\nTimestamp: ${timestamp}\n\nThis signature will not trigger any blockchain transaction or cost any fees.`;
 }
 
 /**
@@ -23,27 +23,27 @@ export function generateChallengeMessage(
  * @throws UnauthorizedException if signature is invalid
  */
 export function verifyStellarSignature(
-    stellarAddress: string,
-    signature: string,
-    message: string,
+  stellarAddress: string,
+  signature: string,
+  message: string,
 ): boolean {
-    try {
-        const messageBuffer = Buffer.from(message, 'utf8');
-        const signatureBuffer = Buffer.from(signature, 'base64');
-        const keypair = Keypair.fromPublicKey(stellarAddress);
-        const isValid = keypair.verify(messageBuffer, signatureBuffer);
+  try {
+    const messageBuffer = Buffer.from(message, 'utf8');
+    const signatureBuffer = Buffer.from(signature, 'base64');
+    const keypair = Keypair.fromPublicKey(stellarAddress);
+    const isValid = keypair.verify(messageBuffer, signatureBuffer);
 
-        if (!isValid) {
-            throw new UnauthorizedException('Invalid signature');
-        }
-
-        return true;
-    } catch (error) {
-        if (error instanceof UnauthorizedException) {
-            throw error;
-        }
-        throw new UnauthorizedException('Signature verification failed');
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid signature');
     }
+
+    return true;
+  } catch (error) {
+    if (error instanceof UnauthorizedException) {
+      throw error;
+    }
+    throw new UnauthorizedException('Signature verification failed');
+  }
 }
 
 /**
@@ -53,12 +53,12 @@ export function verifyStellarSignature(
  * @returns true if challenge has expired
  */
 export function isChallengeExpired(
-    timestamp: number,
-    expirationMinutes: number,
+  timestamp: number,
+  expirationMinutes: number,
 ): boolean {
-    const now = Date.now();
-    const expirationTime = timestamp + expirationMinutes * 60 * 1000;
-    return now > expirationTime;
+  const now = Date.now();
+  const expirationTime = timestamp + expirationMinutes * 60 * 1000;
+  return now > expirationTime;
 }
 
 /**
@@ -67,9 +67,9 @@ export function isChallengeExpired(
  * @returns Unix timestamp in milliseconds
  */
 export function extractTimestampFromChallenge(challenge: string): number {
-    const match = challenge.match(/Timestamp: (\d+)/);
-    if (!match) {
-        throw new UnauthorizedException('Invalid challenge format');
-    }
-    return parseInt(match[1], 10);
+  const match = challenge.match(/Timestamp: (\d+)/);
+  if (!match) {
+    throw new UnauthorizedException('Invalid challenge format');
+  }
+  return parseInt(match[1], 10);
 }

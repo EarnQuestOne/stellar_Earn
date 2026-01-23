@@ -1,24 +1,26 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum NotificationType {
-  QUEST_UPDATE = 'QUEST_UPDATE',
-  SUBMISSION_STATUS = 'SUBMISSION_STATUS',
-  REWARD_EARNED = 'REWARD_EARNED',
-  SYSTEM = 'SYSTEM',
+  SUBMISSION_APPROVED = 'SUBMISSION_APPROVED',
+  SUBMISSION_REJECTED = 'SUBMISSION_REJECTED',
+  QUEST_CREATED = 'QUEST_CREATED',
+  REWARD_CLAIMED = 'REWARD_CLAIMED',
+  LEVEL_UP = 'LEVEL_UP',
 }
 
-export enum NotificationChannel {
-  IN_APP = 'IN_APP',
-  EMAIL = 'EMAIL',
-  PUSH = 'PUSH',
-}
-
-@Entity()
-export class NotificationDB {
+@Entity('notifications')
+export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Index()
+  @Column({ name: 'user_id' })
   userId: string;
 
   @Column({
@@ -30,23 +32,18 @@ export class NotificationDB {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ type: 'text' })
   message: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 
   @Column({ default: false })
-  isRead: boolean;
+  read: boolean;
 
-  @Column({
-    type: 'enum',
-    enum: NotificationChannel,
-    array: true,
-    default: [NotificationChannel.IN_APP],
-  })
-  channels: NotificationChannel[];
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
+  readAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

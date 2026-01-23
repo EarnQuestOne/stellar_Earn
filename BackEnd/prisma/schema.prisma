@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  stellarAddress String   @unique
+  username       String?
+  email          String?
+  role           String   @default("USER")
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  submissions    Submission[]
+  notifications  Notification[]
+}
+
+model Quest {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  contractTaskId    String
+  rewardAsset       String
+  rewardAmount      Int
+  deadline          DateTime?
+  status            String   @default("ACTIVE")
+  verifierType      String
+  verifierConfig    Json
+  createdBy         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  submissions       Submission[]
+}
+
+model Submission {
+  id               String    @id @default(uuid())
+  questId          String
+  userId           String
+  proof            Json
+  status           String    @default("PENDING")
+  approvedBy       String?
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  verifierNotes    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  quest            Quest     @relation(fields: [questId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+  
+  @@index([questId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String    @db.Text
+  metadata  Json?
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([read])
+}

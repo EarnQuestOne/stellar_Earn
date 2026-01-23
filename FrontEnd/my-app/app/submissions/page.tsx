@@ -2,13 +2,15 @@
 
 import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { StatusFilter } from '@/components/submission/StatusFilter';
 import { SubmissionSearch } from '@/components/submission/SubmissionSearch';
 import { SubmissionSummaryCards } from '@/components/submission/SubmissionSummaryCards';
 import { SubmissionsTable } from '@/components/submission/SubmissionsTable';
 import { SubmissionDetail } from '@/components/submission/SubmissionDetail';
 import { Pagination } from '@/components/ui/Pagination';
+import { Modal } from '@/components/ui/Modal';
+import { SubmissionForm } from '@/components/quest/SubmissionForm';
 import { mockSubmissions } from '@/lib/mock/submissions';
 import { SubmissionStatus } from '@/lib/types/submission';
 import type { Submission } from '@/lib/types/submission';
@@ -20,6 +22,7 @@ function SubmissionsContent() {
     useState<Submission | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmissionFormOpen, setIsSubmissionFormOpen] = useState(false);
 
   // Get status filter from URL params
   const statusParam = searchParams.get('status');
@@ -106,18 +109,27 @@ function SubmissionsContent() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-zinc-900 lg:h-screen lg:flex-row">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto lg:ml-0">
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <AppLayout>
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-6 lg:mb-8">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Submissions
-          </h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Track your quest submissions and proof of completion.
-          </p>
+          <div className="mb-6 lg:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+              Submissions
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Track your quest submissions and proof of completion.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsSubmissionFormOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Submission
+          </button>
         </div>
 
         {/* Summary Cards */}
@@ -190,9 +202,26 @@ function SubmissionsContent() {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
         />
-        </div>
-      </main>
-    </div>
+
+        {/* New Submission Form Modal - For Testing */}
+        <Modal
+          isOpen={isSubmissionFormOpen}
+          onClose={() => setIsSubmissionFormOpen(false)}
+          title="Submit Proof"
+          size="lg"
+        >
+          <SubmissionForm
+            questId="test-quest-123"
+            questTitle="Test Quest - Complete a Smart Contract Tutorial"
+            onClose={() => setIsSubmissionFormOpen(false)}
+            onSuccess={() => {
+              console.log('Submission successful!');
+              setIsSubmissionFormOpen(false);
+            }}
+          />
+        </Modal>
+      </div>
+    </AppLayout>
   );
 }
 
@@ -200,10 +229,8 @@ export default function SubmissionsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen bg-white dark:bg-zinc-900">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <AppLayout>
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
                   Submissions
@@ -218,8 +245,7 @@ export default function SubmissionsPage() {
                 ))}
               </div>
             </div>
-          </main>
-        </div>
+          </AppLayout>
       }
     >
       <SubmissionsContent />

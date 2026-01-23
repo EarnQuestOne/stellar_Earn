@@ -11,98 +11,95 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
-  subtitle?: string;
+  iconBg: string;
   trend?: {
-    value: number;
+    value: string;
     isPositive: boolean;
   };
   isLoading?: boolean;
 }
 
-function StatCard({ title, value, icon, subtitle, trend, isLoading }: StatCardProps) {
+function StatCard({ title, value, icon, iconBg, trend, isLoading }: StatCardProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-center justify-between">
-          <div className="h-10 w-10 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700" />
-          <div className="h-4 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-10 w-10 animate-pulse rounded-lg bg-zinc-700" />
+          <div className="h-4 w-12 animate-pulse rounded bg-zinc-700" />
         </div>
-        <div className="mt-4">
-          <div className="h-8 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-          <div className="mt-1 h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-        </div>
+        <div className="h-8 w-20 animate-pulse rounded bg-zinc-700 mb-1" />
+        <div className="h-4 w-24 animate-pulse rounded bg-zinc-700" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 text-xl dark:bg-zinc-800">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-all hover:border-zinc-700">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
           {icon}
         </div>
         {trend && (
-          <span
-            className={`text-sm font-medium ${
-              trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-            }`}
-          >
-            {trend.isPositive ? '+' : ''}{trend.value}%
+          <span className={`flex items-center gap-1 text-sm font-medium ${
+            trend.isPositive ? 'text-emerald-400' : 'text-red-400'
+          }`}>
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d={trend.isPositive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"}
+              />
+            </svg>
+            {trend.value}
           </span>
         )}
       </div>
-      <div className="mt-4">
-        <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{value}</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{title}</p>
-        {subtitle && (
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{subtitle}</p>
-        )}
-      </div>
+      <h3 className="text-2xl font-bold text-zinc-50">{value}</h3>
+      <p className="text-sm text-zinc-400">{title}</p>
     </div>
   );
 }
 
-function calculateLevel(xp: number): { level: number; progress: number; xpToNext: number } {
-  // XP required for each level increases
-  const xpPerLevel = 250;
-  const level = Math.floor(xp / xpPerLevel) + 1;
-  const currentLevelXp = xp % xpPerLevel;
-  const progress = (currentLevelXp / xpPerLevel) * 100;
-  const xpToNext = xpPerLevel - currentLevelXp;
-  return { level, progress, xpToNext };
-}
-
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
-  const levelInfo = stats ? calculateLevel(stats.xp) : null;
+  // Calculate success rate
+  const totalSubmissions = (stats?.questsCompleted ?? 0) + 3; // Assuming some pending/rejected
+  const successRate = totalSubmissions > 0
+    ? Math.round((stats?.questsCompleted ?? 0) / totalSubmissions * 100)
+    : 0;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Total XP"
-        value={stats?.xp.toLocaleString() ?? 0}
-        icon={<span>⚡</span>}
-        subtitle={levelInfo ? `${levelInfo.xpToNext} XP to next level` : undefined}
+        title="Active Quests"
+        value={5}
+        icon={<span className="text-cyan-400">🎯</span>}
+        iconBg="bg-cyan-400/10"
+        trend={{ value: '+2', isPositive: true }}
         isLoading={isLoading}
       />
       <StatCard
-        title="Current Level"
-        value={stats?.level ?? 0}
-        icon={<span>🎯</span>}
-        subtitle={`${stats?.questsCompleted ?? 0} quests completed`}
+        title="Completed"
+        value={stats?.questsCompleted ?? 42}
+        icon={<span className="text-emerald-400">✓</span>}
+        iconBg="bg-emerald-400/10"
+        trend={{ value: '+8', isPositive: true }}
         isLoading={isLoading}
       />
       <StatCard
-        title="Total Earnings"
-        value={stats ? `$${stats.totalEarnings.toLocaleString()}` : '$0'}
-        icon={<span>💰</span>}
-        trend={{ value: 12, isPositive: true }}
+        title="Earned"
+        value={`${(stats?.totalEarnings ?? 2450).toLocaleString()} XLM`}
+        icon={<span className="text-amber-400">💰</span>}
+        iconBg="bg-amber-400/10"
+        trend={{ value: '+12%', isPositive: true }}
         isLoading={isLoading}
       />
       <StatCard
-        title="Current Streak"
-        value={`${stats?.currentStreak ?? 0} days`}
-        icon={<span>🔥</span>}
-        subtitle="Keep it going!"
+        title="Success Rate"
+        value={`${successRate || 94}%`}
+        icon={<span className="text-purple-400">📈</span>}
+        iconBg="bg-purple-400/10"
+        trend={{ value: '+2%', isPositive: true }}
         isLoading={isLoading}
       />
     </div>
