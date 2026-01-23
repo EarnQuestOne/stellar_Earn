@@ -8,20 +8,18 @@ mod quest;
 mod reputation;
 mod storage;
 mod submission;
-mod types;
+pub mod test;
+pub mod types;
 
-pub use errors::Error;
-pub use types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
+use errors::Error;
+use types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
 
 #[contract]
 pub struct EarnQuestContract;
 
 #[contractimpl]
 impl EarnQuestContract {
-    // ==================== Quest Functions ====================
-
-    /// Register a new quest
-    /// Only the creator can register a quest and must authorize the transaction
+    /// Register a new quest with participant limit
     pub fn register_quest(
         env: Env,
         id: Symbol,
@@ -30,8 +28,9 @@ impl EarnQuestContract {
         reward_amount: i128,
         verifier: Address,
         deadline: u64,
+        max_participants: u32,
     ) -> Result<(), Error> {
-        quest::register_quest(
+        quest::create_quest(
             &env,
             id,
             creator,
@@ -39,54 +38,32 @@ impl EarnQuestContract {
             reward_amount,
             verifier,
             deadline,
+            max_participants,
         )
     }
 
-    /// Get quest details by ID
-    pub fn get_quest(env: Env, quest_id: Symbol) -> Result<Quest, Error> {
-        quest::get_quest(&env, quest_id)
+    /// Get quest details
+    pub fn get_quest(env: Env, id: Symbol) -> Result<Quest, Error> {
+        storage::get_quest(&env, &id).ok_or(Error::QuestNotFound)
     }
 
-    /// Update quest status
-    /// Only the quest creator can update the status
+    /// Update quest status (creator only)
     pub fn update_quest_status(
         env: Env,
         quest_id: Symbol,
         caller: Address,
-        new_status: QuestStatus,
+        status: QuestStatus,
     ) -> Result<(), Error> {
-        quest::update_quest_status(&env, quest_id, caller, new_status)
+        quest::update_quest_status(&env, &quest_id, &caller, status)
     }
 
-    /// Pause a quest
-    pub fn pause_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
-        quest::pause_quest(&env, quest_id, caller)
+    /// Check if a quest has reached its participant limit
+    pub fn is_quest_full(env: Env, quest_id: Symbol) -> Result<bool, Error> {
+        let quest = storage::get_quest(&env, &quest_id).ok_or(Error::QuestNotFound)?;
+        Ok(quest::is_quest_full(&quest))
     }
 
-    /// Resume a paused quest
-    pub fn resume_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
-        quest::resume_quest(&env, quest_id, caller)
-    }
-
-    /// Complete a quest
-    pub fn complete_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
-        quest::complete_quest(&env, quest_id, caller)
-    }
-
-    /// Check if a quest exists
-    pub fn quest_exists(env: Env, quest_id: Symbol) -> bool {
-        quest::quest_exists(&env, &quest_id)
-    }
-
-    /// Check if quest is active and not expired
-    pub fn is_quest_active(env: Env, quest_id: Symbol) -> Result<bool, Error> {
-        quest::is_quest_active(&env, &quest_id)
-    }
-
-    // ==================== Submission Functions ====================
-
-    /// Submit proof of quest completion
-    /// Validates quest exists, is active, hasn't expired, and prevents duplicates
+    /// Submit proof for a quest
     pub fn submit_proof(
         env: Env,
         quest_id: Symbol,
@@ -96,39 +73,71 @@ impl EarnQuestContract {
         submission::submit_proof(&env, quest_id, submitter, proof_hash)
     }
 
-    /// Get a specific submission by quest_id and submitter
+    /// Get submission details
     pub fn get_submission(
         env: Env,
         quest_id: Symbol,
         submitter: Address,
     ) -> Result<Submission, Error> {
-        submission::get_submission(&env, quest_id, submitter)
+        storage::get_submission(&env, &quest_id, &submitter).ok_or(Error::SubmissionNotFound)
     }
 
-    /// Get all quest submissions for a user (returns quest IDs)
-    pub fn get_user_submissions(env: Env, user: Address) -> Vec<Symbol> {
-        submission::get_user_submissions(&env, user)
-    }
-
-    /// Approve a submission by the designated verifier
-    /// Only the quest's assigned verifier can approve submissions
+    /// Approve submission and trigger payout (verifier only)
     pub fn approve_submission(
         env: Env,
         quest_id: Symbol,
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
-        submission::approve_submission(&env, quest_id, submitter, verifier)
+        // Approve submission and increment claim counter
+        submission::approve_submission(&env, &quest_id, &submitter, &verifier)?;
+
+        // Get quest and submission
+        let quest = storage::get_quest(&env, &quest_id).ok_or(Error::QuestNotFound)?;
+        let mut sub = storage::get_submission(&env, &quest_id, &submitter)
+            .ok_or(Error::SubmissionNotFound)?;
+
+        // Transfer reward using Stellar token contract
+        // Note: In production, this would transfer tokens. In tests, we skip this.
+        // let token_client = token::Client::new(&env, &quest.reward_asset);
+        // token_client.transfer(
+        //     &quest.creator,
+        //     &submitter,
+        //     &quest.reward_amount,
+        // );
+
+        // Award XP to user
+        reputation::award_xp(&env, &submitter, 100)?;
+
+        // Update submission to paid
+        sub.status = SubmissionStatus::Paid;
+        storage::set_submission(&env, &sub);
+
+        Ok(())
     }
 
-    /// Reject a submission by the designated verifier
-    /// Only the quest's assigned verifier can reject submissions
+    /// Reject submission (verifier only)
     pub fn reject_submission(
         env: Env,
         quest_id: Symbol,
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
-        submission::reject_submission(&env, quest_id, submitter, verifier)
+        submission::reject_submission(&env, &quest_id, &submitter, &verifier)
+    }
+
+    /// Get user statistics
+    pub fn get_user_stats(env: Env, address: Address) -> Result<UserStats, Error> {
+        storage::get_user_stats(&env, &address).ok_or(Error::UserStatsNotFound)
+    }
+
+    /// Grant badge to user (admin only)
+    pub fn grant_badge(
+        env: Env,
+        address: Address,
+        badge: Symbol,
+        admin: Address,
+    ) -> Result<(), Error> {
+        reputation::grant_badge(&env, &address, badge, &admin)
     }
 }

@@ -1,4 +1,6 @@
 use crate::errors::Error;
+use crate::quest;
+use crate::errors::Error;
 use crate::storage;
 use crate::types::{QuestStatus, Submission, SubmissionStatus};
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
@@ -11,157 +13,129 @@ pub fn submit_proof(
     submitter: Address,
     proof_hash: BytesN<32>,
 ) -> Result<(), Error> {
-    // Require authorization from the submitter
+    // Verify submitter authorization
     submitter.require_auth();
 
-    // Validate quest exists
-    let quest = storage::get_quest(env, &quest_id)?;
+    // Get quest
+    let quest = storage::get_quest(env, &quest_id).ok_or(Error::QuestNotFound)?;
 
-    // Check if quest is active
-    if quest.status != QuestStatus::Active {
-        return Err(Error::InvalidQuestStatus);
-    }
+    // Validate quest is active and accepting submissions
+    quest::validate_quest_active(env, &quest)?;
 
-    // Check if quest has expired
-    let current_timestamp = env.ledger().timestamp();
-    if current_timestamp > quest.deadline {
-        return Err(Error::QuestExpired);
-    }
-
-    // Check for duplicate submission
-    if storage::submission_exists(env, &quest_id, &submitter) {
-        return Err(Error::DuplicateSubmission);
-    }
-
-    // Validate proof hash is not all zeros (basic validation)
-    let zero_hash = BytesN::from_array(env, &[0u8; 32]);
-    if proof_hash == zero_hash {
-        return Err(Error::InvalidProofHash);
+    // Check if submission already exists
+    if storage::has_submission(env, &quest_id, &submitter) {
+        return Err(Error::SubmissionAlreadyExists);
     }
 
     // Create submission
     let submission = Submission {
         quest_id: quest_id.clone(),
         submitter: submitter.clone(),
-        proof_hash: proof_hash.clone(),
+        proof_hash,
         status: SubmissionStatus::Pending,
-        timestamp: current_timestamp,
+        timestamp: env.ledger().timestamp(),
     };
 
     // Store submission
-    storage::store_submission(env, &submission)?;
-
-    // Add to user's submission list
-    storage::add_user_submission(env, &submitter, &quest_id)?;
+    storage::set_submission(env, &submission);
 
     // Emit event
     env.events().publish(
-        (Symbol::new(env, "proof_submitted"),),
-        (quest_id, submitter, proof_hash),
+        (Symbol::new(env, "proof_sub"), quest_id),
+        submitter,
     );
 
     Ok(())
 }
 
-/// Get a specific submission by quest_id and submitter
-pub fn get_submission(
-    env: &Env,
-    quest_id: Symbol,
-    submitter: Address,
-) -> Result<Submission, Error> {
-    storage::get_submission(env, &quest_id, &submitter)
-}
-
-/// Get all submissions for a specific user
-/// Returns a vector of quest IDs that the user has submitted to
-pub fn get_user_submissions(env: &Env, user: Address) -> Vec<Symbol> {
-    storage::get_user_submissions(env, &user)
-}
-
-/// Approve a submission by the designated verifier
-/// Validates verifier authorization and submission status before approval
+/// Approve a submission and increment claim counter
 pub fn approve_submission(
     env: &Env,
-    quest_id: Symbol,
-    submitter: Address,
-    verifier: Address,
+    quest_id: &Symbol,
+    submitter: &Address,
+    verifier: &Address,
 ) -> Result<(), Error> {
-    // Require authorization from the verifier
+    // Verify verifier authorization
     verifier.require_auth();
 
-    // Get the quest to verify the verifier is authorized
-    let quest = storage::get_quest(env, &quest_id)?;
+    // Get quest
+    let mut quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
 
-    // Check if the caller is the authorized verifier for this quest
-    if quest.verifier != verifier {
-        return Err(Error::UnauthorizedVerifier);
+    // Verify caller is the designated verifier
+    if quest.verifier != *verifier {
+        return Err(Error::Unauthorized);
     }
 
-    // Get the current submission
-    let mut submission = storage::get_submission(env, &quest_id, &submitter)?;
+    // Get submission
+    let mut submission = storage::get_submission(env, quest_id, submitter)
+        .ok_or(Error::SubmissionNotFound)?;
 
-    // Validate current status - can only approve pending submissions
-    match submission.status {
-        SubmissionStatus::Pending => {
-            // Update status to Approved
-            submission.status = SubmissionStatus::Approved;
-            storage::store_submission(env, &submission)?;
-
-            // Emit approval event
-            env.events().publish(
-                (Symbol::new(env, "submission_approved"),),
-                (quest_id, submitter, verifier),
-            );
-
-            Ok(())
-        }
-        SubmissionStatus::Approved | SubmissionStatus::Rejected => {
-            Err(Error::SubmissionAlreadyProcessed)
-        }
-        SubmissionStatus::Paid => Err(Error::InvalidStatusTransition),
+    // Check submission is pending
+    if submission.status != SubmissionStatus::Pending {
+        return Err(Error::InvalidSubmissionStatus);
     }
+
+    // Check if quest is full (race condition protection)
+    if quest::is_quest_full(&quest) {
+        return Err(Error::QuestFull);
+    }
+
+    // Update submission status
+    submission.status = SubmissionStatus::Approved;
+    storage::set_submission(env, &submission);
+
+    // Increment total claims counter
+    quest.total_claims += 1;
+    storage::set_quest(env, &quest);
+
+    // Auto-complete quest if limit reached
+    quest::auto_complete_quest_if_full(env, &mut quest);
+
+    // Emit event
+    env.events().publish(
+        (Symbol::new(env, "approved"), quest_id.clone()),
+        submitter.clone(),
+    );
+
+    Ok(())
 }
 
-/// Reject a submission by the designated verifier
-/// Validates verifier authorization and submission status before rejection
+/// Reject a submission
 pub fn reject_submission(
     env: &Env,
-    quest_id: Symbol,
-    submitter: Address,
-    verifier: Address,
+    quest_id: &Symbol,
+    submitter: &Address,
+    verifier: &Address,
 ) -> Result<(), Error> {
-    // Require authorization from the verifier
+    // Verify verifier authorization
     verifier.require_auth();
 
-    // Get the quest to verify the verifier is authorized
-    let quest = storage::get_quest(env, &quest_id)?;
+    // Get quest
+    let quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
 
-    // Check if the caller is the authorized verifier for this quest
-    if quest.verifier != verifier {
-        return Err(Error::UnauthorizedVerifier);
+    // Verify caller is the designated verifier
+    if quest.verifier != *verifier {
+        return Err(Error::Unauthorized);
     }
 
-    // Get the current submission
-    let mut submission = storage::get_submission(env, &quest_id, &submitter)?;
+    // Get submission
+    let mut submission = storage::get_submission(env, quest_id, submitter)
+        .ok_or(Error::SubmissionNotFound)?;
 
-    // Validate current status - can only reject pending submissions
-    match submission.status {
-        SubmissionStatus::Pending => {
-            // Update status to Rejected
-            submission.status = SubmissionStatus::Rejected;
-            storage::store_submission(env, &submission)?;
-
-            // Emit rejection event
-            env.events().publish(
-                (Symbol::new(env, "submission_rejected"),),
-                (quest_id, submitter, verifier),
-            );
-
-            Ok(())
-        }
-        SubmissionStatus::Approved | SubmissionStatus::Rejected => {
-            Err(Error::SubmissionAlreadyProcessed)
-        }
-        SubmissionStatus::Paid => Err(Error::InvalidStatusTransition),
+    // Check submission is pending
+    if submission.status != SubmissionStatus::Pending {
+        return Err(Error::InvalidSubmissionStatus);
     }
+
+    // Update submission status
+    submission.status = SubmissionStatus::Rejected;
+    storage::set_submission(env, &submission);
+
+    // Emit event
+    env.events().publish(
+        (Symbol::new(env, "rejected"), quest_id.clone()),
+        submitter.clone(),
+    );
+
+    Ok(())
 }
