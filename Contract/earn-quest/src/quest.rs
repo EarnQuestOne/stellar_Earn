@@ -5,6 +5,7 @@ use crate::storage;
 use crate::types::{Quest, QuestStatus};
 
 /// Create and register a new quest
+#[allow(clippy::too_many_arguments)]
 pub fn create_quest(
     env: &Env,
     id: Symbol,

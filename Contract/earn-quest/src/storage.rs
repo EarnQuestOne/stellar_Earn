@@ -62,6 +62,7 @@ pub fn get_user_stats(env: &Env, address: &Address) -> Option<UserStats> {
 }
 
 /// Check if user stats exist
+#[allow(dead_code)]
 pub fn has_user_stats(env: &Env, address: &Address) -> bool {
     let key = StorageKey::UserStats(address.clone());
     env.storage().persistent().has(&key)

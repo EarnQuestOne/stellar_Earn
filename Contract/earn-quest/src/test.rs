@@ -1,6 +1,6 @@
 #[cfg(test)]
-mod test {
-    use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol};
+mod tests {
+    use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
 
     use crate::{types::QuestStatus, EarnQuestContract, EarnQuestContractClient};
 

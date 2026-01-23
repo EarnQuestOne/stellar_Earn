@@ -23,6 +23,7 @@ pub struct EarnQuestContract;
 #[contractimpl]
 impl EarnQuestContract {
     /// Register a new quest with participant limit
+    #[allow(clippy::too_many_arguments)]
     pub fn register_quest(
         env: Env,
         id: Symbol,

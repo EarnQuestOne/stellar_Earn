@@ -26,7 +26,6 @@ fn test_register_quest_with_past_deadline_fails() {
     let (client, creator, verifier, reward_asset) = setup_env(&env);
 
     let quest_id = symbol_short!("quest1");
-    let current_time = env.ledger().timestamp();
 
     // Set a past deadline (use 0 as past)
     let past_deadline = 0u64;
@@ -119,7 +118,7 @@ fn test_check_expired_returns_false_before_deadline() {
 
     // Check if expired - should be false
     let is_expired = client.check_expired(&quest_id);
-    assert_eq!(is_expired, false);
+    assert!(!is_expired);
 }
 
 #[test]
@@ -150,7 +149,7 @@ fn test_check_expired_returns_true_after_deadline() {
 
     // Check if expired - should be true
     let is_expired = client.check_expired(&quest_id);
-    assert_eq!(is_expired, true);
+    assert!(is_expired);
 }
 
 #[test]
@@ -441,7 +440,7 @@ fn test_timestamp_validation_edge_case() {
 
     // Should not be expired yet
     let is_expired = client.check_expired(&quest_id);
-    assert_eq!(is_expired, false);
+    assert!(!is_expired);
 
     // Submit should succeed
     let submitter = Address::generate(&env);
@@ -455,7 +454,7 @@ fn test_timestamp_validation_edge_case() {
 
     // At deadline, should still not be expired (deadline is exclusive)
     let is_expired = client.check_expired(&quest_id);
-    assert_eq!(is_expired, false);
+    assert!(!is_expired);
 
     // Advance time by 1 more second
     env.ledger().with_mut(|ledger_info| {
@@ -464,7 +463,7 @@ fn test_timestamp_validation_edge_case() {
 
     // Now should be expired
     let is_expired = client.check_expired(&quest_id);
-    assert_eq!(is_expired, true);
+    assert!(is_expired);
 }
 
 #[test]
@@ -509,11 +508,11 @@ fn test_multiple_quests_with_different_deadlines() {
 
     // Quest 1 should be expired
     let is_expired_1 = client.check_expired(&quest_id_1);
-    assert_eq!(is_expired_1, true);
+    assert!(is_expired_1);
 
     // Quest 2 should not be expired
     let is_expired_2 = client.check_expired(&quest_id_2);
-    assert_eq!(is_expired_2, false);
+    assert!(!is_expired_2);
 
     // Quest 1 submission should fail
     let submitter = Address::generate(&env);
