@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 6,
+    "address": 5,
     "nonce": 0
   },
   "auth": [
@@ -38,7 +38,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1000
+                    "lo": 10000
                   }
                 }
               ]
@@ -55,28 +55,49 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "register_quest",
+              "function_name": "grant_badge",
               "args": [
-                {
-                  "symbol": "Q1"
-                },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
-                  }
+                  "vec": [
+                    {
+                      "symbol": "Rookie"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "grant_badge",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "u64": 10000
+                  "vec": [
+                    {
+                      "symbol": "Explorer"
+                    }
+                  ]
                 }
               ]
             }
@@ -87,69 +108,25 @@
     ],
     [
       [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
         {
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "submit_proof",
+              "function_name": "grant_badge",
               "args": [
                 {
-                  "symbol": "Q1"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                },
-                {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "approve_submission",
-              "args": [
-                {
-                  "symbol": "Q1"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "claim_reward",
-              "args": [
-                {
-                  "symbol": "Q1"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                  "vec": [
+                    {
+                      "symbol": "Veteran"
+                    }
+                  ]
                 }
               ]
             }
@@ -258,160 +235,10 @@
                         "key": {
                           "vec": [
                             {
-                              "symbol": "Quest"
-                            },
-                            {
-                              "symbol": "Q1"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "creator"
-                              },
-                              "val": {
-                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "deadline"
-                              },
-                              "val": {
-                                "u64": 10000
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "Q1"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "reward_amount"
-                              },
-                              "val": {
-                                "i128": {
-                                  "hi": 0,
-                                  "lo": 100
-                                }
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "reward_asset"
-                              },
-                              "val": {
-                                "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "status"
-                              },
-                              "val": {
-                                "vec": [
-                                  {
-                                    "symbol": "Active"
-                                  }
-                                ]
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "total_claims"
-                              },
-                              "val": {
-                                "u32": 1
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "verifier"
-                              },
-                              "val": {
-                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "Submission"
-                            },
-                            {
-                              "symbol": "Q1"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "proof_hash"
-                              },
-                              "val": {
-                                "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "quest_id"
-                              },
-                              "val": {
-                                "symbol": "Q1"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "status"
-                              },
-                              "val": {
-                                "vec": [
-                                  {
-                                    "symbol": "Paid"
-                                  }
-                                ]
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "submitter"
-                              },
-                              "val": {
-                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "timestamp"
-                              },
-                              "val": {
-                                "u64": 0
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
                               "symbol": "UserStats"
                             },
                             {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                             }
                           ]
                         },
@@ -422,7 +249,29 @@
                                 "symbol": "badges"
                               },
                               "val": {
-                                "vec": []
+                                "vec": [
+                                  {
+                                    "vec": [
+                                      {
+                                        "symbol": "Rookie"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "vec": [
+                                      {
+                                        "symbol": "Explorer"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "vec": [
+                                      {
+                                        "symbol": "Veteran"
+                                      }
+                                    ]
+                                  }
+                                ]
                               }
                             },
                             {
@@ -438,7 +287,7 @@
                                 "symbol": "quests_completed"
                               },
                               "val": {
-                                "u32": 1
+                                "u32": 0
                               }
                             },
                             {
@@ -446,7 +295,7 @@
                                 "symbol": "xp"
                               },
                               "val": {
-                                "u64": 100
+                                "u64": 0
                               }
                             }
                           ]
@@ -531,7 +380,7 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
             "key": {
               "ledger_key_nonce": {
                 "nonce": 2032731177588607455
@@ -546,7 +395,7 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 2032731177588607455
@@ -564,40 +413,7 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 4270020994084947596
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 4270020994084947596
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
             "key": {
               "ledger_key_nonce": {
                 "nonce": 4837995959683129791
@@ -612,7 +428,7 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 4837995959683129791
@@ -671,80 +487,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 900
-                        }
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "authorized"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "clawback"
-                      },
-                      "val": {
-                        "bool": false
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          518400
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "Balance"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "Balance"
-                    },
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "amount"
-                      },
-                      "val": {
-                        "i128": {
-                          "hi": 0,
-                          "lo": 100
+                          "lo": 10000
                         }
                       }
                     },
@@ -1055,7 +798,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1000
+                    "lo": 10000
                   }
                 }
               ]
@@ -1089,7 +832,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1000
+                "lo": 10000
               }
             }
           }
@@ -1133,31 +876,23 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "register_quest"
+                "symbol": "grant_badge"
               }
             ],
             "data": {
               "vec": [
-                {
-                  "symbol": "Q1"
-                },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
-                  }
-                },
-                {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "u64": 10000
+                  "vec": [
+                    {
+                      "symbol": "Rookie"
+                    }
+                  ]
                 }
               ]
             }
@@ -1175,31 +910,20 @@
           "v0": {
             "topics": [
               {
-                "symbol": "quest_reg"
+                "symbol": "badge_grt"
               },
               {
-                "symbol": "Q1"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
-                  }
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                },
-                {
-                  "u64": 10000
+                  "vec": [
+                    {
+                      "symbol": "Rookie"
+                    }
+                  ]
                 }
               ]
             }
@@ -1220,7 +944,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "register_quest"
+                "symbol": "grant_badge"
               }
             ],
             "data": "void"
@@ -1244,19 +968,23 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "submit_proof"
+                "symbol": "grant_badge"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                  "vec": [
+                    {
+                      "symbol": "Explorer"
+                    }
+                  ]
                 }
               ]
             }
@@ -1274,19 +1002,20 @@
           "v0": {
             "topics": [
               {
-                "symbol": "proof_sub"
+                "symbol": "badge_grt"
               },
               {
-                "symbol": "Q1"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                  "vec": [
+                    {
+                      "symbol": "Explorer"
+                    }
+                  ]
                 }
               ]
             }
@@ -1307,7 +1036,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "submit_proof"
+                "symbol": "grant_badge"
               }
             ],
             "data": "void"
@@ -1331,19 +1060,23 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "approve_submission"
+                "symbol": "grant_badge"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "Veteran"
+                    }
+                  ]
                 }
               ]
             }
@@ -1361,19 +1094,20 @@
           "v0": {
             "topics": [
               {
-                "symbol": "sub_appr"
+                "symbol": "badge_grt"
               },
               {
-                "symbol": "Q1"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                  "vec": [
+                    {
+                      "symbol": "Veteran"
+                    }
+                  ]
                 }
               ]
             }
@@ -1394,62 +1128,10 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "approve_submission"
+                "symbol": "grant_badge"
               }
             ],
             "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 0
-              }
-            }
           }
         }
       },
@@ -1470,18 +1152,11 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "claim_reward"
+                "symbol": "get_user_stats"
               }
             ],
             "data": {
-              "vec": [
-                {
-                  "symbol": "Q1"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                }
-              ]
+              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
             }
           }
         }
@@ -1492,32 +1167,6 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1526,248 +1175,66 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "balance"
+                "symbol": "get_user_stats"
               }
             ],
             "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 1000
-              }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "transfer"
-              }
-            ],
-            "data": {
-              "vec": [
+              "map": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                  "key": {
+                    "symbol": "badges"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "vec": [
+                          {
+                            "symbol": "Rookie"
+                          }
+                        ]
+                      },
+                      {
+                        "vec": [
+                          {
+                            "symbol": "Explorer"
+                          }
+                        ]
+                      },
+                      {
+                        "vec": [
+                          {
+                            "symbol": "Veteran"
+                          }
+                        ]
+                      }
+                    ]
+                  }
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                  "key": {
+                    "symbol": "level"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
                 },
                 {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
+                  "key": {
+                    "symbol": "quests_completed"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "xp"
+                  },
+                  "val": {
+                    "u64": 0
                   }
                 }
               ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "transfer"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-              },
-              {
-                "string": "aaa:GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGO6V"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 100
-              }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "transfer"
-              }
-            ],
-            "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "claimed"
-              },
-              {
-                "symbol": "Q1"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
-                  }
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "xp_award"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u64": 100
-                },
-                {
-                  "u64": 100
-                },
-                {
-                  "u32": 1
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "claim_reward"
-              }
-            ],
-            "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 100
-              }
             }
           }
         }

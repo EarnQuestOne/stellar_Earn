@@ -38,7 +38,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1000
+                    "lo": 10000
                   }
                 }
               ]
@@ -48,6 +48,7 @@
         }
       ]
     ],
+    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
@@ -135,7 +136,6 @@
         }
       ]
     ],
-    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
@@ -671,7 +671,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 900
+                          "lo": 9900
                         }
                       }
                     },
@@ -1055,7 +1055,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1000
+                    "lo": 10000
                   }
                 }
               ]
@@ -1089,7 +1089,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1000
+                "lo": 10000
               }
             }
           }
@@ -1113,6 +1113,88 @@
               }
             ],
             "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "get_user_stats"
+              }
+            ],
+            "data": {
+              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_user_stats"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "badges"
+                  },
+                  "val": {
+                    "vec": []
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "level"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "quests_completed"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "xp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
           }
         }
       },
@@ -1415,58 +1497,6 @@
                 "symbol": "fn_call"
               },
               {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 0
-              }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
@@ -1532,7 +1562,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1000
+                "lo": 10000
               }
             }
           }
@@ -1734,10 +1764,10 @@
                 "symbol": "fn_call"
               },
               {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "balance"
+                "symbol": "get_user_stats"
               }
             ],
             "data": {
@@ -1751,7 +1781,7 @@
     {
       "event": {
         "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1760,14 +1790,44 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "balance"
+                "symbol": "get_user_stats"
               }
             ],
             "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 100
-              }
+              "map": [
+                {
+                  "key": {
+                    "symbol": "badges"
+                  },
+                  "val": {
+                    "vec": []
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "level"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "quests_completed"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "xp"
+                  },
+                  "val": {
+                    "u64": 100
+                  }
+                }
+              ]
             }
           }
         }

@@ -58,7 +58,7 @@
               "function_name": "register_quest",
               "args": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
@@ -76,7 +76,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "u64": 10000
+                  "u64": 5000
                 }
               ]
             }
@@ -95,13 +95,13 @@
               "function_name": "submit_proof",
               "args": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                 }
               ]
             }
@@ -120,7 +120,7 @@
               "function_name": "approve_submission",
               "args": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -135,7 +135,6 @@
         }
       ]
     ],
-    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
@@ -146,7 +145,7 @@
               "function_name": "claim_reward",
               "args": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -157,8 +156,7 @@
           "sub_invocations": []
         }
       ]
-    ],
-    []
+    ]
   ],
   "ledger": {
     "protocol_version": 21,
@@ -261,7 +259,7 @@
                               "symbol": "Quest"
                             },
                             {
-                              "symbol": "Q1"
+                              "symbol": "quest_01"
                             }
                           ]
                         },
@@ -280,7 +278,7 @@
                                 "symbol": "deadline"
                               },
                               "val": {
-                                "u64": 10000
+                                "u64": 5000
                               }
                             },
                             {
@@ -288,7 +286,7 @@
                                 "symbol": "id"
                               },
                               "val": {
-                                "symbol": "Q1"
+                                "symbol": "quest_01"
                               }
                             },
                             {
@@ -348,7 +346,7 @@
                               "symbol": "Submission"
                             },
                             {
-                              "symbol": "Q1"
+                              "symbol": "quest_01"
                             },
                             {
                               "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -362,7 +360,7 @@
                                 "symbol": "proof_hash"
                               },
                               "val": {
-                                "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                                "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                               }
                             },
                             {
@@ -370,7 +368,7 @@
                                 "symbol": "quest_id"
                               },
                               "val": {
-                                "symbol": "Q1"
+                                "symbol": "quest_01"
                               }
                             },
                             {
@@ -1139,7 +1137,7 @@
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
@@ -1157,7 +1155,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "u64": 10000
+                  "u64": 5000
                 }
               ]
             }
@@ -1178,7 +1176,7 @@
                 "symbol": "quest_reg"
               },
               {
-                "symbol": "Q1"
+                "symbol": "quest_01"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
@@ -1199,7 +1197,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "u64": 10000
+                  "u64": 5000
                 }
               ]
             }
@@ -1250,13 +1248,13 @@
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                 }
               ]
             }
@@ -1277,7 +1275,7 @@
                 "symbol": "proof_sub"
               },
               {
-                "symbol": "Q1"
+                "symbol": "quest_01"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -1286,7 +1284,7 @@
             "data": {
               "vec": [
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                 }
               ]
             }
@@ -1337,7 +1335,7 @@
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -1364,7 +1362,7 @@
                 "symbol": "sub_appr"
               },
               {
-                "symbol": "Q1"
+                "symbol": "quest_01"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -1415,58 +1413,6 @@
                 "symbol": "fn_call"
               },
               {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 0
-              }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
@@ -1476,7 +1422,7 @@
             "data": {
               "vec": [
                 {
-                  "symbol": "Q1"
+                  "symbol": "quest_01"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -1644,7 +1590,7 @@
                 "symbol": "claimed"
               },
               {
-                "symbol": "Q1"
+                "symbol": "quest_01"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
@@ -1717,58 +1663,6 @@
               }
             ],
             "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "692c360a04a982db02db346a106cbf008ad9e058c384bdaaf77bc0c48799b3a4",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "balance"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 100
-              }
-            }
           }
         }
       },

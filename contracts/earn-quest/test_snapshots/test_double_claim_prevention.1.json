@@ -402,6 +402,54 @@
                             }
                           ]
                         }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "UserStats"
+                            },
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "badges"
+                              },
+                              "val": {
+                                "vec": []
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "level"
+                              },
+                              "val": {
+                                "u32": 1
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "quests_completed"
+                              },
+                              "val": {
+                                "u32": 1
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp"
+                              },
+                              "val": {
+                                "u64": 100
+                              }
+                            }
+                          ]
+                        }
                       }
                     ]
                   }
@@ -1121,6 +1169,48 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "quest_reg"
+              },
+              {
+                "symbol": "Q3"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                },
+                {
+                  "u64": 10000
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1178,6 +1268,36 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "proof_sub"
+              },
+              {
+                "symbol": "Q3"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1221,6 +1341,36 @@
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "sub_appr"
+              },
+              {
+                "symbol": "Q3"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+              }
+            ],
+            "data": {
+              "vec": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 }
@@ -1442,10 +1592,56 @@
               },
               {
                 "symbol": "Q3"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
               }
             ],
             "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+              "vec": [
+                {
+                  "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "xp_award"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u64": 100
+                },
+                {
+                  "u64": 100
+                },
+                {
+                  "u32": 1
+                }
+              ]
             }
           }
         }

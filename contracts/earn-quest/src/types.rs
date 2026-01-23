@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Symbol, BytesN};
+use soroban_sdk::{contracttype, Address, Symbol, BytesN, Vec};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -39,4 +39,23 @@ pub enum SubmissionStatus {
     Approved,
     Rejected,
     Paid,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserStats {
+    pub xp: u64,
+    pub level: u32,
+    pub quests_completed: u32,
+    pub badges: Vec<Badge>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Badge {
+    Rookie,
+    Explorer,
+    Veteran,
+    Master,
+    Legend,
 }

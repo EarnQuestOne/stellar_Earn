@@ -21,4 +21,7 @@ pub enum Error {
     TransferFailed = 31,
     AlreadyClaimed = 32,
     InvalidAsset = 33,
+    
+    // Reputation Errors
+    UserStatsNotFound = 40,
 }

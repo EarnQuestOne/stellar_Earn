@@ -2,11 +2,13 @@
 
 mod payout;
 mod storage;
-mod types;
+pub mod types;
 mod errors;
+mod events;
+mod reputation;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, symbol_short, BytesN};
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus};
+use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, BytesN};
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, Badge};
 use crate::errors::Error;
 
 #[contract]
@@ -36,16 +38,28 @@ impl EarnQuestContract {
 
         let quest = Quest {
             id: id.clone(),
-            creator,
-            reward_asset,
+            creator: creator.clone(),
+            reward_asset: reward_asset.clone(),
             reward_amount,
-            verifier,
+            verifier: verifier.clone(),
             deadline,
             status: QuestStatus::Active,
             total_claims: 0,
         };
         
         storage::set_quest(&env, &id, &quest);
+
+        // EMIT EVENT: QuestRegistered
+        events::quest_registered(
+            &env, 
+            id, 
+            creator, 
+            reward_asset, 
+            reward_amount, 
+            verifier, 
+            deadline
+        );
+
         Ok(())
     }
     
@@ -64,18 +78,20 @@ impl EarnQuestContract {
         let submission = Submission {
             quest_id: quest_id.clone(),
             submitter: submitter.clone(),
-            proof_hash,
+            proof_hash: proof_hash.clone(),
             status: SubmissionStatus::Pending,
             timestamp: env.ledger().timestamp(),
         };
         
         storage::set_submission(&env, &quest_id, &submitter, &submission);
+
+        // EMIT EVENT: ProofSubmitted
+        events::proof_submitted(&env, quest_id, submitter, proof_hash);
+
         Ok(())
     }
 
     /// Approve submission (Internal/Verifier)
-    /// This changes status to Approved, allowing claim.
-    /// Alternatively, this function could payout immediately, but the request asks for `claim_reward`.
     pub fn approve_submission(
         env: Env,
         quest_id: Symbol,
@@ -101,11 +117,13 @@ impl EarnQuestContract {
         submission.status = SubmissionStatus::Approved;
         storage::set_submission(&env, &quest_id, &submitter, &submission);
         
+        // EMIT EVENT: SubmissionApproved
+        events::submission_approved(&env, quest_id, submitter, verifier);
+
         Ok(())
     }
 
     /// Claim approved reward for a completed quest
-    /// This handles the payout distribution.
     pub fn claim_reward(
         env: Env,
         quest_id: Symbol,
@@ -142,12 +160,33 @@ impl EarnQuestContract {
         quest.total_claims += 1;
         storage::set_quest(&env, &quest_id, &quest);
 
-        // 6. Events
-        env.events().publish(
-            (symbol_short!("claimed"), quest_id),
-            submitter
+        // EMIT EVENT: RewardClaimed
+        events::reward_claimed(
+            &env, 
+            quest_id.clone(), 
+            submitter.clone(), 
+            quest.reward_asset, 
+            quest.reward_amount
         );
 
+        // 6. Award XP for quest completion
+        reputation::award_xp(&env, &submitter, 100)?;
+
         Ok(())
+    }
+
+    /// Get user reputation stats
+    pub fn get_user_stats(env: Env, user: Address) -> UserStats {
+        reputation::get_user_stats(&env, &user)
+    }
+
+    /// Grant a badge to a user (admin only)
+    pub fn grant_badge(
+        env: Env,
+        admin: Address,
+        user: Address,
+        badge: Badge,
+    ) -> Result<(), Error> {
+        reputation::grant_badge(&env, &admin, &user, badge)
     }
 }

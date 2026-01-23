@@ -6,18 +6,23 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { PayoutsModule } from './modules/payouts/payouts.module';
+import { QuestsModule } from './modules/quests/quests.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { StellarModule } from './modules/stellar/stellar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { QuestsModule } from './modules/quests/quests.module';
 import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
-import { User } from './modules/users/entities/user.entity';
+import { Payout } from './modules/payouts/entities/payout.entity';
 import { Quest } from './modules/quests/entities/quest.entity';
-import { Submission } from './modules/submissions/entities/submission.entity';
+import { User } from './modules/users/entities/user.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
-import { Payout } from './modules/analytics/entities/payout.entity';
+import { User as AnalyticsUser } from './modules/analytics/entities/user.entity';
+import { Quest as AnalyticsQuest } from './modules/analytics/entities/quest.entity';
+import { Submission as AnalyticsSubmission } from './modules/analytics/entities/submission.entity';
+import { Payout as AnalyticsPayout } from './modules/analytics/entities/payout.entity';
 import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
+import { Submission } from './modules/submissions/entities/submission.entity';
 
 @Module({
   imports: [
@@ -33,11 +38,15 @@ import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapsh
         url: configService.get<string>('DATABASE_URL'),
         entities: [
           RefreshToken,
-          User,
-          Quest,
-          Submission,
-          Notification,
           Payout,
+          Quest,
+          User,
+          Notification,
+          Submission,
+          AnalyticsUser,
+          AnalyticsQuest,
+          AnalyticsSubmission,
+          AnalyticsPayout,
           AnalyticsSnapshot,
         ],
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
@@ -56,6 +65,7 @@ import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapsh
       inject: [ConfigService],
     }),
     AuthModule,
+    PayoutsModule,
     AnalyticsModule,
     QuestsModule,
     SubmissionsModule,
