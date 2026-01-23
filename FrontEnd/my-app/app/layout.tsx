@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/notifications/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "StellarEarn - Quest-Based Earning Platform",
-  description: "Complete quests, earn rewards, and build your on-chain reputation with Stellar",
+  description:
+    "Complete quests, earn rewards, and build your on-chain reputation with Stellar",
 };
 
 export default function RootLayout({
@@ -27,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

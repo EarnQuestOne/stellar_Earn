@@ -1,6 +1,25 @@
-// types.rs
-use soroban_sdk::{contracttype, Address, BytesN, Symbol};
+use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec};
 
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum QuestStatus {
+    Active,
+    Paused,
+    Completed,
+    Expired,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum SubmissionStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Paid,
+}
+
+#[contracttype]
+#[derive(Clone)]
 pub struct Quest {
     pub id: Symbol,
     pub creator: Address,
@@ -12,6 +31,8 @@ pub struct Quest {
     pub total_claims: u32,
 }
 
+#[contracttype]
+#[derive(Clone)]
 pub struct Submission {
     pub quest_id: Symbol,
     pub submitter: Address,
@@ -20,24 +41,12 @@ pub struct Submission {
     pub timestamp: u64,
 }
 
+#[contracttype]
+#[derive(Clone)]
 pub struct UserStats {
     pub address: Address,
     pub total_xp: u32,
     pub level: u32,
     pub quests_completed: u32,
     pub badges: Vec<Symbol>,
-}
-
-pub enum QuestStatus {
-    Active,
-    Paused,
-    Completed,
-    Expired,
-}
-
-pub enum SubmissionStatus {
-    Pending,
-    Approved,
-    Rejected,
-    Paid,
 }

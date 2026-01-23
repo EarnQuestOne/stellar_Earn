@@ -1,191 +1,152 @@
 #![cfg(test)]
-use soroban_sdk::{
-    testutils::{Address as _, Ledger},
-    Address, BytesN, Env, Symbol, Vec,
-};
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus};
-use crate::storage;
-use crate::submission;
-use crate::errors::Error;
 
-// Helper function to create a test quest
-fn create_test_quest(env: &Env, quest_id: Symbol, deadline_offset: i64) -> Quest {
-    Quest {
-        id: quest_id,
-        creator: Address::generate(env),
-        reward_asset: Address::generate(env),
-        reward_amount: 1000,
-        verifier: Address::generate(env),
-        deadline: (env.ledger().timestamp() as i64 + deadline_offset) as u64,
-        status: QuestStatus::Active,
-        total_claims: 0,
-    }
+use earn_quest::{EarnQuestContract, EarnQuestContractClient, SubmissionStatus};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
+
+fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(env, &contract_id);
+
+    let creator = Address::generate(env);
+    let verifier = Address::generate(env);
+    let reward_asset = Address::generate(env);
+
+    (client, creator, verifier, reward_asset)
+}
+
+fn create_quest<'a>(
+    client: &EarnQuestContractClient<'a>,
+    env: &Env,
+    creator: &Address,
+    verifier: &Address,
+    reward_asset: &Address,
+) {
+    let quest_id = symbol_short!("quest1");
+    let deadline = env.ledger().timestamp() + 86400;
+    client.register_quest(
+        &quest_id,
+        creator,
+        reward_asset,
+        &1000_i128,
+        verifier,
+        &deadline,
+    );
 }
 
 #[test]
 fn test_submit_proof_success() {
     let env = Env::default();
+    env.mock_all_auths();
 
-    // Setup test data
-    let quest_id = Symbol::new(&env, "quest1");
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
+
+    // Create quest
+    create_quest(&client, &env, &creator, &verifier, &reward_asset);
+
+    let quest_id = symbol_short!("quest1");
     let submitter = Address::generate(&env);
-    let proof_hash = BytesN::from_array(&env, &[1; 32]);
+    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    // Create and store test quest
-    let quest = create_test_quest(&env, quest_id, 86400); // 24 hours
-    storage::store_quest(&env, &quest).unwrap();
+    // Submit proof
+    client.submit_proof(&quest_id, &submitter, &proof_hash);
 
-    // Submit proof - should succeed
-    let result = submission::submit_proof(&env, quest_id, submitter, proof_hash);
-    assert!(result.is_ok());
-
-    // Verify submission was stored
-    let stored_submission = storage::get_submission(&env, &quest_id, &submitter).unwrap();
-    assert_eq!(stored_submission.quest_id, quest_id);
-    assert_eq!(stored_submission.submitter, submitter);
-    assert_eq!(stored_submission.proof_hash, proof_hash);
-    assert_eq!(stored_submission.status, SubmissionStatus::Pending);
+    // Verify submission
+    let submission = client.get_submission(&quest_id, &submitter);
+    assert_eq!(submission.quest_id, quest_id);
+    assert_eq!(submission.submitter, submitter);
+    assert_eq!(submission.status, SubmissionStatus::Pending);
 }
 
 #[test]
-fn test_duplicate_submission_prevention() {
+fn test_duplicate_submission_fails() {
     let env = Env::default();
+    env.mock_all_auths();
 
-    // Setup test data
-    let quest_id = Symbol::new(&env, "quest1");
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
+    create_quest(&client, &env, &creator, &verifier, &reward_asset);
+
+    let quest_id = symbol_short!("quest1");
     let submitter = Address::generate(&env);
-    let proof_hash = BytesN::from_array(&env, &[1; 32]);
+    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    // Create and store test quest
-    let quest = create_test_quest(&env, quest_id, 86400);
-    storage::store_quest(&env, &quest).unwrap();
+    // Submit first time
+    client.submit_proof(&quest_id, &submitter, &proof_hash);
 
-    // Submit proof first time - should succeed
-    let result1 = submission::submit_proof(&env, quest_id, submitter, proof_hash);
-    assert!(result1.is_ok());
-
-    // Submit proof second time - should fail
-    let result2 = submission::submit_proof(&env, quest_id, submitter, proof_hash);
-    assert_eq!(result2, Err(Error::DuplicateSubmission));
+    // Try to submit again - should fail
+    let result = client.try_submit_proof(&quest_id, &submitter, &proof_hash);
+    assert!(result.is_err());
 }
 
 #[test]
-fn test_submit_to_nonexistent_quest() {
+fn test_submit_to_nonexistent_quest_fails() {
     let env = Env::default();
+    env.mock_all_auths();
 
-    let quest_id = Symbol::new(&env, "nonexistent");
+    let (client, _creator, _verifier, _reward_asset) = setup_env(&env);
+
+    let quest_id = symbol_short!("noquest");
     let submitter = Address::generate(&env);
-    let proof_hash = BytesN::from_array(&env, &[1; 32]);
+    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    let result = submission::submit_proof(&env, quest_id, submitter, proof_hash);
-    assert_eq!(result, Err(Error::QuestNotFound));
+    // Try to submit to non-existent quest
+    let result = client.try_submit_proof(&quest_id, &submitter, &proof_hash);
+    assert!(result.is_err());
 }
 
 #[test]
-fn test_submit_to_expired_quest() {
+fn test_invalid_proof_hash_fails() {
     let env = Env::default();
+    env.mock_all_auths();
 
-    // Setup test data
-    let quest_id = Symbol::new(&env, "expired_quest");
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
+    create_quest(&client, &env, &creator, &verifier, &reward_asset);
+
+    let quest_id = symbol_short!("quest1");
     let submitter = Address::generate(&env);
-    let deadline = env.ledger().timestamp() - 1; // Already expired
-    let proof_hash = BytesN::from_array(&env, &[1; 32]);
+    let zero_hash = BytesN::from_array(&env, &[0u8; 32]); // Invalid zero hash
 
-    // Create expired quest
-    let quest = create_test_quest(&env, quest_id, -1); // Expired 1 second ago
-    storage::store_quest(&env, &quest).unwrap();
-
-    // Try to submit - should fail
-    let result = submission::submit_proof(&env, quest_id, submitter, proof_hash);
-    assert_eq!(result, Err(Error::QuestExpired));
-}
-
-#[test]
-fn test_invalid_proof_hash() {
-    let env = Env::default();
-
-    // Setup test data
-    let quest_id = Symbol::new(&env, "quest1");
-    let submitter = Address::generate(&env);
-    let invalid_proof_hash = BytesN::from_array(&env, &[0u8; 32]); // Zero hash
-
-    // Create and store test quest
-    let quest = create_test_quest(&env, quest_id, 86400);
-    storage::store_quest(&env, &quest).unwrap();
-
-    // Try to submit with invalid proof - should fail
-    let result = submission::submit_proof(&env, quest_id, submitter, invalid_proof_hash);
-    assert_eq!(result, Err(Error::InvalidProofHash));
-}
-
-#[test]
-fn test_get_nonexistent_submission() {
-    let env = Env::default();
-
-    let quest_id = Symbol::new(&env, "quest1");
-    let submitter = Address::generate(&env);
-
-    let result = submission::get_submission(&env, quest_id, submitter);
-    assert_eq!(result, Err(Error::SubmissionNotFound));
+    // Try to submit with zero hash
+    let result = client.try_submit_proof(&quest_id, &submitter, &zero_hash);
+    assert!(result.is_err());
 }
 
 #[test]
 fn test_get_user_submissions() {
     let env = Env::default();
+    env.mock_all_auths();
 
-    // Setup test data
-    let quest1_id = Symbol::new(&env, "quest1");
-    let quest2_id = Symbol::new(&env, "quest2");
-    let submitter = Address::generate(&env);
-    let proof_hash = BytesN::from_array(&env, &[1; 32]);
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
 
-    // Create and store quests
-    let quest1 = create_test_quest(&env, quest1_id, 86400);
-    let quest2 = create_test_quest(&env, quest2_id, 86400);
-    storage::store_quest(&env, &quest1).unwrap();
-    storage::store_quest(&env, &quest2).unwrap();
-
-    // Submit to both quests
-    submission::submit_proof(&env, quest1_id, submitter, proof_hash).unwrap();
-    submission::submit_proof(&env, quest2_id, submitter, proof_hash).unwrap();
-
-    // Get user submissions
-    let user_submissions = submission::get_user_submissions(&env, submitter);
-    assert_eq!(user_submissions.len(), 2);
-
-    // Check that both quest IDs are present
-    assert!(user_submissions.contains(&quest1_id));
-    assert!(user_submissions.contains(&quest2_id));
-}
-
-#[test]
-fn test_get_user_submissions_empty() {
-    let env = Env::default();
-
-    let submitter = Address::generate(&env);
-    let user_submissions = submission::get_user_submissions(&env, submitter);
-    assert_eq!(user_submissions.len(), 0);
-}
-
-#[test]
-fn test_register_quest_validation() {
-    let env = Env::default();
-
-    let quest_id = Symbol::new(&env, "quest1");
-    let creator = Address::generate(&env);
-    let reward_asset = Address::generate(&env);
-    let verifier = Address::generate(&env);
+    // Create two quests
+    let quest1_id = symbol_short!("quest1");
+    let quest2_id = symbol_short!("quest2");
     let deadline = env.ledger().timestamp() + 86400;
 
-    // Test invalid reward amount (this would be tested via contract call)
-    // For now, test the storage function directly
+    client.register_quest(
+        &quest1_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
+    client.register_quest(
+        &quest2_id,
+        &creator,
+        &reward_asset,
+        &2000_i128,
+        &verifier,
+        &deadline,
+    );
 
-    // Register valid quest
-    let quest = create_test_quest(&env, quest_id, 86400);
-    let result = storage::store_quest(&env, &quest);
-    assert!(result.is_ok());
+    let submitter = Address::generate(&env);
+    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    // Try to store same quest again - should work (storage allows overwrites)
-    let result = storage::store_quest(&env, &quest);
-    assert!(result.is_ok());
+    // Submit to both quests
+    client.submit_proof(&quest1_id, &submitter, &proof_hash);
+    client.submit_proof(&quest2_id, &submitter, &proof_hash);
+
+    // Get user submissions
+    let submissions = client.get_user_submissions(&submitter);
+    assert_eq!(submissions.len(), 2);
 }

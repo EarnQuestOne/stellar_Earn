@@ -7,94 +7,66 @@ interface ActiveQuestsProps {
   isLoading: boolean;
 }
 
-interface QuestCardProps {
-  quest: Quest;
+type QuestStatus = 'in_progress' | 'pending' | 'review';
+
+interface SimpleQuest {
+  id: string;
+  title: string;
+  daysLeft: number;
+  status: QuestStatus;
+  reward: number;
 }
 
-function QuestCardSkeleton() {
+function QuestRowSkeleton() {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="h-5 w-3/4 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-          <div className="mt-2 h-4 w-full animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-        </div>
-        <div className="h-6 w-16 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
+    <div className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0">
+      <div className="flex-1">
+        <div className="h-5 w-48 animate-pulse rounded bg-zinc-700 mb-2" />
+        <div className="h-4 w-20 animate-pulse rounded bg-zinc-700" />
       </div>
-      <div className="mt-4">
-        <div className="h-2 w-full animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-4 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+      <div className="flex items-center gap-4">
+        <div className="h-6 w-20 animate-pulse rounded-full bg-zinc-700" />
+        <div className="h-5 w-16 animate-pulse rounded bg-zinc-700" />
       </div>
     </div>
   );
 }
 
-function QuestCard({ quest }: QuestCardProps) {
-  const daysUntilDeadline = Math.ceil(
-    (new Date(quest.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
-  const isUrgent = daysUntilDeadline <= 2;
-
-  const categoryColors: Record<string, string> = {
-    Development: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    Blockchain: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    Documentation: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    Design: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-    Testing: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+function StatusBadge({ status }: { status: QuestStatus }) {
+  const statusConfig = {
+    in_progress: {
+      label: 'In Progress',
+      className: 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20',
+    },
+    pending: {
+      label: 'Pending',
+      className: 'bg-zinc-700/50 text-zinc-300 border border-zinc-600',
+    },
+    review: {
+      label: 'In Review',
+      className: 'bg-amber-400/10 text-amber-400 border border-amber-400/20',
+    },
   };
 
+  const config = statusConfig[status];
+
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-            {quest.title}
-          </h4>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
-            {quest.description}
-          </p>
-        </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-            categoryColors[quest.category] || 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-          }`}
-        >
-          {quest.category}
-        </span>
-      </div>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${config.className}`}>
+      {config.label}
+    </span>
+  );
+}
 
-      {/* Progress bar */}
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-          <span>Progress</span>
-          <span>{quest.progress}%</span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-            style={{ width: `${quest.progress}%` }}
-          />
-        </div>
+function QuestRow({ quest }: { quest: SimpleQuest }) {
+  return (
+    <div className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0 hover:bg-zinc-800/30 -mx-4 px-4 transition-colors cursor-pointer">
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-zinc-100 truncate">{quest.title}</h4>
+        <p className="text-sm text-zinc-500">{quest.daysLeft} days left</p>
       </div>
-
-      {/* Footer */}
-      <div className="mt-3 flex items-center justify-between text-sm">
-        <span className="font-medium text-green-600 dark:text-green-400">
-          +{quest.reward} XLM
-        </span>
-        <span
-          className={`flex items-center gap-1 ${
-            isUrgent
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-zinc-500 dark:text-zinc-400'
-          }`}
-        >
-          {isUrgent && <span>⚠️</span>}
-          {daysUntilDeadline > 0 ? `${daysUntilDeadline} days left` : 'Due today'}
-        </span>
+      <div className="flex items-center gap-4 ml-4">
+        <StatusBadge status={quest.status} />
+        <span className="text-cyan-400 font-medium whitespace-nowrap">{quest.reward} XLM</span>
       </div>
     </div>
   );
@@ -102,51 +74,55 @@ function QuestCard({ quest }: QuestCardProps) {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+    <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="text-4xl mb-3">🎯</div>
-      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">No active quests</h4>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        Browse available quests to start earning rewards
+      <h4 className="font-medium text-zinc-100">No active quests</h4>
+      <p className="mt-1 text-sm text-zinc-500">
+        Browse available quests to start earning
       </p>
-      <button className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
-        Explore Quests
-      </button>
     </div>
   );
 }
 
 export function ActiveQuests({ quests, isLoading }: ActiveQuestsProps) {
+  // Transform quests to simple format or use mock data
+  const simpleQuests: SimpleQuest[] = quests.length > 0
+    ? quests.map(q => ({
+        id: q.id,
+        title: q.title,
+        daysLeft: Math.ceil((new Date(q.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        status: q.progress > 50 ? 'in_progress' as QuestStatus : 'pending' as QuestStatus,
+        reward: q.reward,
+      }))
+    : [
+        { id: '1', title: 'Smart Contract Security Review', daysLeft: 3, status: 'in_progress' as QuestStatus, reward: 250 },
+        { id: '2', title: 'Documentation Update', daysLeft: 5, status: 'pending' as QuestStatus, reward: 75 },
+        { id: '3', title: 'UI Component Library', daysLeft: 7, status: 'in_progress' as QuestStatus, reward: 150 },
+      ];
+
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Active Quests
-        </h3>
-        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-          {isLoading ? '...' : quests.length}
-        </span>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-semibold text-zinc-100">Active Quests</h3>
+        <button className="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
+          View All
+        </button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
-          <QuestCardSkeleton />
-          <QuestCardSkeleton />
-          <QuestCardSkeleton />
+        <div>
+          <QuestRowSkeleton />
+          <QuestRowSkeleton />
+          <QuestRowSkeleton />
         </div>
-      ) : quests.length === 0 ? (
+      ) : simpleQuests.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="space-y-3">
-          {quests.map((quest) => (
-            <QuestCard key={quest.id} quest={quest} />
+        <div>
+          {simpleQuests.map((quest) => (
+            <QuestRow key={quest.id} quest={quest} />
           ))}
         </div>
-      )}
-
-      {!isLoading && quests.length > 0 && (
-        <button className="mt-4 w-full rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
-          View All Quests
-        </button>
       )}
     </div>
   );

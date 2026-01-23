@@ -1,19 +1,90 @@
+#![no_std]
 
-use soroban_sdk::{contract, contractimpl, Env, Address, Symbol, BytesN, Vec};
-mod types;
-mod storage;
-mod quest;
-mod submission;
-mod payout;
-mod reputation;
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
+
 mod errors;
+mod payout;
+mod quest;
+mod reputation;
+mod storage;
+mod submission;
+mod types;
 
-use errors::Error;
+pub use errors::Error;
+pub use types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
 
+#[contract]
 pub struct EarnQuestContract;
 
 #[contractimpl]
 impl EarnQuestContract {
+    // ==================== Quest Functions ====================
+
+    /// Register a new quest
+    /// Only the creator can register a quest and must authorize the transaction
+    pub fn register_quest(
+        env: Env,
+        id: Symbol,
+        creator: Address,
+        reward_asset: Address,
+        reward_amount: i128,
+        verifier: Address,
+        deadline: u64,
+    ) -> Result<(), Error> {
+        quest::register_quest(
+            &env,
+            id,
+            creator,
+            reward_asset,
+            reward_amount,
+            verifier,
+            deadline,
+        )
+    }
+
+    /// Get quest details by ID
+    pub fn get_quest(env: Env, quest_id: Symbol) -> Result<Quest, Error> {
+        quest::get_quest(&env, quest_id)
+    }
+
+    /// Update quest status
+    /// Only the quest creator can update the status
+    pub fn update_quest_status(
+        env: Env,
+        quest_id: Symbol,
+        caller: Address,
+        new_status: QuestStatus,
+    ) -> Result<(), Error> {
+        quest::update_quest_status(&env, quest_id, caller, new_status)
+    }
+
+    /// Pause a quest
+    pub fn pause_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
+        quest::pause_quest(&env, quest_id, caller)
+    }
+
+    /// Resume a paused quest
+    pub fn resume_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
+        quest::resume_quest(&env, quest_id, caller)
+    }
+
+    /// Complete a quest
+    pub fn complete_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
+        quest::complete_quest(&env, quest_id, caller)
+    }
+
+    /// Check if a quest exists
+    pub fn quest_exists(env: Env, quest_id: Symbol) -> bool {
+        quest::quest_exists(&env, &quest_id)
+    }
+
+    /// Check if quest is active and not expired
+    pub fn is_quest_active(env: Env, quest_id: Symbol) -> Result<bool, Error> {
+        quest::is_quest_active(&env, &quest_id)
+    }
+
+    // ==================== Submission Functions ====================
+
     /// Submit proof of quest completion
     /// Validates quest exists, is active, hasn't expired, and prevents duplicates
     pub fn submit_proof(
@@ -30,15 +101,12 @@ impl EarnQuestContract {
         env: Env,
         quest_id: Symbol,
         submitter: Address,
-    ) -> Result<types::Submission, Error> {
+    ) -> Result<Submission, Error> {
         submission::get_submission(&env, quest_id, submitter)
     }
 
     /// Get all quest submissions for a user (returns quest IDs)
-    pub fn get_user_submissions(
-        env: Env,
-        user: Address,
-    ) -> Vec<Symbol> {
+    pub fn get_user_submissions(env: Env, user: Address) -> Vec<Symbol> {
         submission::get_user_submissions(&env, user)
     }
 
@@ -62,39 +130,5 @@ impl EarnQuestContract {
         verifier: Address,
     ) -> Result<(), Error> {
         submission::reject_submission(&env, quest_id, submitter, verifier)
-    }
-
-    /// Register a new quest (placeholder implementation)
-    pub fn register_quest(
-        env: Env,
-        id: Symbol,
-        creator: Address,
-        reward_asset: Address,
-        reward_amount: i128,
-        verifier: Address,
-        deadline: u64,
-    ) -> Result<(), Error> {
-        // Check if quest already exists
-        if storage::quest_exists(&env, &id) {
-            return Err(Error::QuestAlreadyExists);
-        }
-
-        // Validate reward amount
-        if reward_amount <= 0 {
-            return Err(Error::InvalidRewardAmount);
-        }
-
-        let quest = types::Quest {
-            id,
-            creator,
-            reward_asset,
-            reward_amount,
-            verifier,
-            deadline,
-            status: types::QuestStatus::Active,
-            total_claims: 0,
-        };
-
-        storage::store_quest(&env, &quest)
     }
 }
