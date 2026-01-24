@@ -5,7 +5,9 @@
 
 const SENSITIVE_KEYS = ['password', 'token', 'secret', 'authorization'];
 
-export function sanitizeLogObject(obj: Record<string, any>): Record<string, any> {
+export function sanitizeLogObject(
+  obj: Record<string, any>,
+): Record<string, any> {
   if (!obj || typeof obj !== 'object') return obj;
 
   const sanitized: Record<string, any> = {};

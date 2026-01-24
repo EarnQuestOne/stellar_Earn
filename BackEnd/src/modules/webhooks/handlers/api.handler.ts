@@ -8,11 +8,12 @@ export class ApiHandler {
   async handleEvent(event: WebhookEvent): Promise<any> {
     try {
       this.logger.log(`Handling API webhook event: ${event.type}`);
-      
+
       // Parse API event payload
-      const payload = typeof event.payload === 'string' 
-        ? JSON.parse(event.payload) 
-        : event.payload;
+      const payload =
+        typeof event.payload === 'string'
+          ? JSON.parse(event.payload)
+          : event.payload;
 
       // Handle different API verification types
       switch (event.type.toLowerCase()) {
@@ -32,9 +33,14 @@ export class ApiHandler {
     }
   }
 
-  private async handleSubmissionVerify(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing submission verification ${eventId} for submission ${payload.submissionId}`);
-    
+  private async handleSubmissionVerify(
+    payload: any,
+    eventId: string,
+  ): Promise<any> {
+    this.logger.log(
+      `Processing submission verification ${eventId} for submission ${payload.submissionId}`,
+    );
+
     const submissionId = payload.submissionId;
     const userId = payload.userId;
     const verificationType = payload.verificationType;
@@ -59,8 +65,10 @@ export class ApiHandler {
   }
 
   private async handleAutoApprove(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing auto-approval ${eventId} for entity ${payload.entityId}`);
-    
+    this.logger.log(
+      `Processing auto-approval ${eventId} for entity ${payload.entityId}`,
+    );
+
     const entityId = payload.entityId;
     const entityType = payload.entityType;
     const criteriaMet = payload.criteriaMet || [];
@@ -75,9 +83,14 @@ export class ApiHandler {
     };
   }
 
-  private async handleExternalValidation(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing external validation ${eventId} from service ${payload.serviceName}`);
-    
+  private async handleExternalValidation(
+    payload: any,
+    eventId: string,
+  ): Promise<any> {
+    this.logger.log(
+      `Processing external validation ${eventId} from service ${payload.serviceName}`,
+    );
+
     const serviceName = payload.serviceName;
     const validationId = payload.validationId;
     const validationResult = payload.result;

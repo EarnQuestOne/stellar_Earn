@@ -15,10 +15,11 @@ export function verifyWebhookSignature(
   payload: string | object,
   signature: string,
   secret: string,
-  provider: string
+  provider: string,
 ): boolean {
   try {
-    const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const payloadString =
+      typeof payload === 'string' ? payload : JSON.stringify(payload);
 
     switch (provider.toLowerCase()) {
       case 'github':
@@ -39,7 +40,11 @@ export function verifyWebhookSignature(
  * Verifies GitHub webhook signatures using HMAC SHA256
  * GitHub sends signature as: sha256=hash
  */
-function verifyGithubSignature(payload: string, signature: string, secret: string): boolean {
+function verifyGithubSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+): boolean {
   try {
     // GitHub signature format: sha256=actual_hash
     if (!signature.startsWith('sha256=')) {
@@ -54,7 +59,7 @@ function verifyGithubSignature(payload: string, signature: string, secret: strin
 
     const isValid = crypto.timingSafeEqual(
       Buffer.from(calculatedSignature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
+      Buffer.from(expectedSignature, 'hex'),
     );
 
     if (!isValid) {
@@ -72,7 +77,11 @@ function verifyGithubSignature(payload: string, signature: string, secret: strin
  * Verifies API webhook signatures using HMAC SHA256
  * Custom API format: hmac-sha256=hash
  */
-function verifyApiSignature(payload: string, signature: string, secret: string): boolean {
+function verifyApiSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+): boolean {
   try {
     // Custom API signature format: hmac-sha256=actual_hash
     if (!signature.startsWith('hmac-sha256=')) {
@@ -87,7 +96,7 @@ function verifyApiSignature(payload: string, signature: string, secret: string):
 
     const isValid = crypto.timingSafeEqual(
       Buffer.from(calculatedSignature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
+      Buffer.from(expectedSignature, 'hex'),
     );
 
     if (!isValid) {
@@ -107,21 +116,22 @@ function verifyApiSignature(payload: string, signature: string, secret: string):
 export function generateWebhookSignature(
   payload: string | object,
   secret: string,
-  provider: string = 'github'
+  provider: string = 'github',
 ): string {
-  const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  
+  const payloadString =
+    typeof payload === 'string' ? payload : JSON.stringify(payload);
+
   switch (provider.toLowerCase()) {
     case 'github':
       const githubHmac = crypto.createHmac('sha256', secret);
       githubHmac.update(payloadString, 'utf8');
       return `sha256=${githubHmac.digest('hex')}`;
-    
+
     case 'api':
       const apiHmac = crypto.createHmac('sha256', secret);
       apiHmac.update(payloadString, 'utf8');
       return `hmac-sha256=${apiHmac.digest('hex')}`;
-    
+
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }

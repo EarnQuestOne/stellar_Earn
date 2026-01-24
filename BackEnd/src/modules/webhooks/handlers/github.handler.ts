@@ -8,11 +8,12 @@ export class GithubHandler {
   async handleEvent(event: WebhookEvent): Promise<any> {
     try {
       this.logger.log(`Handling GitHub webhook event: ${event.type}`);
-      
+
       // Parse GitHub event payload
-      const payload = typeof event.payload === 'string' 
-        ? JSON.parse(event.payload) 
-        : event.payload;
+      const payload =
+        typeof event.payload === 'string'
+          ? JSON.parse(event.payload)
+          : event.payload;
 
       // Handle different GitHub event types
       switch (event.type.toLowerCase()) {
@@ -27,14 +28,19 @@ export class GithubHandler {
           return { status: 'ignored', eventType: event.type };
       }
     } catch (error) {
-      this.logger.error(`Error handling GitHub event ${event.id}:`, error.stack);
+      this.logger.error(
+        `Error handling GitHub event ${event.id}:`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   private async handlePushEvent(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing push event ${eventId} for repository ${payload.repository?.full_name}`);
-    
+    this.logger.log(
+      `Processing push event ${eventId} for repository ${payload.repository?.full_name}`,
+    );
+
     // Extract relevant information
     const repoName = payload.repository?.full_name;
     const branch = payload.ref?.replace('refs/heads/', '');
@@ -58,9 +64,14 @@ export class GithubHandler {
     };
   }
 
-  private async handlePullRequestEvent(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing pull request event ${eventId} for PR #${payload.pull_request?.number}`);
-    
+  private async handlePullRequestEvent(
+    payload: any,
+    eventId: string,
+  ): Promise<any> {
+    this.logger.log(
+      `Processing pull request event ${eventId} for PR #${payload.pull_request?.number}`,
+    );
+
     const action = payload.action;
     const prNumber = payload.pull_request?.number;
     const repoName = payload.repository?.full_name;
@@ -100,8 +111,10 @@ export class GithubHandler {
   }
 
   private async handleIssuesEvent(payload: any, eventId: string): Promise<any> {
-    this.logger.log(`Processing issues event ${eventId} for issue #${payload.issue?.number}`);
-    
+    this.logger.log(
+      `Processing issues event ${eventId} for issue #${payload.issue?.number}`,
+    );
+
     const action = payload.action;
     const issueNumber = payload.issue?.number;
     const repoName = payload.repository?.full_name;

@@ -32,7 +32,9 @@ export class WebhooksService {
 
   async processWebhook(event: WebhookEvent): Promise<WebhookResponse> {
     try {
-      this.logger.log(`Processing webhook event ${event.id} of type ${event.type} from ${event.source}`);
+      this.logger.log(
+        `Processing webhook event ${event.id} of type ${event.type} from ${event.source}`,
+      );
 
       // Verify signature if present
       if (event.signature && event.secret) {
@@ -40,9 +42,9 @@ export class WebhooksService {
           event.payload,
           event.signature,
           event.secret,
-          event.source
+          event.source,
         );
-        
+
         if (!isValid) {
           this.logger.warn(`Invalid signature for webhook ${event.id}`);
           return {
@@ -75,7 +77,7 @@ export class WebhooksService {
       }
 
       this.logger.log(`Successfully processed webhook ${event.id}`);
-      
+
       return {
         success: true,
         eventId: event.id,
@@ -83,7 +85,6 @@ export class WebhooksService {
         processedAt: new Date(),
         data: result,
       };
-
     } catch (error) {
       this.logger.error(`Failed to process webhook ${event.id}:`, error.stack);
       return {
@@ -97,13 +98,13 @@ export class WebhooksService {
 
   async retryFailedWebhook(eventId: string, maxRetries = 3): Promise<boolean> {
     this.logger.log(`Attempting to retry webhook ${eventId}`);
-    
+
     // In a real implementation, you would:
     // 1. Retrieve the failed webhook from database
     // 2. Increment retry count
     // 3. Process again with exponential backoff
     // 4. Update status in database
-    
+
     // For now, returning true to indicate retry mechanism exists
     return true;
   }

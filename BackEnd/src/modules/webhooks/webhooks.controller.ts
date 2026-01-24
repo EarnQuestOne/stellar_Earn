@@ -10,7 +10,11 @@ import {
   UnauthorizedException,
   Param,
 } from '@nestjs/common';
-import { WebhooksService, WebhookEvent, WebhookResponse } from './webhooks.service';
+import {
+  WebhooksService,
+  WebhookEvent,
+  WebhookResponse,
+} from './webhooks.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -58,7 +62,9 @@ export class WebhooksController {
       const response = await this.webhooksService.processWebhook(event);
 
       if (!response.success) {
-        this.logger.warn(`GitHub webhook processing failed: ${response.message}`);
+        this.logger.warn(
+          `GitHub webhook processing failed: ${response.message}`,
+        );
         throw new UnauthorizedException(response.message);
       }
 
@@ -83,7 +89,9 @@ export class WebhooksController {
     @Headers() headers: any,
   ): Promise<WebhookResponse> {
     try {
-      this.logger.log(`Received API verification webhook: ${eventType} (${webhookId})`);
+      this.logger.log(
+        `Received API verification webhook: ${eventType} (${webhookId})`,
+      );
 
       // Validate required headers
       if (!eventType) {
