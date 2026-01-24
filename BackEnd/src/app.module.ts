@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler/dist/throttler.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
@@ -12,17 +14,19 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { StellarModule } from './modules/stellar/stellar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+
 import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
 import { Payout } from './modules/payouts/entities/payout.entity';
 import { Quest } from './modules/quests/entities/quest.entity';
 import { User } from './modules/users/entities/user.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
+import { Submission } from './modules/submissions/entities/submission.entity';
+
 import { User as AnalyticsUser } from './modules/analytics/entities/user.entity';
 import { Quest as AnalyticsQuest } from './modules/analytics/entities/quest.entity';
 import { Submission as AnalyticsSubmission } from './modules/analytics/entities/submission.entity';
 import { Payout as AnalyticsPayout } from './modules/analytics/entities/payout.entity';
 import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
-import { Submission } from './modules/submissions/entities/submission.entity';
 
 @Module({
   imports: [
