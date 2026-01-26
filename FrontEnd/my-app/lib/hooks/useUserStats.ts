@@ -101,14 +101,23 @@ export function useRecentSubmissions() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchRecentSubmissions()
-      .then(setSubmissions)
-      .catch(err => setError(err.message))
-      .finally(() => setIsLoading(false));
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchRecentSubmissions();
+      setSubmissions(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch submissions');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  return { submissions, isLoading, error };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { submissions, isLoading, error, refetch: fetchData };
 }
 
 export function useEarningsHistory() {
