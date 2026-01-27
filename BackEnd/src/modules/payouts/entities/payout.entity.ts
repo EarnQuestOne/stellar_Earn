@@ -4,7 +4,6 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 
 export enum PayoutStatus {
@@ -21,13 +20,12 @@ export enum PayoutType {
   REFERRAL = 'referral',
 }
 
-@Entity('payouts')
+@Entity('Payout')
 export class Payout {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  @Index()
   stellarAddress: string;
 
   @Column({ type: 'decimal', precision: 18, scale: 7 })
@@ -41,7 +39,6 @@ export class Payout {
     enum: PayoutStatus,
     default: PayoutStatus.PENDING,
   })
-  @Index()
   status: PayoutStatus;
 
   @Column({
@@ -52,11 +49,9 @@ export class Payout {
   type: PayoutType;
 
   @Column({ type: 'varchar', nullable: true })
-  @Index()
   questId: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  @Index()
   submissionId: string | null;
 
   @Column({ type: 'varchar', nullable: true })

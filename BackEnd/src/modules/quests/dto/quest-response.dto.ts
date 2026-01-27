@@ -12,25 +12,13 @@ export class QuestResponseDto {
   description: string;
 
   @ApiProperty()
-  reward: number;
+  rewardAmount: number;
 
   @ApiProperty()
   status: string;
 
   @ApiProperty()
-  creatorAddress: string;
-
-  @ApiProperty({ required: false })
-  maxCompletions?: number;
-
-  @ApiProperty()
-  currentCompletions: number;
-
-  @ApiProperty({ required: false })
-  startDate?: Date;
-
-  @ApiProperty({ required: false })
-  endDate?: Date;
+  createdBy: string;
 
   @ApiProperty()
   createdAt: Date;
@@ -43,13 +31,9 @@ export class QuestResponseDto {
     dto.id = quest.id;
     dto.title = quest.title;
     dto.description = quest.description;
-    dto.reward = quest.reward;
+    dto.rewardAmount = quest.rewardAmount;
     dto.status = quest.status;
-    dto.creatorAddress = quest.creatorAddress;
-    dto.maxCompletions = quest.maxCompletions;
-    dto.currentCompletions = quest.currentCompletions;
-    dto.startDate = quest.startDate;
-    dto.endDate = quest.endDate;
+    dto.createdBy = quest.createdBy;
     dto.createdAt = quest.createdAt;
     dto.updatedAt = quest.updatedAt;
     return dto;

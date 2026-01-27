@@ -7,11 +7,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Submission, SubmissionStatus } from './entities/submission.entity';
+import { Submission } from './entities/submission.entity';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { StellarService } from '../stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Quest } from '../quests/entities/quest.entity';
+import { User } from '../users/entities/user.entity';
 
 interface QuestVerifier {
   id: string;
@@ -42,7 +44,6 @@ export class SubmissionsService {
   ): Promise<Submission> {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
-      relations: ['quest', 'user'],
     });
 
     if (!submission) {
@@ -51,14 +52,25 @@ export class SubmissionsService {
       );
     }
 
-    await this.validateVerifierAuthorization(submission.quest.id, verifierId);
-    this.validateStatusTransition(submission.status, SubmissionStatus.APPROVED);
+    // Load related quest and user separately
+    const quest = await this.getQuestById(submission.questId);
+    const user = await this.getUserById(submission.userId);
+
+    // Create a temporary object with relations
+    const submissionWithRelations = {
+      ...submission,
+      quest,
+      user,
+    };
+
+    await this.validateVerifierAuthorization(submissionWithRelations.quest.id, verifierId);
+    this.validateStatusTransition(submissionWithRelations.status, 'APPROVED');
 
     const updateResult = await this.submissionsRepository
       .createQueryBuilder()
       .update(Submission)
       .set({
-        status: SubmissionStatus.APPROVED,
+        status: 'APPROVED',
         approvedBy: verifierId,
         approvedAt: new Date(),
         verifierNotes: approveDto.notes,
@@ -75,9 +87,9 @@ export class SubmissionsService {
 
     try {
       await this.stellarService.approveSubmission(
-        submission.quest.contractTaskId,
-        submission.user.stellarAddress,
-        submission.quest.rewardAmount,
+        submissionWithRelations.quest.contractTaskId,
+        submissionWithRelations.user.stellarAddress,
+        submissionWithRelations.quest.rewardAmount,
       );
     } catch (error) {
       await this.submissionsRepository.update(submissionId, {
@@ -94,17 +106,27 @@ export class SubmissionsService {
 
     const updatedSubmission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
-      relations: ['quest', 'user'],
     });
-
+    
     if (!updatedSubmission) {
       throw new NotFoundException('Submission not found after update');
     }
+    
+    // Load related quest and user separately for the updated submission
+    const updatedQuest = await this.getQuestById(updatedSubmission.questId);
+    const updatedUser = await this.getUserById(updatedSubmission.userId);
+    
+    // Create a temporary object with relations
+    const updatedSubmissionWithRelations = {
+      ...updatedSubmission,
+      quest: updatedQuest,
+      user: updatedUser,
+    };
 
     await this.notificationsService.sendSubmissionApproved(
-      updatedSubmission.user.id,
-      updatedSubmission.quest.title,
-      updatedSubmission.quest.rewardAmount,
+      updatedSubmission.userId,
+      updatedSubmissionWithRelations.quest.title,
+      updatedSubmissionWithRelations.quest.rewardAmount,
     );
 
     return updatedSubmission;
@@ -120,7 +142,6 @@ export class SubmissionsService {
   ): Promise<Submission> {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
-      relations: ['quest', 'user'],
     });
 
     if (!submission) {
@@ -129,8 +150,19 @@ export class SubmissionsService {
       );
     }
 
-    await this.validateVerifierAuthorization(submission.quest.id, verifierId);
-    this.validateStatusTransition(submission.status, SubmissionStatus.REJECTED);
+    // Load related quest and user separately
+    const quest = await this.getQuestById(submission.questId);
+    const user = await this.getUserById(submission.userId);
+
+    // Create a temporary object with relations
+    const submissionWithRelations = {
+      ...submission,
+      quest,
+      user,
+    };
+
+    await this.validateVerifierAuthorization(submissionWithRelations.quest.id, verifierId);
+    this.validateStatusTransition(submissionWithRelations.status, 'REJECTED');
 
     if (!rejectDto.reason || rejectDto.reason.trim().length === 0) {
       throw new BadRequestException('Rejection reason is required');
@@ -140,7 +172,7 @@ export class SubmissionsService {
       .createQueryBuilder()
       .update(Submission)
       .set({
-        status: SubmissionStatus.REJECTED,
+        status: 'REJECTED',
         rejectedBy: verifierId,
         rejectedAt: new Date(),
         rejectionReason: rejectDto.reason,
@@ -158,16 +190,26 @@ export class SubmissionsService {
 
     const updatedSubmission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
-      relations: ['quest', 'user'],
     });
 
     if (!updatedSubmission) {
       throw new NotFoundException('Submission not found after update');
     }
 
+    // Load related quest and user separately for the updated submission
+    const updatedQuest = await this.getQuestById(updatedSubmission.questId);
+    const updatedUser = await this.getUserById(updatedSubmission.userId);
+
+    // Create a temporary object with relations
+    const updatedSubmissionWithRelations = {
+      ...updatedSubmission,
+      quest: updatedQuest,
+      user: updatedUser,
+    };
+
     await this.notificationsService.sendSubmissionRejected(
-      updatedSubmission.user.id,
-      updatedSubmission.quest.title,
+      updatedSubmission.userId,
+      updatedSubmissionWithRelations.quest.title,
       rejectDto.reason,
     );
 
@@ -193,23 +235,23 @@ export class SubmissionsService {
   }
 
   private validateStatusTransition(
-    currentStatus: SubmissionStatus,
-    newStatus: SubmissionStatus,
+    currentStatus: string,
+    newStatus: string,
   ): void {
-    const validTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
-      [SubmissionStatus.PENDING]: [
-        SubmissionStatus.APPROVED,
-        SubmissionStatus.REJECTED,
-        SubmissionStatus.UNDER_REVIEW,
+    const validTransitions: Record<string, string[]> = {
+      'PENDING': [
+        'APPROVED',
+        'REJECTED',
+        'UNDER_REVIEW',
       ],
-      [SubmissionStatus.UNDER_REVIEW]: [
-        SubmissionStatus.APPROVED,
-        SubmissionStatus.REJECTED,
-        SubmissionStatus.PENDING,
+      'UNDER_REVIEW': [
+        'APPROVED',
+        'REJECTED',
+        'PENDING',
       ],
-      [SubmissionStatus.APPROVED]: [],
-      [SubmissionStatus.REJECTED]: [SubmissionStatus.PENDING],
-      [SubmissionStatus.PAID]: [],
+      'APPROVED': [],
+      'REJECTED': ['PENDING'],
+      'PAID': [],
     };
 
     if (!validTransitions[currentStatus]?.includes(newStatus)) {
@@ -235,7 +277,6 @@ export class SubmissionsService {
   async findOne(submissionId: string): Promise<Submission> {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
-      relations: ['quest', 'user'],
     });
 
     if (!submission) {
@@ -249,9 +290,27 @@ export class SubmissionsService {
 
   async findByQuest(questId: string): Promise<Submission[]> {
     return this.submissionsRepository.find({
-      where: { quest: { id: questId } },
-      relations: ['user'],
+      where: { questId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Helper methods to load related entities
+  private async getQuestById(questId: string): Promise<Quest> {
+    const questRepo = this.submissionsRepository.manager.getRepository(Quest);
+    const quest = await questRepo.findOne({ where: { id: questId } });
+    if (!quest) {
+      throw new NotFoundException(`Quest with ID ${questId} not found`);
+    }
+    return quest;
+  }
+
+  private async getUserById(userId: string): Promise<User> {
+    const userRepo = this.submissionsRepository.manager.getRepository(User);
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    return user;
   }
 }

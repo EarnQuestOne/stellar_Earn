@@ -5,48 +5,43 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 import { Submission } from '../../submissions/entities/submission.entity';
-import { QuestStatus } from '../enums/quest-status.enum';
 
-@Entity('quests')
+@Entity('Quest')
 export class Quest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 200 })
+  @Column()
   title: string;
 
-  @Column('text')
+  @Column()
   description: string;
 
-  @Column('decimal', { precision: 18, scale: 7 })
-  reward: number;
-
-  @Column({
-    type: 'enum',
-    enum: QuestStatus,
-    default: QuestStatus.DRAFT,
-  })
-  @Index()
-  status: QuestStatus;
+  @Column()
+  contractTaskId: string;
 
   @Column()
-  @Index()
-  creatorAddress: string;
+  rewardAsset: string;
+
+  @Column()
+  rewardAmount: number;
 
   @Column({ nullable: true })
-  maxCompletions: number;
+  deadline: Date;
 
-  @Column({ default: 0 })
-  currentCompletions: number;
+  @Column({ default: 'ACTIVE' })
+  status: string;
 
-  @Column({ type: 'timestamp', nullable: true })
-  startDate: Date;
+  @Column()
+  verifierType: string;
 
-  @Column({ type: 'timestamp', nullable: true })
-  endDate: Date;
+  @Column({ type: 'json' })
+  verifierConfig: any;
+
+  @Column()
+  createdBy: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -54,23 +49,26 @@ export class Quest {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // For compatibility with your verification system
+  // Fields for compatibility
   @Column({ nullable: true })
-  contractTaskId: string;
+  creatorAddress: string;
+
+  @Column({ default: 0 })
+  currentCompletions: number;
 
   @Column({ nullable: true })
-  rewardAmount: number;
+  maxCompletions: number;
 
-  @Column({ nullable: true })
-  rewardAsset: string;
+  @Column({ type: 'timestamp', nullable: true })
+  startDate: Date;
 
-  @Column({ nullable: true })
-  createdBy: string;
+  @Column({ type: 'timestamp', nullable: true })
+  endDate: Date;
 
   @OneToMany(() => Submission, (submission) => submission.quest)
   submissions: Submission[];
 
-  // Temporary properties for compatibility
+  // For compatibility with verification system
   verifiers: { id: string }[];
   creator: { id: string } | null;
 }

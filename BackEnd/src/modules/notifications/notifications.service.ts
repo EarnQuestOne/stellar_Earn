@@ -1,12 +1,7 @@
-import { Injectable } from '@nestjs/common';
-
-@Injectable()
-export class NotificationsService {}
-
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationType } from './entities/notification.entity';
+import { Notification } from './entities/notification.entity';
 
 @Injectable()
 export class NotificationsService {
@@ -27,7 +22,7 @@ export class NotificationsService {
   ): Promise<Notification> {
     const notification = this.notificationsRepository.create({
       userId,
-      type: NotificationType.SUBMISSION_APPROVED,
+      type: 'SUBMISSION_APPROVED',
       title: 'Submission Approved! 🎉',
       message: `Your submission for "${questTitle}" has been approved. You will receive ${rewardAmount} tokens.`,
       metadata: {
@@ -62,7 +57,7 @@ export class NotificationsService {
   ): Promise<Notification> {
     const notification = this.notificationsRepository.create({
       userId,
-      type: NotificationType.SUBMISSION_REJECTED,
+      type: 'SUBMISSION_REJECTED',
       title: 'Submission Update',
       message: `Your submission for "${questTitle}" was not approved. Reason: ${reason}`,
       metadata: {
@@ -110,7 +105,7 @@ export class NotificationsService {
       .createQueryBuilder()
       .update(Notification)
       .set({ read: true, readAt: new Date() })
-      .where('user_id = :userId', { userId })
+      .where('userId = :userId', { userId })
       .andWhere('read = false')
       .execute();
   }

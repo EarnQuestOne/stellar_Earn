@@ -12,56 +12,58 @@ import { User } from '../../users/entities/user.entity';
 
 export enum SubmissionStatus {
   PENDING = 'PENDING',
-  UNDER_REVIEW = 'UNDER_REVIEW',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
   PAID = 'PAID',
 }
 
-@Entity('submissions')
+@Entity('Submission')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Quest, (quest) => quest.submissions)
-  @JoinColumn({ name: 'quest_id' })
-  quest: Quest;
+  @Column()
+  questId: string;
 
-  @ManyToOne(() => User, (user) => user.submissions)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @Column()
+  userId: string;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'json' })
   proof: any;
 
-  @Column({
-    type: 'enum',
-    enum: SubmissionStatus,
-    default: SubmissionStatus.PENDING,
-  })
-  status: SubmissionStatus;
+  @Column({ default: 'PENDING' })
+  status: string;
 
-  @Column({ name: 'approved_by', nullable: true })
+  @Column({ nullable: true })
   approvedBy: string;
 
-  @Column({ name: 'approved_at', type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   approvedAt: Date;
 
-  @Column({ name: 'rejected_by', nullable: true })
+  @Column({ nullable: true })
   rejectedBy: string;
 
-  @Column({ name: 'rejected_at', type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   rejectedAt: Date;
 
-  @Column({ name: 'rejection_reason', nullable: true, length: 500 })
+  @Column({ nullable: true })
   rejectionReason: string;
 
-  @Column({ name: 'verifier_notes', nullable: true, length: 1000 })
+  @Column({ nullable: true })
   verifierNotes: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => User, (user) => user.submissions)
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  user: User;
+
+  @ManyToOne(() => Quest, (quest) => quest.submissions)
+  @JoinColumn({ name: 'questId', referencedColumnName: 'id' })
+  quest: Quest;
 }

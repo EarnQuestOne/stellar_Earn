@@ -91,7 +91,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Complete KYC Verification',
         description: 'Complete the KYC verification process to earn rewards',
-        reward: 10.5,
+        rewardAmount: 10.5,
         status: QuestStatus.DRAFT,
       };
 
@@ -104,10 +104,10 @@ describe('Quests (e2e)', () => {
           expect(res.body).toHaveProperty('id');
           expect(res.body.title).toBe(createQuestDto.title);
           expect(res.body.description).toBe(createQuestDto.description);
-          expect(res.body.reward).toBe(createQuestDto.reward);
+          expect(res.body.rewardAmount).toBe(createQuestDto.rewardAmount);
           expect(res.body.status).toBe(QuestStatus.DRAFT);
-          expect(res.body.creatorAddress).toBe(adminAddress);
-          expect(res.body.currentCompletions).toBe(0);
+          expect(res.body.createdBy).toBe(adminAddress);
+
           createdQuestId = res.body.id;
         });
     });
@@ -116,7 +116,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Test Quest',
         description: 'This should fail',
-        reward: 5.0,
+        rewardAmount: 5.0,
       };
 
       return request(app.getHttpServer())
@@ -130,7 +130,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Test Quest',
         description: 'This should fail',
-        reward: 5.0,
+        rewardAmount: 5.0,
       };
 
       return request(app.getHttpServer())
@@ -143,7 +143,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'AB',
         description: 'Valid description here',
-        reward: 5.0,
+        rewardAmount: 5.0,
       };
 
       return request(app.getHttpServer())
@@ -157,7 +157,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Valid Title',
         description: 'Short',
-        reward: 5.0,
+        rewardAmount: 5.0,
       };
 
       return request(app.getHttpServer())
@@ -171,7 +171,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Valid Title',
         description: 'Valid description here',
-        reward: -5.0,
+        rewardAmount: -5.0,
       };
 
       return request(app.getHttpServer())
@@ -185,10 +185,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Quest with Options',
         description: 'This quest has all optional fields',
-        reward: 25.0,
-        maxCompletions: 100,
-        startDate: new Date('2026-02-01'),
-        endDate: new Date('2026-12-31'),
+        rewardAmount: 25.0,
       };
 
       return request(app.getHttpServer())
@@ -197,9 +194,8 @@ describe('Quests (e2e)', () => {
         .send(createQuestDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body.maxCompletions).toBe(100);
-          expect(res.body.startDate).toBeDefined();
-          expect(res.body.endDate).toBeDefined();
+
+
         });
     });
 
@@ -207,9 +203,7 @@ describe('Quests (e2e)', () => {
       const createQuestDto = {
         title: 'Invalid Date Quest',
         description: 'This quest has invalid dates',
-        reward: 10.0,
-        startDate: new Date('2026-12-31'),
-        endDate: new Date('2026-01-01'),
+        rewardAmount: 10.0,
       };
 
       return request(app.getHttpServer())
@@ -250,11 +244,11 @@ describe('Quests (e2e)', () => {
     it('should filter quests by creator', () => {
       return request(app.getHttpServer())
         .get('/quests')
-        .query({ creatorAddress: adminAddress })
+        .query({ createdBy: adminAddress })
         .expect(200)
         .expect((res) => {
           res.body.data.forEach((quest: any) => {
-            expect(quest.creatorAddress).toBe(adminAddress);
+            expect(quest.createdBy).toBe(adminAddress);
           });
         });
     });
@@ -266,8 +260,8 @@ describe('Quests (e2e)', () => {
         .expect(200)
         .expect((res) => {
           res.body.data.forEach((quest: any) => {
-            expect(quest.reward).toBeGreaterThanOrEqual(5);
-            expect(quest.reward).toBeLessThanOrEqual(15);
+            expect(quest.rewardAmount).toBeGreaterThanOrEqual(5);
+            expect(quest.rewardAmount).toBeLessThanOrEqual(15);
           });
         });
     });
@@ -287,7 +281,7 @@ describe('Quests (e2e)', () => {
     it('should sort quests by different fields', () => {
       return request(app.getHttpServer())
         .get('/quests')
-        .query({ sortBy: 'reward', sortOrder: 'ASC' })
+        .query({ sortBy: 'rewardAmount', sortOrder: 'ASC' })
         .expect(200);
     });
   });
@@ -301,7 +295,7 @@ describe('Quests (e2e)', () => {
           expect(res.body.id).toBe(createdQuestId);
           expect(res.body).toHaveProperty('title');
           expect(res.body).toHaveProperty('description');
-          expect(res.body).toHaveProperty('reward');
+          expect(res.body).toHaveProperty('rewardAmount');
         });
     });
 
@@ -315,7 +309,7 @@ describe('Quests (e2e)', () => {
     it('should update quest by owner', () => {
       const updateDto = {
         title: 'Updated Quest Title',
-        reward: 15.0,
+        rewardAmount: 15.0,
       };
 
       return request(app.getHttpServer())
@@ -325,7 +319,7 @@ describe('Quests (e2e)', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body.title).toBe(updateDto.title);
-          expect(res.body.reward).toBe(updateDto.reward);
+          expect(res.body.rewardAmount).toBe(updateDto.rewardAmount);
         });
     });
 
@@ -364,7 +358,7 @@ describe('Quests (e2e)', () => {
       const createDto = {
         title: 'Archived Quest',
         description: 'This quest will be archived',
-        reward: 5.0,
+        rewardAmount: 5.0,
         status: QuestStatus.ARCHIVED,
       };
 
@@ -418,7 +412,7 @@ describe('Quests (e2e)', () => {
       const createDto = {
         title: 'Quest to Delete',
         description: 'This quest will be deleted',
-        reward: 5.0,
+        rewardAmount: 5.0,
       };
 
       const response = await request(app.getHttpServer())

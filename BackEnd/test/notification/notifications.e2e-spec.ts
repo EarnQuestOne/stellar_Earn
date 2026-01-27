@@ -3,9 +3,13 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { DataSource } from 'typeorm';
-import { NotificationDB } from '../../src/modules/notifications/entities/notification.entity';
-import { NotificationPreference } from '../../src/modules/notifications/entities/notificationPreference.entity';
-import { NotificationType } from '../../src/modules/notifications/entities/notification.entity';
+import { Notification as NotificationDB } from '../../src/modules/notifications/entities/notification.entity';
+
+enum NotificationType {
+  QUEST_UPDATE = 'quest_update',
+  REWARD = 'reward',
+  SUBMISSION = 'submission',
+}
 
 describe('Notifications (e2e)', () => {
   let app: INestApplication;
@@ -42,7 +46,6 @@ describe('Notifications (e2e)', () => {
 
   beforeEach(async () => {
     await dataSource.getRepository(NotificationDB).clear();
-    await dataSource.getRepository(NotificationPreference).clear();
   });
 
   it('GET /notifications → empty list', async () => {
@@ -63,7 +66,6 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.QUEST_UPDATE,
         title: 'Quest Updated',
         message: 'Your quest has changed',
-        channels: ['IN_APP'],
         metadata: {},
       }),
     );
@@ -85,7 +87,6 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.REWARD,
         title: 'Reward!',
         message: 'You earned a reward',
-        channels: ['IN_APP'],
         metadata: {},
       }),
     );
@@ -106,7 +107,6 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.SUBMISSION,
         title: 'Submission',
         message: 'Submission received',
-        channels: ['IN_APP'],
         metadata: {},
       }),
     );
@@ -128,7 +128,6 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.QUEST_UPDATE,
         title: '1',
         message: '1',
-        channels: ['IN_APP'],
         metadata: {},
       }),
       repo.create({
@@ -136,7 +135,6 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.REWARD,
         title: '2',
         message: '2',
-        channels: ['IN_APP'],
         metadata: {},
       }),
     ]);
@@ -146,7 +144,7 @@ describe('Notifications (e2e)', () => {
       .expect(200);
 
     const unreadCount = await repo.count({
-      where: { userId, isRead: false },
+      where: { userId, read: false },
     });
 
     expect(unreadCount).toBe(0);
@@ -179,9 +177,8 @@ describe('Notifications (e2e)', () => {
         type: NotificationType.REWARD,
         title: 'Old',
         message: 'Old notification',
-        channels: ['IN_APP'],
         metadata: {},
-        isRead: true,
+        read: true,
         readAt: oldDate,
       }),
     );

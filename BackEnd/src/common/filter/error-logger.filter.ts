@@ -27,12 +27,18 @@ export class ErrorLoggerFilter implements ExceptionFilter {
         ? exception.message
         : 'Internal server error';
 
-    this.logger.error('Unhandled exception', exception as Error, {
-      method: request.method,
-      url: request.originalUrl,
-      statusCode: status,
-      ip: request.ip,
-    });
+    this.logger.error(
+      'Unhandled exception',
+      exception instanceof Error ? exception.stack : undefined,
+      'ErrorLoggerFilter',
+      {
+        message: exception instanceof Error ? exception.message : 'Unknown error',
+        method: request.method,
+        url: request.originalUrl,
+        statusCode: status,
+        ip: request.ip,
+      }
+    );
 
     response.status(status).json({
       statusCode: status,

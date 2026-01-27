@@ -10,7 +10,7 @@ The StellarEarn backend is a robust API service built with NestJS that handles q
 
 - **Framework**: NestJS
 - **Language**: TypeScript
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: PostgreSQL with TypeORM
 - **Authentication**: JWT + Stellar signature verification
 - **Blockchain**: Stellar SDK, Soroban integration
 - **Validation**: class-validator, class-transformer
@@ -72,9 +72,9 @@ apps/api/
 │   │   ├── guards/
 │   │   ├── interceptors/
 │   │   └── pipes/
-│   └── prisma/
-│       ├── schema.prisma
-│       └── migrations/
+│   └── database/
+│       ├── migrations/
+│       └── seeds/
 ├── test/
 │   ├── unit/
 │   ├── integration/
@@ -151,13 +151,10 @@ RATE_LIMIT_MAX=100
 docker compose -f ../../infra/docker-compose.yml up -d
 
 # Run migrations
-pnpm prisma migrate dev
-
-# Generate Prisma Client
-pnpm prisma generate
+pnpm typeorm:run-migrations
 
 # Seed database (optional)
-pnpm prisma db seed
+ts-node seed.ts
 ```
 
 ### Development
@@ -240,21 +237,26 @@ POST   /webhooks/api-verify     - Custom API verification
 ```typescript
 // src/modules/quests/quests.service.ts
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Quest } from '../entities/quest.entity';
+import { Submission } from '../entities/submission.entity';
 import { StellarService } from '../stellar/stellar.service';
 
 @Injectable()
 export class QuestsService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(Quest)
+    private questRepository: Repository<Quest>,
+    @InjectRepository(Submission)
+    private submissionRepository: Repository<Submission>,
     private stellar: StellarService,
   ) {}
 
   async createQuest(createQuestDto: CreateQuestDto) {
     // 1. Save metadata to database
-    const quest = await this.prisma.quest.create({
-      data: createQuestDto,
-    });
+    const quest = this.questRepository.create(createQuestDto);
+    await this.questRepository.save(quest);
 
     // 2. Register quest on-chain
     await this.stellar.registerTask(
@@ -276,14 +278,13 @@ export class QuestsService {
     }
 
     // 2. Create submission
-    const submission = await this.prisma.submission.create({
-      data: {
-        questId,
-        userId,
-        proof,
-        status: 'PENDING',
-      },
+    const submission = this.submissionRepository.create({
+      questId,
+      userId,
+      proof,
+      status: 'PENDING',
     });
+    await this.submissionRepository.save(submission);
 
     return submission;
   }
@@ -366,9 +367,9 @@ import { Injectable } from '@nestjs/common';
 export class PayoutsService {
   async claimReward(userId: string, submissionId: string) {
     // 1. Verify submission is approved
-    const submission = await this.prisma.submission.findUnique({
+    const submission = await this.submissionRepository.findOne({
       where: { id: submissionId },
-      include: { quest: true, user: true },
+      relations: ['quest', 'user'],
     });
 
     if (submission.status !== 'APPROVED') {
@@ -383,7 +384,7 @@ export class PayoutsService {
     );
 
     // 3. Update submission status
-    await this.prisma.submission.update({
+    await this.submissionRepository.update({
       where: { id: submissionId },
       data: { status: 'PAID' },
     });
@@ -395,64 +396,15 @@ export class PayoutsService {
 
 ## Database Schema
 
-```prisma
-// prisma/schema.prisma
-model User {
-  id             String   @id @default(uuid())
-  stellarAddress String   @unique
-  username       String?
-  email          String?
-  xp             Int      @default(0)
-  level          Int      @default(1)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  submissions    Submission[]
-}
+The database schema is defined using TypeORM entities in the codebase.
 
-model Quest {
-  id             String   @id @default(uuid())
-  title          String
-  description    String
-  rewardAsset    String
-  rewardAmount   Int
-  deadline       DateTime?
-  status         QuestStatus @default(ACTIVE)
-  verifierType   String
-  verifierConfig Json
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  submissions    Submission[]
-}
+Key entities include:
 
-model Submission {
-  id        String   @id @default(uuid())
-  questId   String
-  userId    String
-  proof     Json
-  status    SubmissionStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  quest     Quest    @relation(fields: [questId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-enum QuestStatus {
-  ACTIVE
-  PAUSED
-  COMPLETED
-  EXPIRED
-}
-
-enum SubmissionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PAID
-}
-```
+- User: Stores user information and Stellar addresses
+- Quest: Defines quests with rewards and requirements
+- Submission: Tracks user submissions for quests
+- Notification: Handles user notifications
+- Payout: Manages reward distributions
 
 ## Testing
 
@@ -499,7 +451,7 @@ docker run -p 3001:3001 --env-file .env stellarearn-api
 npm ci --only=production
 
 # Run migrations
-npx prisma migrate deploy
+pnpm typeorm:run-migrations
 
 # Start server
 npm run start:prod
@@ -538,7 +490,7 @@ npm run start:prod
 ## Resources
 
 - [NestJS Documentation](https://docs.nestjs.com/)
-- [Prisma Documentation](https://www.prisma.io/docs/)
+- [TypeORM Documentation](https://typeorm.io/)
 - [Stellar SDK](https://stellar.github.io/js-stellar-sdk/)
 - [Soroban Documentation](https://developers.stellar.org/docs/smart-contracts)
 

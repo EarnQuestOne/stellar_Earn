@@ -10,7 +10,7 @@ import { Quest } from './entities/quest.entity';
 import { CreateQuestDto } from './dto/create-quest.dto';
 import { UpdateQuestDto } from './dto/update-quest.dto';
 import { QueryQuestsDto } from './dto/query-quests.dto';
-import { QuestStatus } from './enums/quest-status.enum';
+
 import {
   QuestResponseDto,
   PaginatedQuestsResponseDto,
@@ -35,7 +35,7 @@ export class QuestsService {
 
     const quest = this.questRepository.create({
       ...createQuestDto,
-      creatorAddress,
+      createdBy: creatorAddress,
     });
 
     const savedQuest = await this.questRepository.save(quest);
@@ -61,7 +61,7 @@ export class QuestsService {
     }
 
     if (creatorAddress) {
-      where.creatorAddress = creatorAddress;
+      where.createdBy = creatorAddress;
     }
 
     const queryBuilder = this.questRepository.createQueryBuilder('quest');
@@ -71,29 +71,31 @@ export class QuestsService {
     }
 
     if (creatorAddress) {
-      queryBuilder.andWhere('quest.creatorAddress = :creatorAddress', {
+      queryBuilder.andWhere('quest.createdBy = :creatorAddress', {
         creatorAddress,
       });
     }
 
-    if (minReward !== undefined) {
-      queryBuilder.andWhere('quest.reward >= :minReward', { minReward });
-    }
 
-    if (maxReward !== undefined) {
-      queryBuilder.andWhere('quest.reward <= :maxReward', { maxReward });
-    }
 
     const allowedSortFields = [
       'createdAt',
       'updatedAt',
       'title',
-      'reward',
+      'rewardAmount',
       'status',
     ];
     const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
     queryBuilder.orderBy(`quest.${sortField}`, sortOrder);
+
+    if (minReward !== undefined) {
+      queryBuilder.andWhere('quest.rewardAmount >= :minReward', { minReward });
+    }
+
+    if (maxReward !== undefined) {
+      queryBuilder.andWhere('quest.rewardAmount <= :maxReward', { maxReward });
+    }
 
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
@@ -130,7 +132,7 @@ export class QuestsService {
       throw new NotFoundException(`Quest with ID ${id} not found`);
     }
 
-    if (quest.creatorAddress !== userAddress) {
+    if (quest.createdBy !== userAddress) {
       throw new ForbiddenException('You can only update quests you created');
     }
 
@@ -157,7 +159,7 @@ export class QuestsService {
       throw new NotFoundException(`Quest with ID ${id} not found`);
     }
 
-    if (quest.creatorAddress !== userAddress) {
+    if (quest.createdBy !== userAddress) {
       throw new ForbiddenException('You can only delete quests you created');
     }
 
@@ -165,19 +167,19 @@ export class QuestsService {
   }
 
   validateStatusTransition(
-    currentStatus: QuestStatus,
-    newStatus: QuestStatus,
+    currentStatus: string,
+    newStatus: string,
   ): void {
-    const validTransitions: Record<QuestStatus, QuestStatus[]> = {
-      [QuestStatus.DRAFT]: [QuestStatus.ACTIVE, QuestStatus.ARCHIVED],
-      [QuestStatus.ACTIVE]: [QuestStatus.COMPLETED, QuestStatus.ARCHIVED],
-      [QuestStatus.COMPLETED]: [QuestStatus.ARCHIVED],
-      [QuestStatus.ARCHIVED]: [],
+    const validTransitions: Record<string, string[]> = {
+      'DRAFT': ['ACTIVE', 'ARCHIVED'],
+      'ACTIVE': ['COMPLETED', 'ARCHIVED'],
+      'COMPLETED': ['ARCHIVED'],
+      'ARCHIVED': [],
     };
 
     const allowedStatuses = validTransitions[currentStatus];
 
-    if (!allowedStatuses.includes(newStatus)) {
+    if (!allowedStatuses?.includes(newStatus)) {
       throw new BadRequestException(
         `Cannot transition from ${currentStatus} to ${newStatus}`,
       );

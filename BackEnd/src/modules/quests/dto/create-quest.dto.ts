@@ -49,7 +49,7 @@ export class CreateQuestDto {
   @IsNumber()
   @IsPositive()
   @Min(0.01)
-  reward: number;
+  rewardAmount: number;
 
   @ApiPropertyOptional({
     description: 'Quest status',

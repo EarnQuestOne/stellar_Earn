@@ -3,47 +3,34 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Index,
 } from 'typeorm';
 
-export enum NotificationType {
-  SUBMISSION_APPROVED = 'SUBMISSION_APPROVED',
-  SUBMISSION_REJECTED = 'SUBMISSION_REJECTED',
-  QUEST_CREATED = 'QUEST_CREATED',
-  REWARD_CLAIMED = 'REWARD_CLAIMED',
-  LEVEL_UP = 'LEVEL_UP',
-}
-
-@Entity('notifications')
+@Entity('Notification')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
-  @Column({ name: 'user_id' })
+  @Column()
   userId: string;
 
-  @Column({
-    type: 'enum',
-    enum: NotificationType,
-  })
-  type: NotificationType;
+  @Column()
+  type: string;
 
   @Column()
   title: string;
 
-  @Column({ type: 'text' })
+  @Column()
   message: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   metadata: any;
 
   @Column({ default: false })
   read: boolean;
 
-  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   readAt: Date;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 }

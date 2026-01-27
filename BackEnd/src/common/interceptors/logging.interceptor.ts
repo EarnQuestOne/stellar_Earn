@@ -21,9 +21,9 @@ export class LoggingInterceptor implements NestInterceptor {
       tap(() => {
         const duration = Date.now() - start;
 
-        this.logger.info('Request completed', {
+        this.logger.log('Request completed', 'LoggingInterceptor', {
           method: request.method,
-          url: request.originalUrl,
+          url: request.url,
           durationMs: duration,
         });
       }),

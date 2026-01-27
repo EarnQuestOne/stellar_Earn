@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { Keypair } from 'stellar-sdk';
 import { DataSource } from 'typeorm';
@@ -163,14 +163,15 @@ describe('Analytics (e2e)', () => {
         reviewedAt:
           i % 4 !== 3
             ? new Date(Date.now() - i * 12 * 60 * 60 * 1000 + 60 * 60 * 1000)
-            : null,
+            : undefined,
         paidAt:
           i % 4 === 2
             ? new Date(Date.now() - i * 12 * 60 * 60 * 1000 + 120 * 60 * 1000)
-            : null,
+            : undefined,
         createdAt: new Date(Date.now() - i * 12 * 60 * 60 * 1000),
       });
-      testSubmissions.push(await submissionRepo.save(submission));
+      const savedSubmission = await submissionRepo.save(submission);
+      testSubmissions.push(savedSubmission);
     }
 
     // Create test payouts

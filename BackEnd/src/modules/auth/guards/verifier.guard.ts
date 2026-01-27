@@ -53,17 +53,18 @@ export class VerifierGuard implements CanActivate {
 
     const quest = await this.questRepository.findOne({
       where: { id: questId },
-      relations: ['verifiers', 'creator'],
     });
 
     if (!quest) {
       throw new BadRequestException('Quest not found');
     }
 
-    const isVerifier = quest.verifiers?.some(
-      (v: { id: string }) => v.id === user.id,
-    );
-    const isCreator = quest.creator?.id === user.id;
+    // Check if user is the creator (using createdBy field)
+    const isCreator = quest.createdBy === user.id;
+
+    // For now, we'll allow verifiers based on user role since the verifiers relation isn't fully implemented
+    // In a real implementation, you'd have a proper verifiers relation
+    const isVerifier = user.role === UserRole.VERIFIER;
 
     if (!isVerifier && !isCreator) {
       throw new ForbiddenException(

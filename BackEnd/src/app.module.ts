@@ -27,7 +27,6 @@ import { Quest as AnalyticsQuest } from './modules/analytics/entities/quest.enti
 import { Submission as AnalyticsSubmission } from './modules/analytics/entities/submission.entity';
 import { Payout as AnalyticsPayout } from './modules/analytics/entities/payout.entity';
 import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
-import { Submission } from './modules/submissions/entities/submission.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
