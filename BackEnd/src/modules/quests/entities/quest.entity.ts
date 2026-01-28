@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Submission } from '../../submissions/entities/submission.entity';
 
-@Entity('Quest')
+@Entity('quests')
 export class Quest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -71,4 +71,5 @@ export class Quest {
   // For compatibility with verification system
   verifiers: { id: string }[];
   creator: { id: string } | null;
+  category: any;
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+// import { User, UserRole } from '../entities/user.entity'; // Updated import
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
 import {
@@ -15,6 +15,7 @@ import { UserAnalyticsQueryDto } from '../dto/analytics-query.dto';
 import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Injectable()
 export class UserAnalyticsService {
@@ -89,7 +90,8 @@ export class UserAnalyticsService {
 
   private async getUserMetrics(user: User): Promise<UserMetrics> {
     const submissions = await this.submissionRepository.find({
-      where: { user: { id: user.id } } as any,
+      where: { user: { id: user.id } },
+      relations: ['quest'],
     });
 
     const approvedSubmissions = submissions.filter(
@@ -106,7 +108,7 @@ export class UserAnalyticsService {
     const payouts = await this.payoutRepository.find({
       where: {
         recipient: { id: user.id },
-      } as any,
+      },
     });
 
     const totalRewardsEarned = ConversionUtil.sumBigIntStrings(
@@ -115,24 +117,24 @@ export class UserAnalyticsService {
 
     const avgCompletionTime = ConversionUtil.calculateAverageTime(
       approvedSubmissions,
-      'submittedAt',
-      'reviewedAt',
+      'submittedAt', // Using submittedAt
+      'reviewedAt',  // Using reviewedAt
     );
 
     const lastActiveAt =
       submissions.length > 0
         ? submissions.reduce(
-            (latest, s) => (s.submittedAt > latest ? s.submittedAt : latest),
-            submissions[0].submittedAt,
+            (latest, s) => (s.submittedAt > latest ? s.submittedAt : latest), // Using submittedAt
+            submissions[0].submittedAt, // Using submittedAt
           )
         : user.createdAt;
 
     const activityHistory = await this.getUserActivityHistory(user.id);
 
     return {
-      stellarAddress: user.stellarAddress,
-      username: user.username,
-      totalXp: user.totalXp,
+      stellarAddress: user.stellarAddress || '',
+      username: user.username || '',
+      totalXp: user.xp, // Changed from totalXp to xp
       level: user.level,
       questsCompleted: user.questsCompleted,
       totalSubmissions: submissions.length,
@@ -144,6 +146,15 @@ export class UserAnalyticsService {
       createdAt: user.createdAt,
       badges: user.badges || [],
       activityHistory,
+      // Additional fields from your updated User entity
+      role: user.role,
+      failedQuests: user.failedQuests,
+      successRate: user.successRate,
+      totalEarned: user.totalEarned,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
+      privacyLevel: user.privacyLevel,
+      socialLinks: user.socialLinks,
     };
   }
 
@@ -152,14 +163,14 @@ export class UserAnalyticsService {
   ): Promise<ActivityDataPoint[]> {
     const submissions = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date')
+      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date') // Using submittedAt
       .addSelect('COUNT(*)', 'submissions')
       .addSelect(
         `COUNT(CASE WHEN submission.status IN ('${SubmissionStatus.APPROVED}', '${SubmissionStatus.PAID}') THEN 1 END)`,
         'questsCompleted',
       )
       .where('submission.userId = :userId', { userId })
-      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`)
+      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`) // Using submittedAt
       .orderBy('date', 'ASC')
       .getRawMany();
 
@@ -167,7 +178,7 @@ export class UserAnalyticsService {
       date: DateRangeUtil.formatDate(new Date(s.date)),
       submissions: parseInt(s.submissions),
       questsCompleted: parseInt(s.questsCompleted || '0'),
-      xpGained: parseInt(s.questsCompleted || '0') * 10, // Assuming 10 XP per quest
+      xpGained: parseInt(s.questsCompleted || '0') * 100, // Updated: 100 XP per quest
     }));
   }
 
@@ -183,6 +194,9 @@ export class UserAnalyticsService {
         metrics.sort((a, b) =>
           BigInt(b.totalRewardsEarned) > BigInt(a.totalRewardsEarned) ? 1 : -1,
         );
+        break;
+      case 'success_rate':
+        metrics.sort((a, b) => b.successRate - a.successRate);
         break;
       case 'created_at':
       default:
@@ -207,8 +221,8 @@ export class UserAnalyticsService {
     const activeUsersResult = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
       .getRawOne();
 
     const activeUsers = parseInt(activeUsersResult?.count || '0');
@@ -226,7 +240,7 @@ export class UserAnalyticsService {
 
     const avgXpResult = await this.userRepository
       .createQueryBuilder('user')
-      .select('AVG(user.totalXp)', 'avg')
+      .select('AVG(user.xp)', 'avg') // Changed from totalXp to xp
       .where('user.createdAt >= :startDate', { startDate })
       .andWhere('user.createdAt <= :endDate', { endDate })
       .getRawOne();
@@ -240,12 +254,25 @@ export class UserAnalyticsService {
       activeUsers,
     );
 
+    // Calculate average success rate
+    const avgSuccessRateResult = await this.userRepository
+      .createQueryBuilder('user')
+      .select('AVG(user.successRate)', 'avg')
+      .where('user.createdAt >= :startDate', { startDate })
+      .andWhere('user.createdAt <= :endDate', { endDate })
+      .getRawOne();
+
+    const avgSuccessRate = ConversionUtil.round(
+      parseFloat(avgSuccessRateResult?.avg || '0'),
+    );
+
     return {
       totalUsers,
       activeUsers,
       avgQuestsPerUser,
       avgXpPerUser,
       retentionRate,
+      avgSuccessRate,
     };
   }
 
@@ -264,8 +291,8 @@ export class UserAnalyticsService {
       .createQueryBuilder('submission')
       .leftJoin('submission.user', 'user')
       .select('COUNT(DISTINCT user.id)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
       .andWhere('user.createdAt < :startDate', { startDate })
       .getRawOne();
 
@@ -281,10 +308,10 @@ export class UserAnalyticsService {
     const previouslyActiveResult = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :prevStart', {
+      .where('submission.submittedAt >= :prevStart', { // Using submittedAt
         prevStart: previousPeriodStart,
       })
-      .andWhere('submission.submittedAt < :startDate', { startDate })
+      .andWhere('submission.submittedAt < :startDate', { startDate }) // Using submittedAt
       .getRawOne();
 
     const previouslyActive = parseInt(previouslyActiveResult?.count || '0');
@@ -292,8 +319,8 @@ export class UserAnalyticsService {
     const currentActiveResult = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
       .getRawOne();
 
     const currentActive = parseInt(currentActiveResult?.count || '0');
@@ -325,7 +352,119 @@ export class UserAnalyticsService {
       date: DateRangeUtil.formatDate(new Date(g.date)),
       submissions: 0,
       questsCompleted: parseInt(g.count),
-      xpGained: 0,
+      xpGained: parseInt(g.count) * 100, // Updated XP calculation
+    }));
+  }
+
+  /**
+   * Get user leaderboard for analytics
+   */
+  async getLeaderboardAnalytics(
+    page: number = 1,
+    limit: number = 50,
+    sortBy: string = 'xp',
+  ): Promise<any> {
+    const offset = (page - 1) * limit;
+
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.stellarAddress',
+        'user.avatarUrl',
+        'user.xp',
+        'user.level',
+        'user.questsCompleted',
+        'user.totalEarned',
+        'user.successRate',
+      ])
+      .where('user.stellarAddress IS NOT NULL')
+      .andWhere('user.username IS NOT NULL');
+
+    switch (sortBy) {
+      case 'xp':
+        queryBuilder.orderBy('user.xp', 'DESC');
+        break;
+      case 'quests_completed':
+        queryBuilder.orderBy('user.questsCompleted', 'DESC');
+        break;
+      case 'success_rate':
+        queryBuilder.orderBy('user.successRate', 'DESC');
+        break;
+      case 'total_earned':
+        queryBuilder.orderBy('user.totalEarned', 'DESC');
+        break;
+      default:
+        queryBuilder.orderBy('user.xp', 'DESC');
+    }
+
+    queryBuilder.skip(offset).take(limit);
+
+    const [users, total] = await queryBuilder.getManyAndCount();
+
+    const leaderboard = users.map((user, index) => ({
+      rank: offset + index + 1,
+      user: {
+        id: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+        stellarAddress: user.stellarAddress,
+      },
+      xp: user.xp,
+      level: user.level,
+      questsCompleted: user.questsCompleted,
+      totalEarned: user.totalEarned,
+      successRate: user.successRate,
+    }));
+
+    return {
+      data: leaderboard,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get user distribution by role
+   */
+  async getUserRoleDistribution(): Promise<Record<string, number>> {
+    const distribution = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('user.role')
+      .getRawMany();
+
+    return distribution.reduce((acc, curr) => {
+      acc[curr.role] = parseInt(curr.count);
+      return acc;
+    }, {});
+  }
+
+  /**
+   * Get user activity heatmap
+   */
+  async getUserActivityHeatmap(userId: string): Promise<any> {
+    const activity = await this.submissionRepository
+      .createQueryBuilder('submission')
+      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date') // Using submittedAt
+      .addSelect('COUNT(*)', 'count')
+      .where('submission.userId = :userId', { userId })
+      .andWhere('submission.submittedAt >= :startDate', { // Using submittedAt
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+      })
+      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`) // Using submittedAt
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    return activity.map((a) => ({
+      date: DateRangeUtil.formatDate(new Date(a.date)),
+      activityCount: parseInt(a.count),
     }));
   }
 }

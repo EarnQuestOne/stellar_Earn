@@ -25,7 +25,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../auth/enums/user-role.enum';
 import type { AuthUser } from '../auth/auth.service';
 import { ClaimPayoutDto, CreatePayoutDto } from './dto/claim-payout.dto';
 import {
@@ -34,6 +33,7 @@ import {
   PayoutResponseDto,
   PayoutStatsDto,
 } from './dto/payout-query.dto';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('Payouts')
 @Controller('payouts')

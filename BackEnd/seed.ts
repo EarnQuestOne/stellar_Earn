@@ -25,7 +25,7 @@ export class Seed {
       const users: UserRow[] = [];
       for (let i = 1; i <= 5; i++) {
         const result = await client.query(
-          `INSERT INTO "User" (stellarAddress, username, email, role, xp, level) 
+          `INSERT INTO "User" (stellarAddress, username, email, role, xp, level)
            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username`,
           [
             `GUSER${i}ADDRESS`,
@@ -43,7 +43,7 @@ export class Seed {
       const quests: QuestRow[] = [];
       for (let i = 1; i <= 5; i++) {
         const result = await client.query(
-          `INSERT INTO "Quest" (title, description, contractTaskId, rewardAsset, rewardAmount, status, verifierType, verifierConfig, createdBy) 
+          `INSERT INTO "Quest" (title, description, contractTaskId, rewardAsset, rewardAmount, status, verifierType, verifierConfig, createdBy)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
           [
             `Quest ${i}`,
@@ -64,7 +64,7 @@ export class Seed {
       for (let i = 0; i < users.length; i++) {
         const quest = quests[i % quests.length];
         await client.query(
-          `INSERT INTO "Submission" (questId, userId, proof, status) 
+          `INSERT INTO "Submission" (questId, userId, proof, status)
            VALUES ($1, $2, $3, $4)`,
           [
             quest.id,
@@ -78,7 +78,7 @@ export class Seed {
       // ---------- NOTIFICATIONS ----------
       for (let i = 0; i < users.length; i++) {
         await client.query(
-          `INSERT INTO "Notification" (userId, type, title, message) 
+          `INSERT INTO "Notification" (userId, type, title, message)
            VALUES ($1, $2, $3, $4)`,
           [
             users[i].id,
@@ -92,7 +92,7 @@ export class Seed {
       // ---------- PAYOUTS ----------
       for (let i = 0; i < users.length; i++) {
         await client.query(
-          `INSERT INTO "Payout" (stellarAddress, amount, asset, status) 
+          `INSERT INTO "Payout" (stellarAddress, amount, asset, status)
            VALUES ($1, $2, $3, $4)`,
           [
             `GUSER${i + 1}ADDRESS`,

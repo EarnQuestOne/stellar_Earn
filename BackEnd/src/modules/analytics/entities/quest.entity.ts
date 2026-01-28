@@ -8,8 +8,8 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { User } from './user.entity';
 import { Submission } from './submission.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 export enum QuestStatus {
   ACTIVE = 'Active',

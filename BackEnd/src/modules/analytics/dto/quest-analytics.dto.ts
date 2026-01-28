@@ -54,6 +54,9 @@ export class QuestSummary {
   @ApiProperty({ description: 'Total number of quests' })
   totalQuests: number;
 
+  @ApiProperty({ description: 'Total unique participants across all quests' })
+  totalUniqueParticipants: number;
+
   @ApiProperty({ description: 'Average submissions per quest' })
   avgSubmissionsPerQuest: number;
 
@@ -62,6 +65,9 @@ export class QuestSummary {
 
   @ApiProperty({ description: 'Average completion time (hours)' })
   avgCompletionTime: number;
+
+  @ApiProperty({ description: 'Total rewards paid out across all quests' })
+  totalRewardsPaid: string;
 }
 
 export class QuestAnalyticsDto {

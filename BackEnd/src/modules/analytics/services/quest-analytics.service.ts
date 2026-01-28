@@ -92,7 +92,7 @@ export class QuestAnalyticsService {
 
   private async getQuestMetrics(quest: Quest): Promise<QuestMetrics> {
     const submissions = await this.submissionRepository.find({
-      where: { quest: { id: quest.id } } as any,
+      where: { quest: { id: quest.id } },
       relations: ['user'],
     });
 
@@ -122,7 +122,8 @@ export class QuestAnalyticsService {
         submission: {
           quest: { id: quest.id },
         },
-      } as any,
+      },
+      relations: ['submission'],
     });
 
     const totalRewardsPaid = ConversionUtil.sumBigIntStrings(
@@ -163,14 +164,14 @@ export class QuestAnalyticsService {
   ): Promise<TimeSeriesDataPoint[]> {
     const submissions = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date')
+      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date') // Using submittedAt
       .addSelect('COUNT(*)', 'newSubmissions')
       .addSelect(
         `COUNT(CASE WHEN submission.status = '${SubmissionStatus.APPROVED}' THEN 1 END)`,
         'approvedSubmissions',
       )
       .where('submission.questId = :questId', { questId })
-      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`)
+      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`) // Using submittedAt
       .orderBy('date', 'ASC')
       .getRawMany();
 
@@ -199,6 +200,9 @@ export class QuestAnalyticsService {
             a.avgSubmissionToApprovalTime - b.avgSubmissionToApprovalTime,
         );
         break;
+      case 'unique_participants':
+        metrics.sort((a, b) => b.uniqueParticipants - a.uniqueParticipants);
+        break;
       case 'created_at':
       default:
         metrics.sort(
@@ -216,6 +220,8 @@ export class QuestAnalyticsService {
         avgSubmissionsPerQuest: 0,
         avgApprovalRate: 0,
         avgCompletionTime: 0,
+        totalUniqueParticipants: 0,
+        totalRewardsPaid: '0',
       };
     }
 
@@ -243,11 +249,24 @@ export class QuestAnalyticsService {
         ? ConversionUtil.calculateAverage(completionTimes)
         : 0;
 
+    const totalUniqueParticipants = metrics.reduce(
+      (sum, m) => sum + m.uniqueParticipants,
+      0,
+    );
+
+    // Sum all rewards paid
+    let totalRewardsPaid = BigInt(0);
+    metrics.forEach((m) => {
+      totalRewardsPaid += BigInt(m.totalRewardsPaid || '0');
+    });
+
     return {
       totalQuests: metrics.length,
       avgSubmissionsPerQuest,
       avgApprovalRate,
       avgCompletionTime,
+      totalUniqueParticipants,
+      totalRewardsPaid: totalRewardsPaid.toString(),
     };
   }
 }
