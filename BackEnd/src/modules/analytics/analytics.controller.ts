@@ -16,7 +16,6 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../auth/enums/user-role.enum';
 import { PlatformAnalyticsService } from './services/platform-analytics.service';
 import { QuestAnalyticsService } from './services/quest-analytics.service';
 import { UserAnalyticsService } from './services/user-analytics.service';
@@ -28,6 +27,7 @@ import {
   QuestAnalyticsQueryDto,
   UserAnalyticsQueryDto,
 } from './dto/analytics-query.dto';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('Analytics')
 @Controller('analytics')

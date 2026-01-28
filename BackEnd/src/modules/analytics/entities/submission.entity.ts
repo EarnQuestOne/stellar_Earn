@@ -8,9 +8,9 @@ import {
   ManyToOne,
   OneToOne,
 } from 'typeorm';
-import { User } from './user.entity';
 import { Quest } from './quest.entity';
 import { Payout } from './payout.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 export enum SubmissionStatus {
   PENDING = 'Pending',

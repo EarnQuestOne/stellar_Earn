@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { Quest, QuestStatus } from '../entities/quest.entity';
+import { Quest } from '../entities/quest.entity';
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
 import {
@@ -13,6 +12,7 @@ import { AnalyticsQueryDto, Granularity } from '../dto/analytics-query.dto';
 import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class PlatformAnalyticsService {
@@ -84,8 +84,8 @@ export class PlatformAnalyticsService {
 
         const avgApprovalTime = ConversionUtil.calculateAverageTime(
           allSubmissions.filter((s) => s.status === SubmissionStatus.APPROVED),
-          'submittedAt',
-          'reviewedAt',
+          'submittedAt', // Using submittedAt
+          'reviewedAt',  // Using reviewedAt
         );
 
         return {
@@ -132,7 +132,7 @@ export class PlatformAnalyticsService {
   ): Promise<number> {
     return this.submissionRepository.count({
       where: {
-        submittedAt: { $gte: startDate, $lte: endDate } as any,
+        submittedAt: { $gte: startDate, $lte: endDate } as any, // Using submittedAt
       },
     });
   }
@@ -143,7 +143,7 @@ export class PlatformAnalyticsService {
   ): Promise<number> {
     return this.submissionRepository.count({
       where: {
-        submittedAt: { $gte: startDate, $lte: endDate } as any,
+        submittedAt: { $gte: startDate, $lte: endDate } as any, // Using submittedAt
         status: SubmissionStatus.APPROVED,
       },
     });
@@ -181,8 +181,8 @@ export class PlatformAnalyticsService {
     const result = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
       .getRawOne();
 
     return parseInt(result?.count || '0');
@@ -217,8 +217,8 @@ export class PlatformAnalyticsService {
       .createQueryBuilder('submission')
       .select('submission.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
       .groupBy('submission.status')
       .getRawMany();
 
@@ -242,7 +242,7 @@ export class PlatformAnalyticsService {
   ): Promise<Submission[]> {
     return this.submissionRepository.find({
       where: {
-        submittedAt: { $gte: startDate, $lte: endDate } as any,
+        submittedAt: { $gte: startDate, $lte: endDate } as any, // Using submittedAt
       },
     });
   }
@@ -279,15 +279,15 @@ export class PlatformAnalyticsService {
     // Get submissions by date
     const submissionSeries = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select(`DATE_TRUNC('${dateTrunc}', submission.submittedAt)`, 'date')
+      .select(`DATE_TRUNC('${dateTrunc}', submission.submittedAt)`, 'date') // Using submittedAt
       .addSelect('COUNT(*)', 'totalSubmissions')
       .addSelect(
         `COUNT(CASE WHEN submission.status = '${SubmissionStatus.APPROVED}' THEN 1 END)`,
         'approvedSubmissions',
       )
-      .where('submission.submittedAt >= :startDate', { startDate })
-      .andWhere('submission.submittedAt <= :endDate', { endDate })
-      .groupBy(`DATE_TRUNC('${dateTrunc}', submission.submittedAt)`)
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
+      .groupBy(`DATE_TRUNC('${dateTrunc}', submission.submittedAt)`) // Using submittedAt
       .orderBy('date', 'ASC')
       .getRawMany();
 

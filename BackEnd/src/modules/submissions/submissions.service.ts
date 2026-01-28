@@ -10,7 +10,7 @@ import { Repository } from 'typeorm';
 import { Submission } from './entities/submission.entity';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
-import { StellarService } from '../stellar/stellar.service';
+// import { StellarService } from '../stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
@@ -30,7 +30,7 @@ export class SubmissionsService {
   constructor(
     @InjectRepository(Submission)
     private submissionsRepository: Repository<Submission>,
-    private stellarService: StellarService,
+    // private stellarService: StellarService,
     private notificationsService: NotificationsService,
   ) {}
 
@@ -63,7 +63,10 @@ export class SubmissionsService {
       user,
     };
 
-    await this.validateVerifierAuthorization(submissionWithRelations.quest.id, verifierId);
+    await this.validateVerifierAuthorization(
+      submissionWithRelations.quest.id,
+      verifierId,
+    );
     this.validateStatusTransition(submissionWithRelations.status, 'APPROVED');
 
     const updateResult = await this.submissionsRepository
@@ -85,12 +88,22 @@ export class SubmissionsService {
       );
     }
 
-    try {
-      await this.stellarService.approveSubmission(
-        submissionWithRelations.quest.contractTaskId,
-        submissionWithRelations.user.stellarAddress,
-        submissionWithRelations.quest.rewardAmount,
+    if (!user.stellarAddress) {
+      throw new BadRequestException(
+        'User does not have a Stellar address linked',
       );
+    }
+
+    // const stellarAddress = this.requireStellarAddress(
+    //   submissionWithRelations.user,
+    // );
+
+    try {
+      // await this.stellarService.approveSubmission(
+      //   submissionWithRelations.quest.contractTaskId,
+      //   stellarAddress,
+      //   submissionWithRelations.quest.rewardAmount,
+      // );
     } catch (error) {
       await this.submissionsRepository.update(submissionId, {
         status: submission.status,
@@ -107,15 +120,15 @@ export class SubmissionsService {
     const updatedSubmission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
     });
-    
+
     if (!updatedSubmission) {
       throw new NotFoundException('Submission not found after update');
     }
-    
+
     // Load related quest and user separately for the updated submission
     const updatedQuest = await this.getQuestById(updatedSubmission.questId);
     const updatedUser = await this.getUserById(updatedSubmission.userId);
-    
+
     // Create a temporary object with relations
     const updatedSubmissionWithRelations = {
       ...updatedSubmission,
@@ -130,6 +143,15 @@ export class SubmissionsService {
     );
 
     return updatedSubmission;
+  }
+
+  private requireStellarAddress(user: User): string {
+    if (!user.stellarAddress) {
+      throw new BadRequestException(
+        'User does not have a Stellar address linked',
+      );
+    }
+    return user.stellarAddress;
   }
 
   /**
@@ -161,7 +183,10 @@ export class SubmissionsService {
       user,
     };
 
-    await this.validateVerifierAuthorization(submissionWithRelations.quest.id, verifierId);
+    await this.validateVerifierAuthorization(
+      submissionWithRelations.quest.id,
+      verifierId,
+    );
     this.validateStatusTransition(submissionWithRelations.status, 'REJECTED');
 
     if (!rejectDto.reason || rejectDto.reason.trim().length === 0) {
@@ -239,19 +264,11 @@ export class SubmissionsService {
     newStatus: string,
   ): void {
     const validTransitions: Record<string, string[]> = {
-      'PENDING': [
-        'APPROVED',
-        'REJECTED',
-        'UNDER_REVIEW',
-      ],
-      'UNDER_REVIEW': [
-        'APPROVED',
-        'REJECTED',
-        'PENDING',
-      ],
-      'APPROVED': [],
-      'REJECTED': ['PENDING'],
-      'PAID': [],
+      PENDING: ['APPROVED', 'REJECTED', 'UNDER_REVIEW'],
+      UNDER_REVIEW: ['APPROVED', 'REJECTED', 'PENDING'],
+      APPROVED: [],
+      REJECTED: ['PENDING'],
+      PAID: [],
     };
 
     if (!validTransitions[currentStatus]?.includes(newStatus)) {

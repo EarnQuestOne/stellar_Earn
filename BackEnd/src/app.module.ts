@@ -12,25 +12,21 @@ import { PayoutsModule } from './modules/payouts/payouts.module';
 import { QuestsModule } from './modules/quests/quests.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
-import { StellarModule } from './modules/stellar/stellar.module';
+// import { StellarModule } from './modules/stellar/stellar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-
+import Datasource from './config/ormconfig';
+import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
+// import { AnalyticsUser } from './modules/analytics/entities/analytics-user.entity';
+// import { AnalyticsQuest } from './modules/analytics/entities/analytics-quest.entity';
+// import { AnalyticsSubmission } from './modules/analytics/entities/analytics-submission.entity';
+// import { AnalyticsPayout } from './modules/analytics/entities/analytics-payout.entity';
+// import { AnalyticsPayout } from './modules/analytics/entities/payout.entity';
 import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
 import { Payout } from './modules/payouts/entities/payout.entity';
 import { Quest } from './modules/quests/entities/quest.entity';
+import { Submission } from './modules/submissions/entities/submission.entity';
 import { User } from './modules/users/entities/user.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
-import { Submission } from './modules/submissions/entities/submission.entity';
-
-import { User as AnalyticsUser } from './modules/analytics/entities/user.entity';
-import { Quest as AnalyticsQuest } from './modules/analytics/entities/quest.entity';
-import { Submission as AnalyticsSubmission } from './modules/analytics/entities/submission.entity';
-import { Payout as AnalyticsPayout } from './modules/analytics/entities/payout.entity';
-import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
-import { LoggerMiddleware } from './common/middleware/logger.middleware';
-import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
 
 @Module({
   imports: [
@@ -39,6 +35,7 @@ import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // TypeOrmModule.forRoot(Datasource.options),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -49,15 +46,16 @@ import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
           Payout,
           Quest,
           User,
-          Notification,
           Submission,
-          AnalyticsUser,
-          AnalyticsQuest,
-          AnalyticsSubmission,
-          AnalyticsPayout,
+          Notification,
+          // AnalyticsUser,
+          // AnalyticsQuest,
+          // AnalyticsSubmission,
+          // AnalyticsPayout,
           AnalyticsSnapshot,
         ],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        // synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false,
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -77,7 +75,7 @@ import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
     AnalyticsModule,
     QuestsModule,
     SubmissionsModule,
-    StellarModule,
+    // StellarModule,
     NotificationsModule,
   ],
   controllers: [AppController],
