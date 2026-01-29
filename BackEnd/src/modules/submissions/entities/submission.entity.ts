@@ -18,7 +18,7 @@ export enum SubmissionStatus {
   PAID = 'PAID',
 }
 
-@Entity('Submission')
+@Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;

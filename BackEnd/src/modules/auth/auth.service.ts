@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { UserRole } from './enums/user-role.enum';
 import {
   generateChallengeMessage,
   verifyStellarSignature,
@@ -22,6 +21,7 @@ import {
   ChallengeResponseDto,
 } from './dto/auth.dto';
 import * as crypto from 'crypto';
+import { UserRole } from '../users/entities/user.entity';
 
 export interface AuthUser {
   id: string;

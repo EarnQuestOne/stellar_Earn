@@ -8,8 +8,8 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
 import { Submission } from './submission.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 /**
  * Payout entity for tracking reward distributions

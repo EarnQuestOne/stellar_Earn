@@ -13,12 +13,19 @@ import { PayoutsModule } from './modules/payouts/payouts.module';
 import { QuestsModule } from './modules/quests/quests.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
-import { StellarModule } from './modules/stellar/stellar.module';
+// import { StellarModule } from './modules/stellar/stellar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-
+import Datasource from './config/ormconfig';
+import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
+// import { AnalyticsUser } from './modules/analytics/entities/analytics-user.entity';
+// import { AnalyticsQuest } from './modules/analytics/entities/analytics-quest.entity';
+// import { AnalyticsSubmission } from './modules/analytics/entities/analytics-submission.entity';
+// import { AnalyticsPayout } from './modules/analytics/entities/analytics-payout.entity';
+// import { AnalyticsPayout } from './modules/analytics/entities/payout.entity';
 import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
 import { Payout } from './modules/payouts/entities/payout.entity';
 import { Quest } from './modules/quests/entities/quest.entity';
+import { Submission } from './modules/submissions/entities/submission.entity';
 import { User } from './modules/users/entities/user.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
 import { Submission } from './modules/submissions/entities/submission.entity';
@@ -43,6 +50,7 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // TypeOrmModule.forRoot(Datasource.options),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -53,15 +61,16 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
           Payout,
           Quest,
           User,
-          Notification,
           Submission,
-          AnalyticsUser,
-          AnalyticsQuest,
-          AnalyticsSubmission,
-          AnalyticsPayout,
+          Notification,
+          // AnalyticsUser,
+          // AnalyticsQuest,
+          // AnalyticsSubmission,
+          // AnalyticsPayout,
           AnalyticsSnapshot,
         ],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        // synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: false,
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -72,7 +81,7 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
     AnalyticsModule,
     QuestsModule,
     SubmissionsModule,
-    StellarModule,
+    // StellarModule,
     NotificationsModule,
   ],
   controllers: [AppController],

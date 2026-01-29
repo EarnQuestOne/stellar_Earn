@@ -20,7 +20,7 @@ export enum PayoutType {
   REFERRAL = 'referral',
 }
 
-@Entity('Payout')
+@Entity('payouts')
 export class Payout {
   @PrimaryGeneratedColumn('uuid')
   id: string;

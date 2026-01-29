@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
-@Entity('Notification')
+@Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;

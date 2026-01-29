@@ -16,7 +16,8 @@ export class ActivityDataPoint {
 
 export class UserMetrics {
   @ApiProperty({ description: 'User Stellar address' })
-  stellarAddress: string;
+  // stellarAddress: string;
+  stellarAddress: string | null;
 
   @ApiProperty({ description: 'User display name', nullable: true })
   username: string;
@@ -56,6 +57,30 @@ export class UserMetrics {
 
   @ApiProperty({ description: 'Activity history', type: [ActivityDataPoint] })
   activityHistory: ActivityDataPoint[];
+
+  @ApiProperty({ description: 'User role' })
+  role: string;
+
+  @ApiProperty({ description: 'Number of failed quests' })
+  failedQuests: number;
+
+  @ApiProperty({ description: 'Success rate percentage (0-100)' })
+  successRate: number;
+
+  @ApiProperty({ description: 'Total earned amount' })
+  totalEarned: string;
+
+  @ApiProperty({ description: 'User bio', nullable: true })
+  bio?: string;
+
+  @ApiProperty({ description: 'Avatar URL', nullable: true })
+  avatarUrl?: string;
+
+  @ApiProperty({ description: 'Privacy level' })
+  privacyLevel?: string;
+
+  @ApiProperty({ description: 'Social links', nullable: true })
+  socialLinks?: Record<string, any>;
 }
 
 export class CohortAnalysis {
@@ -84,6 +109,9 @@ export class UserSummary {
 
   @ApiProperty({ description: 'Retention rate percentage (0-100)' })
   retentionRate: number;
+
+  @ApiProperty({ description: 'Average success rate percentage (0-100)' })
+  avgSuccessRate: number;
 }
 
 export class UserAnalyticsDto {

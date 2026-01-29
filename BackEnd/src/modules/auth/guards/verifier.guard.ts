@@ -8,8 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quest } from '../../quests/entities/quest.entity';
-import { User } from '../../users/entities/user.entity';
-import { UserRole } from '../enums/user-role.enum';
+import { User, UserRole } from '../../users/entities/user.entity';
 
 interface RequestUser {
   id: string;
