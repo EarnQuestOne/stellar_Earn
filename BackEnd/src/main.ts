@@ -110,6 +110,7 @@ async function bootstrap() {
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('Authentication')
+      .addTag('Health', 'System health and readiness probes')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -117,34 +118,20 @@ async function bootstrap() {
 
     console.log('✅ Swagger configured');
 
+    // Terminus handles SIGTERM/SIGINT: marks health checks unhealthy first,
+    // drains in-flight requests, then closes the app cleanly.
+    app.enableShutdownHooks();
+
     const port = process.env.PORT || 3001;
 
     console.log(`📡 Attempting to listen on port ${port}...`);
 
-    // Try to listen with timeout
-    const server = await app.listen(port);
+    await app.listen(port);
 
     console.log(`🎉 Application is running on: http://localhost:${port}`);
     console.log(
       `📚 Swagger docs available at: http://localhost:${port}/api/docs`,
     );
-
-    // Keep the process alive
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received. Shutting down gracefully...');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
-
-    process.on('SIGINT', () => {
-      console.log('SIGINT received. Shutting down gracefully...');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
   } catch (error) {
     console.error('💥 Bootstrap failed:', error);
     console.error('Error stack:', error.stack);

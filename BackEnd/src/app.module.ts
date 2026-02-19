@@ -37,6 +37,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
 import { CacheModule } from './modules/cache/cache.module';
+import { HealthModule } from './modules/health/health.module';
 import { throttlerConfig } from './config/throttler.config';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 
@@ -74,6 +75,7 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
       inject: [ConfigService],
     }),
     ThrottlerModule.forRootAsync(throttlerConfig),
+    HealthModule,
     AuthModule,
     PayoutsModule,
     AnalyticsModule,
