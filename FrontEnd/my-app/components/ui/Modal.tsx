@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { FocusTrap } from '@/components/a11y/FocusTrap';
 
 interface ModalProps {
   isOpen: boolean;
@@ -75,6 +76,8 @@ export function Modal({
     }
   };
 
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -83,46 +86,50 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <div
-        ref={modalRef}
-        className={`relative w-full ${sizeClasses[size]} rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance`}
-        tabIndex={-1}
-      >
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-            {title && (
-              <h2
-                id="modal-title"
-                className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-              >
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-                aria-label="Close modal"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+      <FocusTrap active={isOpen} initialFocus={closeButtonRef}>
+        <div
+          ref={modalRef}
+          className={`relative w-full ${sizeClasses[size]} rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance`}
+          tabIndex={-1}
+        >
+          {(title || showCloseButton) && (
+            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              {title && (
+                <h2
+                  id="modal-title"
+                  className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-        <div className="p-6">{children}</div>
-      </div>
+                  {title}
+                </h2>
+              )}
+              {showCloseButton && (
+                <button
+                  ref={closeButtonRef}
+                  onClick={onClose}
+                  className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                  aria-label="Close modal"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+          <div className="p-6">{children}</div>
+        </div>
+      </FocusTrap>
     </div>
   );
 }
@@ -169,6 +176,7 @@ export function SubmissionSuccessModal({
         <button
           onClick={onClose}
           className="w-full rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+          aria-label="Close success message"
         >
           Done
         </button>
