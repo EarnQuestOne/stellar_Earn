@@ -1,54 +1,75 @@
 "use client";
 
-import { GlobalSearch } from "@/components/search/GlobalSearch";
-import NotificationBell from "../notifications/NotificationBell";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { UserMenu } from "@/components/layout/UserMenu";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { WalletModal } from "@/components/wallet/WalletModal";
+import { isActiveRoute, navigationItems } from "@/lib/config/navigation";
 
-export function Header() {
+interface HeaderProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export function Header({ onOpenMobileMenu }: HeaderProps) {
+  const pathname = usePathname();
+
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/95 dark:supports-backdrop-filter:bg-zinc-900/60">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 lg:px-8">
-        {/* Logo - Stellar Earn */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: "#089ec3" }}
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
+    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+      <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <button
+          aria-label="Open mobile menu"
+          className="inline-flex rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800 lg:hidden"
+          onClick={onOpenMobileMenu}
+          type="button"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path
+              d="M4 6h16M4 12h16M4 18h16"
               stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-          <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-            Stellar Earn
-          </span>
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+            />
+          </svg>
+        </button>
+
+        <div className="hidden items-center gap-1 lg:flex">
+          {navigationItems.slice(0, 4).map((item) => {
+            const active = isActiveRoute(pathname, item);
+            return (
+              <Link
+                aria-current={active ? "page" : undefined}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
+                  active
+                    ? "bg-[#089ec3]/10 text-[#089ec3]"
+                    : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                }`}
+                href={item.href}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Search - takes remaining space */}
-        <div className="flex-1 sm:max-w-2xl">
-          <GlobalSearch />
-        </div>
-
-        {/* User actions */}
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <NotificationBell />
+          <div className="hidden md:block">
+            <ConnectButton />
+          </div>
+          <UserMenu />
         </div>
-
-        <ConnectButton />
-
-        {/* Wallet Modal */}
-        <WalletModal />
       </div>
+
+      <div className="border-t border-zinc-200 px-4 py-2 dark:border-zinc-800 sm:px-6 lg:px-8">
+        <Breadcrumbs />
+      </div>
+
+      <WalletModal />
     </header>
   );
 }

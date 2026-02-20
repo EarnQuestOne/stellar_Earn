@@ -43,13 +43,15 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b border-zinc-800 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
-          <span className="text-lg font-bold">
-            <span className="text-cyan-400">Stellar</span>
-            <span className="text-white">Earn</span>
-          </span>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            <span className="text-lg font-bold">
+              <span className="text-cyan-400">Stellar</span>
+              <span className="text-white">Earn</span>
+            </span>
+          </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             className="ml-auto rounded-lg p-1 text-zinc-500 hover:bg-zinc-800 lg:hidden"
@@ -112,7 +114,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="ml-4 flex items-center gap-2">
+          <Link href="/" className="ml-4 flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
               <span className="text-white font-bold text-xs">S</span>
             </div>
@@ -120,7 +122,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               <span className="text-cyan-400">Stellar</span>
               <span className="text-white">Earn</span>
             </span>
-          </div>
+          </Link>
         </header>
 
         {/* Page content */}
