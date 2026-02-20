@@ -140,7 +140,7 @@ function QuestsContent() {
     <AppLayout>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Header content */}
-        <div className="mb-6 flex items-center justify-between lg:mb-8">
+        <div className="mb-6 flex items-center justify-between lg:mb-8" data-onboarding="quest-board-header">
           <div>
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               Quest Board
@@ -171,7 +171,10 @@ function QuestsContent() {
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div
+          className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+          data-onboarding="quest-board-filters"
+        >
           <div className=" lg:max-w-md">
             <SearchBar
               onSearch={handleSearch}
@@ -191,7 +194,7 @@ function QuestsContent() {
         </div>
 
         {/* Quest List */}
-        <div className="mb-6">
+        <div className="mb-6" data-onboarding="quest-board-list">
           <QuestList
             quests={paginatedQuests}
             isLoading={false}

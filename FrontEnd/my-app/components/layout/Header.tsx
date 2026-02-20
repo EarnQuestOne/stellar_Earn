@@ -35,16 +35,18 @@ export function Header() {
         </div>
 
         {/* Search - takes remaining space */}
-        <div className="flex-1 sm:max-w-2xl">
+        <div className="flex-1 sm:max-w-2xl" data-onboarding="global-search">
           <GlobalSearch />
         </div>
 
         {/* User actions */}
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3" data-onboarding="notifications-bell">
           <NotificationBell />
         </div>
 
-        <ConnectButton />
+        <div data-onboarding="wallet-connect">
+          <ConnectButton />
+        </div>
 
         {/* Wallet Modal */}
         <WalletModal />
