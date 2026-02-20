@@ -8,9 +8,12 @@ mod payout;
 mod reputation;
 pub mod storage;
 pub mod types;
+pub mod validation;
+mod quest;
+mod submission;
 
 use crate::errors::Error;
-use crate::types::{Badge, Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
+use crate::types::{Badge, UserStats};
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol};
 
 #[contract]
@@ -42,7 +45,7 @@ impl EarnQuestContract {
         admin::is_admin(&env, &address)
     }
 
-    /// Register a new quest
+    /// Register a new quest with full input validation
     pub fn register_quest(
         env: Env,
         id: Symbol,
@@ -55,42 +58,18 @@ impl EarnQuestContract {
         security::require_not_paused(&env)?;
         creator.require_auth();
 
-        if storage::has_quest(&env, &id) {
-            return Err(Error::QuestAlreadyExists);
-        }
-
-        if reward_amount <= 0 {
-            return Err(Error::InvalidRewardAmount);
-        }
-
-        let quest = Quest {
-            id: id.clone(),
-            creator: creator.clone(),
-            reward_asset: reward_asset.clone(),
-            reward_amount,
-            verifier: verifier.clone(),
-            deadline,
-            status: QuestStatus::Active,
-            total_claims: 0,
-        };
-
-        storage::set_quest(&env, &id, &quest);
-
-        // EMIT EVENT: QuestRegistered
-        events::quest_registered(
+        quest::register_quest(
             &env,
-            id,
-            creator,
-            reward_asset,
+            &id,
+            &creator,
+            &reward_asset,
             reward_amount,
-            verifier,
+            &verifier,
             deadline,
-        );
-
-        Ok(())
+        )
     }
 
-    /// Submit proof
+    /// Submit proof with input validation
     pub fn submit_proof(
         env: Env,
         quest_id: Symbol,
@@ -100,81 +79,44 @@ impl EarnQuestContract {
         security::require_not_paused(&env)?;
         submitter.require_auth();
 
-        // Verify quest exists
-        let _quest = storage::get_quest(&env, &quest_id)?;
-
-        let submission = Submission {
-            quest_id: quest_id.clone(),
-            submitter: submitter.clone(),
-            proof_hash: proof_hash.clone(),
-            status: SubmissionStatus::Pending,
-            timestamp: env.ledger().timestamp(),
-        };
-
-        storage::set_submission(&env, &quest_id, &submitter, &submission);
-
-        // EMIT EVENT: ProofSubmitted
-        events::proof_submitted(&env, quest_id, submitter, proof_hash);
-
-        Ok(())
+        submission::submit_proof(&env, &quest_id, &submitter, &proof_hash)
     }
 
-    /// Approve submission (Internal/Verifier)
+    /// Approve submission with status transition validation
     pub fn approve_submission(
         env: Env,
         quest_id: Symbol,
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
-        // Auth check
         security::require_not_paused(&env)?;
         verifier.require_auth();
 
-        let quest = storage::get_quest(&env, &quest_id)?;
-
-        if verifier != quest.verifier {
-            return Err(Error::Unauthorized);
-        }
-
-        let submission = storage::get_submission(&env, &quest_id, &submitter)?;
-
-        // Only Pending can be approved
-        if submission.status != SubmissionStatus::Pending {
-            return Err(Error::InvalidSubmissionStatus);
-        }
-
-        storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Approved)?;
-
-        // EMIT EVENT: SubmissionApproved
-        events::submission_approved(&env, quest_id, submitter, verifier);
-
-        Ok(())
+        submission::approve_submission(&env, &quest_id, &submitter, &verifier)
     }
 
-    /// Claim approved reward for a completed quest
+    /// Claim approved reward with full validation
     pub fn claim_reward(env: Env, quest_id: Symbol, submitter: Address) -> Result<(), Error> {
         // 1. Auth
         security::require_not_paused(&env)?;
         submitter.require_auth();
 
-        // 2. Data Retrieval
-        let quest = storage::get_quest(&env, &quest_id)?;
-        let submission = storage::get_submission(&env, &quest_id, &submitter)?;
+        // 2. Validate claim (status transitions, limits)
+        submission::validate_claim(&env, &quest_id, &submitter)?;
 
-        // 3. Validation
-        if submission.status == SubmissionStatus::Paid {
-            return Err(Error::AlreadyClaimed);
-        }
-        if submission.status != SubmissionStatus::Approved {
-            return Err(Error::InvalidSubmissionStatus);
-        }
+        // 3. Data Retrieval for payout
+        let quest = storage::get_quest(&env, &quest_id)?;
 
         // 4. Payout
-        // Logic handled in payout module (includes balance check)
         payout::transfer_reward(&env, &quest.reward_asset, &submitter, quest.reward_amount)?;
 
         // 5. State Update
-        storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Paid)?;
+        storage::update_submission_status(
+            &env,
+            &quest_id,
+            &submitter,
+            types::SubmissionStatus::Paid,
+        )?;
         storage::increment_quest_claims(&env, &quest_id)?;
 
         // EMIT EVENT: RewardClaimed
@@ -197,9 +139,14 @@ impl EarnQuestContract {
         reputation::get_user_stats(&env, &user)
     }
 
-    /// Grant a badge to a user (admin only)
+    /// Grant a badge to a user (admin only) with array length validation
     pub fn grant_badge(env: Env, admin: Address, user: Address, badge: Badge) -> Result<(), Error> {
         security::require_not_paused(&env)?;
+
+        // Validate badge count before granting
+        let stats = storage::get_user_stats_or_default(&env, &user);
+        validation::validate_badge_count(stats.badges.len())?;
+
         reputation::grant_badge(&env, &admin, &user, badge)
     }
 
@@ -218,7 +165,7 @@ impl EarnQuestContract {
         security::emergency_unpause(&env, &caller)
     }
 
-    /// Emergency withdrawal when paused (admin only)
+    /// Emergency withdrawal when paused (admin only) with amount validation
     pub fn emergency_withdraw(
         env: Env,
         caller: Address,
@@ -226,6 +173,8 @@ impl EarnQuestContract {
         to: Address,
         amount: i128,
     ) -> Result<(), Error> {
+        // Validate withdraw amount range
+        validation::validate_reward_amount(amount)?;
         security::emergency_withdraw(&env, &caller, &asset, &to, amount)
     }
 

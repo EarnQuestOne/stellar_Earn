@@ -10,10 +10,11 @@ export function Header() {
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/95 dark:supports-backdrop-filter:bg-zinc-900/60">
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 lg:px-8">
         {/* Logo - Stellar Earn */}
-        <div className="flex items-center gap-2 shrink-0">
+        <a href="/" className="flex items-center gap-2 shrink-0" aria-label="Stellar Earn home">
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
             style={{ backgroundColor: "#089ec3" }}
+            aria-hidden="true"
           >
             <svg
               className="h-5 w-5"
@@ -32,7 +33,7 @@ export function Header() {
           <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
             Stellar Earn
           </span>
-        </div>
+        </a>
 
         {/* Search - takes remaining space */}
         <div className="flex-1 sm:max-w-2xl">

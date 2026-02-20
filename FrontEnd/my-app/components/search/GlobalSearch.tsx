@@ -167,6 +167,7 @@ export function GlobalSearch({
                 <button
                   onClick={clearRecent}
                   className="text-xs text-[#089ec3] hover:underline"
+                  aria-label="Clear recent searches"
                 >
                   Clear
                 </button>

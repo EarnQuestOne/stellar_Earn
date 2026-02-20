@@ -7,6 +7,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { QuestDetail } from '@/components/quest/QuestDetail';
 import { getQuestById } from '@/lib/api/quests';
 import type { Quest } from '@/lib/types/quest';
+import { useAnalytics } from '@/lib/hooks/useAnalytics';
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events';
 
 export default function QuestDetailPage() {
   const params = useParams();
@@ -16,6 +18,7 @@ export default function QuestDetailPage() {
   const [quest, setQuest] = useState<Quest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { trackEvent } = useAnalytics();
 
   useEffect(() => {
     const fetchQuest = async () => {
@@ -24,6 +27,7 @@ export default function QuestDetailPage() {
         setError(null);
         const data = await getQuestById(questId);
         setQuest(data);
+        trackEvent(ANALYTICS_EVENTS.QUEST_VIEW, { questId });
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch quest'));
       } finally {

@@ -5,6 +5,10 @@ import { ToastProvider } from "@/components/notifications/Toast";
 import { ThemeProvider } from "@/app/providers/ThemeProvider";
 import { WalletModal } from "@/components/wallet/WalletModal";
 import { WalletProvider } from "@/context/WalletContext";
+import { AnalyticsProvider } from "@/app/providers/AnalyticsProvider";
+import { ConsentBanner } from "@/components/analytics/ConsentBanner";
+import { SkipToContent } from "@/components/a11y/SkipToContent";
+import { A11yAnnouncerProvider } from "@/components/a11y/A11yAnnouncer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +53,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+<<<<<<< HEAD
         <ThemeProvider>
           <WalletProvider>
             <ToastProvider>
@@ -57,6 +62,19 @@ export default function RootLayout({
             </ToastProvider>
           </WalletProvider>
         </ThemeProvider>
+=======
+        <A11yAnnouncerProvider>
+          <WalletProvider>
+            <AnalyticsProvider>
+              <ToastProvider>
+                <SkipToContent />
+                {children}
+                <ConsentBanner />
+              </ToastProvider>
+            </AnalyticsProvider>
+          </WalletProvider>
+        </A11yAnnouncerProvider>
+>>>>>>> 5f37afa054ad754e8f7755fe07aafef2cf896d18
       </body>
     </html>
   );

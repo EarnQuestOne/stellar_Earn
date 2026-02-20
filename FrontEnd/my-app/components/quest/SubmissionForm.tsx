@@ -121,6 +121,7 @@ export function SubmissionForm({
           onClick={handleStartQuest}
           disabled={!canStart}
           className="w-full rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
+          aria-label={isExpired ? 'Quest expired, cannot start' : isFull ? 'Quest full, cannot start' : `Start quest: ${questTitle}`}
         >
           {isExpired ? 'Quest Expired' : isFull ? 'Quest Full' : 'Start Quest'}
         </button>
@@ -204,6 +205,7 @@ export function SubmissionForm({
             }}
             disabled={isSubmitting}
             className="flex-1 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-900"
+            aria-label="Cancel submission"
           >
             Cancel
           </button>
@@ -211,6 +213,7 @@ export function SubmissionForm({
             type="submit"
             disabled={!proof || isSubmitting}
             className="flex-1 rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
+            aria-label={!proof ? 'Please upload proof before submitting' : isSubmitting ? 'Submitting work' : `Submit work for quest: ${questTitle}`}
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">

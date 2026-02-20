@@ -77,7 +77,7 @@ export function ConnectButton() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full z-50 mt-2 w-full min-w-[180px] overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-xl dark:border-[#1e293b] dark:bg-[#0F1621]"
+              className="absolute right-0 top-full z-50 mt-2 w-full min-w-45 overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-xl dark:border-[#1e293b] dark:bg-[#0F1621]"
             >
               <button
                 type="button"
@@ -101,11 +101,8 @@ export function ConnectButton() {
       whileTap={{ scale: 0.98 }}
       onClick={openModal}
       className="flex items-center gap-2 sm:gap-4"
+      aria-label="Connect wallet"
     >
-      <div className="flex items-center gap-2 rounded-s-2xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium tracking-wide text-[#33C5E0] shadow-lg shadow-black/10 transition-all hover:border-[#33C5E0]/50 dark:border-[#1e293b] dark:bg-[#0F1621] dark:shadow-black/20 sm:gap-4 sm:px-8 sm:py-3 sm:text-base">
-        <span>Connect Wallet</span>
-        <ArrowDownIcon />
-      </div>
       <div className="hidden h-8 w-1.5 items-center justify-center bg-zinc-300 transition-colors dark:bg-[#161E22] sm:flex" />
     </motion.button>
   );
