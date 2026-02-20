@@ -366,8 +366,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
                 type="button"
                 onClick={() => removeTag(tag)}
                 className="ml-1 hover:text-blue-900 dark:hover:text-blue-200"
+                aria-label={`Remove tag: ${tag}`}
               >
-                x
+                <span aria-hidden="true">x</span>
               </button>
             </span>
           ))}
@@ -389,6 +390,7 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
           type="submit"
           disabled={isSubmitting}
           className="flex-1 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={isSubmitting ? 'Creating quest, please wait' : 'Create quest'}
         >
           {isSubmitting ? 'Creating Quest...' : 'Create Quest'}
         </button>
@@ -396,6 +398,7 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
           type="button"
           onClick={() => window.history.back()}
           className="rounded-lg border border-zinc-200 px-6 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          aria-label="Cancel and go back"
         >
           Cancel
         </button>

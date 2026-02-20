@@ -55,6 +55,9 @@ export function ConnectButton() {
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
           className="flex items-center gap-3 px-6 cursor-pointer py-3 rounded-s-2xl bg-[#0F1621] border border-[#1e293b] hover:border-[#33C5E0]/50 transition-all group pointer-events-auto"
+          aria-label={`Wallet connected: ${formatAddress(address)}. Click to open wallet menu`}
+          aria-expanded={dropdownOpen}
+          aria-haspopup="true"
         >
           <div className="w-2 h-2 rounded-full bg-[#33C5E0] shadow-[0_0_8px_#33C5E0]" />
           <span className="text-[#33C5E0] font-medium tracking-wide">
@@ -81,6 +84,7 @@ export function ConnectButton() {
               <button
                 onClick={handleDisconnect}
                 className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-white/5 transition-colors text-sm font-medium"
+                aria-label="Disconnect wallet"
               >
                 <LogOut className="w-4 h-4" />
                 Disconnect
@@ -98,6 +102,7 @@ export function ConnectButton() {
       whileTap={{ scale: 0.98 }}
       onClick={openModal}
       className="flex items-center gap-4"
+      aria-label="Connect wallet"
     >
       <div className="flex items-center gap-4 px-8 py-3 rounded-s-2xl bg-[#0F1621] border border-[#1e293b] hover:border-[#33C5E0]/50 transition-all text-[#33C5E0] font-medium tracking-wide shadow-lg shadow-black/20">
         <span>Connect Wallet</span>

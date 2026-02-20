@@ -45,7 +45,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        aria-label="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         <svg
           className="w-6 h-6"
