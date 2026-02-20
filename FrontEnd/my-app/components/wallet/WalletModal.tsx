@@ -63,7 +63,7 @@ export function WalletModal() {
 
               {error && (
                 <div className="w-full mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                   <span className="text-red-400 text-sm">{error}</span>
                 </div>
               )}
