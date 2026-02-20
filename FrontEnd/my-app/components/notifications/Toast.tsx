@@ -19,7 +19,7 @@ interface ToastContextType {
   showToast: (message: string, type?: NotificationType) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const useToast = () => {
   const context = useContext(ToastContext);

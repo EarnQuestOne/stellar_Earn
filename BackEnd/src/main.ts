@@ -41,11 +41,17 @@
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { CustomValidationPipe } from './common/pipes/validation.pipe';
 import { SanitizationPipe } from './common/pipes/sanitization.pipe';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
+import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
+import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { getSecurityConfig } from './config/security.config';
+import { getCorsConfig } from './config/cors.config';
 
 // Catch all unhandled errors
 process.on('unhandledRejection', (reason, promise) => {
@@ -70,10 +76,15 @@ async function bootstrap() {
 
     console.log('✅ App created successfully');
 
-    app.enableCors({
-      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
-      credentials: true,
-    });
+    // Apply security middleware first
+    app.use(new SecurityMiddleware().use.bind(new SecurityMiddleware()));
+
+    // Apply Helmet security headers
+    const configService = app.get(ConfigService);
+    app.use(helmet(getSecurityConfig(configService)));
+
+    // Configure CORS with whitelist
+    app.enableCors(getCorsConfig());
 
     // Global pipes for validation and sanitization
     app.useGlobalPipes(
@@ -98,8 +109,11 @@ async function bootstrap() {
       }),
     );
 
-    // Global exception filter for validation errors
-    app.useGlobalFilters(new ValidationExceptionFilter());
+    // Global exception filters
+    app.useGlobalFilters(
+      new SecurityExceptionFilter(),
+      new ValidationExceptionFilter(),
+    );
 
     console.log('✅ Middleware configured');
 
@@ -110,6 +124,7 @@ async function bootstrap() {
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('Authentication')
+      .addTag('Health', 'System health and readiness probes')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -117,34 +132,20 @@ async function bootstrap() {
 
     console.log('✅ Swagger configured');
 
+    // Terminus handles SIGTERM/SIGINT: marks health checks unhealthy first,
+    // drains in-flight requests, then closes the app cleanly.
+    app.enableShutdownHooks();
+
     const port = process.env.PORT || 3001;
 
     console.log(`📡 Attempting to listen on port ${port}...`);
 
-    // Try to listen with timeout
-    const server = await app.listen(port);
+    await app.listen(port);
 
     console.log(`🎉 Application is running on: http://localhost:${port}`);
     console.log(
       `📚 Swagger docs available at: http://localhost:${port}/api/docs`,
     );
-
-    // Keep the process alive
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received. Shutting down gracefully...');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
-
-    process.on('SIGINT', () => {
-      console.log('SIGINT received. Shutting down gracefully...');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
   } catch (error) {
     console.error('💥 Bootstrap failed:', error);
     console.error('Error stack:', error.stack);

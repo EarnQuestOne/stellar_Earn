@@ -20,6 +20,7 @@ export function ClaimButton({ onClick, status, disabled }: ClaimButtonProps) {
         ${isLoading ? 'cursor-not-allowed opacity-80' : 'hover:scale-[1.02] active:scale-[0.98]'}
         ${disabled ? 'cursor-not-allowed bg-zinc-400' : 'bg-[#089ec3] hover:bg-[#078dae]'}
       `}
+      aria-label={isLoading ? 'Processing transaction, please wait' : disabled ? 'Claim rewards unavailable' : 'Claim all rewards'}
     >
       {isLoading ? (
         <>

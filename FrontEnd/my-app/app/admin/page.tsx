@@ -1,7 +1,7 @@
 'use client';
 
 import { useAdminAccess, useAdminStats, useQuestManagement, useNotificationState } from '@/lib/hooks/useAdmin';
-import { AdminLayout, AdminStats, QuestManager, Notifications } from '@/components/admin';
+import { AdminLayout, AdminStats, QuestManager, Notifications, Analytics } from '@/components/admin';
 import { NotificationContext } from '@/lib/hooks/useAdmin';
 
 function AdminDashboardContent() {
@@ -36,6 +36,14 @@ function AdminDashboardContent() {
           Platform Overview
         </h2>
         <AdminStats stats={stats} isLoading={statsLoading} />
+      </section>
+
+      {/* Analytics Section */}
+      <section>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
+          Analytics
+        </h2>
+        <Analytics />
       </section>
 
       {/* Quest Manager Section */}

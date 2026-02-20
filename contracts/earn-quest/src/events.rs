@@ -10,6 +10,11 @@ const TOPIC_REWARD_CLAIMED: Symbol = symbol_short!("claimed");
 const TOPIC_XP_AWARDED: Symbol = symbol_short!("xp_award");
 const TOPIC_LEVEL_UP: Symbol = symbol_short!("level_up");
 const TOPIC_BADGE_GRANTED: Symbol = symbol_short!("badge_grt");
+const TOPIC_EMERGENCY_PAUSED: Symbol = symbol_short!("epause");
+const TOPIC_EMERGENCY_UNPAUSED: Symbol = symbol_short!("eunpause");
+const TOPIC_EMERGENCY_WITHDRAW: Symbol = symbol_short!("ewdraw");
+const TOPIC_UNPAUSE_APPROVED: Symbol = symbol_short!("uappr");
+const TOPIC_TIMELOCK_SCHEDULED: Symbol = symbol_short!("tl_sched");
 
 /// Emit when a new quest is created
 pub fn quest_registered(
@@ -25,6 +30,41 @@ pub fn quest_registered(
     let topics = (TOPIC_QUEST_REGISTERED, quest_id, creator);
     // Data: (Asset, Amount, Verifier, Deadline)
     let data = (reward_asset, reward_amount, verifier, deadline);
+    env.events().publish(topics, data);
+}
+
+/// Emit when contract is paused by admin
+pub fn emergency_paused(env: &Env, by: Address) {
+    let topics = (TOPIC_EMERGENCY_PAUSED, by.clone());
+    let data = (by,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when contract is unpaused
+pub fn emergency_unpaused(env: &Env, by: Address) {
+    let topics = (TOPIC_EMERGENCY_UNPAUSED, by.clone());
+    let data = (by,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when emergency withdrawal happens
+pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, amount: i128) {
+    let topics = (TOPIC_EMERGENCY_WITHDRAW, by.clone());
+    let data = (asset, to, amount);
+    env.events().publish(topics, data);
+}
+
+/// Emit when an admin approves unpause
+pub fn unpause_approved(env: &Env, admin: Address) {
+    let topics = (TOPIC_UNPAUSE_APPROVED, admin.clone());
+    let data = (admin,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when a timelock is scheduled for unpause
+pub fn timelock_scheduled(env: &Env, scheduled_time: u64) {
+    let topics = (TOPIC_TIMELOCK_SCHEDULED, scheduled_time);
+    let data = (scheduled_time,);
     env.events().publish(topics, data);
 }
 

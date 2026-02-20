@@ -25,4 +25,19 @@ pub enum Error {
     
     // Reputation Errors
     UserStatsNotFound = 40,
+    // Security / Emergency
+    Paused = 50,
+    TimelockNotExpired = 51,
+    AlreadyApproved = 52,
+    InsufficientApprovals = 53,
+
+    // Validation Errors
+    DeadlineInPast = 60,
+    StringTooLong = 61,
+    ArrayTooLong = 62,
+    InvalidStatusTransition = 63,
+    AmountTooLarge = 64,
+    InvalidAddress = 65,
+    QuestExpired = 66,
+    QuestNotActive = 67,
 }

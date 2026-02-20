@@ -53,8 +53,9 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
           <button
             onClick={() => setSidebarOpen(false)}
             className="ml-auto rounded-lg p-1 text-zinc-500 hover:bg-zinc-800 lg:hidden"
+            aria-label="Close sidebar"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         </div>
 
@@ -96,8 +97,11 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
                 </p>
               </div>
             </div>
-            <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200">
-              <span>→</span>
+            <button 
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+              aria-label="Sign out"
+            >
+              <span aria-hidden="true">→</span>
               Sign Out
             </button>
           </div>
@@ -111,6 +115,8 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800"
+            aria-label="Open sidebar menu"
+            aria-expanded={sidebarOpen}
           >
             <svg
               className="h-6 w-6"
@@ -138,7 +144,9 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-6 lg:p-8">{children}</main>
+        <main id="main-content" className="p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );

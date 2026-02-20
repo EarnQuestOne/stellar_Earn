@@ -4,6 +4,10 @@ import "./globals.css";
 import { ToastProvider } from "@/components/notifications/Toast";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { WalletProvider } from "@/context/WalletContext";
+import { AnalyticsProvider } from "@/app/providers/AnalyticsProvider";
+import { ConsentBanner } from "@/components/analytics/ConsentBanner";
+import { SkipToContent } from "@/components/a11y/SkipToContent";
+import { A11yAnnouncerProvider } from "@/components/a11y/A11yAnnouncer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

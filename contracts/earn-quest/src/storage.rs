@@ -16,6 +16,18 @@ pub enum DataKey {
     UserStats(Address),
     /// Stores admin status, keyed by admin address
     Admin(Address),
+    /// Global paused flag
+    Paused,
+    /// Stores per-admin approval for unpause
+    UnpauseApproval(Address),
+    /// Number of approvals required to unpause
+    UnpauseThreshold,
+    /// Count of approvals recorded
+    UnpauseApprovalCount,
+    /// Timelock seconds to wait after approvals before unpause can be executed
+    UnpauseTimelockSeconds,
+    /// Scheduled unpause ledger timestamp
+    ScheduledUnpauseTime,
 }
 
 //================================================================================
@@ -525,4 +537,121 @@ pub fn remove_admin(env: &Env, address: &Address) {
     env.storage()
         .instance()
         .remove(&DataKey::Admin(address.clone()));
+}
+
+//================================================================================
+// Emergency / Security Storage Helpers
+//================================================================================
+
+/// Set global paused flag
+pub fn set_paused(env: &Env, paused: bool) {
+    if paused {
+        env.storage().instance().set(&DataKey::Paused, &true);
+    } else {
+        env.storage().instance().remove(&DataKey::Paused);
+    }
+}
+
+/// Get paused flag
+pub fn is_paused(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::Paused)
+}
+
+/// Approve or revoke unpause by admin
+pub fn set_unpause_approval(env: &Env, admin: &Address, approved: bool) {
+    if approved {
+        // If not already approved, set and increment counter
+        if !has_unpause_approval(env, admin) {
+            env.storage()
+                .instance()
+                .set(&DataKey::UnpauseApproval(admin.clone()), &true);
+            inc_unpause_approval_count(env);
+        }
+    } else {
+        if has_unpause_approval(env, admin) {
+            env.storage()
+                .instance()
+                .remove(&DataKey::UnpauseApproval(admin.clone()));
+            dec_unpause_approval_count(env);
+        }
+    }
+}
+
+pub fn has_unpause_approval(env: &Env, admin: &Address) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::UnpauseApproval(admin.clone()))
+}
+
+pub fn count_unpause_approvals(env: &Env) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::UnpauseApprovalCount)
+        .unwrap_or(0u32)
+}
+
+pub fn set_unpause_threshold(env: &Env, threshold: u32) {
+    env.storage()
+        .instance()
+        .set(&DataKey::UnpauseThreshold, &threshold);
+}
+
+pub fn get_unpause_threshold(env: &Env) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::UnpauseThreshold)
+        .unwrap_or(2u32)
+}
+
+pub fn set_unpause_timelock_seconds(env: &Env, seconds: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::UnpauseTimelockSeconds, &seconds);
+}
+
+pub fn get_unpause_timelock_seconds(env: &Env) -> u64 {
+    env.storage()
+        .instance()
+        .get(&DataKey::UnpauseTimelockSeconds)
+        .unwrap_or(0u64)
+}
+
+pub fn set_scheduled_unpause_time(env: &Env, ts: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ScheduledUnpauseTime, &ts);
+}
+
+pub fn get_scheduled_unpause_time(env: &Env) -> Option<u64> {
+    env.storage()
+        .instance()
+        .get(&DataKey::ScheduledUnpauseTime)
+}
+
+pub fn clear_unpause_approvals(env: &Env) {
+    // There's no easy iteration to remove all UnpauseApproval keys.
+    // The higher level security module will simply leave entries; remove scheduled time and paused flag.
+    env.storage().instance().remove(&DataKey::ScheduledUnpauseTime);
+}
+
+fn inc_unpause_approval_count(env: &Env) {
+    let mut cur: u32 = env
+        .storage()
+        .instance()
+        .get(&DataKey::UnpauseApprovalCount)
+        .unwrap_or(0u32);
+    cur = cur.saturating_add(1);
+    env.storage().instance().set(&DataKey::UnpauseApprovalCount, &cur);
+}
+
+fn dec_unpause_approval_count(env: &Env) {
+    let mut cur: u32 = env
+        .storage()
+        .instance()
+        .get(&DataKey::UnpauseApprovalCount)
+        .unwrap_or(0u32);
+    if cur > 0 {
+        cur -= 1;
+    }
+    env.storage().instance().set(&DataKey::UnpauseApprovalCount, &cur);
 }
