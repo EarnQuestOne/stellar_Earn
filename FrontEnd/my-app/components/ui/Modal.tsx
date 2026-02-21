@@ -68,15 +68,14 @@ export function Modal({
     };
   }, [isOpen, handleEscape]);
 
-  if (!isOpen) return null;
-
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget && closeOnBackdrop) {
       onClose();
     }
   };
-
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -184,3 +183,4 @@ export function SubmissionSuccessModal({
     </Modal>
   );
 }
+

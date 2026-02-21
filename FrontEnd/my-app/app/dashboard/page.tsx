@@ -44,12 +44,12 @@ export default function DashboardPage() {
       </header>
 
       {/* Stats Cards */}
-      <section className="mb-8">
+      <section className="mb-8" data-onboarding="dashboard-stats">
         <StatsCards stats={stats} isLoading={isLoading} />
       </section>
 
       {/* Active Quests */}
-      <section>
+      <section data-onboarding="dashboard-active-quests">
         <ActiveQuests quests={activeQuests} isLoading={isLoading} />
       </section>
     </DashboardLayout>

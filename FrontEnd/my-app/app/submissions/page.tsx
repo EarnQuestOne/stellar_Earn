@@ -112,7 +112,7 @@ function SubmissionsContent() {
     <AppLayout>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-6 lg:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="mb-6 lg:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-onboarding="submissions-header">
           <div>
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               Submissions
@@ -133,12 +133,15 @@ function SubmissionsContent() {
         </div>
 
         {/* Summary Cards */}
-        <div className="mb-4 lg:mb-6">
+        <div className="mb-4 lg:mb-6" data-onboarding="submissions-summary">
           <SubmissionSummaryCards submissions={mockSubmissions} />
         </div>
 
         {/* Search and Filter Section - Same Line */}
-        <div className="mb-4 flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 lg:mb-6 lg:flex-row lg:items-center lg:justify-between dark:border-zinc-800 dark:bg-zinc-900">
+        <div
+          className="mb-4 flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 lg:mb-6 lg:flex-row lg:items-center lg:justify-between dark:border-zinc-800 dark:bg-zinc-900"
+          data-onboarding="submissions-filters"
+        >
           <div className="flex-1 lg:max-w-md">
             <SubmissionSearch onSearch={handleSearch} />
           </div>
@@ -151,7 +154,7 @@ function SubmissionsContent() {
         </div>
 
         {/* Submissions Table */}
-        <div className="mb-6">
+        <div className="mb-6" data-onboarding="submissions-table">
           {paginatedSubmissions.length > 0 ? (
             <SubmissionsTable
               submissions={paginatedSubmissions}

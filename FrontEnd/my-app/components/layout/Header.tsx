@@ -36,7 +36,7 @@ export function Header() {
         </a>
 
         {/* Search - takes remaining space */}
-        <div className="flex-1 sm:max-w-2xl">
+        <div className="flex-1 sm:max-w-2xl" data-onboarding="global-search">
           <GlobalSearch />
         </div>
 
