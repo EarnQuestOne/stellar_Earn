@@ -33,12 +33,12 @@ export default function DashboardPage() {
   return (
     <DashboardLayout user={{ username: "john.doe", level: 12 }}>
       {/* Welcome Header */}
-      <header className="mb-8" data-onboarding="dashboard-header">
-        <h1 className="text-2xl font-bold text-zinc-50 sm:text-3xl">
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 sm:text-3xl">
           Welcome back, John{" "}
           <span className="inline-block animate-wave">👋</span>
         </h1>
-        <p className="mt-1 text-zinc-400">
+        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Here&apos;s what&apos;s happening with your quests today.
         </p>
       </header>

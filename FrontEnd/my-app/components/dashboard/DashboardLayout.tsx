@@ -26,8 +26,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const defaultUser = user || { username: "john.doe", level: 12 };
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Mobile sidebar backdrop */}
+    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950">
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 lg:hidden"
@@ -35,33 +34,29 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 transform border-r border-zinc-800 bg-zinc-900 transition-transform lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 transform border-r border-zinc-200 bg-white transition-transform dark:border-zinc-800 dark:bg-zinc-900 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-zinc-800 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-cyan-400 to-blue-500">
-            <span className="text-white font-bold text-sm">S</span>
+        <div className="flex h-16 items-center gap-2 border-b border-zinc-200 px-6 dark:border-zinc-800">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
+            <span className="text-sm font-bold text-white">S</span>
           </div>
           <span className="text-lg font-bold">
             <span className="text-cyan-400">Stellar</span>
-            <span className="text-white">Earn</span>
+            <span className="text-zinc-900 dark:text-white">Earn</span>
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="ml-auto rounded-lg p-1 text-zinc-500 hover:bg-zinc-800 lg:hidden"
-            aria-label="Close sidebar"
+            className="ml-auto rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden"
           >
-            <span aria-hidden="true">✕</span>
+            ✕
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col h-[calc(100%-4rem)]">
-          <div className="flex-1 p-4 space-y-1">
+        <nav className="flex h-[calc(100%-4rem)] flex-col">
+          <div className="flex-1 space-y-1 p-4">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -70,8 +65,8 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-cyan-500/10 text-cyan-400 border-l-2 border-cyan-400"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                      ? "border-l-2 border-cyan-400 bg-cyan-500/10 text-cyan-400"
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -82,41 +77,31 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
             })}
           </div>
 
-          {/* User Info */}
-          <div className="border-t border-zinc-800 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 to-blue-500 text-white font-semibold">
+          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 font-semibold text-white">
                 {defaultUser.username.slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <p className="font-medium text-zinc-100">
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">
                   {defaultUser.username}
                 </p>
-                <p className="text-xs text-zinc-500">
-                  Level {defaultUser.level}
-                </p>
+                <p className="text-xs text-zinc-500">Level {defaultUser.level}</p>
               </div>
             </div>
-            <button 
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
-              aria-label="Sign out"
-            >
-              <span aria-hidden="true">→</span>
+            <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
+              <span>→</span>
               Sign Out
             </button>
           </div>
         </nav>
       </aside>
 
-      {/* Main content */}
       <div className="lg:pl-64">
-        {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-zinc-800 bg-zinc-900 px-4 lg:hidden">
+        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800"
-            aria-label="Open sidebar menu"
-            aria-expanded={sidebarOpen}
+            className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <svg
               className="h-6 w-6"
@@ -133,17 +118,16 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
             </svg>
           </button>
           <div className="ml-4 flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-cyan-400 to-blue-500">
-              <span className="text-white font-bold text-xs">S</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
+              <span className="text-xs font-bold text-white">S</span>
             </div>
             <span className="font-bold">
               <span className="text-cyan-400">Stellar</span>
-              <span className="text-white">Earn</span>
+              <span className="text-zinc-900 dark:text-white">Earn</span>
             </span>
           </div>
         </header>
 
-        {/* Page content */}
         <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>

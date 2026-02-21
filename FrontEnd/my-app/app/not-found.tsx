@@ -1,89 +1,56 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full text-center">
-        {/* 404 Illustration */}
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
+      <div className="w-full max-w-2xl text-center">
         <div className="mb-8">
-          <div className="text-9xl font-bold text-zinc-700 mb-4">404</div>
-          <div className="text-2xl font-bold text-zinc-200 mb-2">Page Not Found</div>
-          <p className="text-zinc-400 text-lg">
-            Sorry, we couldn't find the page you're looking for.
+          <div className="mb-4 text-9xl font-bold text-zinc-300 dark:text-zinc-700">
+            404
+          </div>
+          <div className="mb-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            Page Not Found
+          </div>
+          <p className="text-lg text-zinc-500 dark:text-zinc-400">
+            Sorry, we could not find the page you are looking for.
           </p>
         </div>
 
-        {/* Error Message */}
-        <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6 mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="text-2xl">🔍</div>
-            <h3 className="text-lg font-medium text-zinc-200">Possible Causes</h3>
-          </div>
-          <ul className="text-zinc-400 text-left space-y-2 max-w-md mx-auto">
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 mt-1">•</span>
-              <span>The page may have been moved or deleted</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 mt-1">•</span>
-              <span>There might be a typo in the URL</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 mt-1">•</span>
-              <span>You may not have permission to view this page</span>
-            </li>
+        <div className="mb-8 rounded-xl border border-zinc-200 bg-white/70 p-6 dark:border-zinc-800 dark:bg-zinc-900/60">
+          <h3 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+            Possible Causes
+          </h3>
+          <ul className="mx-auto max-w-md space-y-2 text-left text-zinc-600 dark:text-zinc-400">
+            <li>- The page may have been moved or deleted</li>
+            <li>- There might be a typo in the URL</li>
+            <li>- You may not have permission to view this page</li>
           </ul>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <button
             onClick={() => router.back()}
-            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+            className="rounded-lg bg-zinc-200 px-6 py-3 font-medium text-zinc-800 transition-colors hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
             Go Back
           </button>
-          
           <Link
             href="/"
-            className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+            className="rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4]"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
             Home
           </Link>
-          
           <button
             onClick={() => router.refresh()}
-            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+            className="rounded-lg bg-zinc-200 px-6 py-3 font-medium text-zinc-800 transition-colors hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
             Refresh
           </button>
-        </div>
-
-        {/* Search suggestion */}
-        <div className="mt-8 pt-6 border-t border-zinc-800">
-          <p className="text-zinc-500 text-sm">
-            Looking for something specific? Try using the search bar above.
-          </p>
-        </div>
-
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
         </div>
       </div>
     </div>

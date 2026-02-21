@@ -19,14 +19,14 @@ interface SimpleQuest {
 
 function QuestRowSkeleton() {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0">
+    <div className="flex items-center justify-between py-4 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
       <div className="flex-1">
-        <div className="h-5 w-48 animate-pulse rounded bg-zinc-700 mb-2" />
-        <div className="h-4 w-20 animate-pulse rounded bg-zinc-700" />
+        <div className="h-5 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
+        <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
       </div>
       <div className="flex items-center gap-4">
-        <div className="h-6 w-20 animate-pulse rounded-full bg-zinc-700" />
-        <div className="h-5 w-16 animate-pulse rounded bg-zinc-700" />
+        <div className="h-6 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-5 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
       </div>
     </div>
   );
@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: QuestStatus }) {
     },
     pending: {
       label: 'Pending',
-      className: 'bg-zinc-700/50 text-zinc-300 border border-zinc-600',
+      className: 'bg-zinc-100 text-zinc-600 border border-zinc-300 dark:bg-zinc-700/50 dark:text-zinc-300 dark:border-zinc-600',
     },
     review: {
       label: 'In Review',
@@ -59,9 +59,9 @@ function StatusBadge({ status }: { status: QuestStatus }) {
 
 function QuestRow({ quest }: { quest: SimpleQuest }) {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0 hover:bg-zinc-800/30 -mx-4 px-4 transition-colors cursor-pointer">
+    <div className="flex items-center justify-between py-4 border-b border-zinc-200 dark:border-zinc-800 last:border-0 hover:bg-zinc-100 dark:hover:bg-zinc-800/30 -mx-4 px-4 transition-colors cursor-pointer">
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-zinc-100 truncate">{quest.title}</h4>
+        <h4 className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{quest.title}</h4>
         <p className="text-sm text-zinc-500">{quest.daysLeft} days left</p>
       </div>
       <div className="flex items-center gap-4 ml-4">
@@ -76,7 +76,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="text-4xl mb-3">🎯</div>
-      <h4 className="font-medium text-zinc-100">No active quests</h4>
+      <h4 className="font-medium text-zinc-900 dark:text-zinc-100">No active quests</h4>
       <p className="mt-1 text-sm text-zinc-500">
         Browse available quests to start earning
       </p>
@@ -101,9 +101,9 @@ export function ActiveQuests({ quests, isLoading }: ActiveQuestsProps) {
       ];
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-semibold text-zinc-100">Active Quests</h3>
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Active Quests</h3>
         <button className="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
           View All
         </button>

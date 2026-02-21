@@ -4,10 +4,13 @@ import React from "react";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useToast } from "@/components/notifications/Toast";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/lib/hooks/useTheme";
 
 export default function NotificationSettingsPage() {
   const { settings, updateSettings, addNotification } = useNotifications();
   const { showToast } = useToast();
+  const { isDark } = useTheme();
 
   const handleToggle = (key: keyof typeof settings) => {
     const newValue = !settings[key];
@@ -137,6 +140,31 @@ export default function NotificationSettingsPage() {
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.soundEnabled ? "translate-x-6" : "translate-x-1"}`}
                   />
                 </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <div className="p-6 border-b border-zinc-100 dark:border-zinc-800">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                Appearance
+              </h2>
+              <p className="text-sm text-zinc-500">
+                Switch between light and dark mode. Your preference is saved.
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-zinc-900 dark:text-white">
+                    Theme
+                  </p>
+                  <p className="text-sm text-zinc-500">
+                    Currently using {isDark ? "Dark" : "Light"} mode
+                  </p>
+                </div>
+                <ThemeToggle showLabel />
               </div>
             </div>
           </section>
