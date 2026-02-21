@@ -3,6 +3,7 @@
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol};
 
 mod errors;
+mod escrow;
 mod init;
 mod payout;
 mod quest;
@@ -88,33 +89,29 @@ impl EarnQuestContract {
         storage::get_submission(&env, &quest_id, &submitter).ok_or(Error::SubmissionNotFound)
     }
 
-    /// Approve submission and trigger payout (verifier only)
+    /// Approve submission and trigger payout from escrow (verifier only)
     pub fn approve_submission(
         env: Env,
         quest_id: Symbol,
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
+        // Validate sufficient escrow before approving
+        let quest_data = storage::get_quest(&env, &quest_id).ok_or(Error::QuestNotFound)?;
+        escrow::validate_escrow_sufficient(&env, &quest_id, quest_data.reward_amount)?;
+
         // Approve submission and increment claim counter
         submission::approve_submission(&env, &quest_id, &submitter, &verifier)?;
 
-        // Get submission
-        let mut sub = storage::get_submission(&env, &quest_id, &submitter)
-            .ok_or(Error::SubmissionNotFound)?;
-
-        // Transfer reward using Stellar token contract
-        // Note: In production, this would transfer tokens. In tests, we skip this.
-        // let token_client = token::Client::new(&env, &quest.reward_asset);
-        // token_client.transfer(
-        //     &quest.creator,
-        //     &submitter,
-        //     &quest.reward_amount,
-        // );
+        // Process payout from escrow
+        payout::process_payout(&env, &quest_id, &submitter)?;
 
         // Award XP to user
         reputation::award_xp(&env, &submitter, 100)?;
 
         // Update submission to paid
+        let mut sub = storage::get_submission(&env, &quest_id, &submitter)
+            .ok_or(Error::SubmissionNotFound)?;
         sub.status = SubmissionStatus::Paid;
         storage::set_submission(&env, &sub);
 
@@ -200,5 +197,34 @@ impl EarnQuestContract {
     /// Get the current admin address
     pub fn get_admin(env: Env) -> Result<Address, Error> {
         init::get_admin(&env)
+    }
+
+    // ── Escrow Functions ──
+
+    /// Deposit funds into escrow for a quest (creator only).
+    /// Tokens are transferred from the creator to the contract and held until payout or withdrawal.
+    pub fn deposit_escrow(
+        env: Env,
+        quest_id: Symbol,
+        creator: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        escrow::deposit_escrow(&env, &quest_id, &creator, amount)
+    }
+
+    /// Get the current escrow balance for a quest
+    pub fn get_escrow_balance(env: Env, quest_id: Symbol) -> i128 {
+        escrow::get_escrow_balance(&env, &quest_id)
+    }
+
+    /// Withdraw unclaimed escrow funds back to the quest creator.
+    /// Only available after the quest is Completed, Expired, or Cancelled.
+    pub fn withdraw_unclaimed(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
+        escrow::withdraw_unclaimed(&env, &quest_id, &creator)
+    }
+
+    /// Cancel a quest (creator only). Sets status to Cancelled, allowing escrow withdrawal.
+    pub fn cancel_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<(), Error> {
+        quest::cancel_quest(&env, &quest_id, &creator)
     }
 }

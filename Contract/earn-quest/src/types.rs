@@ -12,6 +12,8 @@ pub enum QuestStatus {
     Completed,
     /// Quest deadline has passed
     Expired,
+    /// Quest has been cancelled by the creator
+    Cancelled,
 }
 
 /// Status of a submission

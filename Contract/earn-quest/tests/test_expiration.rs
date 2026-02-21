@@ -4,6 +4,7 @@ use earn_quest::{EarnQuestContract, EarnQuestContractClient, QuestStatus};
 use soroban_sdk::{
     symbol_short,
     testutils::{Address as _, Ledger},
+    token::StellarAssetClient,
     Address, BytesN, Env,
 };
 
@@ -309,33 +310,44 @@ fn test_cannot_expire_completed_quest() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, creator, verifier, reward_asset) = setup_env(&env);
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+
+    let token_admin = Address::generate(&env);
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
+    let token_admin_client = StellarAssetClient::new(&env, &token_address);
 
     let quest_id = symbol_short!("quest11");
     let deadline = env.ledger().timestamp() + 86400;
+    let reward: i128 = 1000;
 
-    // Register quest with limit of 1
+    token_admin_client.mint(&creator, &reward);
+
     client.register_quest(
         &quest_id,
         &creator,
-        &reward_asset,
-        &1000_i128,
+        &token_address,
+        &reward,
         &verifier,
         &deadline,
         &1,
     );
 
-    // Submit and approve to complete quest
+    client.deposit_escrow(&quest_id, &creator, &reward);
+
     let submitter = Address::generate(&env);
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
     client.submit_proof(&quest_id, &submitter, &proof_hash);
     client.approve_submission(&quest_id, &submitter, &verifier);
 
-    // Verify quest is completed
     let quest = client.get_quest(&quest_id);
     assert_eq!(quest.status, QuestStatus::Completed);
 
-    // Try to expire completed quest - should fail
     let result = client.try_expire_quest(&quest_id, &creator);
     assert!(result.is_err());
 }

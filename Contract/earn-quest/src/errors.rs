@@ -30,4 +30,9 @@ pub enum Error {
     InvalidAdmin = 24,
     UnauthorizedUpgrade = 25,
     InvalidVersionNumber = 26,
+    InsufficientEscrow = 27,
+    InvalidEscrowAmount = 28,
+    QuestStillActive = 29,
+    NoEscrowBalance = 30,
+    QuestCancelled = 31,
 }

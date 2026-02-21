@@ -85,8 +85,11 @@ pub fn update_quest_status(
         return Err(Error::Unauthorized);
     }
 
-    // Validate status transition - can't change from Completed or Expired
-    if quest.status == QuestStatus::Completed || quest.status == QuestStatus::Expired {
+    // Validate status transition - can't change from terminal states
+    if quest.status == QuestStatus::Completed
+        || quest.status == QuestStatus::Expired
+        || quest.status == QuestStatus::Cancelled
+    {
         return Err(Error::InvalidStatusTransition);
     }
 
@@ -187,4 +190,30 @@ pub fn auto_expire_quest_if_deadline_passed(env: &Env, quest: &mut Quest) {
             quest.clone(),
         );
     }
+}
+
+/// Cancel a quest (creator only). Allows withdrawal of remaining escrow funds.
+pub fn cancel_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<(), Error> {
+    caller.require_auth();
+
+    let mut quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
+
+    if quest.creator != *caller {
+        return Err(Error::Unauthorized);
+    }
+
+    if quest.status == QuestStatus::Completed
+        || quest.status == QuestStatus::Expired
+        || quest.status == QuestStatus::Cancelled
+    {
+        return Err(Error::InvalidStatusTransition);
+    }
+
+    quest.status = QuestStatus::Cancelled;
+    storage::set_quest(env, &quest);
+
+    env.events()
+        .publish((Symbol::new(env, "quest_can"), quest_id.clone()), quest);
+
+    Ok(())
 }
