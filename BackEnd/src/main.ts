@@ -1,9 +1,7 @@
-
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule } from '@nestjs/swagger';
-import { VersioningType } from '@nestjs/common';
+import { WinstonModule } from 'nest-winston';
 import { setupSwagger } from './config/swagger.config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -16,41 +14,51 @@ import { SecurityExceptionFilter } from './common/filters/security-exception.fil
 import { SecurityMiddleware } from './common/middleware/security.middleware';
 import { getSecurityConfig } from './config/security.config';
 import { getCorsConfig } from './config/cors.config';
+import { createLoggerConfig } from './config/logger.config';
+import { AppLoggerService } from './common/logger/logger.service';
 
-// Catch all unhandled errors
+const bootstrapLogger = WinstonModule.createLogger(createLoggerConfig());
+
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  bootstrapLogger.error('Unhandled Rejection', {
+    promise: String(promise),
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
   process.exit(1);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  bootstrapLogger.error('Uncaught Exception', {
+    message: error.message,
+    stack: error.stack,
+  });
   process.exit(1);
 });
 
 async function bootstrap() {
-  try {
-    console.log('🚀 Starting StellarEarn API...');
+  const startTime = process.hrtime.bigint();
 
-    // Create app with detailed logging
+  try {
+    bootstrapLogger.log('Starting StellarEarn API...');
+
     const app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-      abortOnError: false, // Don't exit on initialization errors
+      logger: WinstonModule.createLogger(createLoggerConfig()),
+      abortOnError: false,
     });
 
-    console.log('✅ App created successfully');
+    const logger = app.get(AppLoggerService);
+    logger.setContext('Bootstrap');
 
-    // Apply security middleware first
+    logger.log('Application instance created', 'Bootstrap');
+
     app.use(new SecurityMiddleware().use.bind(new SecurityMiddleware()));
 
-    // Apply Helmet security headers
     const configService = app.get(ConfigService);
     app.use(helmet(getSecurityConfig(configService)));
 
-    // Configure CORS with whitelist
     app.enableCors(getCorsConfig());
 
-    // Global pipes for validation and sanitization
     app.useGlobalPipes(
       new SanitizationPipe(),
       new CustomValidationPipe(),
@@ -73,58 +81,68 @@ async function bootstrap() {
       }),
     );
 
-    // Global exception filters
     app.useGlobalFilters(
       new SecurityExceptionFilter(),
       new ValidationExceptionFilter(),
     );
 
-    console.log('✅ Middleware configured');
+    logger.log('Security middleware and pipes configured', 'Bootstrap');
 
-    // API versioning and global prefix
     app.setGlobalPrefix('api');
     app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-    // Swagger (centralized setup)
     setupSwagger(app, configService);
 
-      // Mount Bull Board (job monitoring) if JobsModule is present
-      try {
-        const jobsService = app.get(JobsService);
-        const bullRouter = createBullBoardRouter(jobsService as JobsService);
-        // mount at /admin/queues
-        app.use('/admin/queues', bullRouter);
-        // eslint-disable-next-line no-console
-        console.log('✅ Bull Board mounted at /admin/queues');
-      } catch (err) {
-        // JobsModule not available or failed to initialize; skip mounting
-      }
+    try {
+      const jobsService = app.get(JobsService);
+      const bullRouter = createBullBoardRouter(jobsService as JobsService);
+      app.use('/admin/queues', bullRouter);
+      logger.log('Bull Board mounted at /admin/queues', 'Bootstrap');
+    } catch {
+      logger.debug('Bull Board not available, skipping mount', 'Bootstrap');
+    }
 
-    console.log('✅ Swagger configured and versioning enabled');
+    logger.log('Swagger configured and versioning enabled', 'Bootstrap');
 
-    // Terminus handles SIGTERM/SIGINT: marks health checks unhealthy first,
-    // drains in-flight requests, then closes the app cleanly.
     app.enableShutdownHooks();
 
     const port = process.env.PORT || 3001;
 
-    console.log(`📡 Attempting to listen on port ${port}...`);
-
     await app.listen(port);
 
-    console.log(`🎉 Application is running on: http://localhost:${port}`);
-    console.log(
-      `📚 Swagger docs available at: http://localhost:${port}/api/docs`,
-    );
+    const endTime = process.hrtime.bigint();
+    const bootDurationMs = Number(endTime - startTime) / 1_000_000;
+
+    logger.log(`Application started successfully`, 'Bootstrap', {
+      port,
+      environment: process.env.NODE_ENV || 'development',
+      bootDurationMs: Math.round(bootDurationMs),
+      urls: {
+        api: `http://localhost:${port}/api`,
+        docs: `http://localhost:${port}/api/docs`,
+        health: `http://localhost:${port}/api/v1/health`,
+      },
+    });
+
+    logger.performance({
+      operation: 'application_bootstrap',
+      durationMs: Math.round(bootDurationMs),
+      success: true,
+      metadata: { port, environment: process.env.NODE_ENV },
+    });
   } catch (error) {
-    console.error('💥 Bootstrap failed:', error);
-    console.error('Error stack:', error.stack);
+    bootstrapLogger.error('Bootstrap failed', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }
 
-// Start the application
 bootstrap().catch((error) => {
-  console.error('💥 Fatal error during bootstrap:', error);
+  bootstrapLogger.error('Fatal error during bootstrap', {
+    message: error instanceof Error ? error.message : 'Unknown error',
+    stack: error instanceof Error ? error.stack : undefined,
+  });
   process.exit(1);
 });
