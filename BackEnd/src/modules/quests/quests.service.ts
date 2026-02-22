@@ -18,13 +18,18 @@ import {
 import { CacheService } from '../cache/cache.service';
 import { CACHE_KEYS, CACHE_TTL } from '../../config/cache.config';
 
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { QuestCreatedEvent } from '../../events/dto/quest-created.event';
+import { QuestDeletedEvent } from '../../events/dto/quest-deleted.event';
+
 @Injectable()
 export class QuestsService {
   constructor(
     @InjectRepository(Quest)
     private readonly questRepository: Repository<Quest>,
     private readonly cacheService: CacheService,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   async create(
     createQuestDto: CreateQuestDto,
@@ -42,7 +47,18 @@ export class QuestsService {
     });
 
     const savedQuest = await this.questRepository.save(quest);
-    
+
+    // Emit quest created event
+    this.eventEmitter.emit(
+      'quest.created',
+      new QuestCreatedEvent(
+        savedQuest.id,
+        savedQuest.title,
+        savedQuest.createdBy,
+        savedQuest.rewardAmount.toString(),
+      ),
+    );
+
     // Invalidate quest list cache
     await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
 
@@ -215,6 +231,12 @@ export class QuestsService {
     }
 
     await this.questRepository.remove(quest);
+
+    // Emit quest deleted event
+    this.eventEmitter.emit(
+      'quest.deleted',
+      new QuestDeletedEvent(id, quest.createdBy),
+    );
 
     // Invalidate caches
     await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);

@@ -41,9 +41,11 @@ import { CacheModule } from './modules/cache/cache.module';
 import { HealthModule } from './modules/health/health.module';
 import { throttlerConfig } from './config/throttler.config';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
+    EventsModule,
     WebhooksModule,
     CacheModule,
     ConfigModule.forRoot({
@@ -95,4 +97,4 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

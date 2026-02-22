@@ -10,6 +10,9 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
 import { ClaimPayoutDto, CreatePayoutDto } from './dto/claim-payout.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PayoutProcessedEvent } from '../../events/dto/payout-processed.event';
+import { PayoutFailedEvent } from '../../events/dto/payout-failed.event';
 import {
   PayoutQueryDto,
   PayoutHistoryResponseDto,
@@ -25,7 +28,8 @@ export class PayoutsService {
     @InjectRepository(Payout)
     private readonly payoutRepository: Repository<Payout>,
     private readonly configService: ConfigService,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   /**
    * Create a new payout record
@@ -118,7 +122,22 @@ export class PayoutsService {
 
       await this.payoutRepository.save(payout);
       this.logger.log(`Payout ${payoutId} completed successfully`);
+
+      // Emit payout processed event
+      this.eventEmitter.emit(
+        'payout.processed',
+        new PayoutProcessedEvent(
+          payout.id,
+          payout.stellarAddress,
+          payout.amount.toString(),
+          result.transactionHash,
+        ),
+      );
     } catch (error) {
+      this.eventEmitter.emit(
+        'payout.failed',
+        new PayoutFailedEvent(payout.id, payout.stellarAddress, error.message),
+      );
       await this.handlePayoutFailure(payout, error);
     }
   }

@@ -25,6 +25,10 @@ interface QuestWithVerifiers {
   createdBy: string;
 }
 
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { QuestCompletedEvent } from '../../events/dto/quest-completed.event';
+import { SubmissionRejectedEvent } from '../../events/dto/submission-rejected.event';
+
 @Injectable()
 export class SubmissionsService {
   constructor(
@@ -32,7 +36,8 @@ export class SubmissionsService {
     private submissionsRepository: Repository<Submission>,
     // private stellarService: StellarService,
     private notificationsService: NotificationsService,
-  ) {}
+    private eventEmitter: EventEmitter2,
+  ) { }
 
   /**
    * Approve a submission and trigger on-chain reward distribution
@@ -142,6 +147,17 @@ export class SubmissionsService {
       updatedSubmissionWithRelations.quest.rewardAmount,
     );
 
+    // Emit quest completed event
+    this.eventEmitter.emit(
+      'quest.completed',
+      new QuestCompletedEvent(
+        updatedSubmissionWithRelations.quest.id,
+        updatedSubmission.userId,
+        100, // XP increment
+        updatedSubmissionWithRelations.quest.rewardAmount.toString(),
+      ),
+    );
+
     return updatedSubmission;
   }
 
@@ -236,6 +252,16 @@ export class SubmissionsService {
       updatedSubmission.userId,
       updatedSubmissionWithRelations.quest.title,
       rejectDto.reason,
+    );
+
+    // Emit submission rejected event
+    this.eventEmitter.emit(
+      'submission.rejected',
+      new SubmissionRejectedEvent(
+        submissionId,
+        updatedSubmission.userId,
+        rejectDto.reason,
+      ),
     );
 
     return updatedSubmission;

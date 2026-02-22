@@ -18,6 +18,9 @@ import { Repository, FindOptionsWhere, Like } from 'typeorm';
 import { SearchUsersDto } from './dto/search-users.dto';
 import { UpdateProfileDto } from './dto/update.dto';
 import { User, UserRole } from './entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserCreatedEvent } from '../../events/dto/user-created.event';
+import { UserUpdatedEvent } from '../../events/dto/user-updated.event';
 
 export interface UserStats {
   totalQuests: number;
@@ -60,7 +63,25 @@ export class UsersService {
     @InjectRepository(Payout)
     private payoutsRepository: Repository<Payout>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
+
+  async create(userData: Partial<User>): Promise<User> {
+    const user = this.usersRepository.create(userData);
+    const savedUser = await this.usersRepository.save(user);
+
+    this.eventEmitter.emit(
+      'user.created',
+      new UserCreatedEvent(
+        savedUser.id,
+        savedUser.username,
+        savedUser.email,
+        savedUser.stellarAddress,
+      ),
+    );
+
+    return savedUser;
+  }
 
   async findByAddress(address: string): Promise<User> {
     const user = await this.usersRepository.findOne({
@@ -259,6 +280,15 @@ export class UsersService {
     user.updateStatistics();
 
     await this.usersRepository.save(user);
+
+    // Collect updated fields
+    const updatedFields = Object.keys(updateData);
+
+    // Emit user updated event
+    this.eventEmitter.emit(
+      'user.updated',
+      new UserUpdatedEvent(user.id, updatedFields),
+    );
 
     // Clear cache
     await this.cacheManager.del(`user_stats_${address}`);
