@@ -93,7 +93,8 @@ pub fn require_not_paused(env: &Env) -> Result<(), Error> {
         Err(e) => return Err(e),
     };
 
-    // Check if timelock has passed
+    // Check if timelock has passedd
+    
     if !pause_state.is_paused {
         return Ok(());
     }
