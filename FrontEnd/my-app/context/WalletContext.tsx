@@ -14,6 +14,7 @@ interface WalletContextType {
   isModalOpen: boolean;
   supportedWallets: { id: string; name: string; icon: string }[];
   error: string | null;
+  signMessage: (message: string) => Promise<string>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -122,6 +123,24 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     setIsModalOpen(false);
   };
 
+  const signMessage = async (message: string) => {
+    if (!kit) {
+      throw new Error("Wallet kit not loaded");
+    }
+    if (!address) {
+      throw new Error("Wallet not connected");
+    }
+    try {
+      const { result } = await kit.sign({
+        payload: message,
+      });
+      return result;
+    } catch (err: any) {
+      console.error("Signing failed:", err);
+      throw new Error(err?.message || "Signing failed");
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -136,6 +155,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         isModalOpen,
         supportedWallets,
         error,
+        signMessage,
       }}
     >
       {children}

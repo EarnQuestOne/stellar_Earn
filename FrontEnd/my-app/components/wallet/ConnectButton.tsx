@@ -1,9 +1,10 @@
 "use client";
 
 import { useWallet } from "../../context/WalletContext";
+import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 const ArrowDownIcon = () => (
   <svg
@@ -31,8 +32,8 @@ export function ConnectButton() {
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
-  const handleDisconnect = async () => {
-    await disconnect();
+  const handleLogout = async () => {
+    await logout();
     setDropdownOpen(false);
   };
 
@@ -49,7 +50,7 @@ export function ConnectButton() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (isConnected && address) {
+  if (isAuthenticated && address) {
     return (
       <div className="relative" ref={dropdownRef}>
         <button
@@ -81,11 +82,11 @@ export function ConnectButton() {
             >
               <button
                 type="button"
-                onClick={handleDisconnect}
+                onClick={handleLogout}
                 className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-zinc-100 dark:text-red-400 dark:hover:bg-white/5"
               >
                 <LogOut className="h-4 w-4" />
-                Disconnect
+                Logout
               </button>
             </motion.div>
           )}
