@@ -22,6 +22,8 @@ import { Role } from '../../common/enums/role.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserCreatedEvent } from '../../events/dto/user-created.event';
 import { UserUpdatedEvent } from '../../events/dto/user-updated.event';
+import { UserLevelUpEvent } from '../../events/dto/user-level-up.event';
+import { ReputationChangedEvent } from '../../events/dto/reputation-changed.event';
 
 export interface UserStats {
   totalQuests: number;
@@ -384,10 +386,25 @@ export class UsersService {
 
   async updateUserXP(address: string, xpToAdd: number): Promise<User> {
     const user = await this.findByAddress(address);
+    const oldLevel = user.level;
     user.xp += xpToAdd;
     user.level = user.calculateLevel();
 
     await this.usersRepository.save(user);
+
+    // Emit reputation changed event
+    this.eventEmitter.emit(
+      'reputation.changed',
+      new ReputationChangedEvent(user.id, xpToAdd, user.xp),
+    );
+
+    // Emit level up event if level increased
+    if (user.level > oldLevel) {
+      this.eventEmitter.emit(
+        'user.level_up',
+        new UserLevelUpEvent(user.id, user.level),
+      );
+    }
 
     // Clear leaderboard cache since XP changed
     await this.clearLeaderboardCache();
@@ -401,21 +418,20 @@ export class UsersService {
     amount?: string,
   ): Promise<User> {
     const user = await this.findByAddress(address);
+    const oldLevel = user.level;
+    const oldXP = user.xp;
+    let xpAdded = 0;
 
     if (success) {
       user.completedQuests += 1;
       // Add XP for completion
-      user.xp += 100;
+      xpAdded = 100;
+      user.xp += xpAdded;
     } else {
       user.failedQuests += 1;
       // Add minimal XP for attempt
-      user.xp += 10;
-    }
-
-    if (amount) {
-      const currentTotal = BigInt(user.totalEarned || '0');
-      const newAmount = BigInt(amount);
-      user.totalEarned = (currentTotal + newAmount).toString();
+      xpAdded = 10;
+      user.xp += xpAdded;
     }
 
     user.successRate = user.calculateSuccessRate();
@@ -423,6 +439,20 @@ export class UsersService {
     user.lastActiveAt = new Date();
 
     await this.usersRepository.save(user);
+
+    // Emit reputation changed event
+    this.eventEmitter.emit(
+      'reputation.changed',
+      new ReputationChangedEvent(user.id, xpAdded, user.xp),
+    );
+
+    // Emit level up event if level increased
+    if (user.level > oldLevel) {
+      this.eventEmitter.emit(
+        'user.level_up',
+        new UserLevelUpEvent(user.id, user.level),
+      );
+    }
 
     // Clear caches
     await this.cacheManager.del(`user_stats_${address}`);
