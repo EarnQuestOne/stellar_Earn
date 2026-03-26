@@ -21,6 +21,7 @@ import { CACHE_KEYS, CACHE_TTL } from '../../config/cache.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { QuestCreatedEvent } from '../../events/dto/quest-created.event';
 import { QuestDeletedEvent } from '../../events/dto/quest-deleted.event';
+import { QuestUpdatedEvent } from '../../events/dto/quest-updated.event';
 
 @Injectable()
 export class QuestsService {
@@ -211,6 +212,12 @@ export class QuestsService {
 
     Object.assign(quest, updateQuestDto);
     const updatedQuest = await this.questRepository.save(quest);
+
+    // Emit quest updated event
+    this.eventEmitter.emit(
+      'quest.updated',
+      new QuestUpdatedEvent(id, updateQuestDto as any),
+    );
 
     // Invalidate caches
     await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);

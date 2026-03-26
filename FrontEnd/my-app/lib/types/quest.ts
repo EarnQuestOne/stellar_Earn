@@ -12,6 +12,8 @@ export enum QuestDifficulty {
 }
 
 export interface Quest {
+  creator: any;
+  skills: any;
   id: string;
   title: string;
   description: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import FeaturedQuests from "@/components/homepage/FeaturedQuests";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { HowItWorks } from "@/components/homepage/HowItWorks";
@@ -100,6 +101,11 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
+        <div>
+          <FeaturedQuests />
+          </div>
+      </main>
+    </div>
       </section>
 
       {/* FAQ */}

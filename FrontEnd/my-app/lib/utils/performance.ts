@@ -1,3 +1,5 @@
+import type { Metric } from 'web-vitals';
+
 export const trackPerformance = (metricName: string, value: number, extra?: any) => {
     if (typeof window !== 'undefined' && 'performance' in window) {
         console.log(`[Performance] ${metricName}: ${value}ms`, extra || '');
