@@ -13,3 +13,8 @@ process.env.RATE_LIMIT_LIMIT ??= '100';
 process.env.RATE_LIMIT_TTL ??= '60';
 process.env.RATE_LIMIT_AUTH_LIMIT ??= '20';
 process.env.RATE_LIMIT_AUTH_TTL ??= '60';
+
+process.env.SENDGRID_API_KEY ??= '';
+process.env.EMAIL_FROM_ADDRESS ??= 'test@stellarearn.com';
+process.env.EMAIL_FROM_NAME ??= 'Stellar Earn Test';
+process.env.APP_URL ??= 'http://localhost:3000';

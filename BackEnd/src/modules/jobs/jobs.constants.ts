@@ -4,6 +4,7 @@ export const QUEUES = {
   CLEANUP: 'cleanup',
   SCHEDULED: 'scheduled',
   DEAD_LETTER: 'dead_letter',
+  EMAIL: 'email',
 };
 
 export const DEFAULT_JOB_OPTIONS = {

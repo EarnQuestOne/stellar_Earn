@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HowItWorks } from "@/components/homepage/HowItWorks";
 import { FAQAccordion } from "@/components/homepage/FAQAccordion";
+import FeaturedQuests from "@/components/homepage/FeaturedQuests";
 
 export default function Home() {
   return (
@@ -107,6 +108,9 @@ export default function Home() {
       </main>
     </div>
       </section>
+
+      {/* Featured Quests */}
+      <FeaturedQuests />
 
       {/* FAQ */}
       <FAQAccordion />
