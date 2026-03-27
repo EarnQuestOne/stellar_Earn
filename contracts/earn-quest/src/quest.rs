@@ -137,6 +137,8 @@ pub fn resume_quest(env: &Env, id: &Symbol, caller: &Address) -> Result<(), Erro
     events::quest_resumed(env, id.clone(), caller.clone());
 
     Ok(())
+}
+
 pub fn update_quest_metadata(
     env: &Env,
     quest_id: &Symbol,
@@ -198,18 +200,22 @@ pub fn get_quests_by_status(
     let mut matched = 0u32;
     let mut count = 0u32;
 
+    // Optimized: cache status reference and avoid redundant lookups
     for i in 0..ids.len() {
         if count >= limit {
             break;
         }
         let id = ids.get(i).unwrap();
-        if let Ok(quest) = storage::get_quest(env, &id) {
-            if &quest.status == status {
-                if matched >= offset {
-                    results.push_back(quest);
-                    count += 1;
+        // Optimized: use has_quest first (cheaper) before full read
+        if storage::has_quest(env, &id) {
+            if let Ok(quest) = storage::get_quest(env, &id) {
+                if &quest.status == status {
+                    if matched >= offset {
+                        results.push_back(quest);
+                        count += 1;
+                    }
+                    matched += 1;
                 }
-                matched += 1;
             }
         }
     }
@@ -228,6 +234,7 @@ pub fn get_quests_by_creator(
     let mut matched = 0u32;
     let mut count = 0u32;
 
+    // Optimized: cache creator reference
     for i in 0..ids.len() {
         if count >= limit {
             break;

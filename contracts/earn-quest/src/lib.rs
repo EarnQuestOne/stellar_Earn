@@ -15,12 +15,7 @@ pub mod types;
 pub mod validation;
 
 use crate::errors::Error;
-use crate::types::{Badge, BatchApprovalInput, BatchQuestInput, UserStats, EscrowInfo, Quest, Submission};
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
-use crate::types::{
-    Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, EscrowInfo, PlatformStats, Quest,
-    QuestMetadata, QuestStatus, UserStats,
-};
+use crate::types::{Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, EscrowInfo, PlatformStats, Quest, QuestMetadata, QuestStatus, UserStats, Submission};
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec};
 
 #[contract]
@@ -334,11 +329,6 @@ impl EarnQuestContract {
 
     /// Admin: set unpause approvals threshold
     pub fn set_unpause_threshold(env: Env, caller: Address, threshold: u32) -> Result<(), Error> {
-    pub fn set_unpause_threshold(
-        env: Env,
-        caller: Address,
-        threshold: u32,
-    ) -> Result<(), Error> {
         security::set_unpause_threshold(&env, &caller, threshold)
     }
 

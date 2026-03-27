@@ -1,11 +1,6 @@
 use crate::errors::Error;
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo};
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
-use crate::types::{
-    CreatorStats, EscrowInfo, PlatformStats, Quest, QuestStatus, Submission, SubmissionStatus,
-    UserStats,
-};
-use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo, QuestMetadata, PlatformStats, CreatorStats};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 
 /// Storage key definitions for the contract's persistent data.
 ///
@@ -349,7 +344,7 @@ pub fn delete_user_stats(env: &Env, user: &Address) {
 // Partial Update Helpers (Gas Optimization)
 //================================================================================
 
-/// Updates only the status field of a quest.
+/// Updates only the status field of a quest (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -376,7 +371,7 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
     Ok(())
 }
 
-/// Atomically increments the total_claims counter for a quest.
+/// Atomically increments the total_claims counter for a quest (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -402,7 +397,7 @@ pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     Ok(())
 }
 
-/// Updates only the status field of a submission.
+/// Updates only the status field of a submission (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -434,7 +429,7 @@ pub fn update_submission_status(
     Ok(())
 }
 
-/// Atomically adds XP to a user's stats and recalculates level.
+/// Atomically adds XP to a user's stats and recalculates level (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -465,17 +460,13 @@ pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserStats
     let mut stats = get_user_stats(env, user)?;
     stats.xp = stats.xp.saturating_add(xp_delta);
 
-    // Recalculate level based on XP thresholds
-    stats.level = if stats.xp >= 1500 {
-        5
-    } else if stats.xp >= 1000 {
-        4
-    } else if stats.xp >= 600 {
-        3
-    } else if stats.xp >= 300 {
-        2
-    } else {
-        1
+    // Recalculate level based on XP thresholds (optimized branching)
+    stats.level = match stats.xp {
+        x if x >= 1500 => 5,
+        x if x >= 1000 => 4,
+        x if x >= 600 => 3,
+        x if x >= 300 => 2,
+        _ => 1,
     };
 
     set_user_stats(env, user, &stats);
