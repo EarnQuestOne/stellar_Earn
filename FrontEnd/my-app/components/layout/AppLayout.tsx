@@ -29,16 +29,19 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <AppLayoutContext.Provider value={true}>
-      <div className="flex min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <div className="flex h-screen overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
           <Header onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
           <MobileMenu
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
             pathname={pathname}
           />
-          <main id="main-content" className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+          <main
+            id="main-content"
+            className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
+          >
             {children}
           </main>
         </div>

@@ -1,3 +1,5 @@
+import type { Metric } from 'web-vitals';
+
 export const trackPerformance = (metricName: string, value: number, extra?: any) => {
     if (typeof window !== 'undefined' && 'performance' in window) {
         console.log(`[Performance] ${metricName}: ${value}ms`, extra || '');
@@ -26,16 +28,16 @@ export const measureFCP = () => {
     }
 };
 
-export const reportWebVitals = (onPerfEntry?: (metric: any) => void) => {
-    if (onPerfEntry && onPerfEntry instanceof Function) {
-        import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
-            onCLS(onPerfEntry);
-            onFID(onPerfEntry);
-            onFCP(onPerfEntry);
-            onLCP(onPerfEntry);
-            onTTFB(onPerfEntry);
-        }).catch(err => {
-            console.error('Error reporting web vitals:', err);
-        });
-    }
+export const reportWebVitals = (onPerfEntry?: (metric: Metric) => void) => {
+    if (typeof onPerfEntry !== 'function') return;
+
+    import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
+        onCLS(onPerfEntry);
+        onINP(onPerfEntry);
+        onFCP(onPerfEntry);
+        onLCP(onPerfEntry);
+        onTTFB(onPerfEntry);
+    }).catch(err => {
+        console.error('Error reporting web vitals:', err);
+    });
 };

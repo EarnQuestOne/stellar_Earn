@@ -28,6 +28,8 @@ interface QuestWithVerifiers {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { QuestCompletedEvent } from '../../events/dto/quest-completed.event';
 import { SubmissionRejectedEvent } from '../../events/dto/submission-rejected.event';
+import { SubmissionApprovedEvent } from '../../events/dto/submission-approved.event';
+import { SubmissionReceivedEvent } from '../../events/dto/submission-received.event';
 
 @Injectable()
 export class SubmissionsService {
@@ -147,6 +149,12 @@ export class SubmissionsService {
       updatedSubmissionWithRelations.quest.rewardAmount,
     );
 
+    // Emit submission approved event
+    this.eventEmitter.emit(
+      'submission.approved',
+      new SubmissionApprovedEvent(submissionId, updatedSubmission.questId, verifierId),
+    );
+
     // Emit quest completed event
     this.eventEmitter.emit(
       'quest.completed',
@@ -157,6 +165,15 @@ export class SubmissionsService {
         updatedSubmissionWithRelations.quest.rewardAmount.toString(),
       ),
     );
+
+    // Emit submission approved event
+    this.eventEmitter.emit('submission.approved', {
+      submissionId,
+      questId: updatedSubmission.questId,
+      userId: updatedSubmission.userId,
+      approvedBy: verifierId,
+      approvedAt: new Date(),
+    });
 
     return updatedSubmission;
   }

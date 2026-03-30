@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
@@ -30,11 +31,15 @@ import { UsersService } from './user.service';
 import { User } from './entities/user.entity';
 import { Role } from '../../common/enums/role.enum';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { DataExportService } from './data-export.service';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly dataExportService: DataExportService,
+  ) {}
 
   @Get('search')
   @ApiOperation({ summary: 'Search users by username or address' })
@@ -149,5 +154,28 @@ export class UsersController {
     @CurrentUser() requestingUser: User,
   ) {
     await this.usersService.deleteUser(address, requestingUser);
+  }
+
+  @Post('export')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request data export (async)' })
+  @ApiResponse({ status: 202, description: 'Export queued' })
+  async requestExport(
+    @CurrentUser() user: User,
+    @Body('format') format: string = 'json',
+    @Body('exportType') exportType: string = 'users',
+  ) {
+    if (!user || !user.id) {
+      throw new BadRequestException('Invalid user');
+    }
+
+    const record = await this.dataExportService.requestExport(user.id, exportType, format);
+
+    return {
+      id: record.id,
+      status: record.status,
+      message: 'Export request queued. You will be notified when ready.',
+    };
   }
 }

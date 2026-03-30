@@ -96,6 +96,7 @@ export class AuthService {
   ): Promise<{
     accessToken: string;
     refreshToken: string;
+    expiresIn: number;
   }> {
     const payload = {
       sub: stellarAddress,
@@ -103,12 +104,16 @@ export class AuthService {
       role,
     };
 
+    const accessTokenExpiration = this.configService.get<string>(
+      'JWT_ACCESS_TOKEN_EXPIRATION',
+      '15m',
+    );
+
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>(
-        'JWT_ACCESS_TOKEN_EXPIRATION',
-        '15m',
-      ),
+      expiresIn: accessTokenExpiration,
     } as any);
+
+    const expiresIn = this.parseExpirationToMs(accessTokenExpiration);
 
     const refreshTokenValue = crypto.randomBytes(32).toString('hex');
     const refreshTokenExpiration = this.configService.get<string>(
@@ -130,6 +135,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken: refreshTokenValue,
+      expiresIn,
     };
   }
 

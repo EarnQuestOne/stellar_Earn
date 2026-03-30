@@ -3,6 +3,8 @@ import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as redisStore from 'cache-manager-redis-store';
 import { CacheService } from './cache.service';
+import { CacheAnalyticsService } from './cache-analytics.service';
+import { CacheAsideStrategy, WriteThroughStrategy, CacheWarmingStrategy } from './cache-strategies';
 
 @Global()
 @Module({
@@ -25,7 +27,20 @@ import { CacheService } from './cache.service';
       }),
     }),
   ],
-  providers: [CacheService],
-  exports: [CacheService, NestCacheModule],
+  providers: [
+    CacheService,
+    CacheAnalyticsService,
+    CacheAsideStrategy,
+    WriteThroughStrategy,
+    CacheWarmingStrategy,
+  ],
+  exports: [
+    CacheService,
+    NestCacheModule,
+    CacheAnalyticsService,
+    CacheAsideStrategy,
+    WriteThroughStrategy,
+    CacheWarmingStrategy,
+  ],
 })
 export class CacheModule {}

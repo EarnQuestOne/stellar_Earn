@@ -1,6 +1,7 @@
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
 use crate::errors::Error;
+use crate::init;
 use crate::storage;
 use crate::types::UserStats;
 
@@ -53,6 +54,11 @@ pub fn grant_badge(
 ) -> Result<(), Error> {
     // Verify admin authorization
     admin.require_auth();
+
+    let config = init::get_config(env)?;
+    if config.admin != *admin {
+        return Err(Error::Unauthorized);
+    }
 
     // Get user stats
     let mut stats = storage::get_user_stats(env, address).ok_or(Error::UserStatsNotFound)?;

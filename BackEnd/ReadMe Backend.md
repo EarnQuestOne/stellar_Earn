@@ -151,11 +151,75 @@ RATE_LIMIT_MAX=100
 docker compose -f ../../infra/docker-compose.yml up -d
 
 # Run migrations
-pnpm typeorm:run-migrations
+bun run migration:run
 
 # Seed database (optional)
 ts-node seed.ts
 ```
+
+### Database Migrations
+
+The project uses TypeORM migrations to manage schema changes. All migration scripts use **bun** as the runtime.
+
+#### Migration Commands
+
+```bash
+# Generate a new migration from entity changes
+bun run migration:generate src/database/migrations/DescriptiveName
+
+# Create an empty migration (for manual SQL)
+bun run migration:create src/database/migrations/DescriptiveName
+
+# Run all pending migrations
+bun run migration:run
+
+# Revert the last executed migration
+bun run migration:revert
+
+# Show migration status (which have run, which are pending)
+bun run migration:show
+
+# Log the SQL that would be executed to sync schema (dry run, no changes)
+bun run schema:log
+```
+
+#### Migration Workflow
+
+1. **Make entity changes** — edit or create files in `src/**/entities/*.entity.ts`
+2. **Generate migration** — run `bun run migration:generate src/database/migrations/AddUserAvatarColumn`
+3. **Review the generated file** — open `src/database/migrations/<timestamp>-AddUserAvatarColumn.ts` and verify both `up()` and `down()` methods
+4. **Run the migration** — `bun run migration:run`
+5. **Commit** — add the migration file alongside your entity changes
+
+#### Rolling Back
+
+```bash
+# Revert the most recent migration
+bun run migration:revert
+
+# Revert multiple migrations (run multiple times)
+bun run migration:revert && bun run migration:revert
+```
+
+#### Configuration
+
+Migrations are configured via `src/database/data-source.ts`, which reads `DATABASE_URL` from `.env`. Key settings:
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| `migrationsTableName` | `typeorm_migrations` | Table that tracks which migrations have run |
+| `synchronize` | `false` | Always false — schema changes go through migrations only |
+| `entities` | glob pattern | Auto-discovers all `*.entity.{ts,js}` files |
+| `migrations` | `src/database/migrations/*` | Directory where migration files live |
+
+#### Best Practices
+
+- Never use `synchronize: true` in production
+- Always review generated SQL before running
+- Keep migrations small and focused — one logical change per migration
+- Ensure `down()` correctly reverses `up()`
+- Name migrations descriptively (e.g., `AddEventStoreTable`, `AddIndexOnSubmissionStatus`)
+- Run `bun run migration:show` in CI to verify no pending migrations ship without being applied
 
 ### Development
 
@@ -405,6 +469,11 @@ Key entities include:
 - Submission: Tracks user submissions for quests
 - Notification: Handles user notifications
 - Payout: Manages reward distributions
+- ModerationItem / ModerationAppeal: Content moderation queue and appeals (see **Content moderation** below)
+
+### Content moderation
+
+Automated checks run when quests are created or updated (title + description). Optional external APIs can augment scoring (`MODERATION_EXTERNAL_API_URL`, `MODERATION_IMAGE_API_URL`). Moderators and admins use `GET /moderation/dashboard/pending` and related routes documented in Swagger under the `moderation` tag. Users may submit appeals via `POST /moderation/appeals`. Configure thresholds and blocklists via `.env` (see `.env.example`).
 
 ## Testing
 
@@ -448,13 +517,13 @@ docker run -p 3001:3001 --env-file .env stellarearn-api
 
 ```bash
 # Install production dependencies
-npm ci --only=production
+bun install --production
 
 # Run migrations
-pnpm typeorm:run-migrations
+bun run migration:run
 
 # Start server
-npm run start:prod
+bun run start:prod
 ```
 
 ## Best Practices

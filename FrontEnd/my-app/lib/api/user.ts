@@ -1,197 +1,326 @@
-// API utilities for user dashboard data
+/**
+ * User / Profile API – via the centralised Axios client.
+ *
+ * Endpoints (all under /api/v1/users):
+ *  GET    /search              – search users
+ *  GET    /leaderboard         – leaderboard
+ *  GET    /:address            – user by Stellar address
+ *  GET    /:address/stats      – user statistics
+ *  GET    /:address/quests     – user quest history (paginated)
+ *  PATCH  /profile             – update own profile (auth required)
+ *  DELETE /:address            – delete own account (auth required)
+ *
+ * Dashboard helpers still available (fetchDashboardData etc.)
+ */
 
-import type { DashboardData, UserStats, Quest, Submission, EarningsData, Badge } from '../types/dashboard';
+import {
+  get,
+  patch,
+  del,
+  withRetry,
+  createCancelToken,
+  type CancelToken,
+} from "./client";
+import type {
+  UserResponse,
+  UserStatsResponse,
+  UpdateProfileRequest,
+  UserSearchParams,
+  PaginationParams,
+} from "@/lib/types/api.types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Re-export legacy dashboard types for backward compat
+export type {
+  UserStats,
+  Quest,
+  Submission,
+  EarningsData,
+  Badge,
+  DashboardData,
+} from "../types/dashboard";
+import type {
+  UserStats,
+  Quest,
+  Submission,
+  EarningsData,
+  Badge,
+  DashboardData,
+} from "../types/dashboard";
 
-// Mock data for development - will be replaced with actual API calls
+const dashboardDelay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 const mockUserStats: UserStats = {
-  xp: 2450,
+  xp: 2840,
   level: 12,
-  totalEarnings: 1250.50,
-  questsCompleted: 28,
-  currentStreak: 7,
+  totalEarnings: 2450,
+  questsCompleted: 42,
+  currentStreak: 6,
 };
 
 const mockActiveQuests: Quest[] = [
   {
-    id: '1',
-    title: 'Complete GitHub Integration',
-    description: 'Connect your GitHub account and make 3 commits',
-    reward: 50,
-    deadline: '2026-01-25',
-    progress: 66,
-    status: 'active',
-    category: 'Development',
+    id: "active-1",
+    title: "Smart Contract Security Review",
+    description:
+      "Audit reward distribution contract flow and document findings.",
+    reward: 250,
+    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    progress: 72,
+    status: "active",
+    category: "Blockchain",
   },
   {
-    id: '2',
-    title: 'Smart Contract Review',
-    description: 'Review and test the Soroban smart contract',
-    reward: 100,
-    deadline: '2026-01-28',
-    progress: 30,
-    status: 'active',
-    category: 'Blockchain',
+    id: "active-2",
+    title: "Documentation Update",
+    description: "Refresh contributor docs and integration notes.",
+    reward: 75,
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    progress: 34,
+    status: "active",
+    category: "Documentation",
   },
   {
-    id: '3',
-    title: 'Documentation Update',
-    description: 'Update the API documentation with new endpoints',
-    reward: 30,
-    deadline: '2026-01-23',
-    progress: 90,
-    status: 'active',
-    category: 'Documentation',
+    id: "active-3",
+    title: "UI Component Library",
+    description: "Extend reusable quest card and moderation components.",
+    reward: 150,
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    progress: 58,
+    status: "active",
+    category: "Development",
   },
 ];
 
 const mockRecentSubmissions: Submission[] = [
   {
-    id: '1',
-    questId: '10',
-    questTitle: 'UI Component Library',
-    submittedAt: '2026-01-20T14:30:00Z',
-    status: 'approved',
+    id: "submission-1",
+    questId: "active-1",
+    questTitle: "Smart Contract Security Review",
+    submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    status: "approved",
+    reward: 250,
+    feedback: "Approved after final validation pass.",
+  },
+  {
+    id: "submission-2",
+    questId: "active-2",
+    questTitle: "Documentation Update",
+    submittedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+    status: "pending",
     reward: 75,
   },
   {
-    id: '2',
-    questId: '11',
-    questTitle: 'Bug Fix: Authentication Flow',
-    submittedAt: '2026-01-19T09:15:00Z',
-    status: 'pending',
-    reward: 45,
-  },
-  {
-    id: '3',
-    questId: '12',
-    questTitle: 'Database Migration Script',
-    submittedAt: '2026-01-18T16:45:00Z',
-    status: 'approved',
-    reward: 60,
-  },
-  {
-    id: '4',
-    questId: '13',
-    questTitle: 'API Rate Limiting',
-    submittedAt: '2026-01-17T11:20:00Z',
-    status: 'rejected',
-    reward: 40,
-    feedback: 'Missing test coverage for edge cases',
+    id: "submission-3",
+    questId: "archive-1",
+    questTitle: "API Error Handling Improvements",
+    submittedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "rejected",
+    reward: 125,
+    feedback: "Missing required test coverage.",
   },
 ];
 
 const mockEarningsHistory: EarningsData[] = [
-  { date: '2026-01-15', amount: 120 },
-  { date: '2026-01-16', amount: 85 },
-  { date: '2026-01-17', amount: 150 },
-  { date: '2026-01-18', amount: 60 },
-  { date: '2026-01-19', amount: 200 },
-  { date: '2026-01-20', amount: 75 },
-  { date: '2026-01-21', amount: 95 },
+  { date: "2026-03-01", amount: 120 },
+  { date: "2026-03-08", amount: 300 },
+  { date: "2026-03-15", amount: 180 },
+  { date: "2026-03-22", amount: 450 },
 ];
 
 const mockBadges: Badge[] = [
   {
-    id: '1',
-    name: 'Early Adopter',
-    description: 'Joined during the platform beta phase',
-    icon: '🌟',
-    earnedAt: '2026-01-01T00:00:00Z',
-    rarity: 'rare',
+    id: "badge-1",
+    name: "Fast Finisher",
+    description: "Completed 10 quests before deadline.",
+    icon: "bolt",
+    earnedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    rarity: "rare",
   },
   {
-    id: '2',
-    name: 'Quest Master',
-    description: 'Completed 25 quests',
-    icon: '🏆',
-    earnedAt: '2026-01-15T00:00:00Z',
-    rarity: 'epic',
-  },
-  {
-    id: '3',
-    name: 'Code Warrior',
-    description: 'Completed 10 development quests',
-    icon: '⚔️',
-    earnedAt: '2026-01-10T00:00:00Z',
-    rarity: 'common',
-  },
-  {
-    id: '4',
-    name: 'Streak Legend',
-    description: 'Maintained a 7-day streak',
-    icon: '🔥',
-    earnedAt: '2026-01-20T00:00:00Z',
-    rarity: 'rare',
-  },
-  {
-    id: '5',
-    name: 'Stellar Pioneer',
-    description: 'First transaction on Stellar network',
-    icon: '🚀',
-    earnedAt: '2026-01-05T00:00:00Z',
-    rarity: 'legendary',
+    id: "badge-2",
+    name: "Code Guardian",
+    description: "Delivered multiple high-quality review submissions.",
+    icon: "shield",
+    earnedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    rarity: "epic",
   },
 ];
 
-// Simulated API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// ---------------------------------------------------------------------------
+// Fetch user by Stellar address
+// ---------------------------------------------------------------------------
 
-export async function fetchUserStats(): Promise<UserStats> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/users/stats`);
-  // return response.json();
-  await delay(500);
-  return mockUserStats;
+export async function fetchUserByAddress(
+  address: string,
+  cancelToken?: CancelToken,
+): Promise<UserResponse> {
+  return withRetry(() =>
+    get<UserResponse>(`/users/${address}`, {
+      signal: cancelToken?.signal,
+    }),
+  );
 }
 
+// ---------------------------------------------------------------------------
+// User stats
+// ---------------------------------------------------------------------------
+
+export async function fetchUserStats(
+  address: string,
+  cancelToken?: CancelToken,
+): Promise<UserStatsResponse> {
+  return withRetry(() =>
+    get<UserStatsResponse>(`/users/${address}/stats`, {
+      signal: cancelToken?.signal,
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User quest history
+// ---------------------------------------------------------------------------
+
+export async function fetchUserQuests(
+  address: string,
+  page = 1,
+  limit = 20,
+  cancelToken?: CancelToken,
+): Promise<{ quests: unknown[]; total: number; page: number; limit: number }> {
+  return withRetry(() =>
+    get<{ quests: unknown[]; total: number; page: number; limit: number }>(
+      `/users/${address}/quests`,
+      {
+        params: { page, limit },
+        signal: cancelToken?.signal,
+      },
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Update own profile (authenticated)
+// ---------------------------------------------------------------------------
+
+export async function updateProfile(
+  payload: UpdateProfileRequest,
+): Promise<UserResponse> {
+  return patch<UserResponse>("/users/profile", payload);
+}
+
+// ---------------------------------------------------------------------------
+// Search users
+// ---------------------------------------------------------------------------
+
+export async function searchUsers(
+  params: UserSearchParams,
+  cancelToken?: CancelToken,
+): Promise<{ users: UserResponse[]; total: number }> {
+  return withRetry(() =>
+    get<{ users: UserResponse[]; total: number }>("/users/search", {
+      params: params as Record<string, unknown>,
+      signal: cancelToken?.signal,
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard
+// ---------------------------------------------------------------------------
+
+export async function fetchLeaderboard(
+  page = 1,
+  limit = 50,
+  cancelToken?: CancelToken,
+): Promise<{ users: UserResponse[]; total: number }> {
+  return withRetry(() =>
+    get<{ users: UserResponse[]; total: number }>("/users/leaderboard", {
+      params: { page, limit },
+      signal: cancelToken?.signal,
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Delete own account
+// ---------------------------------------------------------------------------
+
+export async function deleteAccount(address: string): Promise<void> {
+  return del<void>(`/users/${address}`);
+}
+
+// ---------------------------------------------------------------------------
+// Legacy dashboard helpers (backward compatibility for existing UI)
+// ---------------------------------------------------------------------------
+
 export async function fetchActiveQuests(): Promise<Quest[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/quests/active`);
-  // return response.json();
-  await delay(600);
-  return mockActiveQuests;
+  await dashboardDelay(250);
+  return [...mockActiveQuests];
 }
 
 export async function fetchRecentSubmissions(): Promise<Submission[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/submissions/recent`);
-  // return response.json();
-  await delay(400);
-  return mockRecentSubmissions;
+  await dashboardDelay(250);
+  return [...mockRecentSubmissions];
 }
 
 export async function fetchEarningsHistory(): Promise<EarningsData[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/users/earnings`);
-  // return response.json();
-  await delay(700);
-  return mockEarningsHistory;
+  await dashboardDelay(250);
+  return [...mockEarningsHistory];
 }
 
 export async function fetchBadges(): Promise<Badge[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/users/badges`);
-  // return response.json();
-  await delay(300);
-  return mockBadges;
+  await dashboardDelay(250);
+  return [...mockBadges];
 }
 
-export async function fetchDashboardData(): Promise<DashboardData> {
-  const [stats, activeQuests, recentSubmissions, earningsHistory, badges] = await Promise.all([
-    fetchUserStats(),
-    fetchActiveQuests(),
-    fetchRecentSubmissions(),
-    fetchEarningsHistory(),
-    fetchBadges(),
-  ]);
+// ---------------------------------------------------------------------------
+// Dashboard aggregate (convenience)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch all dashboard data in parallel for the given Stellar address.
+ */
+export async function fetchDashboardData(
+  address?: string,
+): Promise<
+  DashboardData | { userProfile: UserResponse; userStats: UserStatsResponse }
+> {
+  if (address) {
+    const [userProfile, userStats] = await Promise.all([
+      fetchUserByAddress(address),
+      fetchUserStats(address),
+    ]);
+    return { userProfile, userStats };
+  }
+
+  const [activeQuests, recentSubmissions, earningsHistory, badges] =
+    await Promise.all([
+      fetchActiveQuests(),
+      fetchRecentSubmissions(),
+      fetchEarningsHistory(),
+      fetchBadges(),
+    ]);
 
   return {
-    stats,
+    stats: mockUserStats,
     activeQuests,
     recentSubmissions,
     earningsHistory,
     badges,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Profile page (legacy shape – profile + achievements + activities)
+// ---------------------------------------------------------------------------
+
+export async function fetchUserProfile(address: string) {
+  return fetchUserByAddress(address);
+}
+
+export async function updateUserProfile(
+  _address: string,
+  data: UpdateProfileRequest,
+) {
+  return updateProfile(data);
 }

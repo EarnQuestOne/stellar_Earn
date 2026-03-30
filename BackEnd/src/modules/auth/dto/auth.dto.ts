@@ -98,6 +98,11 @@ export class TokenResponseDto {
   refreshToken: string;
 
   @ApiProperty({
+    description: 'Access token expiration in milliseconds',
+  })
+  expiresIn: number;
+
+  @ApiProperty({
     description: 'User information',
   })
   user: UserResponseDto;

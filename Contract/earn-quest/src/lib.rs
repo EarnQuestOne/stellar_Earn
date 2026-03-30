@@ -2,16 +2,22 @@
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol};
 
+mod admin;
+pub mod dispute;
+pub mod assets;
 mod errors;
 mod escrow;
 mod init;
+mod pausable;
 mod payout;
 mod quest;
 mod reputation;
 mod storage;
 mod submission;
+pub mod templates;
 pub mod test;
 pub mod types;
+mod upgrade;
 
 use errors::Error;
 use init::ContractConfig;
@@ -37,6 +43,9 @@ impl EarnQuestContract {
         deadline: u64,
         max_participants: u32,
     ) -> Result<(), Error> {
+        // Check if contract is paused
+        pausable::require_not_paused(&env)?;
+
         quest::create_quest(
             &env,
             id,
@@ -77,6 +86,9 @@ impl EarnQuestContract {
         submitter: Address,
         proof_hash: BytesN<32>,
     ) -> Result<(), Error> {
+        // Check if contract is paused
+        pausable::require_not_paused(&env)?;
+
         submission::submit_proof(&env, quest_id, submitter, proof_hash)
     }
 
@@ -96,6 +108,9 @@ impl EarnQuestContract {
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
+        // Check if contract is paused
+        pausable::require_not_paused(&env)?;
+
         // Validate sufficient escrow before approving
         let quest_data = storage::get_quest(&env, &quest_id).ok_or(Error::QuestNotFound)?;
         escrow::validate_escrow_sufficient(&env, &quest_id, quest_data.reward_amount)?;
@@ -226,5 +241,128 @@ impl EarnQuestContract {
     /// Cancel a quest (creator only). Sets status to Cancelled, allowing escrow withdrawal.
     pub fn cancel_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<(), Error> {
         quest::cancel_quest(&env, &quest_id, &creator)
+    }
+
+    // ── Upgrade and Migration ──
+
+    /// Upgrade the contract's WASM code and run any outstanding migrations (Admin only).
+    pub fn upgrade_contract(
+        env: Env,
+        admin: Address,
+        new_wasm_hash: BytesN<32>,
+    ) -> Result<(), Error> {
+        admin::upgrade_contract(&env, admin, new_wasm_hash)
+    }
+
+    /// Manually trigger data migrations to the latest version (Admin only).
+    pub fn trigger_migration(env: Env, admin: Address) -> Result<(), Error> {
+        admin::trigger_migration(&env, admin)
+    }
+
+    /// Roll back data to a specific version (Admin only).
+    pub fn trigger_rollback(env: Env, admin: Address, target_version: u32) -> Result<(), Error> {
+        admin::trigger_rollback(&env, admin, target_version)
+    }
+
+    // ── Emergency Pause Mechanism ──
+
+    /// Initialize pause configuration (admin only)
+    /// Sets up timelock delay, required signatures, and grace period
+    pub fn initialize_pause(
+        env: Env,
+        admin: Address,
+        timelock_delay: u64,
+        required_signatures: u32,
+        grace_period: u64,
+    ) -> Result<(), Error> {
+        // Verify admin privileges
+        admin.require_auth();
+        let config = init::get_config(&env)?;
+        if config.admin != admin {
+            return Err(Error::Unauthorized);
+        }
+
+        pausable::initialize_pause_state(&env, timelock_delay, required_signatures, grace_period)
+    }
+
+    /// Request pause with multi-sig (any authorized signer can request)
+    /// Pause activates once required signatures reached and timelock expires
+    pub fn request_pause(
+        env: Env,
+        requester: Address,
+        reason: Option<Symbol>,
+    ) -> Result<(), Error> {
+        pausable::request_pause(&env, requester, reason)
+    }
+
+    /// Cancel a pending pause request (admin only)
+    /// Only works if pause hasn't been activated yet
+    pub fn cancel_pause_request(env: Env, admin: Address) -> Result<(), Error> {
+        pausable::cancel_pause_request(&env, admin)
+    }
+
+    /// Unpause the contract (admin only)
+    /// Immediately resumes normal operations
+    pub fn unpause_contract(env: Env, admin: Address) -> Result<(), Error> {
+        pausable::unpause_contract(&env, admin)
+    }
+
+    /// Check if contract is currently paused
+    pub fn is_paused(env: Env) -> Result<bool, Error> {
+        pausable::is_contract_paused(&env)
+    }
+
+    /// Get current pause state information
+    pub fn get_pause_state(env: Env) -> Result<pausable::PauseState, Error> {
+        pausable::get_pause_state(&env)
+    }
+
+    /// Get remaining signatures needed for pause activation
+    pub fn get_remaining_pause_signatures(env: Env) -> Result<u32, Error> {
+        pausable::get_remaining_signatures(&env)
+    }
+
+    /// Get addresses that have signed for pause
+    pub fn get_pause_signers(env: Env) -> Result<soroban_sdk::Vec<Address>, Error> {
+        pausable::get_pause_signers(&env)
+    }
+
+    /// Get timelock remaining time in seconds
+    pub fn get_pause_timelock_remaining(env: Env) -> Result<u64, Error> {
+        pausable::get_timelock_remaining(&env)
+    }
+
+    /// Get grace period remaining for emergency withdrawals
+    pub fn get_grace_period_remaining(env: Env) -> Result<u64, Error> {
+        pausable::get_grace_period_remaining(&env)
+    }
+
+    /// Update pause configuration (admin only)
+    pub fn update_pause_config(
+        env: Env,
+        admin: Address,
+        timelock_delay: Option<u64>,
+        required_signatures: Option<u32>,
+        grace_period: Option<u64>,
+    ) -> Result<(), Error> {
+        pausable::update_pause_config(
+            &env,
+            admin,
+            timelock_delay,
+            required_signatures,
+            grace_period,
+        )
+    }
+
+    /// Emergency withdrawal from paused contract (during grace period)
+    /// Allows users to withdraw their escrowed funds during emergency pause
+    pub fn emergency_withdraw(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
+        // Allow withdrawal even during pause if grace period is active
+        if pausable::is_contract_paused(&env)? && !pausable::is_withdrawal_allowed(&env)? {
+            return Err(Error::EmergencyWindowClosed);
+        }
+
+        // Perform the withdrawal (same as normal withdrawal)
+        escrow::withdraw_unclaimed(&env, &quest_id, &creator)
     }
 }

@@ -48,6 +48,9 @@ pub fn initialize(env: &Env, admin: Address) -> Result<(), Error> {
     // Store configuration
     storage::set_config(env, &config);
 
+    // Set initial data version
+    storage::set_data_version(env, CONTRACT_VERSION);
+
     Ok(())
 }
 

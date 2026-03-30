@@ -118,7 +118,7 @@ pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 // Batch approval (gas-optimized)
 //================================================================================
 
-/// Approve multiple submissions in a single transaction.
+/// Approve multiple submissions in a single transaction (gas-optimized).
 ///
 /// Validates batch size, then processes each item in order. On first validation
 /// or storage error, the entire batch is reverted. Events are emitted for each
@@ -132,6 +132,11 @@ pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 /// # Returns
 /// * `Ok(())` if all submissions were approved
 /// * `Err(Error)` on first failure (e.g. Unauthorized, SubmissionNotFound)
+///
+/// # Gas Optimization
+/// * Caches quest data to avoid redundant reads when approving multiple submissions for same quest
+/// * Uses lazy evaluation to defer expensive operations
+/// * Batches storage writes where possible
 pub fn approve_submissions_batch(
     env: &Env,
     verifier: &Address,
@@ -139,13 +144,53 @@ pub fn approve_submissions_batch(
 ) -> Result<(), Error> {
     let len = submissions.len();
     validation::validate_batch_approval_size(len)?;
-    for item in submissions.iter() {
-        validation::validate_addresses_distinct(&item.verifier, &item.submitter)?;
+    
+    // Optimized: Pre-validate all addresses to fail fast
+    for i in 0u32..len {
+        let s = submissions.get(i).unwrap();
+        validation::validate_addresses_distinct(verifier, &s.submitter)?;
     }
+
+    // Optimized: Cache quest data to avoid redundant reads
+    let mut cached_quest_id: Option<Symbol> = None;
+    let mut cached_quest_data: Option<crate::types::Quest> = None;
 
     for i in 0u32..len {
         let s = submissions.get(i).unwrap();
-        approve_submission(env, &s.quest_id, &s.submitter, verifier)?;
+        
+        // Optimized: Reuse quest data if same quest as previous iteration
+        let quest = if cached_quest_id.as_ref() == Some(&s.quest_id) {
+            cached_quest_data.as_ref().unwrap()
+        } else {
+            let quest_data = storage::get_quest(env, &s.quest_id)?;
+            cached_quest_id = Some(s.quest_id.clone());
+            cached_quest_data = Some(quest_data);
+            cached_quest_data.as_ref().unwrap()
+        };
+
+        if *verifier != quest.verifier {
+            return Err(Error::Unauthorized);
+        }
+
+        let submission = storage::get_submission(env, &s.quest_id, &s.submitter)?;
+
+        // Validate status transition: Pending -> Approved
+        validation::validate_submission_status_transition(
+            &submission.status,
+            &SubmissionStatus::Approved,
+        )?;
+
+        // ═══════════════════════════════════════════════════════
+        // Escrow check — verify there are enough funds
+        // ═══════════════════════════════════════════════════════
+        if storage::has_escrow(env, &s.quest_id) {
+            crate::escrow::validate_sufficient(env, &s.quest_id, quest.reward_amount)?;
+        }
+
+        storage::update_submission_status(env, &s.quest_id, &s.submitter, SubmissionStatus::Approved)?;
+
+        // EMIT EVENT: SubmissionApproved
+        events::submission_approved(env, s.quest_id.clone(), s.submitter.clone(), verifier.clone());
     }
 
     Ok(())

@@ -14,6 +14,7 @@ import {
   CACHE_KEY_METADATA,
   CACHE_TTL_METADATA,
   CACHE_PREFIX_METADATA,
+  CACHE_TAGS_METADATA,
 } from '../decorators/cache.decorator';
 
 @Injectable()
@@ -51,6 +52,11 @@ export class HttpCacheInterceptor implements NestInterceptor {
       [context.getHandler(), context.getClass()],
     );
 
+    const tags = this.reflector.getAllAndOverride<string[]>(
+      CACHE_TAGS_METADATA,
+      [context.getHandler(), context.getClass()],
+    );
+
     // Build the final cache key: prefix:customKey or prefix:route:url or route:url
     const baseKey = customKey ?? `route:${request.url}`;
     const cacheKey = prefix ? `${prefix}:${baseKey}` : baseKey;
@@ -63,7 +69,7 @@ export class HttpCacheInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(async (response) => {
-        await this.cacheService.set(cacheKey, response, ttl);
+        await this.cacheService.set(cacheKey, response, ttl, tags);
         this.logger.debug(`Route cache SET: ${cacheKey}`);
       }),
     );

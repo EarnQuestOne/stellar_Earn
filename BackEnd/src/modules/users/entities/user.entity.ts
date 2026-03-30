@@ -94,8 +94,11 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   lastActiveAt: Date;
 
-  @Column({ default: 0 })
-  completedQuests: number;
+  @Column({ type: 'varchar', nullable: true })
+  pushToken: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  webhookUrl: string;
 
   @CreateDateColumn()
   createdAt: Date;

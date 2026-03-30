@@ -46,6 +46,7 @@ Contract/
 ## Prerequisites
 
 - **Rust (stable)** via [rustup](https://rustup.rs/)
+  - **Windows Users**: You will need the Visual Studio C++ Build Tools (`link.exe`). See our [Windows Setup Guide](../docs/WINDOWS_SETUP_GUIDE.md) for full instructions or run `..\scripts\build-windows.ps1` to configure your environment automatically. WSL2 is also a supported alternative.
 - **WASM target**:
 
 ```bash

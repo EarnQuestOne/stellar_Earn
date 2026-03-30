@@ -1,7 +1,11 @@
 #![cfg(test)]
 
 use earn_quest::{EarnQuestContract, EarnQuestContractClient, SubmissionStatus};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
+use soroban_sdk::{
+    symbol_short,
+    testutils::{Address as _, Ledger as _},
+    Address, BytesN, Env,
+};
 
 fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
     let contract_id = env.register_contract(None, EarnQuestContract);
@@ -157,4 +161,43 @@ fn test_multiple_user_submissions() {
 
     let submission2 = client.get_submission(&quest2_id, &submitter);
     assert_eq!(submission2.quest_id, quest2_id);
+}
+
+#[test]
+fn test_submit_proof_to_paused_quest_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
+    create_quest(&client, &env, &creator, &verifier, &reward_asset);
+
+    let quest_id = symbol_short!("quest1");
+    client.update_quest_status(&quest_id, &creator, &earn_quest::QuestStatus::Paused);
+
+    let submitter = Address::generate(&env);
+    let proof_hash = BytesN::from_array(&env, &[8u8; 32]);
+    let result = client.try_submit_proof(&quest_id, &submitter, &proof_hash);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_submission_timestamp_matches_current_ledger_time() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (client, creator, verifier, reward_asset) = setup_env(&env);
+    create_quest(&client, &env, &creator, &verifier, &reward_asset);
+
+    let quest_id = symbol_short!("quest1");
+    env.ledger().with_mut(|ledger| {
+        ledger.timestamp = 42;
+    });
+
+    let submitter = Address::generate(&env);
+    let proof_hash = BytesN::from_array(&env, &[9u8; 32]);
+    client.submit_proof(&quest_id, &submitter, &proof_hash);
+
+    let submission = client.get_submission(&quest_id, &submitter);
+    assert_eq!(submission.status, SubmissionStatus::Pending);
+    assert_eq!(submission.timestamp, 42);
 }

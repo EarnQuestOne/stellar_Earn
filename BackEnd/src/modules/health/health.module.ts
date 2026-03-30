@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthController } from './health.controller';
 import { DatabaseIndicator } from './indicators/database.indicator';
 import { RedisIndicator } from './indicators/redis.indicator';
+// MetricsService is provided globally by LoggerModule — no local import needed.
 
 @Module({
   imports: [TerminusModule, TypeOrmModule, ConfigModule],

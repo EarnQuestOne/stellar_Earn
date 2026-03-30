@@ -21,6 +21,8 @@ import { CACHE_KEYS, CACHE_TTL } from '../../config/cache.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { QuestCreatedEvent } from '../../events/dto/quest-created.event';
 import { QuestDeletedEvent } from '../../events/dto/quest-deleted.event';
+import { QuestUpdatedEvent } from '../../events/dto/quest-updated.event';
+import { ModerationService } from '../moderation/moderation.service';
 
 @Injectable()
 export class QuestsService {
@@ -29,6 +31,7 @@ export class QuestsService {
     private readonly questRepository: Repository<Quest>,
     private readonly cacheService: CacheService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly moderationService: ModerationService,
   ) { }
 
   async create(
@@ -46,7 +49,26 @@ export class QuestsService {
       createdBy: creatorAddress,
     });
 
+    const scan = await this.moderationService.scanText(
+      `${createQuestDto.title}\n\n${createQuestDto.description}`,
+    );
+    if (scan.shouldBlock) {
+      throw new BadRequestException({
+        message: 'Content violates platform moderation rules',
+        code: 'MODERATION_BLOCKED',
+        keywordHits: scan.keywordHits,
+      });
+    }
+
     const savedQuest = await this.questRepository.save(quest);
+
+    await this.moderationService.saveQuestModerationItem(
+      savedQuest.id,
+      creatorAddress,
+      savedQuest.title,
+      savedQuest.description,
+      scan,
+    );
 
     // Emit quest created event
     this.eventEmitter.emit(
@@ -209,12 +231,46 @@ export class QuestsService {
       }
     }
 
+    const nextTitle = updateQuestDto.title ?? quest.title;
+    const nextDesc = updateQuestDto.description ?? quest.description;
+    const scan = await this.moderationService.scanText(
+      `${nextTitle}\n\n${nextDesc}`,
+    );
+    if (scan.shouldBlock) {
+      throw new BadRequestException({
+        message: 'Content violates platform moderation rules',
+        code: 'MODERATION_BLOCKED',
+        keywordHits: scan.keywordHits,
+      });
+    }
+
     Object.assign(quest, updateQuestDto);
     const updatedQuest = await this.questRepository.save(quest);
+
+    await this.moderationService.saveQuestModerationItem(
+      updatedQuest.id,
+      userAddress,
+      updatedQuest.title,
+      updatedQuest.description,
+      scan,
+    );
+
+    // Emit quest updated event
+    this.eventEmitter.emit(
+      'quest.updated',
+      new QuestUpdatedEvent(id, updateQuestDto as any),
+    );
 
     // Invalidate caches
     await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
     await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+
+    // Emit quest updated event
+    this.eventEmitter.emit('quest.updated', {
+      questId: id,
+      changes: updateQuestDto,
+      updatedAt: new Date(),
+    });
 
     return QuestResponseDto.fromEntity(updatedQuest);
   }

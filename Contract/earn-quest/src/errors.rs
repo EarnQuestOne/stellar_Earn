@@ -35,4 +35,16 @@ pub enum Error {
     QuestStillActive = 29,
     NoEscrowBalance = 30,
     QuestCancelled = 31,
+    /// Contract is paused
+    ContractPaused = 32,
+    /// Pause state is invalid
+    InvalidPauseState = 33,
+    /// Address has already signed the pause
+    AlreadySigned = 34,
+    /// Emergency withdrawal is no longer allowed (grace period expired)
+    EmergencyWindowClosed = 35,
+    /// Cannot withdraw during active quest
+    WithdrawalBlocked = 36,
+    /// Not enough signatures for pause activation
+    InsufficientSignatures = 37,
 }

@@ -1,9 +1,11 @@
 import { Global, Module, DynamicModule } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { AppLoggerService } from './logger.service';
 import { LoggingInterceptor } from '../interceptors/logging.interceptor';
 import { ErrorLoggerFilter } from '../filter/error-logger.filter';
-import { Reflector } from '@nestjs/core';
+import { MetricsService } from '../services/metrics.service';
+import { AlertService } from '../services/alert.service';
+import { TracingService } from '../tracing/tracing.service';
 
 export interface LoggerModuleOptions {
   isGlobal?: boolean;
@@ -23,25 +25,29 @@ export class LoggerModule {
 
     const providers: any[] = [
       AppLoggerService,
+      MetricsService,
+      AlertService,
+      TracingService,
       Reflector,
     ];
 
     if (enableInterceptor) {
       providers.push({
         provide: APP_INTERCEPTOR,
-        useFactory: (logger: AppLoggerService, reflector: Reflector) => {
-          return new LoggingInterceptor(logger, reflector);
-        },
-        inject: [AppLoggerService, Reflector],
+        useFactory: (
+          logger: AppLoggerService,
+          reflector: Reflector,
+          metrics: MetricsService,
+          alerts: AlertService,
+        ) => new LoggingInterceptor(logger, reflector, metrics, alerts),
+        inject: [AppLoggerService, Reflector, MetricsService, AlertService],
       });
     }
 
     if (enableErrorFilter) {
       providers.push({
         provide: APP_FILTER,
-        useFactory: (logger: AppLoggerService) => {
-          return new ErrorLoggerFilter(logger);
-        },
+        useFactory: (logger: AppLoggerService) => new ErrorLoggerFilter(logger),
         inject: [AppLoggerService],
       });
     }
@@ -50,7 +56,7 @@ export class LoggerModule {
       module: LoggerModule,
       global: isGlobal,
       providers,
-      exports: [AppLoggerService],
+      exports: [AppLoggerService, MetricsService, AlertService, TracingService],
     };
   }
 
