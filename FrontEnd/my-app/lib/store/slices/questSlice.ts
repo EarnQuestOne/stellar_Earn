@@ -1,24 +1,17 @@
 import { StateCreator } from "zustand";
-import type { Quest, QuestFilters } from "@/lib/types/quest";
-
-export interface QuestPagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasMore: boolean;
-}
+import type { QuestFilters } from "@/lib/types/quest";
+import type { QuestResponse } from "@/lib/types/api.types";
 
 export interface QuestSlice {
   // state
-  quests: Quest[];
+  quests: QuestResponse[];
   filters: QuestFilters;
   pagination: QuestPagination;
   questsLoading: boolean;
   questsError: string | null;
 
   // actions
-  setQuests: (quests: Quest[]) => void;
+  setQuests: (quests: QuestResponse[]) => void;
   setQuestFilters: (filters: Partial<QuestFilters>) => void;
   setQuestPagination: (pagination: Partial<QuestPagination>) => void;
   setQuestsLoading: (loading: boolean) => void;

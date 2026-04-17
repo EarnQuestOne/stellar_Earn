@@ -16,18 +16,6 @@ interface WalletContextType {
   isModalOpen:       boolean;
   supportedWallets:  { id: string; name: string; icon: string }[];
   error:             string | null;
-    
-  connect: (moduleId: string) => Promise<void>;
-  disconnect: () => Promise<void>;
-  address: string | null;
-  isConnected: boolean;
-  isConnecting: boolean;
-  selectedWalletId: string | null;
-  openModal: () => void;
-  closeModal: () => void;
-  isModalOpen: boolean;
-  supportedWallets: { id: string; name: string; icon: string }[];
-  error: string | null;
   signMessage: (message: string) => Promise<string>;
 
 }
@@ -149,8 +137,6 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         supportedWallets,
 
         error: walletError,
-
-        error,
         signMessage,
 
       }}

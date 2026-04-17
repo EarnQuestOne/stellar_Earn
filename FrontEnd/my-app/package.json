@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint"
   },
-  "dependencies": {
+   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^1.9.5",
     "@tiptap/extension-placeholder": "^3.20.5",
     "@tiptap/react": "^3.20.5",
@@ -22,7 +22,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tailwind-merge": "^3.4.0",
-    "web-vitals": "^5.1.0"
+    "web-vitals": "^5.1.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

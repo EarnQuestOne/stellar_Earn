@@ -73,7 +73,7 @@ export function Modal({
       onClose();
     }
   };
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   if (!isOpen) return null;
 
@@ -85,7 +85,7 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <FocusTrap active={isOpen} initialFocus={closeButtonRef}>
+      <FocusTrap active={isOpen} initialFocus={closeButtonRef as React.RefObject<HTMLElement>}>
         <div
           ref={modalRef}
           className={`relative w-full ${sizeClasses[size]} rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance`}

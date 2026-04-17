@@ -3,11 +3,10 @@
 import { useEffect, useCallback } from 'react';
 import { useStore } from '@/lib/store';
 import { getQuests } from '@/lib/api/quests';
-import type { QuestFilters, PaginationParams } from '@/lib/types/quest';
+import type { QuestQueryParams } from '@/lib/types/api.types';
 
 export function useQuests(
-  filters?: QuestFilters,
-  pagination?: PaginationParams,
+  filters?: QuestQueryParams,
 ) {
   const quests           = useStore((s) => s.quests);
   const questsLoading    = useStore((s) => s.questsLoading);
@@ -17,21 +16,20 @@ export function useQuests(
   const setQuestsLoading = useStore((s) => s.setQuestsLoading);
   const setQuestsError   = useStore((s) => s.setQuestsError);
   const setPagination    = useStore((s) => s.setQuestPagination);
-  const setFilters       = useStore((s) => s.setQuestFilters);
 
   const fetchQuests = useCallback(async () => {
     try {
       setQuestsLoading(true);
       setQuestsError(null);
 
-      const response = await getQuests(filters, pagination);
-      setQuests(response.data);
+      const response = await getQuests(filters);
+      setQuests(response.quests);
       setPagination({
-        page:       response.pagination.page       ?? 1,
-        limit:      response.pagination.limit      ?? 12,
-        total:      response.pagination.total      ?? 0,
-        totalPages: response.pagination.totalPages ?? 0,
-        hasMore:    response.pagination.hasMore    ?? false,
+        page:       response.page       ?? 1,
+        limit:      response.limit      ?? 12,
+        total:      response.total      ?? 0,
+        totalPages: response.totalPages ?? 0,
+        hasMore:    response.page < (response.totalPages ?? 1),
       });
     } catch (err) {
       setQuestsError(err instanceof Error ? err.message : 'Failed to fetch quests');
@@ -39,10 +37,6 @@ export function useQuests(
     } finally {
       setQuestsLoading(false);
     }
-  }, [JSON.stringify(filters), JSON.stringify(pagination)]);
-
-  useEffect(() => {
-    if (filters) setFilters(filters);
   }, [JSON.stringify(filters)]);
 
   useEffect(() => {

@@ -29,8 +29,7 @@ import type {
 } from '@/lib/types/api.types';
 import type { ProofType } from '@/lib/validation/submission';
 
-// Re-export legacy shapes so existing hooks keep compiling
-export type { CreateSubmissionRequest as CreateSubmissionData } from '@/lib/types/api.types';
+export type { SubmissionResponse as CreateSubmissionResponse } from '@/lib/types/api.types';
 
 export interface CreateSubmissionData {
   questId: string;

@@ -89,7 +89,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       />
       <StatCard
         title="Earned"
-        value={`${(stats?.totalEarnings ?? 2450).toLocaleString()} XLM`}
+        value={`${(parseFloat(stats?.totalEarned ?? '0') || 2450).toLocaleString()} XLM`}
         icon={<span className="text-amber-400">💰</span>}
         iconBg="bg-amber-400/10"
         trend={{ value: '+12%', isPositive: true }}

@@ -1,10 +1,10 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, ElementType } from 'react';
 
 interface ScreenReaderOnlyProps {
   children: ReactNode;
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
   className?: string;
 }
 

@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
-import type { Submission, SubmissionFilters } from "@/lib/types/submission";
+import type { SubmissionFilters } from "@/lib/types/submission";
+import type { SubmissionResponse } from "@/lib/types/api.types";
 
 export type SubmissionStatus = "idle" | "loading" | "success" | "error";
 
@@ -13,8 +14,8 @@ export interface SubmissionPagination {
 
 export interface SubmissionSlice {
   // state
-  submissions: Submission[];
-  drafts: Submission[];
+  submissions: SubmissionResponse[];
+  drafts: SubmissionResponse[];
   submissionStatus: SubmissionStatus;
   submissionsLoading: boolean;
   submissionsError: string | null;
@@ -22,8 +23,8 @@ export interface SubmissionSlice {
   submissionPagination: SubmissionPagination;
 
   // actions
-  setSubmissions: (submissions: Submission[]) => void;
-  setDrafts: (drafts: Submission[]) => void;
+  setSubmissions: (submissions: SubmissionResponse[]) => void;
+  setDrafts: (drafts: SubmissionResponse[]) => void;
   setSubmissionStatus: (status: SubmissionStatus) => void;
   setSubmissionsLoading: (loading: boolean) => void;
   setSubmissionsError: (error: string | null) => void;
@@ -31,7 +32,7 @@ export interface SubmissionSlice {
   setSubmissionPagination: (pagination: Partial<SubmissionPagination>) => void;
 
   // optimistic update
-  optimisticallyUpdateSubmission: (id: string, patch: Partial<Submission>) => void;
+  optimisticallyUpdateSubmission: (id: string, patch: Partial<SubmissionResponse>) => void;
 }
 
 const DEFAULT_PAGINATION: SubmissionPagination = {

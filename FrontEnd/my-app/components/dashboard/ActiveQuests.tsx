@@ -90,9 +90,9 @@ export function ActiveQuests({ quests, isLoading }: ActiveQuestsProps) {
     ? quests.map(q => ({
         id: q.id,
         title: q.title,
-        daysLeft: Math.ceil((new Date(q.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
-        status: q.progress > 50 ? 'in_progress' as QuestStatus : 'pending' as QuestStatus,
-        reward: q.reward,
+        daysLeft: q.deadline ? Math.ceil((new Date(q.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0,
+        status: (q as any).progress > 50 ? 'in_progress' as QuestStatus : 'pending' as QuestStatus,
+        reward: (q as any).reward,
       }))
     : [
         { id: '1', title: 'Smart Contract Security Review', daysLeft: 3, status: 'in_progress' as QuestStatus, reward: 250 },

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { DashboardData, UserStats, Quest, Submission, EarningsData, Badge } from '../types/dashboard';
+import { useAuth } from '@/context/AuthContext';
 import {
   fetchUserStats,
   fetchActiveQuests,
@@ -37,11 +38,15 @@ export function useUserStats(): UseUserStatsReturn {
 
     try {
       const data = await fetchDashboardData();
-      setStats(data.stats);
-      setActiveQuests(data.activeQuests);
-      setRecentSubmissions(data.recentSubmissions);
-      setEarningsHistory(data.earningsHistory);
-      setBadges(data.badges);
+      if ('stats' in data) {
+        setStats(data.stats);
+        setActiveQuests(data.activeQuests);
+        setRecentSubmissions(data.recentSubmissions);
+        setEarningsHistory(data.earningsHistory);
+        setBadges(data.badges);
+      } else {
+        setStats(data.userStats);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
     } finally {
@@ -70,13 +75,18 @@ export function useStats() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchUserStats()
+    if (!user?.stellarAddress) {
+      setIsLoading(false);
+      return;
+    }
+    fetchUserStats(user.stellarAddress)
       .then(setStats)
       .catch(err => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [user?.stellarAddress]);
 
   return { stats, isLoading, error };
 }

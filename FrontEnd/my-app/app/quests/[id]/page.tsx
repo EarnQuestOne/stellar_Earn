@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { QuestDetail } from '@/components/quest/QuestDetail';
 import { getQuestById } from '@/lib/api/quests';
+import { QuestDifficulty } from '@/lib/types/quest';
 import type { Quest } from '@/lib/types/quest';
+import type { QuestResponse } from '@/lib/types/api.types';
 import { useAnalytics } from '@/lib/hooks/useAnalytics';
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events';
 
@@ -26,7 +28,12 @@ export default function QuestDetailPage() {
         setIsLoading(true);
         setError(null);
         const data = await getQuestById(questId);
-        setQuest(data);
+        setQuest({
+          ...data,
+          creator: null,
+          skills: [],
+          difficulty: (data.difficulty ? data.difficulty.charAt(0).toUpperCase() + data.difficulty.slice(1) : 'EASY') as QuestDifficulty,
+        } as unknown as Quest);
         trackEvent(ANALYTICS_EVENTS.QUEST_VIEW, { questId });
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch quest'));

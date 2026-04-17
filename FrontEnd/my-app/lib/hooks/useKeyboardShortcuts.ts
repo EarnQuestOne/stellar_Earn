@@ -116,10 +116,10 @@ export function useKeyboardShortcuts(
     };
 
     const element = target || document;
-    element.addEventListener('keydown', handleKeyDown);
+    element.addEventListener('keydown', handleKeyDown as EventListener);
 
     return () => {
-      element.removeEventListener('keydown', handleKeyDown);
+      element.removeEventListener('keydown', handleKeyDown as EventListener);
     };
   }, [shortcuts, enabled, target, matches]);
 }

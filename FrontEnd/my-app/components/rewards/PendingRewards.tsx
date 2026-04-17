@@ -7,7 +7,7 @@ interface PendingRewardsProps {
 }
 
 export function PendingRewards({ rewards }: PendingRewardsProps) {
-  const totalPending = rewards.reduce((sum, r) => sum + r.reward, 0);
+  const totalPending = rewards.reduce((sum, r) => sum + Number(r.quest?.rewardAmount ?? 0), 0);
 
   return (
     <div className="space-y-4">
@@ -46,16 +46,16 @@ export function PendingRewards({ rewards }: PendingRewardsProps) {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {reward.questTitle}
+                    {reward.quest?.title}
                   </h4>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Approved on {new Date(reward.submittedAt).toLocaleDateString()}
+                    Approved on {new Date(reward.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-                  +{reward.reward} Tokens
+                  +{reward.quest?.rewardAmount} Tokens
                 </p>
               </div>
             </div>

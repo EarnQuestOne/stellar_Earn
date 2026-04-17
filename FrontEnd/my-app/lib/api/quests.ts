@@ -19,6 +19,7 @@ import {
   type CancelToken,
 } from './client';
 import { cacheManager } from '@/lib/utils/cache';
+import type { QuestFilters, PaginationParams } from '@/lib/types/quest';
 import type {
   QuestResponse,
   PaginatedQuestsResponse,

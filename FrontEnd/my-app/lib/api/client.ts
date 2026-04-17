@@ -176,7 +176,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => Promise.reject(transformAxiosError(error)),
+  (error: AxiosError) => Promise.reject(transformAxiosError(error as AxiosError<ApiErrorResponse>)),
 );
 
 // ---------------------------------------------------------------------------
@@ -212,7 +212,7 @@ apiClient.interceptors.response.use(
         tokenManager.clearTokens();
         processQueue(error, null);
         isRefreshing = false;
-        return Promise.reject(transformAxiosError(error));
+return Promise.reject(transformAxiosError(error as AxiosError<ApiErrorResponse>));
       }
 
       try {

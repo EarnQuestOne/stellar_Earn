@@ -35,7 +35,7 @@ export function useSubmissions(
       setSubmissions(response.data);
       setPagination({
         total:      response.pagination.total      ?? 0,
-        totalPages: response.pagination.totalPages ?? 0,
+        totalPages: Math.ceil((response.pagination.total ?? 0) / response.pagination.limit),
         hasMore:    response.pagination.hasMore    ?? false,
       });
     } catch (err) {

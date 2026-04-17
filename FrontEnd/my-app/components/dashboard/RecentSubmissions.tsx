@@ -57,24 +57,29 @@ function SubmissionRowSkeleton() {
 
 function StatusBadge({ status }: { status: Submission['status'] }) {
   const statusConfig = {
-    pending: {
+    Pending: {
       label: 'Pending',
       className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       icon: '⏳',
     },
-    approved: {
+    Approved: {
       label: 'Approved',
       className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       icon: '✓',
     },
-    rejected: {
+    Rejected: {
       label: 'Rejected',
       className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       icon: '✗',
     },
+    Paid: {
+      label: 'Paid',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      icon: '💰',
+    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.Pending;
 
   return (
     <span
@@ -92,11 +97,11 @@ function SubmissionRow({ submission }: SubmissionRowProps) {
       <td className="py-3 pr-4">
         <div className="flex flex-col">
           <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate max-w-[200px]">
-            {submission.questTitle}
+            {submission.quest?.title}
           </span>
-          {submission.feedback && (
+          {submission.rejectionReason && (
             <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
-              {submission.feedback}
+              {submission.rejectionReason}
             </span>
           )}
         </div>
@@ -107,16 +112,16 @@ function SubmissionRow({ submission }: SubmissionRowProps) {
       <td className="py-3 pr-4">
         <span
           className={`font-medium ${
-            submission.status === 'approved'
+            submission.status === 'Approved'
               ? 'text-green-600 dark:text-green-400'
               : 'text-zinc-500 dark:text-zinc-400'
           }`}
         >
-          {submission.status === 'approved' ? '+' : ''}{submission.reward} XLM
+          {submission.status === 'Approved' ? '+' : ''}{submission.quest?.rewardAmount} XLM
         </span>
       </td>
       <td className="py-3 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-        {formatDate(submission.submittedAt)}
+        {formatDate(submission.createdAt)}
       </td>
     </tr>
   );

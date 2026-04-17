@@ -18,15 +18,15 @@ export function ClaimRewards() {
 
   // Filter approved but not yet claimed rewards
   // In a real app, 'approved' submissions would have a 'claimed' flag.
-  // We'll simulate this by filtering for 'approved' status and removing them when claimed locally.
+  // We'll simulate this by filtering for 'Approved' status and removing them when claimed locally.
   const pendingRewards = useMemo(() => {
-    return submissions.filter(s => s.status === 'approved' && !claimedIds.includes(s.id));
+    return submissions.filter(s => s.status === 'Approved' && !claimedIds.includes(s.id));
   }, [submissions, claimedIds]);
 
   const handleClaim = async () => {
     if (pendingRewards.length === 0) return;
 
-    const totalAmount = pendingRewards.reduce((sum, r) => sum + r.reward, 0);
+    const totalAmount = pendingRewards.reduce((sum, r) => sum + Number(r.quest?.rewardAmount ?? 0), 0);
     setIsModalOpen(true);
     
     // We'll use a combined ID for "all" or just the first one for simulation

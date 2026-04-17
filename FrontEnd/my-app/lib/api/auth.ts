@@ -128,7 +128,7 @@ export function isAuthenticated(): boolean {
 }
 
 /** Returns the stored tokens (or null if not logged in). */
-export function getStoredTokens(): AuthTokens | null {
+export function getStoredTokens(): { accessToken: string; refreshToken: string } | null {
   const accessToken = tokenManager.getAccessToken();
   const refreshToken = tokenManager.getRefreshToken();
   if (!accessToken || !refreshToken) return null;
