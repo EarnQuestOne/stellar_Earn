@@ -10,6 +10,7 @@ import {
   fetchBadges,
   fetchDashboardData,
 } from '../api/user';
+import { useAuth } from '@/context/AuthContext';
 
 interface UseUserStatsReturn {
   stats: UserStats | null;
@@ -36,7 +37,7 @@ export function useUserStats(): UseUserStatsReturn {
     setError(null);
 
     try {
-      const data = await fetchDashboardData();
+      const data = await fetchDashboardData() as DashboardData;
       setStats(data.stats);
       setActiveQuests(data.activeQuests);
       setRecentSubmissions(data.recentSubmissions);
@@ -67,16 +68,21 @@ export function useUserStats(): UseUserStatsReturn {
 
 // Individual hooks for more granular data fetching
 export function useStats() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchUserStats()
+    if (!user?.address) {
+      setIsLoading(false);
+      return;
+    }
+    fetchUserStats(user.address)
       .then(setStats)
       .catch(err => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [user?.address]);
 
   return { stats, isLoading, error };
 }

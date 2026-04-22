@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
-import type { Quest, QuestFilters } from "@/lib/types/quest";
+import type { Quest } from "@/lib/types/quest";
+import type { QuestQueryParams } from "@/lib/types/api.types";
 
 export interface QuestPagination {
   page: number;
@@ -12,21 +13,21 @@ export interface QuestPagination {
 export interface QuestSlice {
   // state
   quests: Quest[];
-  filters: QuestFilters;
+  filters: QuestQueryParams;
   pagination: QuestPagination;
   questsLoading: boolean;
   questsError: string | null;
 
   // actions
   setQuests: (quests: Quest[]) => void;
-  setQuestFilters: (filters: Partial<QuestFilters>) => void;
+  setQuestFilters: (filters: Partial<QuestQueryParams>) => void;
   setQuestPagination: (pagination: Partial<QuestPagination>) => void;
   setQuestsLoading: (loading: boolean) => void;
   setQuestsError: (error: string | null) => void;
   resetQuestFilters: () => void;
 }
 
-const DEFAULT_FILTERS: QuestFilters = {};
+const DEFAULT_FILTERS: QuestQueryParams = {};
 
 const DEFAULT_PAGINATION: QuestPagination = {
   page: 1,

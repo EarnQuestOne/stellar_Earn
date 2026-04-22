@@ -30,7 +30,7 @@ import type {
 import type { ProofType } from '@/lib/validation/submission';
 
 // Re-export legacy shapes so existing hooks keep compiling
-export type { CreateSubmissionRequest as CreateSubmissionData } from '@/lib/types/api.types';
+// export type { CreateSubmissionRequest as CreateSubmissionData } from '@/lib/types/api.types';
 
 export interface CreateSubmissionData {
   questId: string;
@@ -75,7 +75,7 @@ export async function fetchSubmissions(
   filters?: SubmissionFilters,
   pagination?: PaginationParams,
   cancelToken?: CancelToken,
-): Promise<{ data: SubmissionResponse[]; pagination: { page: number; limit: number; total: number; hasMore: boolean } }> {
+): Promise<{ data: SubmissionResponse[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasMore: boolean } }> {
   const params: Record<string, string | number | undefined> = {};
   if (filters?.status) params.status = filters.status;
   if (pagination?.page) params.page = pagination.page;
@@ -86,15 +86,20 @@ export async function fetchSubmissions(
     get<SubmissionResponse[]>('/submissions', {
       params,
       signal: cancelToken?.signal,
-    }).then((data) => ({
-      data,
-      pagination: {
-        page: pagination?.page ?? 1,
-        limit: pagination?.limit ?? data.length,
-        total: data.length,
-        hasMore: false,
-      },
-    })),
+    }).then((data) => {
+      const limit = (pagination?.limit ?? data.length) || 1;
+      const total = data.length;
+      return {
+        data,
+        pagination: {
+          page: pagination?.page ?? 1,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: false,
+        },
+      };
+    }),
   );
 }
 

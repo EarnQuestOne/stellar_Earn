@@ -26,13 +26,13 @@ export function useSubmissions(
     setError(null);
 
     try {
-      const response = await fetchSubmissions(filters, {
+      const response = await fetchSubmissions(filters as any, {
         page:   pagination.page,
         limit:  pagination.limit,
         ...initialPagination,
       });
 
-      setSubmissions(response.data);
+      setSubmissions(response.data as any);
       setPagination({
         total:      response.pagination.total      ?? 0,
         totalPages: response.pagination.totalPages ?? 0,

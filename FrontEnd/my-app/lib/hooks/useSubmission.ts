@@ -5,8 +5,8 @@ import {
   createSubmission,
   uploadProofFile,
   type CreateSubmissionData,
-  type CreateSubmissionResponse,
 } from '../api/submissions';
+import type { SubmissionResponse } from '@/lib/types/api.types';
 import {
   validateSubmissionForm,
   sanitizeSubmissionData,
@@ -19,7 +19,7 @@ export type SubmissionStep = 'type' | 'proof' | 'preview' | 'submitting' | 'succ
 interface UseSubmissionOptions {
   questId: string;
   questTitle: string;
-  onSuccess?: (response: CreateSubmissionResponse) => void;
+  onSuccess?: (response: SubmissionResponse) => void;
   onError?: (error: Error) => void;
 }
 
@@ -49,7 +49,7 @@ interface UseSubmissionReturn {
   isSubmitting: boolean;
   submitProgress: number;
   submit: () => Promise<void>;
-  submissionResponse: CreateSubmissionResponse | null;
+  submissionResponse: SubmissionResponse | null;
   submissionError: Error | null;
 
   // Reset
@@ -84,7 +84,7 @@ export function useSubmission({
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState(0);
-  const [submissionResponse, setSubmissionResponse] = useState<CreateSubmissionResponse | null>(
+  const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse | null>(
     null
   );
   const [submissionError, setSubmissionError] = useState<Error | null>(null);

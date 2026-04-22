@@ -178,7 +178,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => Promise.reject(transformAxiosError(error)),
+  (error: AxiosError<ApiErrorResponse>) => Promise.reject(transformAxiosError(error)),
 );
 
 // ---------------------------------------------------------------------------
