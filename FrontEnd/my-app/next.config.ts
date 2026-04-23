@@ -3,10 +3,6 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   experimental: {
-    turbopack: {
-      // This tells Turbopack to look one or two levels up if needed
-      root: "../../",
-    },
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
