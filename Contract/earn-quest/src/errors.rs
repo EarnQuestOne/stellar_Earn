@@ -47,4 +47,8 @@ pub enum Error {
     WithdrawalBlocked = 36,
     /// Not enough signatures for pause activation
     InsufficientSignatures = 37,
+    /// Arithmetic overflow occurred
+    ArithmeticOverflow = 38,
+    /// Arithmetic underflow occurred
+    ArithmeticUnderflow = 39,
 }

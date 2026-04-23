@@ -16,14 +16,16 @@ pub fn award_xp(env: &Env, address: &Address, xp: u32) -> Result<(), Error> {
         badges: Vec::new(env),
     });
 
-    // Add XP
-    stats.total_xp += xp;
+    // Add XP with overflow check
+    stats.total_xp = stats.total_xp.checked_add(xp)
+        .ok_or(Error::ArithmeticOverflow)?;
 
     // Update level based on XP
     stats.level = calculate_level(stats.total_xp);
 
-    // Increment quests completed
-    stats.quests_completed += 1;
+    // Increment quests completed with overflow check
+    stats.quests_completed = stats.quests_completed.checked_add(1)
+        .ok_or(Error::ArithmeticOverflow)?;
 
     // Store updated stats
     storage::set_user_stats(env, &stats);
