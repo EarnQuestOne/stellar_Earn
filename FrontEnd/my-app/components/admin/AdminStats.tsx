@@ -1,5 +1,4 @@
 'use client';
-
 import type { AdminStats as AdminStatsType } from '@/lib/types/admin';
 import { Skeleton } from '@/components/ui/Skeleton';
 

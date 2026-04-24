@@ -1,5 +1,4 @@
 'use client';
-
 import type { Submission } from '@/lib/types/submission';
 import type { SubmissionStatus } from '@/lib/types/api.types';
 import { Skeleton } from '@/components/ui/Skeleton';

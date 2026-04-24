@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { UserProfile } from '@/lib/types/profile';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/notifications/useToast';
