@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
+  DeleteDateColumn,
 } from 'typeorm';
 
 import { Role } from '../../../common/enums/role.enum';
@@ -105,6 +106,9 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;

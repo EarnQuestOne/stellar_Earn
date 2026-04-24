@@ -51,6 +51,7 @@ export class SubmissionsService {
   ): Promise<Submission> {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
+      withDeleted: false,
     });
 
     if (!submission) {
@@ -196,6 +197,7 @@ export class SubmissionsService {
     verifierId: string,
   ): Promise<Submission> {
     const submission = await this.submissionsRepository.findOne({
+      withDeleted: false,
       where: { id: submissionId },
     });
 

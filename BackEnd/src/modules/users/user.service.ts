@@ -90,6 +90,7 @@ export class UsersService {
     const user = await this.usersRepository.findOne({
       where: { stellarAddress: address },
       relations: ['createdQuests'],
+      withDeleted: false,
     });
 
     if (!user) {
@@ -102,6 +103,7 @@ export class UsersService {
   async findByUsername(username: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { username },
+      withDeleted: false,
     });
 
     if (!user) {
@@ -114,6 +116,7 @@ export class UsersService {
   async findById(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
+      withDeleted: false,
     });
 
     if (!user) {
@@ -495,7 +498,8 @@ totalEarned: user.totalEarned,
       throw new BadRequestException('You can only delete your own account');
     }
 
-    await this.usersRepository.remove(userToDelete);
+    // Soft delete by setting deletedAt
+    await this.usersRepository.softDelete(userToDelete.id);
 
     // Clear caches
     await this.cacheManager.del(`user_stats_${address}`);

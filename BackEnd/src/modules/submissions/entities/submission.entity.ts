@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 export enum SubmissionStatus {
@@ -56,6 +57,9 @@ export class Submission {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @ManyToOne('User', 'submissions')
   @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
