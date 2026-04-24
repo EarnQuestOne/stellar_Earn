@@ -15,7 +15,11 @@ export class RefreshToken {
   @Index()
   token: string;
 
-  @Column()
+  @Column({ nullable: true })
+  @Index()
+  userId: string;
+
+  @Column({ nullable: true })
   @Index()
   stellarAddress: string;
 

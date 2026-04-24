@@ -4,15 +4,18 @@ import {
   Get,
   Body,
   UseGuards,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import type { AuthUser } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -82,6 +85,34 @@ export class AuthController {
     return this.authService.refreshTokens(refreshTokenDto.refreshToken);
   }
 
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Redirect to Google for authentication' })
+  googleAuth() {
+    return;
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Handle Google OAuth callback' })
+  async googleCallback(@Req() req: Request): Promise<TokenResponseDto> {
+    return this.authService.loginOAuthUser(req.user as any);
+  }
+
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'Redirect to GitHub for authentication' })
+  githubAuth() {
+    return;
+  }
+
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'Handle GitHub OAuth callback' })
+  async githubCallback(@Req() req: Request): Promise<TokenResponseDto> {
+    return this.authService.loginOAuthUser(req.user as any);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   @ApiBearerAuth()
@@ -107,7 +138,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
-    await this.authService.revokeToken(user.stellarAddress);
+    await this.authService.revokeToken(user.id);
     return { message: 'Logged out successfully' };
   }
 
@@ -119,7 +150,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'All sessions logged out' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logoutAll(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
-    await this.authService.revokeToken(user.stellarAddress);
+    await this.authService.revokeToken(user.id);
     return { message: 'All sessions logged out successfully' };
   }
 }

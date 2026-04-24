@@ -79,8 +79,8 @@ export class LoginDto {
 }
 
 export class UserResponseDto {
-  @ApiProperty()
-  stellarAddress: string;
+  @ApiProperty({ required: false, nullable: true })
+  stellarAddress?: string | null;
 
   @ApiProperty()
   role: string;

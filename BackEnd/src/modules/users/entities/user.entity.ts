@@ -42,6 +42,12 @@ export class User {
   @Index()
   email: string;
 
+  @Column({ nullable: true })
+  googleId: string;
+
+  @Column({ nullable: true })
+  githubId: string;
+
   @Column({
     type: 'enum',
     enum: Role,

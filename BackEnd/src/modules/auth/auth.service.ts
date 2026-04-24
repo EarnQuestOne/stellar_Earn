@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { UsersService } from '../users/user.service';
+import { User } from '../users/entities/user.entity';
 import {
   generateChallengeMessage,
   verifyStellarSignature,
@@ -29,11 +31,21 @@ export interface AuthUser {
   role: Role;
 }
 
+export interface OAuthUserProfile {
+  googleId?: string;
+  githubId?: string;
+  email?: string;
+  username?: string;
+  avatarUrl?: string;
+  provider: 'google' | 'github';
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
@@ -79,7 +91,7 @@ export class AuthService {
     verifyStellarSignature(stellarAddress, signature, challenge);
 
     const role = this.getRoleForAddress(stellarAddress);
-    const tokens = await this.generateTokens(stellarAddress, role);
+    const tokens = await this.generateTokens(stellarAddress, null, stellarAddress, role);
 
     return {
       ...tokens,
@@ -87,11 +99,56 @@ export class AuthService {
     };
   }
 
+  async loginOAuthUser(profile: OAuthUserProfile): Promise<TokenResponseDto> {
+    const user = await this.findOrCreateOAuthUser(profile);
+    const role = user.role;
+
+    const tokens = await this.generateTokens(user.id, user.id, user.stellarAddress ?? null, role);
+
+    return {
+      ...tokens,
+      user: this.mapToUserResponse(user.stellarAddress, role),
+    };
+  }
+
+  private async findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<User> {
+    let user: User | null = null;
+
+    if (profile.googleId) {
+      user = await this.usersService.findByGoogleId(profile.googleId);
+    }
+
+    if (!user && profile.githubId) {
+      user = await this.usersService.findByGithubId(profile.githubId);
+    }
+
+    if (!user && profile.email) {
+      user = await this.usersService.findByEmail(profile.email);
+    }
+
+    const updateData: Partial<User> = {
+      email: profile.email,
+      username: profile.username,
+      avatarUrl: profile.avatarUrl,
+      googleId: profile.googleId,
+      githubId: profile.githubId,
+    };
+
+    if (user) {
+      Object.assign(user, updateData);
+      return this.usersService.create(user);
+    }
+
+    return this.usersService.create(updateData);
+  }
+
   /**
    * Generate access and refresh tokens
    */
   async generateTokens(
-    stellarAddress: string,
+    tokenSubject: string,
+    userId: string | null,
+    stellarAddress: string | null,
     role: Role,
   ): Promise<{
     accessToken: string;
@@ -99,7 +156,7 @@ export class AuthService {
     expiresIn: number;
   }> {
     const payload = {
-      sub: stellarAddress,
+      sub: tokenSubject,
       stellarAddress,
       role,
     };
@@ -126,6 +183,7 @@ export class AuthService {
 
     const refreshToken = this.refreshTokenRepository.create({
       token: refreshTokenValue,
+      userId,
       stellarAddress,
       expiresAt,
     });
@@ -162,22 +220,28 @@ export class AuthService {
     refreshToken.isRevoked = true;
     await this.refreshTokenRepository.save(refreshToken);
 
-    const role = this.getRoleForAddress(refreshToken.stellarAddress);
-    const tokens = await this.generateTokens(refreshToken.stellarAddress, role);
+    const user = refreshToken.userId
+      ? await this.usersService.findById(refreshToken.userId)
+      : await this.getStellarAuthUser(refreshToken.stellarAddress);
+
+    const tokens = await this.generateTokens(user.id, user.id, user.stellarAddress ?? null, user.role);
 
     return {
       ...tokens,
-      user: this.mapToUserResponse(refreshToken.stellarAddress, role),
+      user: this.mapToUserResponse(user.stellarAddress, user.role),
     };
   }
 
   /**
    * Revoke a specific refresh token or all user tokens
    */
-  async revokeToken(stellarAddress: string, tokenId?: string): Promise<void> {
+  async revokeToken(userId: string, tokenId?: string): Promise<void> {
     if (tokenId) {
       const token = await this.refreshTokenRepository.findOne({
-        where: { id: tokenId, stellarAddress },
+        where: [
+          { id: tokenId, userId },
+          { id: tokenId, stellarAddress: userId },
+        ],
       });
 
       if (!token) {
@@ -187,36 +251,75 @@ export class AuthService {
       token.isRevoked = true;
       await this.refreshTokenRepository.save(token);
     } else {
-      await this.refreshTokenRepository.update(
-        { stellarAddress, isRevoked: false },
-        { isRevoked: true },
-      );
+      await this.refreshTokenRepository.createQueryBuilder()
+        .update(RefreshToken)
+        .set({ isRevoked: true })
+        .where('userId = :userId OR stellarAddress = :userId', { userId })
+        .execute();
     }
   }
 
   /**
    * Validate user for JWT strategy
    */
-  async validateUser(stellarAddress: string): Promise<AuthUser> {
-    const role = this.getRoleForAddress(stellarAddress);
+  async validateUser(subject: string): Promise<AuthUser> {
+    if (subject?.length === 56 && subject.startsWith('G')) {
+      try {
+        const user = await this.usersService.findByAddress(subject);
+        return {
+          id: user.id,
+          stellarAddress: user.stellarAddress,
+          role: user.role,
+        };
+      } catch {
+        return {
+          id: subject,
+          stellarAddress: subject,
+          role: this.getRoleForAddress(subject),
+        };
+      }
+    }
+
+    const user = await this.usersService.findById(subject);
     return {
-      id: stellarAddress,
-      stellarAddress,
-      role,
+      id: user.id,
+      stellarAddress: user.stellarAddress,
+      role: user.role,
     };
   }
 
   /**
    * Get role for a Stellar address based on configuration
    */
-  private getRoleForAddress(stellarAddress: string): Role {
+  private async getStellarAuthUser(stellarAddress: string): Promise<AuthUser> {
+    if (!stellarAddress) {
+      throw new UnauthorizedException('Invalid stellar address');
+    }
+
+    try {
+      const user = await this.usersService.findByAddress(stellarAddress);
+      return {
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        role: user.role,
+      };
+    } catch {
+      return {
+        id: stellarAddress,
+        stellarAddress,
+        role: this.getRoleForAddress(stellarAddress),
+      };
+    }
+  }
+
+  private getRoleForAddress(stellarAddress: string | null): Role {
     const adminAddresses = this.configService
       .get<string>('ADMIN_ADDRESSES', '')
       .split(',')
       .map((addr) => addr.trim())
       .filter((addr) => addr.length > 0);
 
-    return adminAddresses.includes(stellarAddress)
+    return stellarAddress && adminAddresses.includes(stellarAddress)
       ? Role.ADMIN
       : Role.USER;
   }
@@ -225,11 +328,11 @@ export class AuthService {
    * Map to user response DTO
    */
   private mapToUserResponse(
-    stellarAddress: string,
+    stellarAddress: string | null,
     role: Role,
   ): UserResponseDto {
     return {
-      stellarAddress,
+      stellarAddress: stellarAddress ?? null,
       role,
     };
   }

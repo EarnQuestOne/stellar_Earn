@@ -86,6 +86,30 @@ export class UsersService {
     return savedUser;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    if (!email) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    if (!googleId) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { googleId } });
+  }
+
+  async findByGithubId(githubId: string): Promise<User | null> {
+    if (!githubId) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { githubId } });
+  }
+
   async findByAddress(address: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { stellarAddress: address },
