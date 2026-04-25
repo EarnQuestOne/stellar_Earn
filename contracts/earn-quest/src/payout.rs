@@ -71,18 +71,15 @@ pub fn transfer_reward_from_escrow(
 ) -> Result<(), Error> {
     let has_escrow = storage::has_escrow(env, quest_id);
 
-    // Pre-check: verify escrow has enough
+    // CEI ordering: validate AND debit the escrow accounting before issuing
+    // the external token transfer. If the transfer fails the entire
+    // transaction reverts and the accounting write is rolled back; if a
+    // re-entrant call lands during the transfer it sees the post-debit
+    // balance and cannot drain the same funds twice.
     if has_escrow {
         escrow::validate_sufficient(env, quest_id, amount)?;
-    }
-
-    // Actual token transfer (existing logic)
-    transfer_reward(env, reward_asset, to, amount)?;
-
-    // Post-transfer: update escrow accounting
-    if has_escrow {
         escrow::record_payout(env, quest_id, to, amount)?;
     }
 
-    Ok(())
+    transfer_reward(env, reward_asset, to, amount)
 }

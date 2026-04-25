@@ -184,10 +184,24 @@ impl EarnQuestContract {
 
     pub fn claim_reward(env: Env, quest_id: Symbol, submitter: Address) -> Result<(), Error> {
         security::require_not_paused(&env)?;
+        security::nonreentrant_enter(&env)?;
         submitter.require_auth();
         submission::validate_claim(&env, &quest_id, &submitter)?;
 
         let quest = storage::get_quest(&env, &quest_id)?;
+
+        // CEI: flip the submission to Paid and increment claims BEFORE the
+        // external token transfer. If a malicious token re-enters during
+        // the transfer the AlreadyClaimed check in validate_claim will
+        // reject the second attempt even before the reentrancy guard kicks
+        // in, giving us defence in depth.
+        storage::update_submission_status(
+            &env,
+            &quest_id,
+            &submitter,
+            types::SubmissionStatus::Paid,
+        )?;
+        storage::increment_quest_claims(&env, &quest_id)?;
 
         payout::transfer_reward_from_escrow(
             &env,
@@ -196,13 +210,6 @@ impl EarnQuestContract {
             &submitter,
             quest.reward_amount,
         )?;
-        storage::update_submission_status(
-            &env,
-            &quest_id,
-            &submitter,
-            types::SubmissionStatus::Paid,
-        )?;
-        storage::increment_quest_claims(&env, &quest_id)?;
 
         events::reward_claimed(
             &env,
@@ -214,6 +221,7 @@ impl EarnQuestContract {
 
         reputation::award_xp(&env, &submitter, 100)?;
 
+        security::nonreentrant_exit(&env);
         Ok(())
     }
 
@@ -252,8 +260,11 @@ impl EarnQuestContract {
         to: Address,
         amount: i128,
     ) -> Result<(), Error> {
+        security::nonreentrant_enter(&env)?;
         validation::validate_reward_amount(amount)?;
-        security::emergency_withdraw(&env, &caller, &asset, &to, amount)
+        security::emergency_withdraw(&env, &caller, &asset, &to, amount)?;
+        security::nonreentrant_exit(&env);
+        Ok(())
     }
 
     pub fn deposit_escrow(
@@ -264,14 +275,20 @@ impl EarnQuestContract {
         amount: i128,
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
+        security::nonreentrant_enter(&env)?;
         depositor.require_auth();
-        escrow::deposit(&env, &quest_id, &depositor, &token, amount)
+        escrow::deposit(&env, &quest_id, &depositor, &token, amount)?;
+        security::nonreentrant_exit(&env);
+        Ok(())
     }
 
     pub fn cancel_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
+        security::nonreentrant_enter(&env)?;
         creator.require_auth();
-        escrow::cancel_quest(&env, &quest_id, &creator)
+        let refunded = escrow::cancel_quest(&env, &quest_id, &creator)?;
+        security::nonreentrant_exit(&env);
+        Ok(refunded)
     }
 
     pub fn withdraw_unclaimed(
@@ -280,14 +297,20 @@ impl EarnQuestContract {
         creator: Address,
     ) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
+        security::nonreentrant_enter(&env)?;
         creator.require_auth();
-        escrow::withdraw_unclaimed(&env, &quest_id, &creator)
+        let withdrawn = escrow::withdraw_unclaimed(&env, &quest_id, &creator)?;
+        security::nonreentrant_exit(&env);
+        Ok(withdrawn)
     }
 
     pub fn expire_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
+        security::nonreentrant_enter(&env)?;
         creator.require_auth();
-        escrow::expire_quest(&env, &quest_id, &creator)
+        let refunded = escrow::expire_quest(&env, &quest_id, &creator)?;
+        security::nonreentrant_exit(&env);
+        Ok(refunded)
     }
 
     pub fn update_quest_metadata(

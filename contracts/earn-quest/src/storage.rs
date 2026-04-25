@@ -44,6 +44,8 @@ pub enum DataKey {
     QuestIds,
     PlatformStats,
     CreatorStats(Address),
+    /// Mutex flag set while a non-reentrant entry point is executing.
+    ReentrancyGuard,
 }
 
 //================================================================================
@@ -592,6 +594,31 @@ pub fn set_paused(env: &Env, paused: bool) {
 /// Get paused flag
 pub fn is_paused(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Paused)
+}
+
+//================================================================================
+// Reentrancy Guard Storage Helpers
+//================================================================================
+
+/// Returns true while a non-reentrant entry point is executing in the
+/// current invocation. Reads from instance storage so the flag is rolled
+/// back automatically if the transaction reverts.
+pub fn is_reentrancy_locked(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::ReentrancyGuard)
+}
+
+/// Acquire the reentrancy lock. Caller must check `is_reentrancy_locked`
+/// first; this function unconditionally writes the flag.
+pub fn set_reentrancy_lock(env: &Env) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ReentrancyGuard, &true);
+}
+
+/// Release the reentrancy lock. Idempotent: safe to call when the lock
+/// is not currently held.
+pub fn clear_reentrancy_lock(env: &Env) {
+    env.storage().instance().remove(&DataKey::ReentrancyGuard);
 }
 
 /// Approve or revoke unpause by admin for the current round
