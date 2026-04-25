@@ -60,14 +60,11 @@ export default new DataSource({
   logging: process.env.NODE_ENV === 'development',
   // Add these extra options for Neon
   extra: {
-    ssl: {
-      rejectUnauthorized: false,
-      require: true,
-    },
-    // Connection pool settings
-    max: 10,
-    connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
+    ssl: { rejectUnauthorized: false, require: true },
+    max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
+    min: parseInt(process.env.DB_POOL_MIN ?? '2', 10),
+    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000', 10),
+    idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
   },
 });
 
