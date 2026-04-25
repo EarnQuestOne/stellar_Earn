@@ -1,22 +1,3 @@
-import type { SubmissionResponse, SubmissionStatus as ApiSubmissionStatus } from './api.types';
-
-export enum SubmissionStatus {
-  PENDING = 'Pending',
-  APPROVED = 'Approved',
-  REJECTED = 'Rejected',
-  PAID = 'Paid',
-  UNDER_REVIEW = 'Pending',
-}
-
-export interface Quest {
-  id: string;
-  title: string;
-  description?: string;
-  rewardAmount: number | string;
-  rewardAsset: string;
-  deadline?: string;
-  status?: string;
-}
 
 export interface Submission extends Partial<SubmissionResponse> {
   id: string;
