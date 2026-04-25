@@ -213,11 +213,13 @@ export class UsersService {
       streak = diffDays <= 1 ? consecutive : 0;
     }
 
-    // Get user rank
-    const allUsers = await this.usersRepository.find({
-      order: { xp: 'DESC' },
-    });
-    const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
+    // Get user rank via a single COUNT query instead of loading every user
+    // from the table just to find one user's position.
+    const higherRanked = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.xp > :xp', { xp: user.xp })
+      .getCount();
+    const rank = higherRanked + 1;
 
     const stats: UserStats = {
       totalQuests: submissions.length,

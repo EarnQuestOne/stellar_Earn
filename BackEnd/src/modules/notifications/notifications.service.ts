@@ -179,13 +179,34 @@ export class NotificationsService {
    * Mark all user notifications as read
    */
   async markAllAsRead(userId: string): Promise<void> {
-    const unreadNotifications = await this.notificationsRepository.find({
-      where: { userId, read: false }
-    });
+    // Batch-update notifications and the matching IN_APP delivery logs in two
+    // queries instead of issuing 2N queries inside a per-notification loop.
+    const readAt = new Date();
 
-    for (const notification of unreadNotifications) {
-      await this.markAsRead(notification.id);
+    const updateResult = await this.notificationsRepository
+      .createQueryBuilder()
+      .update(Notification)
+      .set({ read: true, readAt })
+      .where('userId = :userId', { userId })
+      .andWhere('read = :read', { read: false })
+      .returning(['id'])
+      .execute();
+
+    const updatedIds = (
+      updateResult.raw as Array<{ id: string }> | undefined
+    )?.map((row) => row.id);
+
+    if (!updatedIds || updatedIds.length === 0) {
+      return;
     }
+
+    await this.logRepository
+      .createQueryBuilder()
+      .update(NotificationLog)
+      .set({ status: DeliveryStatus.READ })
+      .where('notificationId IN (:...ids)', { ids: updatedIds })
+      .andWhere('channel = :channel', { channel: ChannelType.IN_APP })
+      .execute();
   }
 
   /**

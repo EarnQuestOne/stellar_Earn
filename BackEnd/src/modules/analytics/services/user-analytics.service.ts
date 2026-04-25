@@ -65,8 +65,20 @@ export class UserAnalyticsService {
 
         const users = await queryBuilder.take(query.limit || 20).getMany();
 
-        const userMetrics = await Promise.all(
-          users.map((user) => this.getUserMetrics(user)),
+        // Batch-load submissions, payouts and activity history for the entire
+        // user batch so we don't issue N+N+N follow-up queries inside the
+        // per-user metrics builder below.
+        const userIds = users.map((u) => u.id);
+        const [submissionsByUser, payoutsByUser, activityByUser] =
+          await this.loadUserMetricsRelations(userIds);
+
+        const userMetrics = users.map((user) =>
+          this.buildUserMetrics(
+            user,
+            submissionsByUser.get(user.id) ?? [],
+            payoutsByUser.get(user.id) ?? [],
+            activityByUser.get(user.id) ?? [],
+          ),
         );
 
         this.sortUserMetrics(userMetrics, query.sortBy || 'xp');
@@ -88,12 +100,12 @@ export class UserAnalyticsService {
     );
   }
 
-  private async getUserMetrics(user: AnalyticsUser): Promise<UserMetrics> {
-    const submissions = await this.submissionRepository.find({
-      where: { user: { id: user.id } },
-      relations: ['quest'],
-    });
-
+  private buildUserMetrics(
+    user: AnalyticsUser,
+    submissions: Submission[],
+    payouts: Payout[],
+    activityHistory: ActivityDataPoint[],
+  ): UserMetrics {
     const approvedSubmissions = submissions.filter(
       (s) =>
         s.status === SubmissionStatus.APPROVED ||
@@ -105,36 +117,28 @@ export class UserAnalyticsService {
       submissions.length,
     );
 
-    const payouts = await this.payoutRepository.find({
-      where: {
-        recipient: { id: user.id },
-      },
-    });
-
     const totalRewardsEarned = ConversionUtil.sumBigIntStrings(
       payouts.map((p) => p.amount),
     );
 
     const avgCompletionTime = ConversionUtil.calculateAverageTime(
       approvedSubmissions,
-      'submittedAt', // Using submittedAt
-      'reviewedAt',  // Using reviewedAt
+      'submittedAt',
+      'reviewedAt',
     );
 
     const lastActiveAt =
       submissions.length > 0
         ? submissions.reduce(
-            (latest, s) => (s.submittedAt > latest ? s.submittedAt : latest), // Using submittedAt
-            submissions[0].submittedAt, // Using submittedAt
+            (latest, s) => (s.submittedAt > latest ? s.submittedAt : latest),
+            submissions[0].submittedAt,
           )
         : user.createdAt;
-
-    const activityHistory = await this.getUserActivityHistory(user.id);
 
     return {
       stellarAddress: user.stellarAddress || '',
       username: user.username || '',
-      totalXp: user.totalXp, // Use totalXp from analytics entity
+      totalXp: user.totalXp,
       level: user.level,
       questsCompleted: user.questsCompleted,
       totalSubmissions: submissions.length,
@@ -158,28 +162,93 @@ export class UserAnalyticsService {
     };
   }
 
-  private async getUserActivityHistory(
-    userId: string,
-  ): Promise<ActivityDataPoint[]> {
-    const submissions = await this.submissionRepository
-      .createQueryBuilder('submission')
-      .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date') // Using submittedAt
-      .addSelect('COUNT(*)', 'submissions')
-      .addSelect(
-        `COUNT(CASE WHEN submission.status IN ('${SubmissionStatus.APPROVED}', '${SubmissionStatus.PAID}') THEN 1 END)`,
-        'questsCompleted',
-      )
-      .where('submission.userId = :userId', { userId })
-      .groupBy(`DATE_TRUNC('day', submission.submittedAt)`) // Using submittedAt
-      .orderBy('date', 'ASC')
-      .getRawMany();
+  /**
+   * Fetch submissions, payouts, and activity history for a batch of users in
+   * three queries total (instead of three queries per user) and group the
+   * results by user id for fast in-memory lookups.
+   */
+  private async loadUserMetricsRelations(
+    userIds: string[],
+  ): Promise<
+    [
+      Map<string, Submission[]>,
+      Map<string, Payout[]>,
+      Map<string, ActivityDataPoint[]>,
+    ]
+  > {
+    const submissionsByUser = new Map<string, Submission[]>();
+    const payoutsByUser = new Map<string, Payout[]>();
+    const activityByUser = new Map<string, ActivityDataPoint[]>();
 
-    return submissions.map((s) => ({
-      date: DateRangeUtil.formatDate(new Date(s.date)),
-      submissions: parseInt(s.submissions),
-      questsCompleted: parseInt(s.questsCompleted || '0'),
-      xpGained: parseInt(s.questsCompleted || '0') * 100, // Updated: 100 XP per quest
-    }));
+    if (userIds.length === 0) {
+      return [submissionsByUser, payoutsByUser, activityByUser];
+    }
+
+    const [submissions, payouts, activityRows] = await Promise.all([
+      this.submissionRepository
+        .createQueryBuilder('submission')
+        .leftJoinAndSelect('submission.quest', 'quest')
+        .leftJoin('submission.user', 'user')
+        .addSelect('user.id', 'user_id')
+        .where('user.id IN (:...userIds)', { userIds })
+        .getMany(),
+      this.payoutRepository
+        .createQueryBuilder('payout')
+        .leftJoin('payout.recipient', 'recipient')
+        .addSelect('recipient.id', 'recipient_id')
+        .where('recipient.id IN (:...userIds)', { userIds })
+        .getMany(),
+      this.submissionRepository
+        .createQueryBuilder('submission')
+        .select('submission.userId', 'userId')
+        .addSelect(`DATE_TRUNC('day', submission.submittedAt)`, 'date')
+        .addSelect('COUNT(*)', 'submissions')
+        .addSelect(
+          `COUNT(CASE WHEN submission.status IN ('${SubmissionStatus.APPROVED}', '${SubmissionStatus.PAID}') THEN 1 END)`,
+          'questsCompleted',
+        )
+        .where('submission.userId IN (:...userIds)', { userIds })
+        .groupBy('submission.userId')
+        .addGroupBy(`DATE_TRUNC('day', submission.submittedAt)`)
+        .orderBy('submission.userId')
+        .addOrderBy('date', 'ASC')
+        .getRawMany(),
+    ]);
+
+    for (const submission of submissions) {
+      const userId = (submission.user as { id?: string } | undefined)?.id;
+      if (!userId) continue;
+      const list = submissionsByUser.get(userId) ?? [];
+      list.push(submission);
+      submissionsByUser.set(userId, list);
+    }
+
+    for (const payout of payouts) {
+      const userId = (payout.recipient as { id?: string } | undefined)?.id;
+      if (!userId) continue;
+      const list = payoutsByUser.get(userId) ?? [];
+      list.push(payout);
+      payoutsByUser.set(userId, list);
+    }
+
+    for (const row of activityRows as Array<{
+      userId: string;
+      date: Date | string;
+      submissions: string;
+      questsCompleted: string | null;
+    }>) {
+      const point: ActivityDataPoint = {
+        date: DateRangeUtil.formatDate(new Date(row.date)),
+        submissions: parseInt(row.submissions),
+        questsCompleted: parseInt(row.questsCompleted || '0'),
+        xpGained: parseInt(row.questsCompleted || '0') * 100,
+      };
+      const list = activityByUser.get(row.userId) ?? [];
+      list.push(point);
+      activityByUser.set(row.userId, list);
+    }
+
+    return [submissionsByUser, payoutsByUser, activityByUser];
   }
 
   private sortUserMetrics(metrics: UserMetrics[], sortBy: string): void {
