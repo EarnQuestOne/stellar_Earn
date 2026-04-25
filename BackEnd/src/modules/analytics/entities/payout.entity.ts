@@ -8,8 +8,6 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { Submission } from './submission.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 
 /**
  * Payout entity for tracking reward distributions
@@ -20,12 +18,12 @@ export class Payout {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => Submission, (submission) => submission.payout)
+  @OneToOne('Submission', 'payout')
   @JoinColumn()
-  submission: Submission;
+  submission: any;
 
-  @ManyToOne(() => User)
-  recipient: User;
+  @ManyToOne('User')
+  recipient: any;
 
   @Column({ type: 'bigint' })
   amount: string;

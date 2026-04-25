@@ -57,17 +57,11 @@ pub fn deposit(
         return Err(Error::TokenMismatch);
     }
 
-    // Transfer tokens: creator → contract
-    let token_client = token::Client::new(env, token_address);
-    let transfer_result =
-        token_client.try_transfer(depositor, &env.current_contract_address(), &amount);
-
-    match transfer_result {
-        Ok(Ok(_)) => {}
-        _ => return Err(Error::TransferFailed),
-    }
-
-    // Load or create escrow record
+    // CEI ordering: load and update the escrow record FIRST, then perform
+    // the external token transfer last. If the transfer fails the entire
+    // transaction reverts and the storage write is rolled back, but a
+    // re-entrant call during the transfer will see a fully-updated record
+    // and cannot inflate the deposit total a second time.
     let mut escrow = if storage::has_escrow(env, quest_id) {
         let existing = storage::get_escrow(env, quest_id)?;
         if !existing.is_active {
@@ -84,18 +78,28 @@ pub fn deposit(
             total_paid_out: 0,
             total_refunded: 0,
             is_active: true,
+            created_at: env.ledger().timestamp(),
+            deposit_count: 0,
         }
     };
 
-    // Update balance
     escrow.total_deposited += amount;
+    escrow.deposit_count += 1;
     storage::set_escrow(env, quest_id, &escrow);
 
     // Emit event
     let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
     events::escrow_deposited(env, quest_id.clone(), depositor.clone(), amount, available);
 
-    Ok(())
+    // Transfer tokens: creator → contract (external call, kept last)
+    let token_client = token::Client::new(env, token_address);
+    let transfer_result =
+        token_client.try_transfer(depositor, &env.current_contract_address(), &amount);
+
+    match transfer_result {
+        Ok(Ok(_)) => Ok(()),
+        _ => Err(Error::TransferFailed),
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -182,13 +186,22 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut escrow = storage::get_escrow(env, quest_id)?;
 
     let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+    let depositor = escrow.depositor.clone();
+    let token = escrow.token.clone();
+
+    // CEI ordering: mark the escrow refunded and inactive FIRST so a
+    // re-entrant call during the transfer below cannot trigger a second
+    // refund (it would see is_active=false). On transfer failure the
+    // transaction reverts and the storage write is rolled back atomically.
+    escrow.total_refunded += available;
+    escrow.is_active = false;
+    storage::set_escrow(env, quest_id, &escrow);
 
     if available > 0 {
-        // Transfer tokens: contract → creator
-        let token_client = token::Client::new(env, &escrow.token);
+        let token_client = token::Client::new(env, &token);
         let transfer_result = token_client.try_transfer(
             &env.current_contract_address(),
-            &escrow.depositor,
+            &depositor,
             &available,
         );
 
@@ -196,15 +209,8 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
             Ok(Ok(_)) => {}
             _ => return Err(Error::TransferFailed),
         }
-    }
 
-    // Update tracking
-    escrow.total_refunded += available;
-    escrow.is_active = false;
-    storage::set_escrow(env, quest_id, &escrow);
-
-    if available > 0 {
-        events::escrow_refunded(env, quest_id.clone(), escrow.depositor.clone(), available);
+        events::escrow_refunded(env, quest_id.clone(), depositor, available);
     }
 
     Ok(available)
@@ -252,6 +258,57 @@ pub fn cancel_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i1
     };
 
     events::quest_cancelled(env, quest_id.clone(), caller.clone(), refunded);
+
+    Ok(refunded)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPIRE QUEST: Mark expired + refund
+// ═══════════════════════════════════════════════════════════════
+
+/// Mark a quest as expired and refund remaining escrow to the creator.
+///
+/// # Requirements
+/// - Caller must be the quest creator or admin
+/// - Quest must be Active or Paused
+/// - Quest deadline must have passed
+///
+/// # Flow
+/// ```text
+/// Quest.status = Expired
+/// Remaining escrow → Creator's wallet
+/// ```
+pub fn expire_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i128, Error> {
+    let quest = storage::get_quest(env, quest_id)?;
+
+    // Only creator can expire
+    if *caller != quest.creator {
+        return Err(Error::Unauthorized);
+    }
+
+    // Must not already be terminal
+    if validation::is_quest_terminal(&quest.status) {
+        return Err(Error::QuestNotActive);
+    }
+
+    // Quest deadline must have passed
+    let current_time = env.ledger().timestamp();
+    if current_time < quest.deadline {
+        return Err(Error::QuestNotActive); // Not yet expired
+    }
+
+    // Validate the status transition
+    validation::validate_quest_status_transition(&quest.status, &QuestStatus::Expired)?;
+
+    // Update quest status
+    storage::update_quest_status(env, quest_id, QuestStatus::Expired)?;
+
+    // Refund escrow if it exists
+    let refunded = if storage::has_escrow(env, quest_id) {
+        refund_remaining(env, quest_id)?
+    } else {
+        0
+    };
 
     Ok(refunded)
 }

@@ -8,9 +8,6 @@ import {
   ManyToOne,
   OneToOne,
 } from 'typeorm';
-import { Quest } from './quest.entity';
-import { Payout } from './payout.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 
 export enum SubmissionStatus {
   PENDING = 'Pending',
@@ -32,11 +29,11 @@ export class Submission {
   @Index()
   contractSubmissionId: string;
 
-  @ManyToOne(() => Quest, (quest) => quest.submissions)
-  quest: Quest;
+  @ManyToOne('Quest', 'submissions')
+  quest: any;
 
-  @ManyToOne(() => User, (user) => user.submissions)
-  user: User;
+  @ManyToOne('User', 'submissions')
+  user: any;
 
   @Column({ type: 'text' })
   proofHash: string;
@@ -68,6 +65,6 @@ export class Submission {
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;
 
-  @OneToOne(() => Payout, (payout) => payout.submission)
-  payout: Payout;
+  @OneToOne('Payout', 'submission')
+  payout: any;
 }

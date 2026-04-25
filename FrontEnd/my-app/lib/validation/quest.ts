@@ -1,4 +1,4 @@
-import type { QuestFormData, QuestCategory, QuestDifficulty } from '../types/admin';
+import type { QuestFormData, QuestCategory, QuestDifficulty } from '../types/api.types';
 
 export interface ValidationError {
   field: string;

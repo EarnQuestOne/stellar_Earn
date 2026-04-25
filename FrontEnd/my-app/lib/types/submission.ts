@@ -1,35 +1,16 @@
-export enum SubmissionStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  PAID = 'PAID',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-}
 
-export interface Quest {
-  id: string;
-  title: string;
-  description: string;
-  rewardAmount: number;
-  rewardAsset: string;
-  deadline?: string;
-  status?: string;
-}
-
-export interface Submission {
+export interface Submission extends Partial<SubmissionResponse> {
   id: string;
   questId: string;
   userId: string;
-  status: SubmissionStatus;
-  proof: Record<string, unknown>;
-  rejectionReason?: string;
+  status: ApiSubmissionStatus;
   createdAt: string;
   updatedAt: string;
-  quest: Quest;
+  quest?: Quest; // Made optional to match SubmissionResponse
 }
 
 export interface SubmissionFilters {
-  status?: SubmissionStatus;
+  status?: SubmissionStatus | ApiSubmissionStatus;
 }
 
 export interface PaginationParams {

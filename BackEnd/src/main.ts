@@ -1,7 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  API_VERSION_CONFIG,
+  extractApiVersion,
+} from './config/versioning.config';
 import { WinstonModule } from 'nest-winston';
+import * as express from 'express';
 import { setupSwagger } from './config/swagger.config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -11,11 +16,20 @@ import { CustomValidationPipe } from './common/pipes/validation.pipe';
 import { SanitizationPipe } from './common/pipes/sanitization.pipe';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
+import { AppExceptionFilter } from './common/filters/app-exception.filter';
+import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
-import { getSecurityConfig } from './config/security.config';
+import {
+  getApplicationSecurityConfig,
+  getSecurityConfig,
+} from './config/security.config';
 import { getCorsConfig } from './config/cors.config';
 import { createLoggerConfig } from './config/logger.config';
 import { AppLoggerService } from './common/logger/logger.service';
+import { initSentry } from './config/sentry.config';
+
+// Initialise Sentry before anything else so it can capture bootstrap errors
+initSentry();
 
 const bootstrapLogger = WinstonModule.createLogger(createLoggerConfig());
 
@@ -52,9 +66,21 @@ async function bootstrap() {
 
     logger.log('Application instance created', 'Bootstrap');
 
-    app.use(new SecurityMiddleware().use.bind(new SecurityMiddleware()));
-
     const configService = app.get(ConfigService);
+    const appSecurityConfig = getApplicationSecurityConfig(configService);
+
+    app.use(
+      express.json({
+        limit: appSecurityConfig.limits.jsonBodyLimit,
+      }),
+    );
+    app.use(
+      express.urlencoded({
+        extended: true,
+        limit: appSecurityConfig.limits.urlencodedBodyLimit,
+      }),
+    );
+    app.use(app.get(SecurityMiddleware).use.bind(app.get(SecurityMiddleware)));
     app.use(helmet(getSecurityConfig(configService)));
 
     app.enableCors(getCorsConfig());
@@ -68,28 +94,34 @@ async function bootstrap() {
         transform: true,
         disableErrorMessages: false,
         exceptionFactory: (errors) => {
-          return new Error(
-            JSON.stringify({
-              message: 'Validation failed',
-              errors: errors.map((error) => ({
-                property: error.property,
-                constraints: error.constraints,
-              })),
-            }),
-          );
+          return new BadRequestException({
+            message: 'Validation failed',
+            errors: errors.map((error) => ({
+              property: error.property,
+              constraints: error.constraints,
+            })),
+          });
         },
       }),
     );
 
     app.useGlobalFilters(
+      new SentryExceptionFilter(),
       new SecurityExceptionFilter(),
       new ValidationExceptionFilter(),
+      new AppExceptionFilter(),
     );
 
     logger.log('Security middleware and pipes configured', 'Bootstrap');
 
     app.setGlobalPrefix('api');
-    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+    app.enableVersioning({
+      type: VersioningType.CUSTOM,
+      defaultVersion: API_VERSION_CONFIG.defaultVersion,
+      extractor: (request) => {
+        return extractApiVersion(request as any) || API_VERSION_CONFIG.defaultVersion;
+      },
+    });
 
     setupSwagger(app, configService);
 

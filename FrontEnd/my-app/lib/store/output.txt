@@ -1,0 +1,14 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\Frontend\my-app\lib\store
+├── index.ts
+├── middlewear
+|  └── persistence.ts
+├── output.txt
+└── slices
+   ├── notificationSlice.ts
+   ├── questSlice.ts
+   ├── submissionSlice.ts
+   ├── uiSlice.ts
+   └── userSlice.ts
+
+directory: 2 file: 8
+

@@ -15,6 +15,32 @@ pub fn require_not_paused(env: &Env) -> Result<(), Error> {
     Ok(())
 }
 
+//================================================================================
+// Reentrancy Guard
+//================================================================================
+
+/// Acquire the contract-wide reentrancy guard. Returns `Error::ReentrantCall`
+/// if the guard is already held, which is the case when this entry point is
+/// being re-entered through a sub-invocation (e.g. a malicious token contract
+/// calling back into us during a transfer).
+///
+/// Pair every call with `nonreentrant_exit` on the success path. On the error
+/// path the lock does not need to be cleared explicitly: a contract function
+/// returning `Err` reverts the transaction and rolls back instance storage,
+/// so the flag never persists past a failed invocation.
+pub fn nonreentrant_enter(env: &Env) -> Result<(), Error> {
+    if storage::is_reentrancy_locked(env) {
+        return Err(Error::ReentrantCall);
+    }
+    storage::set_reentrancy_lock(env);
+    Ok(())
+}
+
+/// Release the reentrancy guard at the end of a successful invocation.
+pub fn nonreentrant_exit(env: &Env) {
+    storage::clear_reentrancy_lock(env);
+}
+
 /// Pause the contract immediately (admin only)
 pub fn emergency_pause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();

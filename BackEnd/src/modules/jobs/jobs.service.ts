@@ -1,6 +1,7 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { QUEUES, DEFAULT_JOB_OPTIONS } from './jobs.constants';
+import { DataExportProcessor } from './processors/export.processor';
 
 const redisConnection = () => {
   const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -9,22 +10,35 @@ const redisConnection = () => {
 
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(JobsService.name);
   private queues: Record<string, Queue> = {};
   private workers: Worker[] = [];
+  private emailProcessor: ((messageId: string, dto: any) => Promise<void>) | null = null;
+
+  constructor(private readonly dataExportProcessor?: DataExportProcessor) {}
+
+  registerEmailProcessor(processor: (messageId: string, dto: any) => Promise<void>) {
+    this.emailProcessor = processor;
+  }
 
   onModuleInit() {
-    // create queues
     this.queues[QUEUES.NOTIFICATIONS] = new Queue(QUEUES.NOTIFICATIONS, redisConnection() as any);
     this.queues[QUEUES.ANALYTICS] = new Queue(QUEUES.ANALYTICS, redisConnection() as any);
     this.queues[QUEUES.CLEANUP] = new Queue(QUEUES.CLEANUP, redisConnection() as any);
     this.queues[QUEUES.SCHEDULED] = new Queue(QUEUES.SCHEDULED, redisConnection() as any);
     this.queues[QUEUES.DEAD_LETTER] = new Queue(QUEUES.DEAD_LETTER, redisConnection() as any);
+    this.queues[QUEUES.EMAIL] = new Queue(QUEUES.EMAIL, redisConnection() as any);
+    this.queues[QUEUES.EXPORTS] = new Queue(QUEUES.EXPORTS, redisConnection() as any);
 
-    // start workers
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
     this.createWorker(QUEUES.CLEANUP, this.handleCleanup.bind(this));
     this.createWorker(QUEUES.SCHEDULED, this.handleScheduled.bind(this));
+    this.createWorker(QUEUES.EMAIL, this.handleEmail.bind(this));
+    // register exports worker if processor available
+    if (this.dataExportProcessor && typeof this.dataExportProcessor.processExport === 'function') {
+      this.createWorker(QUEUES.EXPORTS, this.dataExportProcessor.processExport.bind(this.dataExportProcessor));
+    }
   }
 
   async onModuleDestroy() {
@@ -95,9 +109,22 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleScheduled(job: Job) {
-    // scheduled tasks / cron
     // eslint-disable-next-line no-console
     console.log('Processing scheduled job', job.id, job.data);
     return { ran: true };
+  }
+
+  private async handleEmail(job: Job) {
+    const { messageId, dto } = job.data;
+    await job.updateProgress(10);
+
+    if (this.emailProcessor) {
+      await this.emailProcessor(messageId, dto);
+    } else {
+      this.logger.warn(`No email processor registered, skipping email job ${job.id}`);
+    }
+
+    await job.updateProgress(100);
+    return { sent: true, messageId };
   }
 }

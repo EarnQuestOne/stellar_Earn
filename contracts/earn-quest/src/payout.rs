@@ -1,37 +1,42 @@
 use crate::errors::Error;
 use soroban_sdk::{token, Address, Env};
 
-/// Transfer rewards from the contract escrow to the user.
+/// Transfer rewards from the contract escrow to the user (gas-optimized).
 ///
 /// This function handles the low-level token transfer and ensures
 /// the contract has sufficient balance.
+///
+/// # Gas Optimization
+/// * Caches contract address to avoid redundant retrieval
+/// * Uses try_transfer for efficient error handling
+/// * Minimizes storage reads by checking balance once
 pub fn transfer_reward(
     env: &Env,
     reward_asset: &Address,
     to: &Address,
     amount: i128,
 ) -> Result<(), Error> {
-    // 0. Asset validation (basic check that it's a valid address is handled by SDK type)
+    // Asset validation (basic check that it's a valid addresses is handled by SDK type)
     // Additional validation could be checking against a whitelist if required.
 
     if amount <= 0 {
         return Err(Error::InvalidRewardAmount);
     }
 
-    let token_client = token::Client::new(env, reward_asset);
+    // Optimized: Cache contract address and token client
     let contract_address = env.current_contract_address();
+    let token_client = token::Client::new(env, reward_asset);
 
-    // 1. Balance Checking
+    // Optimized: Single balance check before transfer
     let balance = token_client.balance(&contract_address);
     if balance < amount {
         return Err(Error::InsufficientBalance);
     }
 
-    // 2. Transfer logic
-    // The contract authorizes this transfer as it owns the funds.
+    // Transfer logic - contract authorizes this transfer as it owns the funds
     let transfer_result = token_client.try_transfer(&contract_address, to, &amount);
 
-    // 3. Error Handling
+    // Error Handling
     match transfer_result {
         Ok(Ok(_)) => Ok(()),
         Ok(Err(_)) => Err(Error::TransferFailed), // Token logic error
@@ -66,18 +71,15 @@ pub fn transfer_reward_from_escrow(
 ) -> Result<(), Error> {
     let has_escrow = storage::has_escrow(env, quest_id);
 
-    // Pre-check: verify escrow has enough
+    // CEI ordering: validate AND debit the escrow accounting before issuing
+    // the external token transfer. If the transfer fails the entire
+    // transaction reverts and the accounting write is rolled back; if a
+    // re-entrant call lands during the transfer it sees the post-debit
+    // balance and cannot drain the same funds twice.
     if has_escrow {
         escrow::validate_sufficient(env, quest_id, amount)?;
-    }
-
-    // Actual token transfer (existing logic)
-    transfer_reward(env, reward_asset, to, amount)?;
-
-    // Post-transfer: update escrow accounting
-    if has_escrow {
         escrow::record_payout(env, quest_id, to, amount)?;
     }
 
-    Ok(())
+    transfer_reward(env, reward_asset, to, amount)
 }

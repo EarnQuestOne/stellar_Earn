@@ -34,7 +34,9 @@ function EmptyState() {
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

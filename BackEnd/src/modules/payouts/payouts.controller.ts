@@ -32,7 +32,7 @@ import {
   PayoutResponseDto,
   PayoutStatsDto,
 } from './dto/payout-query.dto';
-import { UserRole } from '../users/entities/user.entity';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('Payouts')
 @Controller('payouts')
@@ -118,7 +118,7 @@ export class PayoutsController {
 
   @Post('admin/create')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a new payout (Admin only)' })
   @ApiResponse({
     status: 201,
@@ -152,7 +152,7 @@ export class PayoutsController {
 
   @Get('admin/all')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get all payouts (Admin only)' })
   @ApiResponse({
     status: 200,
@@ -182,7 +182,7 @@ export class PayoutsController {
 
   @Get('admin/stats')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get global payout statistics (Admin only)' })
   @ApiResponse({
     status: 200,
@@ -197,7 +197,7 @@ export class PayoutsController {
 
   @Post('admin/:id/retry')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Retry a failed payout (Admin only)' })
   @ApiParam({ name: 'id', description: 'Payout UUID' })
@@ -221,7 +221,7 @@ export class PayoutsController {
 
   @Get('admin/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get any payout by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'Payout UUID' })
   @ApiResponse({

@@ -1,0 +1,25 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".integration-spec.ts$",
+  "setupFiles": ["<rootDir>/setup-integration-env.ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": ["../src/**/*.ts"],
+  "coverageDirectory": "../coverage/integration",
+  "testTimeout": 60000,
+  "maxWorkers": 1,
+  "bail": false,
+  "verbose": true,
+  "globals": {
+    "ts-jest": {
+      "tsconfig": {
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
+      }
+    }
+  },
+  "setupFilesAfterEnv": ["<rootDir>/setup-integration-afterenv.ts"]
+}

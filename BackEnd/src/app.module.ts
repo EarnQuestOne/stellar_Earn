@@ -1,11 +1,13 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ApiVersionGuard } from './common/guards/versioning.guard';
+import { VersioningInterceptor } from './common/interceptors/versioning.interceptor';
 
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,22 +17,25 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { JobsModule } from './modules/jobs/jobs.module';
-import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapshot.entity';
-import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
-import { Payout } from './modules/payouts/entities/payout.entity';
-import { Quest } from './modules/quests/entities/quest.entity';
-import { Submission } from './modules/submissions/entities/submission.entity';
-import { User } from './modules/users/entities/user.entity';
-import { Notification } from './modules/notifications/entities/notification.entity';
+import { EmailModule } from './modules/email/email.module';
+import { UsersModule } from './modules/users/users.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
+
+import { dataSourceOptions } from './database/data-source';
+import moderationConfig from './config/moderation.config';
 
 import { LoggerModule } from './common/logger/logger.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { TracingMiddleware } from './common/tracing/tracing.middleware';
 import { CacheModule } from './modules/cache/cache.module';
 import { HealthModule } from './modules/health/health.module';
 import { throttlerConfig } from './config/throttler.config';
 import { PerUserRateLimitConfigService } from './config/per-user-rate-limit.config';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { EventsModule } from './events/events.module';
+import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { CsrfGuard } from './common/guards/csrf.guard';
 
 @Module({
   imports: [
@@ -45,25 +50,11 @@ import { EventsModule } from './events/events.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [moderationConfig],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [
-          RefreshToken,
-          Payout,
-          Quest,
-          User,
-          Submission,
-          Notification,
-          AnalyticsSnapshot,
-        ],
-        synchronize: false,
-        logging: configService.get<string>('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      ...dataSourceOptions,
+      autoLoadEntities: true,
     }),
     ThrottlerModule.forRootAsync(throttlerConfig),
     HealthModule,
@@ -74,6 +65,10 @@ import { EventsModule } from './events/events.module';
     SubmissionsModule,
     NotificationsModule,
     JobsModule,
+    EmailModule,
+    UsersModule,
+    ModerationModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [
@@ -83,10 +78,24 @@ import { EventsModule } from './events/events.module';
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ApiVersionGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: VersioningInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    // TracingMiddleware must run first: it sets the AsyncLocalStorage TraceContext
+    // that LoggerMiddleware and all subsequent handlers read from.
+    consumer.apply(TracingMiddleware, LoggerMiddleware).forRoutes('*');
   }
 }

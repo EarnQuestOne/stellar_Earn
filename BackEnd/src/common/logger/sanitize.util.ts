@@ -41,14 +41,27 @@ const SENSITIVE_KEY_PATTERNS = [
   'jwt',
   'x-api-key',
   'x-auth-token',
+  'email',
+  'phone',
+  'phonenumber',
+  'phone_number',
+  'mobile',
+  'address',
+  'dob',
+  'dateofbirth',
+  'date_of_birth',
+  'fullname',
+  'full_name',
 ];
 
 const SENSITIVE_VALUE_PATTERNS = [
   /^Bearer\s+.+$/i,
   /^Basic\s+.+$/i,
-  /^\d{3}-\d{2}-\d{4}$/,
-  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/,
-  /^[A-Za-z0-9+/]{20,}={0,2}$/,
+  /^\d{3}-\d{2}-\d{4}$/,                          // SSN
+  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/,    // Credit card
+  /^[A-Za-z0-9+/]{20,}={0,2}$/,                   // Base64 tokens
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/,                    // Email addresses
+  /^(\+?\d[\s\-.]?){7,15}$/,                       // Phone numbers
 ];
 
 const MASK = '[REDACTED]';
@@ -191,7 +204,7 @@ export function sanitizeHeaders(
 export function sanitizeUrl(url: string): string {
   try {
     const urlObj = new URL(url, 'http://localhost');
-    const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'api_key', 'apikey'];
+    const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'api_key', 'apikey', 'email', 'phone'];
     
     sensitiveParams.forEach((param) => {
       if (urlObj.searchParams.has(param)) {

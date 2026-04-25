@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { Quest, QuestStatus } from '@/lib/types/admin';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface QuestManagerProps {
   quests: Quest[];
@@ -27,33 +28,6 @@ const STATUS_COLORS: Record<QuestStatus, string> = {
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
-function QuestRowSkeleton() {
-  return (
-    <tr className="border-b border-zinc-100 dark:border-zinc-800">
-      <td className="py-4 pr-3">
-        <div className="h-5 w-5 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4 pr-4">
-        <div className="h-5 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4 pr-4">
-        <div className="h-6 w-16 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4 pr-4">
-        <div className="h-5 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4 pr-4">
-        <div className="h-5 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4 pr-4">
-        <div className="h-5 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-4">
-        <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-    </tr>
-  );
-}
 
 export function QuestManager({
   quests,
@@ -104,9 +78,12 @@ export function QuestManager({
         case 'reward':
           comparison = a.reward - b.reward;
           break;
-        case 'deadline':
-          comparison = new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        case 'deadline': {
+          const timeA = a.deadline ? new Date(a.deadline).getTime() : 0;
+          const timeB = b.deadline ? new Date(b.deadline).getTime() : 0;
+          comparison = (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
           break;
+        }
         case 'participants':
           comparison = a.currentParticipants - b.currentParticipants;
           break;
@@ -289,9 +266,31 @@ export function QuestManager({
           <tbody className="bg-white dark:bg-zinc-900">
             {isLoading ? (
               <>
-                <QuestRowSkeleton />
-                <QuestRowSkeleton />
-                <QuestRowSkeleton />
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <tr key={index} className="border-b border-zinc-100 dark:border-zinc-800">
+                    <td className="py-4 pr-3">
+                      <Skeleton.Text className="h-5 w-5" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Skeleton.Text className="h-5 w-48" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Skeleton.Text className="h-6 w-16 rounded-full" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Skeleton.Text className="h-5 w-20" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Skeleton.Text className="h-5 w-16" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Skeleton.Text className="h-5 w-24" />
+                    </td>
+                    <td className="py-4">
+                      <Skeleton.Text className="h-8 w-20" />
+                    </td>
+                  </tr>
+                ))}
               </>
             ) : filteredAndSortedQuests.length === 0 ? (
               <tr>
@@ -335,7 +334,7 @@ export function QuestManager({
                     {quest.currentParticipants}/{quest.maxParticipants}
                   </td>
                   <td className="py-4 pr-4 text-sm text-zinc-500 dark:text-zinc-400">
-                    {new Date(quest.deadline).toLocaleDateString()}
+                    {quest.deadline ? new Date(quest.deadline).toLocaleDateString() : 'No deadline'}
                   </td>
                   <td className="py-4 pr-4">
                     <div className="flex gap-2">

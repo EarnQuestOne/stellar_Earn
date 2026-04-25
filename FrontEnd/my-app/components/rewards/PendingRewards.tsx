@@ -1,6 +1,6 @@
 'use client';
 
-import { Submission } from '@/lib/types/dashboard';
+import { Submission } from '@/lib/types/submission';
 
 interface PendingRewardsProps {
   rewards: Submission[];

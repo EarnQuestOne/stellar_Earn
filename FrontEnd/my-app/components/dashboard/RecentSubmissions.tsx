@@ -1,6 +1,7 @@
 'use client';
-
-import type { Submission } from '@/lib/types/dashboard';
+import type { Submission } from '@/lib/types/submission';
+import type { SubmissionStatus } from '@/lib/types/api.types';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface RecentSubmissionsProps {
   submissions: Submission[];
@@ -12,7 +13,9 @@ interface SubmissionRowProps {
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -36,45 +39,32 @@ function formatDate(dateString: string): string {
   });
 }
 
-function SubmissionRowSkeleton() {
-  return (
-    <tr className="border-b border-zinc-100 dark:border-zinc-800">
-      <td className="py-3 pr-4">
-        <div className="h-5 w-40 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-3 pr-4">
-        <div className="h-5 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-3 pr-4">
-        <div className="h-5 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-      <td className="py-3">
-        <div className="h-5 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </td>
-    </tr>
-  );
-}
 
 function StatusBadge({ status }: { status: Submission['status'] }) {
   const statusConfig = {
-    pending: {
+    Pending: {
       label: 'Pending',
       className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       icon: '⏳',
     },
-    approved: {
+    Approved: {
       label: 'Approved',
       className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       icon: '✓',
     },
-    rejected: {
+    Rejected: {
       label: 'Rejected',
       className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       icon: '✗',
     },
+    Paid: {
+      label: 'Paid',
+      className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+      icon: '💰',
+    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
 
   return (
     <span
@@ -87,16 +77,20 @@ function StatusBadge({ status }: { status: Submission['status'] }) {
 }
 
 function SubmissionRow({ submission }: SubmissionRowProps) {
+  const questTitle = submission.quest?.title || 'Unknown Quest';
+  const reward = submission.quest?.rewardAmount || 0;
+  const isApproved = submission.status === 'Approved' || submission.status === 'Paid';
+
   return (
     <tr className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
       <td className="py-3 pr-4">
         <div className="flex flex-col">
           <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate max-w-[200px]">
-            {submission.questTitle}
+            {questTitle}
           </span>
-          {submission.feedback && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
-              {submission.feedback}
+          {submission.rejectionReason && (
+            <span className="text-xs text-red-500 truncate max-w-[200px]">
+              {submission.rejectionReason}
             </span>
           )}
         </div>
@@ -107,16 +101,16 @@ function SubmissionRow({ submission }: SubmissionRowProps) {
       <td className="py-3 pr-4">
         <span
           className={`font-medium ${
-            submission.status === 'approved'
+            isApproved
               ? 'text-green-600 dark:text-green-400'
               : 'text-zinc-500 dark:text-zinc-400'
           }`}
         >
-          {submission.status === 'approved' ? '+' : ''}{submission.reward} XLM
+          {isApproved ? '+' : ''}{reward} XLM
         </span>
       </td>
       <td className="py-3 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-        {formatDate(submission.submittedAt)}
+        {formatDate(submission.createdAt)}
       </td>
     </tr>
   );
@@ -166,9 +160,22 @@ export function RecentSubmissions({ submissions, isLoading }: RecentSubmissionsP
               </tr>
             </thead>
             <tbody>
-              <SubmissionRowSkeleton />
-              <SubmissionRowSkeleton />
-              <SubmissionRowSkeleton />
+              {Array.from({ length: 3 }).map((_, index) => (
+                <tr key={index} className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-3 pr-4">
+                    <Skeleton.Text className="h-5 w-40" />
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton.Text className="h-5 w-20 rounded-full" />
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton.Text className="h-5 w-16" />
+                  </td>
+                  <td className="py-3">
+                    <Skeleton.Text className="h-5 w-24" />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { UserCreatedEvent } from '../dto/user-created.event';
 import { UserUpdatedEvent } from '../dto/user-updated.event';
 import { Retry } from '../../common/decorators/retry.decorator';
@@ -7,6 +7,8 @@ import { Retry } from '../../common/decorators/retry.decorator';
 @Injectable()
 export class UserListener {
     private readonly logger = new Logger(UserListener.name);
+
+    constructor(private readonly eventEmitter: EventEmitter2) {}
 
     @OnEvent('user.created', { async: true })
     @Retry(3, 2000)
@@ -19,6 +21,7 @@ export class UserListener {
             this.logger.log(`Successfully processed user.created for ${event.userId}`);
         } catch (error) {
             this.logger.error(`Failed to process user.created for ${event.userId}: ${error.message}`);
+            this.eventEmitter.emit('event.failed', { eventName: 'user.created', payload: event, error: error.message });
             throw error;
         }
     }
@@ -27,5 +30,12 @@ export class UserListener {
     @Retry(3, 1000)
     async handleUserUpdatedEvent(event: UserUpdatedEvent) {
         this.logger.log(`Handling user.updated for user: ${event.userId}. Updated fields: ${event.updatedFields.join(', ')}`);
+        
+        try {
+          // Simulate processing
+        } catch (error) {
+            this.eventEmitter.emit('event.failed', { eventName: 'user.updated', payload: event, error: error.message });
+            throw error;
+        }
     }
 }

@@ -33,7 +33,12 @@ pub fn deposit_escrow(
     token_client.transfer(depositor, &contract_address, &amount);
 
     let current_balance = storage::get_escrow_balance(env, quest_id);
-    storage::set_escrow_balance(env, quest_id, current_balance + amount);
+    
+    // Check for overflow before adding
+    let new_balance = current_balance.checked_add(amount)
+        .ok_or(Error::ArithmeticOverflow)?;
+    
+    storage::set_escrow_balance(env, quest_id, new_balance);
 
     env.events()
         .publish((Symbol::new(env, "escrow_dep"), quest_id.clone()), amount);
@@ -61,7 +66,12 @@ pub fn process_payout(env: &Env, quest_id: &Symbol, recipient: &Address) -> Resu
     validate_escrow_sufficient(env, quest_id, quest.reward_amount)?;
 
     let current_balance = storage::get_escrow_balance(env, quest_id);
-    storage::set_escrow_balance(env, quest_id, current_balance - quest.reward_amount);
+    
+    // Check for underflow before subtracting
+    let new_balance = current_balance.checked_sub(quest.reward_amount)
+        .ok_or(Error::ArithmeticUnderflow)?;
+    
+    storage::set_escrow_balance(env, quest_id, new_balance);
 
     let token_client = token::Client::new(env, &quest.reward_asset);
     let contract_address = env.current_contract_address();

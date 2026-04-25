@@ -1,22 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import type { UserProfile, ProfileStats, Achievement, Activity, EditProfileData } from '@/lib/types/profile';
+import type { UserProfile, Achievement, Activity, EditProfileData } from '@/lib/types/profile';
+import type { ProfileStats } from '@/lib/types/profile';
 import { ProfileHeader } from './ProfileHeader';
-import { ProfileStats } from './ProfileStats';
+import { ProfileStats as ProfileStatsComponent } from './ProfileStats';
 import { AchievementsList } from './AchievementsList';
 import { ActivityFeed } from './ActivityFeed';
 import { EditProfileModal } from './EditProfileModal';
+import { useStore } from '@/lib/store';
 
 interface UserProfileProps {
-  profile: UserProfile;
-  stats: ProfileStats;
-  achievements: Achievement[];
-  activities: Activity[];
-  isLoading: boolean;
-  error: string | null;
-  isUpdating: boolean;
-  updateError: string | null;
   onRefetch: () => Promise<void>;
   onUpdateProfile: (data: EditProfileData) => Promise<void>;
   onFollow: () => Promise<void>;
@@ -24,20 +18,21 @@ interface UserProfileProps {
 }
 
 export function UserProfile({
-  profile,
-  stats,
-  achievements,
-  activities,
-  isLoading,
-  error,
-  isUpdating,
-  updateError,
   onRefetch,
   onUpdateProfile,
   onFollow,
   onUnfollow,
 }: UserProfileProps) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const profile      = useStore((s) => s.profile);
+  const stats        = useStore((s) => s.stats);
+  const achievements = useStore((s) => s.achievements);
+  const activities   = useStore((s) => s.activities);
+  const isLoading    = useStore((s) => s.isLoading);
+  const error        = useStore((s) => s.error);
+  const isUpdating   = useStore((s) => s.isUpdating);
+  const updateError  = useStore((s) => s.updateError);
+
+const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleEditProfile = () => {
     if (profile?.isOwnProfile) {
@@ -53,6 +48,7 @@ export function UserProfile({
     setIsEditModalOpen(false);
   };
 
+   // 🔴 Error state
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -73,6 +69,9 @@ export function UserProfile({
     );
   }
 
+  // ⏳ Prevent render until hydrated
+  if (!profile || !stats) return null;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="space-y-6">
@@ -86,7 +85,7 @@ export function UserProfile({
         />
 
         {/* Profile Stats */}
-        <ProfileStats
+        <ProfileStatsComponent
           stats={stats}
           isLoading={isLoading}
         />
@@ -105,15 +104,13 @@ export function UserProfile({
       </div>
 
       {/* Edit Profile Modal */}
-      {profile && (
-        <EditProfileModal
-          profile={profile}
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          onSave={handleSaveProfile}
-          isUpdating={isUpdating}
-        />
-      )}
+      <EditProfileModal
+        profile={profile}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveProfile}
+        isUpdating={isUpdating}
+      />
 
       {/* Update Error Toast */}
       {updateError && (

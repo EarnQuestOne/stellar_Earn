@@ -52,8 +52,7 @@ function SubmissionsContent() {
       filtered = filtered.filter(
         (s) =>
           s.id.toLowerCase().includes(query) ||
-          s.quest.title.toLowerCase().includes(query) ||
-          s.quest.description.toLowerCase().includes(query),
+          (s.quest?.title.toLowerCase().includes(query) ?? false),
       );
     }
 

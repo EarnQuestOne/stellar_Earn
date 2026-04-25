@@ -4,8 +4,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import "./globals.css";
 import { ToastProvider } from "@/components/notifications/Toast";
 import { ThemeProvider } from "@/app/providers/ThemeProvider";
-import { WalletModal } from "@/components/wallet/WalletModal";
+import { AuthProvider } from "@/app/providers/AuthProvider";
+import { WalletConnectionModal } from "@/components/wallet/WalletConnectionModal";
 import { WalletProvider } from "@/context/WalletContext";
+import { SessionManager } from "@/components/auth/SessionManager";
 import { AnalyticsProvider } from "@/app/providers/AnalyticsProvider";
 import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { SkipToContent } from "@/components/a11y/SkipToContent";
@@ -78,15 +80,18 @@ export default function RootLayout({
         <ThemeProvider>
           <A11yAnnouncerProvider>
             <WalletProvider>
-              <AnalyticsProvider>
-                <ToastProvider>
-                  <SkipToContent />
-                  {children}
-                  <PerformanceMonitor />
-                  <ConsentBanner />
-                  <WalletModal />
-                </ToastProvider>
-              </AnalyticsProvider>
+              <AuthProvider>
+                <AnalyticsProvider>
+                  <ToastProvider>
+                    <SkipToContent />
+                    {children}
+                    <PerformanceMonitor />
+                    <ConsentBanner />
+                    <WalletConnectionModal />
+                    <SessionManager />
+                  </ToastProvider>
+                </AnalyticsProvider>
+              </AuthProvider>
             </WalletProvider>
           </A11yAnnouncerProvider>
         </ThemeProvider>

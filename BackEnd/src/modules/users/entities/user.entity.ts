@@ -1,5 +1,3 @@
-import { Quest } from 'src/modules/quests/entities/quest.entity';
-import { Submission } from 'src/modules/submissions/entities/submission.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -8,14 +6,10 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
+  DeleteDateColumn,
 } from 'typeorm';
 
-export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR',
-  VERIFIER = 'VERIFIER',
-}
+import { Role } from '../../../common/enums/role.enum';
 
 export enum PrivacyLevel {
   PUBLIC = 'PUBLIC',
@@ -49,12 +43,18 @@ export class User {
   @Index()
   email: string;
 
+  @Column({ nullable: true })
+  googleId: string;
+
+  @Column({ nullable: true })
+  githubId: string;
+
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.USER,
+    enum: Role,
+    default: Role.USER,
   })
-  role: UserRole;
+  role: Role;
 
   @Column({ type: 'int', default: 0 })
   xp: number;
@@ -101,8 +101,11 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   lastActiveAt: Date;
 
-  @Column({ default: 0 })
-  completedQuests: number;
+  @Column({ type: 'varchar', nullable: true })
+  pushToken: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  webhookUrl: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -110,14 +113,17 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @DeleteDateColumn()
+  deletedAt: Date;
+
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;
 
-  @OneToMany(() => Submission, (submission) => submission.user)
-  submissions: Submission[];
+  @OneToMany('Submission', 'user')
+  submissions: any[];
 
-  @OneToMany(() => Quest, (quest) => quest.creator)
-  createdQuests: Quest[];
+  @OneToMany('Quest', 'creator')
+  createdQuests: any[];
 
   // Helper methods
   calculateLevel(): number {

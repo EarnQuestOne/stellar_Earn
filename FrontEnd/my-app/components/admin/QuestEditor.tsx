@@ -28,7 +28,7 @@ export function QuestEditor({ quest, onSave, onStatusChange, isSaving }: QuestEd
     difficulty: quest.difficulty,
     reward: quest.reward,
     xpReward: quest.xpReward,
-    deadline: quest.deadline.slice(0, 16), // Format for datetime-local
+    deadline: quest.deadline ? quest.deadline.slice(0, 16) : '', // Format for datetime-local
     maxParticipants: quest.maxParticipants,
     requirements: quest.requirements,
     tags: quest.tags,
@@ -96,7 +96,7 @@ export function QuestEditor({ quest, onSave, onStatusChange, isSaving }: QuestEd
             Edit Quest
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            ID: {quest.id} | Created: {new Date(quest.createdAt).toLocaleDateString()}
+            ID: {quest.id} | Created: {quest.createdAt ? new Date(quest.createdAt).toLocaleDateString() : 'N/A'}
           </p>
         </div>
 

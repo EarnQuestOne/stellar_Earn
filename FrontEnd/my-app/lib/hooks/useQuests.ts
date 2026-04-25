@@ -1,72 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
+import { useStore } from '@/lib/store';
 import { getQuests } from '@/lib/api/quests';
-import type { Quest, QuestFilters, PaginationParams, PaginatedResponse } from '@/lib/types/quest';
+import type { QuestQueryParams, PaginationParams } from '@/lib/types/api.types';
 
-interface UseQuestsReturn {
-  quests: Quest[];
-  isLoading: boolean;
-  error: Error | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-  refetch: () => void;
-}
-
-/**
- * Custom hook for fetching quests with filters and pagination
- */
 export function useQuests(
-  filters?: QuestFilters,
+  filters?: QuestQueryParams,
   pagination?: PaginationParams,
-): UseQuestsReturn {
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [paginationData, setPaginationData] = useState({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-    hasMore: false,
-  });
+) {
+  const quests           = useStore((s) => s.quests);
+  const questsLoading    = useStore((s) => s.questsLoading);
+  const questsError      = useStore((s) => s.questsError);
+  const paginationData   = useStore((s) => s.pagination);
+  const setQuests        = useStore((s) => s.setQuests);
+  const setQuestsLoading = useStore((s) => s.setQuestsLoading);
+  const setQuestsError   = useStore((s) => s.setQuestsError);
+  const setPagination    = useStore((s) => s.setQuestPagination);
 
-  const fetchQuests = async () => {
+  // Memoize filters to avoid unnecessary re-renders when the object reference changes
+  // but the values remain the same.
+  const memoizedFilters = useMemo(() => filters, [
+    filters?.status,
+    filters?.category,
+    filters?.difficulty,
+    filters?.search,
+    filters?.minReward,
+    filters?.maxReward,
+    filters?.sortBy,
+    filters?.order,
+  ]);
+
+  const memoizedPagination = useMemo(() => pagination, [
+    pagination?.page,
+    pagination?.limit,
+    pagination?.cursor,
+  ]);
+
+  const fetchQuests = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setQuestsLoading(true);
+      setQuestsError(null);
 
-      const response: PaginatedResponse<Quest> = await getQuests(filters, pagination);
-      setQuests(response.data);
-      setPaginationData({
-        page: response.pagination.page || 1,
-        limit: response.pagination.limit || 12,
-        total: response.pagination.total || 0,
-        totalPages: response.pagination.totalPages || 0,
-        hasMore: response.pagination.hasMore || false,
+      const response = await getQuests({ ...memoizedFilters, ...memoizedPagination });
+      setQuests(response.quests as any);
+      setPagination({
+        page: response.page ?? 1,
+        limit: response.limit ?? 12,
+        total: response.total ?? 0,
+        totalPages: response.totalPages ?? 0,
+        hasMore: (response.page ?? 0) < (response.totalPages ?? 0),
       });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch quests'));
+      setQuestsError(err instanceof Error ? err.message : 'Failed to fetch quests');
       setQuests([]);
     } finally {
-      setIsLoading(false);
+      setQuestsLoading(false);
     }
-  };
+  }, [
+    memoizedFilters,
+    memoizedPagination,
+    setQuestsLoading,
+    setQuestsError,
+    setQuests,
+    setPagination,
+    getQuests
+  ]);
 
   useEffect(() => {
     fetchQuests();
-  }, [JSON.stringify(filters), JSON.stringify(pagination)]);
+  }, [fetchQuests]);
 
   return {
     quests,
-    isLoading,
-    error,
+    isLoading:  questsLoading,
+    error:      questsError ? new Error(questsError) : null,
     pagination: paginationData,
-    refetch: fetchQuests,
+    refetch:    fetchQuests,
   };
 }

@@ -1,155 +1,256 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { ConfigService } from '@nestjs/config';
-
-export interface CacheStats {
-  hits: number;
-  misses: number;
-  hitRate: number;
-  keys: number;
-}
+import type { Cache } from 'cache-manager';
+import { CacheAnalyticsService } from './cache-analytics.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-  private readonly namespace: string;
-  private hits = 0;
-  private misses = 0;
+
+  // In-memory registry of every key we have ever set, so we can
+  // implement deletePattern() without needing a Redis SCAN command.
+  private readonly keyRegistry = new Set<string>();
+
+  // Optional: local memory store for fallbacks
+  private readonly localFallbackStore = new Map<string, { value: any; expiresAt?: number }>();
 
   constructor(
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-    private readonly configService: ConfigService,
-  ) {
-    this.namespace = this.configService.get<string>('cache.namespace', 'app');
-  }
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly analyticsService: CacheAnalyticsService,
+  ) {}
 
-  /**
-   * Build a namespaced cache key.
-   */
-  buildKey(key: string, prefix?: string): string {
-    const parts = [this.namespace, prefix, key].filter(Boolean);
-    return parts.join(':');
-  }
+  // ─── Core Methods ──────────────────────────────────────────────────────────
 
-  /**
-   * Get a value from cache. Returns null on miss.
-   */
-  async get<T>(key: string, prefix?: string): Promise<T | null> {
-    const fullKey = this.buildKey(key, prefix);
+  async get<T>(key: string): Promise<T | undefined> {
     try {
-      const value = await this.cacheManager.get<T>(fullKey);
+      const value = await this.cacheManager.get<T>(key);
       if (value !== undefined && value !== null) {
-        this.hits++;
-        this.logger.debug(`Cache HIT: ${fullKey}`);
+        this.analyticsService.recordHit();
         return value;
       }
-      this.misses++;
-      this.logger.debug(`Cache MISS: ${fullKey}`);
-      return null;
-    } catch (err) {
-      this.logger.warn(`Cache GET error for key "${fullKey}": ${err.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Set a value in cache with optional TTL (seconds).
-   */
-  async set<T>(key: string, value: T, ttl?: number, prefix?: string): Promise<void> {
-    const fullKey = this.buildKey(key, prefix);
-    const defaultTtl = this.configService.get<number>('cache.ttl', 300);
-    try {
-      await this.cacheManager.set(fullKey, value, ttl ?? defaultTtl);
-      this.logger.debug(`Cache SET: ${fullKey} (TTL: ${ttl ?? defaultTtl}s)`);
-    } catch (err) {
-      this.logger.warn(`Cache SET error for key "${fullKey}": ${err.message}`);
-    }
-  }
-
-  /**
-   * Delete a specific key from cache.
-   */
-  async delete(key: string, prefix?: string): Promise<void> {
-    const fullKey = this.buildKey(key, prefix);
-    try {
-      await this.cacheManager.del(fullKey);
-      this.logger.debug(`Cache DELETE: ${fullKey}`);
-    } catch (err) {
-      this.logger.warn(`Cache DELETE error for key "${fullKey}": ${err.message}`);
-    }
-  }
-
-  /**
-   * Invalidate all keys matching a prefix pattern.
-   */
-  async invalidatePrefix(prefix: string): Promise<void> {
-    const pattern = this.buildKey('*', prefix);
-    try {
-      // cache-manager-ioredis exposes the underlying client
-      const store = (this.cacheManager as any).store;
-      if (store && typeof store.keys === 'function') {
-        const keys: string[] = await store.keys(pattern);
-        if (keys.length > 0) {
-          await Promise.all(keys.map((k) => this.cacheManager.del(k)));
-          this.logger.log(`Invalidated ${keys.length} keys matching "${pattern}"`);
+      
+      // Check local fallback
+      const fallback = this.localFallbackStore.get(key);
+      if (fallback) {
+        if (!fallback.expiresAt || fallback.expiresAt > Date.now()) {
+          this.logger.debug(`Cache fallback hit for key: ${key}`);
+          this.analyticsService.recordHit();
+          return fallback.value;
+        } else {
+          this.localFallbackStore.delete(key);
         }
-      } else {
-        this.logger.warn('Cache store does not support key scanning; skipping prefix invalidation.');
       }
-    } catch (err) {
-      this.logger.warn(`Cache invalidatePrefix error for "${pattern}": ${err.message}`);
+
+      this.analyticsService.recordMiss();
+      return undefined;
+    } catch (e) {
+      this.logger.error(`Cache get fallback triggered for key ${key}`, e);
+      this.analyticsService.recordError();
+      return undefined;
     }
   }
 
-  /**
-   * Get-or-set pattern: fetch from cache, fall back to factory, then cache the result.
-   */
-  async wrap<T>(
-    key: string,
-    factory: () => Promise<T>,
-    ttl?: number,
-    prefix?: string,
-  ): Promise<T> {
-    const cached = await this.get<T>(key, prefix);
-    if (cached !== null) {
+  async set(key: string, value: any, ttl?: number, tags?: string[]): Promise<void> {
+    try {
+      await this.cacheManager.set(key, value, ttl);
+      this.keyRegistry.add(key);
+      this.analyticsService.recordSet();
+
+      // Store in fallback just in case redis goes down
+      const fallbackMs = ttl ? ttl * 1000 : undefined;
+      this.localFallbackStore.set(key, { value, expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined });
+
+      if (tags && tags.length > 0) {
+        await Promise.all(tags.map(tag => this.addTagToKey(key, tag)));
+      }
+    } catch (e) {
+      this.logger.error(`Cache set failed for key ${key}`, e);
+      this.analyticsService.recordError();
+      // Store locally as fallback
+      this.keyRegistry.add(key);
+      const fallbackMs = ttl ? ttl * 1000 : undefined;
+      this.localFallbackStore.set(key, { value, expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined });
+    }
+  }
+
+  async del(key: string): Promise<void> {
+    try {
+      await this.cacheManager.del(key);
+      this.keyRegistry.delete(key);
+      this.localFallbackStore.delete(key);
+      this.analyticsService.recordDel();
+    } catch (e) {
+      this.logger.error(`Cache del failed for key ${key}`, e);
+      this.analyticsService.recordError();
+      this.keyRegistry.delete(key);
+      this.localFallbackStore.delete(key);
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    return this.del(key);
+  }
+
+  async deletePattern(pattern: string): Promise<void> {
+    const toDelete: string[] = [];
+
+    for (const key of this.keyRegistry) {
+      if (key.startsWith(pattern)) {
+        toDelete.push(key);
+      }
+    }
+
+    await Promise.all(toDelete.map((key) => this.del(key)));
+    this.logger.debug(`deletePattern("${pattern}") removed ${toDelete.length} key(s)`);
+  }
+
+  // ─── Tags Functionality ────────────────────────────────────────────────────
+
+  private async addTagToKey(key: string, tag: string): Promise<void> {
+    const tagKey = `cache_tag:${tag}`;
+    const mappedKeys = await this.get<string[]>(tagKey) || [];
+    if (!mappedKeys.includes(key)) {
+      mappedKeys.push(key);
+      // Store tag mapping with high TTL
+      await this.cacheManager.set(tagKey, mappedKeys, 0); // 0 or long enough
+    }
+  }
+
+  async invalidateByTag(tag: string): Promise<void> {
+    const tagKey = `cache_tag:${tag}`;
+    const keys = await this.get<string[]>(tagKey) || [];
+    if (keys.length > 0) {
+      await Promise.all(keys.map(k => this.del(k)));
+      await this.del(tagKey);
+      this.logger.debug(`Invalidated ${keys.length} keys for tag "${tag}"`);
+    }
+  }
+
+  // ─── Distributed Locking ───────────────────────────────────────────────────
+
+  async acquireLock(key: string, ttlMs: number = 5000): Promise<string | null> {
+    const lockKey = `lock:${key}`;
+    const lockValue = uuidv4();
+
+    try {
+      const store = (this.cacheManager as any).stores?.[0] ?? (this.cacheManager as any).store;
+      const client = store?.getClient ? store.getClient() : store?.client ? store.client : null;
+      if (client && typeof client.set === 'function') {
+        const result = await client.set(lockKey, lockValue, 'PX', ttlMs, 'NX');
+        if (result === 'OK') return lockValue;
+        return null;
+      }
+    } catch (e) {
+      this.logger.warn('Redis client not exposed or failed, falling back to memory lock', e);
+    }
+
+    // In-memory fallback lock
+    if (this.keyRegistry.has(lockKey) || this.localFallbackStore.has(lockKey)) {
+      return null;
+    }
+    
+    this.keyRegistry.add(lockKey);
+    this.localFallbackStore.set(lockKey, { value: lockValue, expiresAt: Date.now() + ttlMs });
+    
+    setTimeout(() => {
+      this.releaseLock(key, lockValue).catch(() => {});
+    }, ttlMs);
+    
+    return lockValue;
+  }
+
+  async releaseLock(key: string, lockValue: string): Promise<boolean> {
+    const lockKey = `lock:${key}`;
+    
+    try {
+      const store = (this.cacheManager as any).stores?.[0] ?? (this.cacheManager as any).store;
+      const client = store?.getClient ? store.getClient() : store?.client ? store.client : null;
+      if (client && typeof client.eval === 'function') {
+        // Lua script to check value and del
+        const script = `
+          if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+          else
+            return 0
+          end
+        `;
+        const result = await client.eval(script, 1, lockKey, lockValue);
+        return result === 1;
+      }
+    } catch (e) {
+      this.logger.warn('Redis release lock fallback to memory', e);
+    }
+
+    // fallback memory release
+    const stored = this.localFallbackStore.get(lockKey);
+    if (stored && stored.value === lockValue) {
+      this.keyRegistry.delete(lockKey);
+      this.localFallbackStore.delete(lockKey);
+      return true;
+    }
+    return false;
+  }
+
+  // ─── Utilities ─────────────────────────────────────────────────────────────
+
+  async clear(): Promise<void> {
+    try {
+      if (typeof (this.cacheManager as any).reset === 'function') {
+        await (this.cacheManager as any).reset();
+      } else {
+        await Promise.all([...this.keyRegistry].map((key) => this.cacheManager.del(key)));
+      }
+    } catch {
+      // Ignored
+    }
+    this.keyRegistry.clear();
+    this.localFallbackStore.clear();
+  }
+
+  async getStats(keyPrefix?: string) {
+    const analytics = this.analyticsService.getAnalytics();
+    const base = {
+      ...analytics,
+      trackedKeys: this.keyRegistry.size,
+    };
+
+    if (keyPrefix) {
+      const keys = [...this.keyRegistry].filter((k) => k.startsWith(keyPrefix));
+      return { ...base, keys };
+    }
+
+    return base;
+  }
+
+  resetStats(): void {
+    this.analyticsService.resetAnalytics();
+  }
+
+  generateKey(prefix: string, params: Record<string, any>): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map((key) => `${key}:${params[key]}`)
+      .join('|');
+    return `${prefix}:${sortedParams}`;
+  }
+
+  async wrap<T>(key: string, fn: () => Promise<T>, ttl?: number, prefix?: string, tags?: string[]): Promise<T> {
+    const finalKey = prefix ? `${prefix}:${key}` : key;
+    const cached = await this.get<T>(finalKey);
+    if (cached !== undefined) {
       return cached;
     }
-    const fresh = await factory();
-    await this.set(key, fresh, ttl, prefix);
-    return fresh;
+    const result = await fn();
+    await this.set(finalKey, result, ttl, tags);
+    return result;
   }
 
-  /**
-   * Reset cache statistics counters.
-   */
-  resetStats(): void {
-    this.hits = 0;
-    this.misses = 0;
+  async invalidatePrefix(prefix: string): Promise<void> {
+    return this.deletePattern(`${prefix}:`);
   }
 
-  /**
-   * Return current cache statistics.
-   */
-  getStats(): CacheStats {
-    const total = this.hits + this.misses;
-    return {
-      hits: this.hits,
-      misses: this.misses,
-      hitRate: total > 0 ? Math.round((this.hits / total) * 10000) / 100 : 0,
-      keys: total,
-    };
-  }
-
-  /**
-   * Flush the entire cache. Use with care in production.
-   */
-  async flush(): Promise<void> {
-    try {
-      await (this.cacheManager as any).reset();
-      this.logger.warn('Cache flushed entirely.');
-    } catch (err) {
-      this.logger.warn(`Cache flush error: ${err.message}`);
-    }
+  async reset(): Promise<void> {
+    return this.clear();
   }
 }

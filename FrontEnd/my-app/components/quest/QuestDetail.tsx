@@ -75,35 +75,35 @@ export function QuestDetail({ quest }: QuestDetailProps) {
               <div>
                 <dt className="text-xs text-zinc-500 dark:text-zinc-400">Created</dt>
                 <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                  {new Date(quest.createdAt).toLocaleDateString('en-US', {
+                  {quest.createdAt ? new Date(quest.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                  })}
+                  }) : 'N/A'}
                 </dd>
               </div>
               {quest.deadline && (
                 <div>
                   <dt className="text-xs text-zinc-500 dark:text-zinc-400">Deadline</dt>
                   <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                    {new Date(quest.deadline).toLocaleDateString('en-US', {
+                    {quest.deadline ? new Date(quest.deadline).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    })}
+                    }) : 'No deadline'}
                   </dd>
                 </div>
               )}
               <div>
                 <dt className="text-xs text-zinc-500 dark:text-zinc-400">Last Updated</dt>
                 <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                  {new Date(quest.updatedAt).toLocaleDateString('en-US', {
+                  {quest.updatedAt ? new Date(quest.updatedAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                  })}
+                  }) : 'N/A'}
                 </dd>
               </div>
             </dl>

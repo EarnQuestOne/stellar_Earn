@@ -1,88 +1,73 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+/**
+ * Search API – global text search via the centralised Axios client.
+ *
+ * Endpoint: GET /api/v1/search
+ */
 
-export interface SearchResult {
-  id: string;
-  type: 'quest' | 'user' | 'submission';
-  title: string;
-  description?: string;
-  metadata?: Record<string, unknown>;
-}
+import { get, withRetry, createCancelToken, type CancelToken } from './client';
+import type { SearchResponse, SearchParams } from '@/lib/types/api.types';
 
-export interface SearchResponse {
-  results: SearchResult[];
-  suggestions: string[];
-  total: number;
-}
+// Re-export types consumed by useSearch hook (backward compat)
+export type { SearchResultItem as SearchResult } from '@/lib/types/api.types';
+export type SearchFilters = Pick<SearchParams, 'type' | 'limit'>;
 
-export interface SearchFilters {
-  type?: 'quest' | 'user' | 'submission' | 'all';
-  limit?: number;
-}
+// ---------------------------------------------------------------------------
+// Global search
+// ---------------------------------------------------------------------------
 
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-}
-
+/**
+ * Perform a global search across quests, users, and submissions.
+ * Results are de-bounced at the hook level; this function is a thin API call.
+ */
 export async function searchGlobal(
   query: string,
   filters?: SearchFilters,
+  cancelToken?: CancelToken,
 ): Promise<SearchResponse> {
-  try {
-    const params = new URLSearchParams();
-    params.append('q', query);
+  const params: Record<string, string | number | undefined> = { q: query };
+  if (filters?.type && filters.type !== 'all') params.type = filters.type;
+  if (filters?.limit) params.limit = filters.limit;
 
-    if (filters?.type && filters.type !== 'all') {
-      params.append('type', filters.type);
-    }
-
-    if (filters?.limit) {
-      params.append('limit', filters.limit.toString());
-    }
-
-    const token = getAuthToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/search?${params}`, {
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Search failed: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Search error:', error);
-    throw error;
-  }
+  return withRetry(() =>
+    get<SearchResponse>('/search', {
+      params,
+      signal: cancelToken?.signal,
+    }),
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Recent searches (local storage)
+// ---------------------------------------------------------------------------
+
+const RECENT_SEARCHES_KEY = 'recentSearches';
+const MAX_RECENT = 5;
 
 export async function getRecentSearches(): Promise<string[]> {
   if (typeof window === 'undefined') return [];
-
-  const stored = localStorage.getItem('recentSearches');
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function saveRecentSearch(query: string): void {
   if (typeof window === 'undefined') return;
-
-  const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-  const filtered = recent.filter((q: string) => q !== query);
-  const updated = [query, ...filtered].slice(0, 5);
-
-  localStorage.setItem('recentSearches', JSON.stringify(updated));
+  try {
+    const current: string[] = JSON.parse(
+      localStorage.getItem(RECENT_SEARCHES_KEY) || '[]',
+    );
+    const filtered = current.filter((q) => q !== query);
+    const updated = [query, ...filtered].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore storage errors
+  }
 }
 
 export function clearRecentSearches(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem('recentSearches');
+  localStorage.removeItem(RECENT_SEARCHES_KEY);
 }

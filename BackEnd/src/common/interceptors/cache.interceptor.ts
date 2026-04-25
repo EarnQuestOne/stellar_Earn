@@ -14,6 +14,7 @@ import {
   CACHE_KEY_METADATA,
   CACHE_TTL_METADATA,
   CACHE_PREFIX_METADATA,
+  CACHE_TAGS_METADATA,
 } from '../decorators/cache.decorator';
 
 @Injectable()
@@ -25,7 +26,10 @@ export class HttpCacheInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<unknown>> {
     const request = context.switchToHttp().getRequest<Request>();
 
     // Only cache GET requests
@@ -33,33 +37,39 @@ export class HttpCacheInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const customKey = this.reflector.getAllAndOverride<string>(CACHE_KEY_METADATA, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const customKey = this.reflector.getAllAndOverride<string>(
+      CACHE_KEY_METADATA,
+      [context.getHandler(), context.getClass()],
+    );
 
     const ttl = this.reflector.getAllAndOverride<number>(CACHE_TTL_METADATA, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    const prefix = this.reflector.getAllAndOverride<string>(CACHE_PREFIX_METADATA, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const prefix = this.reflector.getAllAndOverride<string>(
+      CACHE_PREFIX_METADATA,
+      [context.getHandler(), context.getClass()],
+    );
 
-    // Key: custom > route URL (includes query string)
-    const cacheKey = customKey ?? `route:${request.url}`;
+    const tags = this.reflector.getAllAndOverride<string[]>(
+      CACHE_TAGS_METADATA,
+      [context.getHandler(), context.getClass()],
+    );
 
-    const cached = await this.cacheService.get(cacheKey, prefix);
-    if (cached !== null) {
+    // Build the final cache key: prefix:customKey or prefix:route:url or route:url
+    const baseKey = customKey ?? `route:${request.url}`;
+    const cacheKey = prefix ? `${prefix}:${baseKey}` : baseKey;
+
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached !== null && cached !== undefined) {
       this.logger.debug(`Route cache HIT: ${cacheKey}`);
       return of(cached);
     }
 
     return next.handle().pipe(
       tap(async (response) => {
-        await this.cacheService.set(cacheKey, response, ttl, prefix);
+        await this.cacheService.set(cacheKey, response, ttl, tags);
         this.logger.debug(`Route cache SET: ${cacheKey}`);
       }),
     );

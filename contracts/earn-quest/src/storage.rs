@@ -1,6 +1,7 @@
 use crate::errors::Error;
-use crate::types::{EscrowInfo, Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo, QuestMetadata, PlatformStats, CreatorStats};
+use crate::validation;
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 
 /// Storage key definitions for the contract's persistent data.
 ///
@@ -10,12 +11,22 @@ use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 pub enum DataKey {
     /// Stores individual Quest data, keyed by quest ID (Symbol)
     Quest(Symbol),
+    /// Stores quest metadata, keyed by quest ID (Symbol)
+    QuestMetadata(Symbol),
     /// Stores individual Submission data, keyed by quest ID and submitter address
     Submission(Symbol, Address),
     /// Stores UserStats data, keyed by user address
     UserStats(Address),
     /// Stores admin status, keyed by admin address
     Admin(Address),
+    /// Stores contract admin (single)
+    ContractAdmin,
+    /// Stores contract version
+    ContractVersion,
+    /// Stores contract config params
+    ContractConfig,
+    /// Tracks initialization
+    Initialized,
     /// Global paused flag
     Paused,
     /// Stores per-admin approval for unpause in a specific round
@@ -31,6 +42,11 @@ pub enum DataKey {
     /// Scheduled unpause ledger timestamp
     ScheduledUnpauseTime,
     Escrow(Symbol),
+    QuestIds,
+    PlatformStats,
+    CreatorStats(Address),
+    /// Mutex flag set while a non-reentrant entry point is executing.
+    ReentrancyGuard,
 }
 
 //================================================================================
@@ -91,6 +107,28 @@ pub fn set_quest(env: &Env, id: &Symbol, quest: &Quest) {
     env.storage()
         .instance()
         .set(&DataKey::Quest(id.clone()), quest);
+}
+
+/// Checks if metadata exists for a quest.
+pub fn has_quest_metadata(env: &Env, id: &Symbol) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::QuestMetadata(id.clone()))
+}
+
+/// Gets metadata for a quest, if present.
+pub fn get_quest_metadata(env: &Env, id: &Symbol) -> Result<QuestMetadata, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::QuestMetadata(id.clone()))
+        .ok_or(Error::MetadataNotFound)
+}
+
+/// Stores metadata for a quest.
+pub fn set_quest_metadata(env: &Env, id: &Symbol, metadata: &QuestMetadata) {
+    env.storage()
+        .instance()
+        .set(&DataKey::QuestMetadata(id.clone()), metadata);
 }
 
 //================================================================================
@@ -260,6 +298,9 @@ pub fn delete_quest(env: &Env, id: &Symbol) -> Result<(), Error> {
     }
 
     env.storage().instance().remove(&DataKey::Quest(id.clone()));
+    env.storage()
+        .instance()
+        .remove(&DataKey::QuestMetadata(id.clone()));
     Ok(())
 }
 
@@ -306,7 +347,7 @@ pub fn delete_user_stats(env: &Env, user: &Address) {
 // Partial Update Helpers (Gas Optimization)
 //================================================================================
 
-/// Updates only the status field of a quest.
+/// Updates only the status field of a quest (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -333,7 +374,7 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
     Ok(())
 }
 
-/// Atomically increments the total_claims counter for a quest.
+/// Atomically increments the total_claims counter for a quest (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -359,7 +400,7 @@ pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     Ok(())
 }
 
-/// Updates only the status field of a submission.
+/// Updates only the status field of a submission (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -391,7 +432,7 @@ pub fn update_submission_status(
     Ok(())
 }
 
-/// Atomically adds XP to a user's stats and recalculates level.
+/// Atomically adds XP to a user's stats and recalculates level (gas-optimized).
 ///
 /// # Arguments
 /// * `env` - The contract environment
@@ -422,17 +463,13 @@ pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserStats
     let mut stats = get_user_stats(env, user)?;
     stats.xp = stats.xp.saturating_add(xp_delta);
 
-    // Recalculate level based on XP thresholds
-    stats.level = if stats.xp >= 1500 {
-        5
-    } else if stats.xp >= 1000 {
-        4
-    } else if stats.xp >= 600 {
-        3
-    } else if stats.xp >= 300 {
-        2
-    } else {
-        1
+    // Recalculate level based on XP thresholds (optimized branching)
+    stats.level = match stats.xp {
+        x if x >= 1500 => 5,
+        x if x >= 1000 => 4,
+        x if x >= 600 => 3,
+        x if x >= 300 => 2,
+        _ => 1,
     };
 
     set_user_stats(env, user, &stats);
@@ -560,6 +597,31 @@ pub fn is_paused(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Paused)
 }
 
+//================================================================================
+// Reentrancy Guard Storage Helpers
+//================================================================================
+
+/// Returns true while a non-reentrant entry point is executing in the
+/// current invocation. Reads from instance storage so the flag is rolled
+/// back automatically if the transaction reverts.
+pub fn is_reentrancy_locked(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::ReentrancyGuard)
+}
+
+/// Acquire the reentrancy lock. Caller must check `is_reentrancy_locked`
+/// first; this function unconditionally writes the flag.
+pub fn set_reentrancy_lock(env: &Env) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ReentrancyGuard, &true);
+}
+
+/// Release the reentrancy lock. Idempotent: safe to call when the lock
+/// is not currently held.
+pub fn clear_reentrancy_lock(env: &Env) {
+    env.storage().instance().remove(&DataKey::ReentrancyGuard);
+}
+
 /// Approve or revoke unpause by admin for the current round
 pub fn set_unpause_approval(env: &Env, admin: &Address, approved: bool) {
     let round = get_unpause_round(env);
@@ -676,9 +738,7 @@ fn dec_unpause_approval_count(env: &Env) {
         .instance()
         .get(&DataKey::UnpauseApprovalCount)
         .unwrap_or(0u32);
-    if cur > 0 {
-        cur -= 1;
-    }
+    cur = cur.saturating_sub(1);
     env.storage()
         .instance()
         .set(&DataKey::UnpauseApprovalCount, &cur);
@@ -708,4 +768,122 @@ pub fn set_escrow(env: &Env, quest_id: &Symbol, escrow: &EscrowInfo) {
     env.storage()
         .instance()
         .set(&DataKey::Escrow(quest_id.clone()), escrow);
+}
+
+/// Delete escrow record for a quest (cleanup after terminal state)
+pub fn delete_escrow(env: &Env, quest_id: &Symbol) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::Escrow(quest_id.clone()));
+}
+
+//================================================================================
+// Contract Initialization Storage
+//================================================================================
+
+pub fn is_initialized(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::Initialized)
+}
+
+pub fn mark_initialized(env: &Env) {
+    env.storage().instance().set(&DataKey::Initialized, &true);
+}
+
+pub fn get_admin(env: &Env) -> Address {
+    env.storage()
+        .instance()
+        .get(&DataKey::ContractAdmin)
+        .expect("Contract not initialized")
+}
+
+pub fn set_contract_admin(env: &Env, address: &Address) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ContractAdmin, address);
+}
+
+pub fn get_version(env: &Env) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::ContractVersion)
+        .unwrap_or(0u32)
+}
+
+pub fn set_version(env: &Env, version: u32) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ContractVersion, &version);
+}
+
+pub fn get_config(env: &Env) -> Vec<(String, String)> {
+    env.storage()
+        .instance()
+        .get(&DataKey::ContractConfig)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_config(env: &Env, config: &Vec<(String, String)>) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ContractConfig, config);
+}
+
+//================================================================================
+// Quest Index (for query/filtering support)
+//================================================================================
+
+pub fn get_quest_ids(env: &Env) -> Vec<Symbol> {
+    env.storage()
+        .instance()
+        .get(&DataKey::QuestIds)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn add_quest_id(env: &Env, id: &Symbol) -> Result<(), Error> {
+    let mut ids = get_quest_ids(env);
+    validation::validate_max_quests(ids.len())?;
+    ids.push_back(id.clone());
+    env.storage().instance().set(&DataKey::QuestIds, &ids);
+    Ok(())
+}
+
+//================================================================================
+// Platform & Creator Stats Storage
+//================================================================================
+
+pub fn get_platform_stats(env: &Env) -> PlatformStats {
+    env.storage()
+        .instance()
+        .get(&DataKey::PlatformStats)
+        .unwrap_or(PlatformStats {
+            total_quests_created: 0,
+            total_submissions: 0,
+            total_rewards_distributed: 0,
+            total_active_users: 0,
+            total_rewards_claimed: 0,
+        })
+}
+
+pub fn set_platform_stats(env: &Env, stats: &PlatformStats) {
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformStats, stats);
+}
+
+pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {
+    env.storage()
+        .instance()
+        .get(&DataKey::CreatorStats(creator.clone()))
+        .unwrap_or(CreatorStats {
+            quests_created: 0,
+            total_rewards_posted: 0,
+            total_submissions_received: 0,
+            total_claims_paid: 0,
+        })
+}
+
+pub fn set_creator_stats(env: &Env, creator: &Address, stats: &CreatorStats) {
+    env.storage()
+        .instance()
+        .set(&DataKey::CreatorStats(creator.clone()), stats);
 }

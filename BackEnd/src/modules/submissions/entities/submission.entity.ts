@@ -6,9 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
-import { Quest } from '../../quests/entities/quest.entity';
-import { User } from '../../users/entities/user.entity';
 
 export enum SubmissionStatus {
   PENDING = 'PENDING',
@@ -59,11 +58,14 @@ export class Submission {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.submissions)
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
-  user: User;
+  @DeleteDateColumn()
+  deletedAt: Date;
 
-  @ManyToOne(() => Quest, (quest) => quest.submissions)
+  @ManyToOne('User', 'submissions')
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  user: any;
+
+  @ManyToOne('Quest', 'submissions')
   @JoinColumn({ name: 'questId', referencedColumnName: 'id' })
-  quest: Quest;
+  quest: any;
 }

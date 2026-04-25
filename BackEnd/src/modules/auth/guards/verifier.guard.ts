@@ -8,12 +8,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quest } from '../../quests/entities/quest.entity';
-import { User, UserRole } from '../../users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
+import { Role } from '../../../common/enums/role.enum';
 
 interface RequestUser {
   id: string;
   stellarAddress: string;
-  role: UserRole;
+  role: Role;
 }
 
 interface AuthenticatedRequest {
@@ -46,7 +47,7 @@ export class VerifierGuard implements CanActivate {
     }
 
     // Admins can verify any submission
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === Role.ADMIN) {
       return true;
     }
 
@@ -63,7 +64,7 @@ export class VerifierGuard implements CanActivate {
 
     // For now, we'll allow verifiers based on user role since the verifiers relation isn't fully implemented
     // In a real implementation, you'd have a proper verifiers relation
-    const isVerifier = user.role === UserRole.VERIFIER;
+    const isVerifier = user.role === Role.VERIFIER;
 
     if (!isVerifier && !isCreator) {
       throw new ForbiddenException(

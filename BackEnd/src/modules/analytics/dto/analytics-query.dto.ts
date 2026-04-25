@@ -93,6 +93,15 @@ export class UserAnalyticsQueryDto extends AnalyticsQueryDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
+    description: 'Filter by specific user ID',
+    example: 'uuid',
+    required: false,
+  })
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
     description: 'Filter by specific user Stellar address',
     example: 'GXXXXXX...',
     required: false,

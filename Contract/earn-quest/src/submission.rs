@@ -84,8 +84,9 @@ pub fn approve_submission(
     submission.status = SubmissionStatus::Approved;
     storage::set_submission(env, &submission);
 
-    // Increment total claims counter
-    quest.total_claims += 1;
+    // Increment total claims counter with overflow check
+    quest.total_claims = quest.total_claims.checked_add(1)
+        .ok_or(Error::ArithmeticOverflow)?;
     storage::set_quest(env, &quest);
 
     // Auto-complete quest if limit reached

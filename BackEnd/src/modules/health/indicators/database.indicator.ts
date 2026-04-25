@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import {
-  HealthIndicatorResult,
-  HealthIndicatorService,
-} from '@nestjs/terminus';
+import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 @Injectable()
-export class DatabaseIndicator {
+export class DatabaseIndicator extends HealthIndicator {
   constructor(
-    private readonly healthIndicatorService: HealthIndicatorService,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  ) {
+    super();
+  }
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
-    const indicator = this.healthIndicatorService.check(key);
     try {
       await this.dataSource.query('SELECT 1');
-      return indicator.up();
+      return this.getStatus(key, true);
     } catch (error) {
-      return indicator.down({ message: (error as Error).message });
+      throw new HealthCheckError(
+        'Database check failed',
+        this.getStatus(key, false, { message: (error as Error).message }),
+      );
     }
   }
 }

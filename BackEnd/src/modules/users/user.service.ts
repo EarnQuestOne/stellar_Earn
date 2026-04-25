@@ -17,10 +17,13 @@ import { Cache } from 'cache-manager';
 import { Repository, FindOptionsWhere, Like } from 'typeorm';
 import { SearchUsersDto } from './dto/search-users.dto';
 import { UpdateProfileDto } from './dto/update.dto';
-import { User, UserRole } from './entities/user.entity';
+import { User } from './entities/user.entity';
+import { Role } from '../../common/enums/role.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserCreatedEvent } from '../../events/dto/user-created.event';
 import { UserUpdatedEvent } from '../../events/dto/user-updated.event';
+import { UserLevelUpEvent } from '../../events/dto/user-level-up.event';
+import { ReputationChangedEvent } from '../../events/dto/reputation-changed.event';
 
 export interface UserStats {
   totalQuests: number;
@@ -83,10 +86,35 @@ export class UsersService {
     return savedUser;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    if (!email) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    if (!googleId) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { googleId } });
+  }
+
+  async findByGithubId(githubId: string): Promise<User | null> {
+    if (!githubId) {
+      return null;
+    }
+
+    return this.usersRepository.findOne({ where: { githubId } });
+  }
+
   async findByAddress(address: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { stellarAddress: address },
       relations: ['createdQuests'],
+      withDeleted: false,
     });
 
     if (!user) {
@@ -99,6 +127,7 @@ export class UsersService {
   async findByUsername(username: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { username },
+      withDeleted: false,
     });
 
     if (!user) {
@@ -111,6 +140,7 @@ export class UsersService {
   async findById(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
+      withDeleted: false,
     });
 
     if (!user) {
@@ -210,11 +240,13 @@ export class UsersService {
       streak = diffDays <= 1 ? consecutive : 0;
     }
 
-    // Get user rank
-    const allUsers = await this.usersRepository.find({
-      order: { xp: 'DESC' },
-    });
-    const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
+    // Get user rank via a single COUNT query instead of loading every user
+    // from the table just to find one user's position.
+    const higherRanked = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.xp > :xp', { xp: user.xp })
+      .getCount();
+    const rank = higherRanked + 1;
 
     const stats: UserStats = {
       totalQuests: submissions.length,
@@ -296,6 +328,46 @@ export class UsersService {
     return user;
   }
 
+  async getLeaderboard(page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await this.usersRepository.findAndCount({
+      order: { xp: 'DESC' },
+      skip,
+      take: limit,
+      select: [
+        'id',
+        'username',
+        'avatarUrl',
+        'stellarAddress',
+        'xp',
+        'level',
+        'createdQuests',
+        'totalEarned',
+      ],
+    });
+
+    const leaderboard = users.map((user, index) => ({
+      rank: (page - 1) * limit + index + 1,
+      id: user.id,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+      stellarAddress: user.stellarAddress,
+      xp: user.xp,
+      level: user.level,
+      createdQuests: user.createdQuests,
+      totalEarned: user.totalEarned,
+    }));
+
+    return {
+      data: leaderboard,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async searchUsers(searchDto: SearchUsersDto) {
     const {
       query,
@@ -317,48 +389,13 @@ export class UsersService {
       order: { [sortBy]: order },
       skip,
       take: limit,
-      select: [
+select: [
         'id',
-        'username',
         'avatarUrl',
         'stellarAddress',
         'xp',
         'level',
-        'createdAt',
-      ],
-    });
-
-    return {
-      data: users,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async getLeaderboard(page = 1, limit = 50) {
-    const cacheKey = `leaderboard_page_${page}_limit_${limit}`;
-    const cached = await this.cacheManager.get<LeaderboardEntry[]>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
-    const [users] = await this.usersRepository.findAndCount({
-      order: { xp: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-      select: [
-        'id',
-        'username',
-        'avatarUrl',
-        'stellarAddress',
-        'xp',
-        'level',
-        'completedQuests',
+        'createdQuests',
         'totalEarned',
       ],
     });
@@ -373,20 +410,35 @@ export class UsersService {
       },
       xp: user.xp,
       level: user.level,
-      completedQuests: user.completedQuests,
-      totalEarned: user.totalEarned,
+      createdQuests: user.createdQuests,
+totalEarned: user.totalEarned,
     }));
 
-    await this.cacheManager.set(cacheKey, leaderboard, 30000); // Cache for 30 seconds
+    await this.cacheManager.set('leaderboard_data', leaderboard, 30000);
     return leaderboard;
   }
 
   async updateUserXP(address: string, xpToAdd: number): Promise<User> {
     const user = await this.findByAddress(address);
+    const oldLevel = user.level;
     user.xp += xpToAdd;
     user.level = user.calculateLevel();
 
     await this.usersRepository.save(user);
+
+    // Emit reputation changed event
+    this.eventEmitter.emit(
+      'reputation.changed',
+      new ReputationChangedEvent(user.id, xpToAdd, user.xp),
+    );
+
+    // Emit level up event if level increased
+    if (user.level > oldLevel) {
+      this.eventEmitter.emit(
+        'user.level_up',
+        new UserLevelUpEvent(user.id, user.level),
+      );
+    }
 
     // Clear leaderboard cache since XP changed
     await this.clearLeaderboardCache();
@@ -400,21 +452,20 @@ export class UsersService {
     amount?: string,
   ): Promise<User> {
     const user = await this.findByAddress(address);
+    const oldLevel = user.level;
+    const oldXP = user.xp;
+    let xpAdded = 0;
 
     if (success) {
-      user.completedQuests += 1;
+      user.questsCompleted += 1;
       // Add XP for completion
-      user.xp += 100;
+      xpAdded = 100;
+      user.xp += xpAdded;
     } else {
       user.failedQuests += 1;
       // Add minimal XP for attempt
-      user.xp += 10;
-    }
-
-    if (amount) {
-      const currentTotal = BigInt(user.totalEarned || '0');
-      const newAmount = BigInt(amount);
-      user.totalEarned = (currentTotal + newAmount).toString();
+      xpAdded = 10;
+      user.xp += xpAdded;
     }
 
     user.successRate = user.calculateSuccessRate();
@@ -422,6 +473,20 @@ export class UsersService {
     user.lastActiveAt = new Date();
 
     await this.usersRepository.save(user);
+
+    // Emit reputation changed event
+    this.eventEmitter.emit(
+      'reputation.changed',
+      new ReputationChangedEvent(user.id, xpAdded, user.xp),
+    );
+
+    // Emit level up event if level increased
+    if (user.level > oldLevel) {
+      this.eventEmitter.emit(
+        'user.level_up',
+        new UserLevelUpEvent(user.id, user.level),
+      );
+    }
 
     // Clear caches
     await this.cacheManager.del(`user_stats_${address}`);
@@ -441,7 +506,7 @@ export class UsersService {
     }
   }
 
-  async getUsersByRole(role: UserRole): Promise<User[]> {
+  async getUsersByRole(role: Role): Promise<User[]> {
     return this.usersRepository.find({
       where: { role },
       order: { createdAt: 'DESC' },
@@ -453,13 +518,14 @@ export class UsersService {
 
     // Only allow if requesting user is admin or deleting own account
     if (
-      requestingUser.role !== UserRole.ADMIN &&
+      requestingUser.role !== Role.ADMIN &&
       requestingUser.id !== userToDelete.id
     ) {
       throw new BadRequestException('You can only delete your own account');
     }
 
-    await this.usersRepository.remove(userToDelete);
+    // Soft delete by setting deletedAt
+    await this.usersRepository.softDelete(userToDelete.id);
 
     // Clear caches
     await this.cacheManager.del(`user_stats_${address}`);

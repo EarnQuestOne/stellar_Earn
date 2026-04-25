@@ -79,8 +79,8 @@ export class LoginDto {
 }
 
 export class UserResponseDto {
-  @ApiProperty()
-  stellarAddress: string;
+  @ApiProperty({ required: false, nullable: true })
+  stellarAddress?: string | null;
 
   @ApiProperty()
   role: string;
@@ -96,6 +96,11 @@ export class TokenResponseDto {
     description: 'Refresh token for obtaining new access tokens',
   })
   refreshToken: string;
+
+  @ApiProperty({
+    description: 'Access token expiration in milliseconds',
+  })
+  expiresIn: number;
 
   @ApiProperty({
     description: 'User information',

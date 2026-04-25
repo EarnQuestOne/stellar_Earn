@@ -1,7 +1,6 @@
 'use client';
-
-import { useState } from 'react';
 import type { Badge } from '@/lib/types/dashboard';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface BadgeDisplayProps {
   badges: Badge[];
@@ -12,14 +11,11 @@ interface BadgeItemProps {
   badge: Badge;
 }
 
-function BadgeSkeleton() {
-  return (
-    <div className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700" />
-  );
-}
 
 function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -58,15 +54,12 @@ const rarityLabels: Record<Badge['rarity'], { label: string; color: string }> = 
 };
 
 function BadgeItem({ badge }: BadgeItemProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
   const styles = rarityStyles[badge.rarity];
   const rarityLabel = rarityLabels[badge.rarity];
 
   return (
     <div
       className="relative"
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Badge */}
       <div
@@ -74,32 +67,6 @@ function BadgeItem({ badge }: BadgeItemProps) {
       >
         {badge.icon}
       </div>
-
-      {/* Tooltip */}
-      {showTooltip && (
-        <div className="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap">
-          <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
-            <p className="font-semibold text-zinc-900 dark:text-zinc-50">
-              {badge.name}
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[200px] whitespace-normal">
-              {badge.description}
-            </p>
-            <div className="mt-1 flex items-center justify-between gap-4 text-xs">
-              <span className={`font-medium ${rarityLabel.color}`}>
-                {rarityLabel.label}
-              </span>
-              <span className="text-zinc-400 dark:text-zinc-500">
-                {formatDate(badge.earnedAt)}
-              </span>
-            </div>
-          </div>
-          {/* Arrow */}
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1">
-            <div className="h-2 w-2 rotate-45 border-b border-r border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -146,7 +113,7 @@ export function BadgeDisplay({ badges, isLoading }: BadgeDisplayProps) {
       {isLoading ? (
         <div className="flex flex-wrap gap-3 justify-center">
           {[...Array(5)].map((_, i) => (
-            <BadgeSkeleton key={i} />
+            <Skeleton.Text key={i} className="h-16 w-16 rounded-full" />
           ))}
         </div>
       ) : badges.length === 0 ? (

@@ -1,33 +1,12 @@
-// Dashboard type definitions
+import type {
+  QuestResponse,
+  SubmissionResponse,
+  UserStatsResponse,
+} from "./api.types";
 
-export interface UserStats {
-  xp: number;
-  level: number;
-  totalEarnings: number;
-  questsCompleted: number;
-  currentStreak: number;
-}
-
-export interface Quest {
-  id: string;
-  title: string;
-  description: string;
-  reward: number;
-  deadline: string;
-  progress: number;
-  status: 'active' | 'completed' | 'expired';
-  category: string;
-}
-
-export interface Submission {
-  id: string;
-  questId: string;
-  questTitle: string;
-  submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-  reward: number;
-  feedback?: string;
-}
+export type UserStats = UserStatsResponse;
+export type Quest = QuestResponse;
+export type Submission = SubmissionResponse;
 
 export interface EarningsData {
   date: string;

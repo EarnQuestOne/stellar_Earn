@@ -1,7 +1,10 @@
 #![cfg(test)]
 
+use soroban_sdk::testutils::Events as _;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{
+    symbol_short, testutils::Address as _, Address, BytesN, Env, IntoVal, Symbol, Vec, TryFromVal,
+};
 
 extern crate earn_quest;
 use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
@@ -34,7 +37,7 @@ fn setup_contract_and_token(
 }
 
 fn make_quest_input(
-    env: &Env,
+    _env: &Env,
     id: &Symbol,
     reward_asset: &Address,
     reward_amount: i128,
@@ -100,17 +103,6 @@ fn test_register_quests_batch_success() {
     client.register_quests_batch(&creator, &quests);
 
     // All three quests should exist (read via single register would fail if duplicate)
-    client.register_quest(
-        &symbol_short!("BQ1"),
-        &creator,
-        &token_contract,
-        &100,
-        &verifier,
-        &deadline,
-    );
-    // If we get here without panic, BQ1 was already registered - so we actually
-    // need to just verify we can't register again. So instead: register_quest
-    // for a new id would succeed; for BQ1 we expect QuestAlreadyExists.
     let res = client.try_register_quest(
         &symbol_short!("BQ1"),
         &creator,
@@ -153,19 +145,33 @@ fn test_register_quests_batch_emits_events() {
     client.register_quests_batch(&creator, &quests);
 
     let events = env.events().all();
-    let reg_events: Vec<_> = events
+    let mut reg_count = 0u32;
+    for i in 0..events.len() {
+        let (_addr, topics, _data) = events.get(i).unwrap();
+        if !topics.is_empty() {
+            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
+            if t0 == symbol_short!("quest_reg") {
+                reg_count += 1;
+            }
+        }
+    }
+    assert!(
+        reg_count >= 2,
+        "expected at least 2 quest_reg events, got {}",
+        reg_count
+    );
+    let reg_events = events
         .iter()
         .filter(|e| {
-            let (topics, _): (soroban_sdk::Vec<soroban_sdk::RawVal>, _) =
-                (e.0.clone(), e.1.clone());
-            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
+            let topics = &e.1;
+            let t0: Symbol = Symbol::from_val(&env, &topics.get(0).unwrap());
             t0 == symbol_short!("quest_reg")
         })
-        .collect();
+        .count();
     assert!(
-        reg_events.len() >= 2,
+        reg_events >= 2,
         "expected at least 2 quest_reg events, got {}",
-        reg_events.len()
+        reg_events
     );
 }
 
@@ -331,17 +337,31 @@ fn test_approve_submissions_batch_emits_events() {
     client.approve_submissions_batch(&verifier, &submissions);
 
     let events = env.events().all();
-    let appr_events: Vec<_> = events
+    let mut appr_count = 0u32;
+    for i in 0..events.len() {
+        let (_addr, topics, _data) = events.get(i).unwrap();
+        if !topics.is_empty() {
+            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
+            if t0 == symbol_short!("sub_appr") {
+                appr_count += 1;
+            }
+        }
+    }
+    assert!(
+        appr_count >= 1,
+        "expected at least 1 submission_approved event, got {}",
+        appr_count
+    );
+    let appr_events = events
         .iter()
         .filter(|e| {
-            let (topics, _): (soroban_sdk::Vec<soroban_sdk::RawVal>, _) =
-                (e.0.clone(), e.1.clone());
-            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
+            let topics = &e.1;
+            let t0: Symbol = Symbol::from_val(&env, &topics.get(0).unwrap());
             t0 == symbol_short!("sub_appr")
         })
-        .collect();
+        .count();
     assert!(
-        appr_events.len() >= 1,
+        appr_events >= 1,
         "expected at least 1 submission_approved event"
     );
 }
@@ -354,23 +374,26 @@ fn test_approve_submissions_batch_size_limit_enforced() {
     let (_, client, token_contract, _) = setup_contract_and_token(&env);
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
+    let submitter = Address::generate(&env);
     let deadline = 10000u64;
     let proof = BytesN::from_array(&env, &[1u8; 32]);
 
-    // Register 51 quests and create 51 submissions
-    let mut submitters = Vec::new(&env);
-    for i in 0u32..51 {
-        let sym = Symbol::new(&env, &format!("LQ{:02}", i));
-        client.register_quest(&sym, &creator, &token_contract, &1, &verifier, &deadline);
-        let sub = Address::generate(&env);
-        submitters.push_back(sub.clone());
-        client.submit_proof(&sym, &sub, &proof);
-    }
+    // Prepare one valid submission and then exceed max batch size using duplicates.
+    // Validation checks size before processing entries.
+    let quest_id = symbol_short!("LQMAX");
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &1,
+        &verifier,
+        &deadline,
+    );
+    client.submit_proof(&quest_id, &submitter, &proof);
 
     let mut submissions = Vec::new(&env);
-    for i in 0u32..51 {
-        let sym = Symbol::new(&env, &format!("LQ{:02}", i));
-        submissions.push_back(make_approval_input(&sym, &submitters.get(i).unwrap()));
+    for _ in 0u32..51 {
+        submissions.push_back(make_approval_input(&quest_id, &submitter));
     }
 
     let res = client.try_approve_submissions_batch(&verifier, &submissions);

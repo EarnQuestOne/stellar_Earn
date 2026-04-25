@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 export enum PayoutStatus {
@@ -12,6 +13,7 @@ export enum PayoutStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   RETRY_SCHEDULED = 'retry_scheduled',
+  AWAITING_APPROVAL = 'awaiting_approval',
 }
 
 export enum PayoutType {
@@ -83,6 +85,9 @@ export class Payout {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   // Helper method to check if payout can be retried
   canRetry(): boolean {

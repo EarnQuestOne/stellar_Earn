@@ -20,7 +20,7 @@ export function ClaimRewards() {
   // In a real app, 'approved' submissions would have a 'claimed' flag.
   // We'll simulate this by filtering for 'approved' status and removing them when claimed locally.
   const pendingRewards = useMemo(() => {
-    return submissions.filter(s => s.status === 'approved' && !claimedIds.includes(s.id));
+    return submissions.filter(s => s.status === 'Approved' && !claimedIds.includes(s.id));
   }, [submissions, claimedIds]);
 
   const handleClaim = async () => {

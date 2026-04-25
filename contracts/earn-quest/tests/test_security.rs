@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 extern crate earn_quest;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};

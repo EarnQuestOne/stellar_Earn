@@ -8,8 +8,6 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { Submission } from './submission.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 
 export enum QuestStatus {
   ACTIVE = 'Active',
@@ -37,8 +35,8 @@ export class Quest {
   @Column({ type: 'text' })
   description: string;
 
-  @ManyToOne(() => User, (user) => user.createdQuests)
-  creator: User;
+  @ManyToOne('User', 'createdQuests')
+  creator: any;
 
   @Column()
   rewardAsset: string;
@@ -82,6 +80,6 @@ export class Quest {
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;
 
-  @OneToMany(() => Submission, (submission) => submission.quest)
-  submissions: Submission[];
+  @OneToMany('Submission', 'quest')
+  submissions: any[];
 }

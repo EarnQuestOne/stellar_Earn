@@ -161,10 +161,25 @@ The contract includes comprehensive tests covering:
 - Automatic quest completion
 - Edge cases (zero participants, simultaneous claims, full quest rejection)
 - User reputation tracking
+- Escrow and payout invariants
+- Emergency pause and recovery paths
+- Upgrade and rollback authorization paths
+- Property-style invariants for claims and reputation
+- Budget-based gas sanity checks for critical flows
 
 Run tests with:
 ```bash
 cargo test -- --nocapture
+```
+
+Property-focused suites can be run independently with:
+```bash
+cargo test test_edge_cases -- --nocapture
+```
+
+Security and pause regression suites can be run with:
+```bash
+cargo test test_security test_pause -- --nocapture
 ```
 
 ## Security

@@ -7,8 +7,6 @@ import {
   Index,
   OneToMany,
 } from 'typeorm';
-import { Submission } from './submission.entity';
-import { Quest } from './quest.entity';
 
 /**
  * User entity for analytics tracking
@@ -55,9 +53,9 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;
 
-  @OneToMany(() => Submission, (submission) => submission.user)
-  submissions: Submission[];
+  @OneToMany('Submission', 'user')
+  submissions: any[];
 
-  @OneToMany(() => Quest, (quest) => quest.creator)
-  createdQuests: Quest[];
+  @OneToMany('Quest', 'creator')
+  createdQuests: any[];
 }

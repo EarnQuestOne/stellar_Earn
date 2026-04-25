@@ -4,7 +4,9 @@ import { StatusBadge } from './StatusBadge';
 import type { Submission } from '@/lib/types/submission';
 
 function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 

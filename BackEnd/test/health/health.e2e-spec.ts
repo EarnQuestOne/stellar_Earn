@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, VersioningType } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { HealthCheckError, TerminusModule } from '@nestjs/terminus';
 import { ConfigModule } from '@nestjs/config';
+import { API_VERSION_CONFIG, extractApiVersion } from '../../src/config/versioning.config';
 import { HealthController } from '../../src/modules/health/health.controller';
 import { DatabaseIndicator } from '../../src/modules/health/indicators/database.indicator';
 import { RedisIndicator } from '../../src/modules/health/indicators/redis.indicator';
@@ -30,6 +31,12 @@ describe('Health (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    app.enableVersioning({
+      type: VersioningType.CUSTOM,
+      defaultVersion: API_VERSION_CONFIG.defaultVersion,
+      extractor: (request) => extractApiVersion(request as any) || API_VERSION_CONFIG.defaultVersion,
+    });
     await app.init();
   });
 
@@ -50,7 +57,7 @@ describe('Health (e2e)', () => {
         redis: { status: 'up' },
       });
 
-      const res = await request(app.getHttpServer()).get('/health').expect(200);
+      const res = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
 
       expect(res.body.status).toBe('ok');
       expect(res.body.info.database.status).toBe('up');
@@ -67,7 +74,7 @@ describe('Health (e2e)', () => {
         redis: { status: 'up' },
       });
 
-      const res = await request(app.getHttpServer()).get('/health').expect(503);
+      const res = await request(app.getHttpServer()).get('/api/v1/health').expect(503);
 
       expect(res.body.status).toBe('error');
     });
@@ -82,7 +89,7 @@ describe('Health (e2e)', () => {
         }),
       );
 
-      const res = await request(app.getHttpServer()).get('/health').expect(503);
+      const res = await request(app.getHttpServer()).get('/api/v1/health').expect(503);
 
       expect(res.body.status).toBe('error');
     });
@@ -95,7 +102,7 @@ describe('Health (e2e)', () => {
         redis: { status: 'up', status_detail: 'skipped' },
       });
 
-      const res = await request(app.getHttpServer()).get('/health').expect(200);
+      const res = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
 
       expect(res.body.status).toBe('ok');
     });

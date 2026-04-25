@@ -27,6 +27,12 @@ pub const MAX_BATCH_QUEST_REGISTRATION: u32 = 50;
 /// Maximum number of submissions that can be approved in a single batch call
 pub const MAX_BATCH_APPROVALS: u32 = 50;
 
+/// Maximum total number of quests allowed in the system (prevents global index bloat)
+pub const MAX_QUEST_IDS_TOTAL: u32 = 5000;
+
+/// Maximum number of iterations for query scans (prevents gas exhaustion)
+pub const MAX_SCAN_ITERATIONS: u32 = 100;
+
 //================================================================================
 // Address Validation
 //================================================================================
@@ -307,6 +313,14 @@ pub fn validate_batch_approval_size(length: u32) -> Result<(), Error> {
     }
     if length > MAX_BATCH_APPROVALS {
         return Err(Error::ArrayTooLong);
+    }
+    Ok(())
+}
+
+/// Validates that the total number of quests does not exceed the limit.
+pub fn validate_max_quests(current_count: u32) -> Result<(), Error> {
+    if current_count >= MAX_QUEST_IDS_TOTAL {
+        return Err(Error::ArrayTooLong); // Or a more specific error if available
     }
     Ok(())
 }

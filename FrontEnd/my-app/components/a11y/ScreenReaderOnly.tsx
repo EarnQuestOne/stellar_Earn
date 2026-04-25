@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 
 interface ScreenReaderOnlyProps {
   children: ReactNode;
-  as?: keyof JSX.IntrinsicElements;
+  as?: any;
   className?: string;
 }
 

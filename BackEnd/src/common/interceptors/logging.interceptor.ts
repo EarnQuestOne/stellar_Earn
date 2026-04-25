@@ -5,6 +5,7 @@ import {
   NestInterceptor,
   HttpException,
   SetMetadata,
+  Optional,
 } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
@@ -12,6 +13,8 @@ import { AppLoggerService } from '../logger/logger.service';
 import { sanitizeBody, sanitizeUrl } from '../logger/sanitize.util';
 import { Request, Response } from 'express';
 import { Reflector } from '@nestjs/core';
+import { MetricsService } from '../services/metrics.service';
+import { AlertService } from '../services/alert.service';
 
 interface RequestWithCorrelationId extends Request {
   correlationId?: string;
@@ -26,7 +29,9 @@ export const SkipLogging = () => SetMetadata(SKIP_LOGGING_KEY, true);
 export class LoggingInterceptor implements NestInterceptor {
   constructor(
     private readonly logger: AppLoggerService,
-    private readonly reflector?: Reflector,
+    @Optional() private readonly reflector?: Reflector,
+    @Optional() private readonly metrics?: MetricsService,
+    @Optional() private readonly alerts?: AlertService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -117,6 +122,14 @@ export class LoggingInterceptor implements NestInterceptor {
         correlationId: request.correlationId,
       },
     });
+
+    const roundedMs = Math.round(durationMs * 100) / 100;
+    this.metrics?.observeHistogram('http_request_duration_ms', roundedMs, {
+      method: request.method,
+      status: String(response.statusCode),
+    });
+    this.metrics?.incrementCounter('http_requests_total', { method: request.method });
+    this.alerts?.recordRequest(roundedMs, false);
   }
 
   private logError(
@@ -173,5 +186,14 @@ export class LoggingInterceptor implements NestInterceptor {
         correlationId: request.correlationId,
       },
     });
+
+    const roundedMs = Math.round(durationMs * 100) / 100;
+    this.metrics?.observeHistogram('http_request_duration_ms', roundedMs, {
+      method: request.method,
+      status: String(statusCode),
+    });
+    this.metrics?.incrementCounter('http_requests_total', { method: request.method });
+    this.metrics?.incrementCounter('http_errors_total', { method: request.method, status: String(statusCode) });
+    this.alerts?.recordRequest(roundedMs, true);
   }
 }

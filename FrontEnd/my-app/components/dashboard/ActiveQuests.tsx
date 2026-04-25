@@ -1,6 +1,7 @@
 'use client';
 
 import type { Quest } from '@/lib/types/dashboard';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface ActiveQuestsProps {
   quests: Quest[];
@@ -17,20 +18,6 @@ interface SimpleQuest {
   reward: number;
 }
 
-function QuestRowSkeleton() {
-  return (
-    <div className="flex items-center justify-between py-4 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
-      <div className="flex-1">
-        <div className="h-5 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
-        <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="h-6 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-5 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-    </div>
-  );
-}
 
 function StatusBadge({ status }: { status: QuestStatus }) {
   const statusConfig = {
@@ -90,9 +77,9 @@ export function ActiveQuests({ quests, isLoading }: ActiveQuestsProps) {
     ? quests.map(q => ({
         id: q.id,
         title: q.title,
-        daysLeft: Math.ceil((new Date(q.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
-        status: q.progress > 50 ? 'in_progress' as QuestStatus : 'pending' as QuestStatus,
-        reward: q.reward,
+        daysLeft: q.deadline ? Math.ceil((new Date(q.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0,
+        status: 'in_progress' as QuestStatus,
+        reward: Number(q.rewardAmount),
       }))
     : [
         { id: '1', title: 'Smart Contract Security Review', daysLeft: 3, status: 'in_progress' as QuestStatus, reward: 250 },
@@ -110,11 +97,7 @@ export function ActiveQuests({ quests, isLoading }: ActiveQuestsProps) {
       </div>
 
       {isLoading ? (
-        <div>
-          <QuestRowSkeleton />
-          <QuestRowSkeleton />
-          <QuestRowSkeleton />
-        </div>
+        <Skeleton.List items={3} />
       ) : simpleQuests.length === 0 ? (
         <EmptyState />
       ) : (

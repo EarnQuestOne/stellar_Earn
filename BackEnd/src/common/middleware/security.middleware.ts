@@ -1,63 +1,132 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NestMiddleware,
+  PayloadTooLargeException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
-import { Logger } from '@nestjs/common';
+import {
+  detectSecurityIssues,
+  extractAuditPayload,
+  generateCsrfToken,
+  getClientIp,
+  isIpBlockedByActivity,
+  isIpBlockedByReputation,
+  isSafeMethod,
+  parseCookies,
+  recordSuspiciousActivity,
+  sanitizeObjectDeep,
+  serializeCookie,
+  verifyRequestSignature,
+} from '../utils/security.utils';
+import { getApplicationSecurityConfig } from '../../config/security.config';
 
-/**
- * Security middleware for additional request validation and sanitization
- * Provides enhanced security beyond Helmet and basic validation
- */
 @Injectable()
 export class SecurityMiddleware implements NestMiddleware {
   private readonly logger = new Logger(SecurityMiddleware.name);
 
+  constructor(private readonly configService: ConfigService) {}
+
   use(req: Request, res: Response, next: NextFunction) {
-    // Log security-relevant information
-    this.logRequestInfo(req);
+    const securityConfig = getApplicationSecurityConfig(this.configService);
+    const ipAddress = getClientIp(req);
+    const auditId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    // Additional security headers
+    res.setHeader(securityConfig.headers.auditHeaderName, auditId);
     this.setAdditionalSecurityHeaders(res);
+    this.enforceRequestConstraints(
+      req,
+      securityConfig.limits.maxContentLengthBytes,
+      securityConfig.limits.maxHeaderCount,
+      securityConfig.limits.maxUrlLength,
+    );
+    this.enforceIpReputation(
+      ipAddress,
+      securityConfig.reputation.blockedIps,
+      securityConfig.reputation.trustedIps,
+    );
+    this.sanitizeQueryParams(req, securityConfig.limits.maxParameterDepth);
 
-    // Request validation
-    this.validateRequest(req);
+    const issues = this.collectIssues(req, ipAddress, securityConfig);
+    const suspiciousActivity = issues.length
+      ? recordSuspiciousActivity({
+          key: ipAddress,
+          issues,
+          threshold: securityConfig.detection.suspiciousScoreThreshold,
+          windowMs: securityConfig.detection.suspiciousWindowMs,
+          blockDurationMs: securityConfig.detection.suspiciousBlockDurationMs,
+        })
+      : { score: 0, blocked: false as const };
 
-    // Sanitize query parameters
-    this.sanitizeQueryParams(req);
+    if (isIpBlockedByActivity(ipAddress) || suspiciousActivity.blocked) {
+      this.logSecurityAudit(
+        req,
+        auditId,
+        ipAddress,
+        issues,
+        'blocked_activity_threshold',
+        securityConfig.detection.maxAuditBodyLength,
+      );
+      throw new ForbiddenException('Suspicious activity threshold exceeded');
+    }
 
-    // Detect suspicious patterns
-    this.detectSuspiciousActivity(req);
+    const signatureStatus = this.verifyOptionalRequestSignature(
+      req,
+      securityConfig,
+      auditId,
+      ipAddress,
+    );
+    res.locals.securityContext = {
+      auditId,
+      ipAddress,
+      signatureVerified: signatureStatus.verified,
+      signatureFingerprint: signatureStatus.fingerprint,
+    };
+
+    this.issueCsrfTokenIfNeeded(req, res, securityConfig);
+
+    if (
+      issues.length > 0 &&
+      securityConfig.detection.blockSuspiciousRequests &&
+      issues.some((issue) => issue.score >= 3)
+    ) {
+      this.logSecurityAudit(
+        req,
+        auditId,
+        ipAddress,
+        issues,
+        'blocked_request',
+        securityConfig.detection.maxAuditBodyLength,
+      );
+      throw new BadRequestException('Suspicious request blocked by security policy');
+    }
+
+    if (issues.length > 0) {
+      this.logSecurityAudit(
+        req,
+        auditId,
+        ipAddress,
+        issues,
+        'flagged_request',
+        securityConfig.detection.maxAuditBodyLength,
+      );
+    }
 
     next();
   }
 
-  private logRequestInfo(req: Request): void {
-    const userAgent = req.get('User-Agent') || 'Unknown';
-    const ipAddress = this.getClientIP(req);
-    const method = req.method;
-    const url = req.url;
-    const referer = req.get('Referer') || 'Direct';
-
-    this.logger.verbose(
-      `Request: ${method} ${url} | IP: ${ipAddress} | UA: ${userAgent.substring(0, 50)}... | Ref: ${referer}`,
-    );
-  }
-
   private setAdditionalSecurityHeaders(res: Response): void {
-    // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
-
-    // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
-
-    // Enable XSS protection (for older browsers)
     res.setHeader('X-XSS-Protection', '1; mode=block');
-
-    // Specify referrer policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-    // Remove server information
+    res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=()');
     res.removeHeader('X-Powered-By');
 
-    // Set strict transport security (if not set by Helmet)
     if (!res.getHeader('Strict-Transport-Security')) {
       res.setHeader(
         'Strict-Transport-Security',
@@ -66,147 +135,217 @@ export class SecurityMiddleware implements NestMiddleware {
     }
   }
 
-  private validateRequest(req: Request): void {
-    // Validate Content-Type for POST/PUT/PATCH requests
-    const writeMethods = ['POST', 'PUT', 'PATCH'];
+  private enforceRequestConstraints(
+    req: Request,
+    maxContentLengthBytes: number,
+    maxHeaderCount: number,
+    maxUrlLength: number,
+  ): void {
+    const contentLengthHeader = req.headers['content-length'];
+    const contentLength =
+      typeof contentLengthHeader === 'string' ? Number(contentLengthHeader) : undefined;
+
+    if (contentLength && contentLength > maxContentLengthBytes) {
+      throw new PayloadTooLargeException('Request payload exceeds configured size limit');
+    }
+
+    if (Object.keys(req.headers).length > maxHeaderCount) {
+      throw new BadRequestException('Request contains too many headers');
+    }
+
+    if (req.originalUrl.length > maxUrlLength) {
+      throw new BadRequestException('Request URL exceeds allowed length');
+    }
+
+    const contentType = req.get('content-type');
     if (
-      writeMethods.includes(req.method) &&
-      req.headers['content-type'] &&
-      !req.headers['content-type'].includes('application/json') &&
-      !req.headers['content-type'].includes('application/x-www-form-urlencoded')
+      !isSafeMethod(req.method) &&
+      contentType &&
+      !contentType.includes('application/json') &&
+      !contentType.includes('application/x-www-form-urlencoded') &&
+      !contentType.includes('multipart/form-data')
     ) {
-      this.logger.warn(
-        `Suspicious Content-Type: ${req.headers['content-type']} for ${req.method} request to ${req.url}`,
-      );
-    }
-
-    // Check for excessive headers (potential attack)
-    const headerCount = Object.keys(req.headers).length;
-    if (headerCount > 100) {
-      this.logger.warn(
-        `Excessive headers (${headerCount}) in request to ${req.url}`,
-      );
-    }
-
-    // Validate user agent
-    const userAgent = req.get('User-Agent');
-    if (!userAgent || userAgent.length < 10) {
-      this.logger.verbose(
-        `Suspicious User-Agent: ${userAgent || 'None'} for request to ${req.url}`,
-      );
+      throw new BadRequestException('Unsupported content type');
     }
   }
 
-  private sanitizeQueryParams(req: Request): void {
-    // Deep sanitize query parameters
+  private enforceIpReputation(
+    ipAddress: string,
+    blockedIps: string[],
+    trustedIps: string[],
+  ): void {
+    if (isIpBlockedByReputation(ipAddress, blockedIps, trustedIps)) {
+      throw new ForbiddenException('Request blocked by IP reputation policy');
+    }
+  }
+
+  private sanitizeQueryParams(req: Request, maxDepth: number): void {
     if (req.query) {
-      req.query = this.sanitizeObject(req.query);
+      req.query = sanitizeObjectDeep(req.query, 0, maxDepth) as Request['query'];
     }
   }
 
-  private sanitizeObject(obj: any): any {
-    if (typeof obj === 'string') {
-      return this.sanitizeString(obj);
+  private collectIssues(
+    req: Request,
+    ipAddress: string,
+    securityConfig: ReturnType<typeof getApplicationSecurityConfig>,
+  ) {
+    const issues = [
+      ...detectSecurityIssues(req.originalUrl),
+      ...detectSecurityIssues(req.query),
+      ...detectSecurityIssues(req.body),
+      ...detectSecurityIssues(req.headers['user-agent'] || ''),
+    ];
+
+    const userAgent = req.get('user-agent') || '';
+    if (!userAgent || userAgent.length < 6) {
+      issues.push({
+        category: 'anomaly',
+        reason: 'Missing or suspiciously short user-agent header',
+        score: 1,
+      });
     }
 
-    if (Array.isArray(obj)) {
-      return obj.map((item) => this.sanitizeObject(item));
+    if (isIpBlockedByActivity(ipAddress)) {
+      issues.push({
+        category: 'anomaly',
+        reason: 'IP is temporarily blocked after repeated suspicious requests',
+        score: securityConfig.detection.suspiciousScoreThreshold,
+      });
     }
 
-    if (typeof obj === 'object' && obj !== null) {
-      const sanitized = {};
-      for (const [key, value] of Object.entries(obj)) {
-        // Remove dangerous keys
-        if (
-          key.toLowerCase().includes('constructor') ||
-          key.toLowerCase().includes('prototype') ||
-          key.toLowerCase().includes('__proto__')
-        ) {
-          continue;
-        }
-        sanitized[key] = this.sanitizeObject(value);
-      }
-      return sanitized;
-    }
-
-    return obj;
+    return issues;
   }
 
-  private sanitizeString(str: string): string {
-    if (typeof str !== 'string') return str;
+  private verifyOptionalRequestSignature(
+    req: Request,
+    securityConfig: ReturnType<typeof getApplicationSecurityConfig>,
+    auditId: string,
+    ipAddress: string,
+  ): { verified: boolean; fingerprint?: string } {
+    const signature = req.get(securityConfig.headers.signatureHeaderName);
+    const timestamp = req.get(securityConfig.headers.signatureTimestampHeaderName);
+    const nonce = req.get(securityConfig.headers.signatureNonceHeaderName);
+    const signatureHeadersPresent = [signature, timestamp, nonce].some(Boolean);
 
-    return (
-      str
-        // Remove NULL bytes
-        .replace(/\0/g, '')
-        // Remove control characters
-        .replace(/[\x00-\x1f\x7f-\x9f]/g, '')
-        // Basic HTML entity decoding to prevent double-encoding attacks
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&#x27;/g, "'")
-        // Remove javascript protocol
-        .replace(/javascript:/gi, 'javascript_disabled:')
-        // Remove data protocol (except for data:image)
-        .replace(/((?!data:image\/)\S)*data:(?!image\/)\S*/gi, 'data_disabled:')
-        .trim()
+    if (!signatureHeadersPresent) {
+      return { verified: false };
+    }
+
+    if (!signature || !timestamp || !nonce) {
+      this.logSecurityAudit(
+        req,
+        auditId,
+        ipAddress,
+        [
+          {
+            category: 'signature',
+            reason: 'Incomplete request signature headers',
+            score: 4,
+          },
+        ],
+        'invalid_signature_headers',
+        securityConfig.detection.maxAuditBodyLength,
+      );
+      throw new UnauthorizedException('Invalid request signature');
+    }
+
+    const verification = verifyRequestSignature({
+      secret: securityConfig.secrets.requestSignature,
+      signature,
+      timestamp,
+      nonce,
+      method: req.method,
+      path: req.originalUrl,
+      body: req.body,
+      toleranceMs: securityConfig.detection.signatureToleranceMs,
+    });
+
+    if (!verification.valid) {
+      this.logSecurityAudit(
+        req,
+        auditId,
+        ipAddress,
+        [
+          {
+            category: 'signature',
+            reason: verification.reason || 'Signature verification failed',
+            score: 4,
+          },
+        ],
+        'invalid_signature',
+        securityConfig.detection.maxAuditBodyLength,
+      );
+      throw new UnauthorizedException('Invalid request signature');
+    }
+
+    return {
+      verified: true,
+      fingerprint: verification.fingerprint,
+    };
+  }
+
+  private issueCsrfTokenIfNeeded(
+    req: Request,
+    res: Response,
+    securityConfig: ReturnType<typeof getApplicationSecurityConfig>,
+  ): void {
+    if (!isSafeMethod(req.method)) {
+      return;
+    }
+
+    const cookies = parseCookies(req.headers.cookie);
+    const existingToken = cookies[securityConfig.headers.csrfCookieName];
+    const token =
+      existingToken ||
+      generateCsrfToken(
+        securityConfig.secrets.csrf,
+        securityConfig.detection.csrfTtlMs,
+      );
+
+    res.setHeader(securityConfig.headers.csrfHeaderName, token);
+
+    if (!existingToken) {
+      res.append(
+        'Set-Cookie',
+        serializeCookie(securityConfig.headers.csrfCookieName, token, {
+          maxAgeMs: securityConfig.detection.csrfTtlMs,
+          secure: securityConfig.environment === 'production',
+          sameSite: 'Strict',
+          path: '/',
+        }),
+      );
+    }
+  }
+
+  private logSecurityAudit(
+    req: Request,
+    auditId: string,
+    ipAddress: string,
+    issues: Array<{ category: string; reason: string; score: number }>,
+    outcome: string,
+    maxAuditBodyLength: number,
+  ): void {
+    const shouldSkipAudit = ['/api/v1/health', '/api/health'].some((path) =>
+      req.originalUrl.startsWith(path),
     );
-  }
 
-  private detectSuspiciousActivity(req: Request): void {
-    const url = req.url;
-    const method = req.method;
-    const userAgent = req.get('User-Agent') || '';
-    const referer = req.get('Referer') || '';
-
-    // Check for common attack patterns
-    const attackPatterns = [
-      /\b(?:SELECT|UNION|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|xp_)\b/i,
-      /\.\.\/|~\/|\/\/\/|\/\.\./,
-      /<script.*?>|<.*?onload|<.*?onerror|<img.*?onerror/i,
-      /\$\{.*?\}|#\{.*?\}|{{.*?}}/,
-      /etc\/passwd|c:|windows\/|\/system32\//i,
-    ];
-
-    // Check URL parameters
-    const suspiciousInput = url + JSON.stringify(req.query) + JSON.stringify(req.body);
-    const detectedAttack = attackPatterns.find(pattern => pattern.test(suspiciousInput));
-
-    if (detectedAttack) {
-      this.logger.warn(
-        `Suspicious input detected: ${detectedAttack.toString()} | ${method} ${url} | IP: ${this.getClientIP(req)} | UA: ${userAgent.substring(0, 50)}`,
-      );
-
-      // In production, you might want to block these requests
-      // For now, we just log them
+    if (shouldSkipAudit) {
+      return;
     }
 
-    // Check for suspicious user agents
-    const suspiciousUserAgents = [
-      /sqlmap/i,
-      /nikto/i,
-      /nessus/i,
-      /burp/i,
-      /zaproxy/i,
-    ];
-
-    const suspiciousUA = suspiciousUserAgents.find(pattern => pattern.test(userAgent));
-    if (suspiciousUA) {
-      this.logger.warn(
-        `Suspicious User-Agent detected: ${userAgent} | ${method} ${url}`,
-      );
-    }
-  }
-
-  private getClientIP(req: Request): string {
-    return (
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      (req.headers['x-real-ip'] as string) ||
-      (req.connection?.remoteAddress as string) ||
-      (req.socket?.remoteAddress as string) ||
-      'Unknown'
+    this.logger.warn(
+      JSON.stringify({
+        event: 'security_audit',
+        auditId,
+        outcome,
+        ipAddress,
+        method: req.method,
+        path: req.originalUrl,
+        userAgent: req.get('user-agent'),
+        issues,
+        body: extractAuditPayload(req.body, maxAuditBodyLength),
+      }),
     );
   }
 }

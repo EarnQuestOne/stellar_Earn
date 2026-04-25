@@ -12,13 +12,13 @@ import { AnalyticsQueryDto, Granularity } from '../dto/analytics-query.dto';
 import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
-import { User } from '../../users/entities/user.entity';
+import { User as AnalyticsUser } from '../entities/user.entity';
 
 @Injectable()
 export class PlatformAnalyticsService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(AnalyticsUser)
+    private userRepository: Repository<AnalyticsUser>,
     @InjectRepository(Quest)
     private questRepository: Repository<Quest>,
     @InjectRepository(Submission)

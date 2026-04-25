@@ -47,4 +47,8 @@ pub enum Error {
     NoFundsToWithdraw = 73,
     QuestNotTerminal = 74,
     TokenMismatch = 75,
+    MetadataNotFound = 76,
+
+    // Reentrancy
+    ReentrantCall = 80,
 }

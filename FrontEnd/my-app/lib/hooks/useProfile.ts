@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import type { 
-  ProfileData, 
-  UserProfile, 
-  ProfileStats, 
-  Achievement, 
-  Activity, 
-  EditProfileData 
-} from '../types/profile';
+import { useEffect, useCallback } from 'react';
+import { useStore } from '@/lib/store';
+import type { ProfileData, EditProfileData } from '../types/profile';
 import {
   fetchUserProfile,
   updateProfile,
@@ -18,131 +12,122 @@ import {
   fetchUserActivities,
 } from '../api/profile';
 
-interface UseProfileReturn {
-  profile: UserProfile | null;
-  stats: ProfileStats | null;
-  achievements: Achievement[];
-  activities: Activity[];
-  isLoading: boolean;
-  error: string | null;
-  isUpdating: boolean;
-  updateError: string | null;
-  refetch: () => Promise<void>;
-  updateProfileData: (data: EditProfileData) => Promise<void>;
-  follow: () => Promise<void>;
-  unfollow: () => Promise<void>;
-  fetchAchievements: () => Promise<void>;
-  fetchActivities: () => Promise<void>;
-}
+export function useProfile(address: string) {
+  const profile      = useStore((s) => s.profile);
+  const stats        = useStore((s) => s.stats);
+  const achievements = useStore((s) => s.achievements);
+  const activities   = useStore((s) => s.activities);
+  const isLoading    = useStore((s) => s.isLoading);
+  const error        = useStore((s) => s.error);
+  const isUpdating   = useStore((s) => s.isUpdating);
+  const updateError  = useStore((s) => s.updateError);
 
-export function useProfile(address: string): UseProfileReturn {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState<string | null>(null);
+  const setUserData   = useStore((s) => s.setUserData);
+  const setLoading    = useStore((s) => s.setLoading);
+  const setError      = useStore((s) => s.setError);
+  const setUpdating   = useStore((s) => s.setUpdating);
+  const setUpdateError = useStore((s) => s.setUpdateError);
 
   const fetchData = useCallback(async () => {
     if (!address) {
       setError('No address provided');
-      setIsLoading(false);
+      setLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
       const data: ProfileData = await fetchUserProfile(address);
-      setProfile(data.profile);
-      setStats(data.stats);
-      setAchievements(data.achievements);
-      setActivities(data.activities);
+      setUserData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch profile data');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [address]);
 
   const updateProfileData = useCallback(async (data: EditProfileData) => {
     if (!profile) return;
 
-    setIsUpdating(true);
+    setUpdating(true);
     setUpdateError(null);
 
     try {
       const updatedProfile = await updateProfile(profile.stellarAddress, data);
-      setProfile(updatedProfile);
-      // Update stats if needed
-      if (stats) {
-        setStats({
-          ...stats,
-          xp: updatedProfile.xp,
-          level: updatedProfile.level,
-        });
-      }
+      setUserData({
+        profile: updatedProfile,
+        stats:   stats
+          ? { ...stats, xp: updatedProfile.xp, level: updatedProfile.level }
+          : stats!,
+        achievements,
+        activities,
+      });
     } catch (err) {
       setUpdateError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
-      setIsUpdating(false);
+      setUpdating(false);
     }
-  }, [profile, stats]);
+  }, [profile, stats, achievements, activities]);
 
   const follow = useCallback(async () => {
     if (!profile || profile.isOwnProfile) return;
-
     try {
       await followUser(profile.stellarAddress);
-      setProfile({
-        ...profile,
-        isFollowing: true,
-        followersCount: profile.followersCount + 1,
+      setUserData({
+        profile: {
+          ...profile,
+          isFollowing:    true,
+          followersCount: profile.followersCount + 1,
+        },
+        stats:        stats!,
+        achievements,
+        activities,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to follow user');
     }
-  }, [profile]);
+  }, [profile, stats, achievements, activities]);
 
   const unfollow = useCallback(async () => {
     if (!profile || profile.isOwnProfile) return;
-
     try {
       await unfollowUser(profile.stellarAddress);
-      setProfile({
-        ...profile,
-        isFollowing: false,
-        followersCount: profile.followersCount - 1,
+      setUserData({
+        profile: {
+          ...profile,
+          isFollowing:    false,
+          followersCount: profile.followersCount - 1,
+        },
+        stats:        stats!,
+        achievements,
+        activities,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unfollow user');
     }
-  }, [profile]);
+  }, [profile, stats, achievements, activities]);
 
   const fetchAchievements = useCallback(async () => {
     if (!profile) return;
-
     try {
-      const userAchievements = await fetchUserAchievements(profile.stellarAddress);
-      setAchievements(userAchievements);
+      const data = await fetchUserAchievements(profile.stellarAddress);
+      setUserData({ profile: profile!, stats: stats!, achievements: data, activities });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch achievements');
     }
-  }, [profile]);
+  }, [profile, stats, activities]);
 
   const fetchActivities = useCallback(async () => {
     if (!profile) return;
-
     try {
-      const userActivities = await fetchUserActivities(profile.stellarAddress);
-      setActivities(userActivities);
+      const data = await fetchUserActivities(profile.stellarAddress);
+      setUserData({ profile: profile!, stats: stats!, achievements, activities: data });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch activities');
     }
-  }, [profile]);
+  }, [profile, stats, achievements]);
 
   useEffect(() => {
     fetchData();
@@ -157,7 +142,7 @@ export function useProfile(address: string): UseProfileReturn {
     error,
     isUpdating,
     updateError,
-    refetch: fetchData,
+    refetch:          fetchData,
     updateProfileData,
     follow,
     unfollow,

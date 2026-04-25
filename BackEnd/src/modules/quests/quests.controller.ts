@@ -31,7 +31,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.service';
-import { UserRole } from '../users/entities/user.entity';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('Quests')
 @Controller('quests')
@@ -40,7 +40,7 @@ export class QuestsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new quest (Admin only)' })
   @ApiResponse({
@@ -86,7 +86,7 @@ export class QuestsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a quest (Admin only, ownership required)' })
   @ApiParam({ name: 'id', description: 'Quest ID (UUID)' })
@@ -112,7 +112,7 @@ export class QuestsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a quest (Admin only, ownership required)' })

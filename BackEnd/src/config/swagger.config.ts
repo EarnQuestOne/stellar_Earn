@@ -11,8 +11,10 @@ export function setupSwagger(app: INestApplication, configService?: ConfigServic
 
   const builder = new DocumentBuilder()
     .setTitle(title)
-    .setDescription(description)
+    .setDescription(`${description}\n\nSupported API versions: v1, v2. Use path versioning (/api/v1/*, /api/v2/*) and/or header versioning (X-API-Version: 1).`)
     .setVersion(version)
+    .addServer('/api/v1', 'API v1')
+    .addServer('/api/v2', 'API v2')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'JWT-auth',
