@@ -53,6 +53,8 @@ export interface OAuthUserProfile {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -162,13 +164,16 @@ export class AuthService {
   }
 
   /**
-   * Generate access and refresh tokens
+   * Issue a new access + refresh token pair. When called as part of a refresh
+   * rotation, pass the existing `familyId` so the new token belongs to the
+   * same lineage; otherwise a fresh family is created (e.g. on login).
    */
   async generateTokens(
     tokenSubject: string,
     userId: string | null,
     stellarAddress: string | null,
     role: Role,
+    familyId?: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -191,6 +196,9 @@ export class AuthService {
 
     const expiresIn = this.parseExpirationToMs(accessTokenExpiration);
 
+    // The plaintext refresh token is returned to the caller exactly once
+    // (in this response) and only its SHA-256 hash is persisted. A DB leak
+    // therefore cannot be replayed against /auth/refresh.
     const refreshTokenValue = crypto.randomBytes(32).toString('hex');
     const refreshTokenExpiration = this.configService.get<string>(
       'JWT_REFRESH_TOKEN_EXPIRATION',
@@ -204,40 +212,65 @@ export class AuthService {
       token: refreshTokenValue,
       userId,
       stellarAddress,
+      familyId: familyId ?? crypto.randomUUID(),
       expiresAt,
     });
 
-    await this.refreshTokenRepository.save(refreshToken);
+    const saved = await this.refreshTokenRepository.save(refreshToken);
 
     return {
       accessToken,
-      refreshToken: refreshTokenValue,
+      refreshToken: this.encodeRefreshToken(saved.id, refreshTokenValue),
       expiresIn,
     };
   }
 
   /**
-   * Refresh access token using refresh token
+   * Rotate a refresh token: validate the presented value, mark it consumed,
+   * and issue a fresh pair under the same family. If the presented token has
+   * already been rotated/revoked, treat it as a stolen-token reuse attempt
+   * and revoke the entire family before failing.
    */
   async refreshTokens(refreshTokenValue: string): Promise<TokenResponseDto> {
-    const refreshToken = await this.refreshTokenRepository.findOne({
-      where: { token: refreshTokenValue },
-    });
-
-    if (!refreshToken) {
+    const decoded = this.decodeRefreshToken(refreshTokenValue);
+    if (!decoded) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    if (refreshToken.isRevoked) {
+    const tokenHash = this.hashRefreshToken(decoded.secret);
+    const stored = await this.refreshTokenRepository.findOne({
+      where: { id: decoded.id, tokenHash },
+    });
+
+    if (!stored) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (stored.isRevoked) {
+      // A previously-rotated (or otherwise revoked) token is being presented
+      // again. The legitimate client would only ever use the latest token, so
+      // this is treated as a stolen-token replay: kill the whole family to
+      // force the real user (and the attacker) back through /auth/login.
+      this.logger.warn(
+        `Refresh token reuse detected for family ${stored.familyId}; revoking entire family`,
+      );
+      await this.revokeFamily(
+        stored.familyId,
+        RefreshTokenRevokeReason.REUSE_DETECTED,
+      );
       throw new UnauthorizedException('Refresh token has been revoked');
     }
 
-    if (new Date() > refreshToken.expiresAt) {
+    if (new Date() > stored.expiresAt) {
       throw new UnauthorizedException('Refresh token has expired');
     }
 
-    refreshToken.isRevoked = true;
-    await this.refreshTokenRepository.save(refreshToken);
+    const role = this.getRoleForAddress(stored.stellarAddress);
+    const tokens = await this.generateTokens(
+      stored.stellarAddress,
+      role,
+      stored.familyId,
+    );
 
     const user = refreshToken.userId
       ? await this.usersService.findById(refreshToken.userId)
@@ -252,7 +285,7 @@ export class AuthService {
   }
 
   /**
-   * Revoke a specific refresh token or all user tokens
+   * Revoke a specific refresh token or all the user's active tokens.
    */
   async revokeToken(userId: string, tokenId?: string): Promise<void> {
     if (tokenId) {
@@ -268,6 +301,8 @@ export class AuthService {
       }
 
       token.isRevoked = true;
+      token.revokedAt = now;
+      token.revokedReason = RefreshTokenRevokeReason.LOGOUT;
       await this.refreshTokenRepository.save(token);
     } else {
       await this.refreshTokenRepository.createQueryBuilder()
@@ -276,6 +311,15 @@ export class AuthService {
         .where('userId = :userId OR stellarAddress = :userId', { userId })
         .execute();
     }
+
+    await this.refreshTokenRepository.update(
+      { stellarAddress, isRevoked: false },
+      {
+        isRevoked: true,
+        revokedAt: now,
+        revokedReason: RefreshTokenRevokeReason.LOGOUT_ALL,
+      },
+    );
   }
 
   /**
@@ -304,6 +348,51 @@ export class AuthService {
       id: user.id,
       stellarAddress: user.stellarAddress,
       role: user.role,
+    };
+  }
+
+  /**
+   * Revoke every still-active refresh token in a family. Used by
+   * reuse-detection — a presented-after-rotation token means at least one
+   * party in the chain is malicious, so all current tokens are invalidated.
+   */
+  private async revokeFamily(
+    familyId: string,
+    reason: RefreshTokenRevokeReason,
+  ): Promise<void> {
+    await this.refreshTokenRepository.update(
+      { familyId, isRevoked: false },
+      {
+        isRevoked: true,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
+    );
+  }
+
+  private hashRefreshToken(value: string): string {
+    return crypto.createHash('sha256').update(value).digest('hex');
+  }
+
+  /**
+   * The wire format embeds the row id alongside the secret so the lookup is
+   * O(1) by primary key and we don't have to scan the table by hash. Format:
+   *   <uuid>.<hex-secret>
+   */
+  private encodeRefreshToken(id: string, secret: string): string {
+    return `${id}.${secret}`;
+  }
+
+  private decodeRefreshToken(
+    value: string,
+  ): { id: string; secret: string } | null {
+    const sep = value.indexOf('.');
+    if (sep <= 0 || sep === value.length - 1) {
+      return null;
+    }
+    return {
+      id: value.slice(0, sep),
+      secret: value.slice(sep + 1),
     };
   }
 
