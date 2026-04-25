@@ -6,6 +6,7 @@ import { DatabaseIndicator } from './indicators/database.indicator';
 import { RedisIndicator } from './indicators/redis.indicator';
 import { MetricsService } from '../../common/services/metrics.service';
 import { SkipLogging } from '../../common/interceptors/logging.interceptor';
+import { DatabasePoolMonitorService } from './services/database-pool-monitor.service';
 
 @ApiTags('Health')
 @Controller('health')
@@ -15,6 +16,7 @@ export class HealthController {
     private readonly db: DatabaseIndicator,
     private readonly redis: RedisIndicator,
     private readonly metrics: MetricsService,
+    private readonly poolMonitor: DatabasePoolMonitorService,
   ) {}
 
   @Get()
@@ -69,5 +71,17 @@ export class HealthController {
   })
   prometheusMetrics(@Res() res: Response) {
     res.send(this.metrics.getPrometheusOutput());
+  }
+
+  @Get('pool')
+  @ApiOperation({ summary: 'Database connection pool statistics' })
+  @ApiResponse({ status: 200, description: 'Pool statistics' })
+  poolStats() {
+    return {
+      stats: this.poolMonitor.getPoolStats(),
+      config: this.poolMonitor.getPoolConfig(),
+      utilization: this.poolMonitor.getUtilizationPercentage(),
+      averageAcquisitionTime: this.poolMonitor.getAverageAcquisitionTime(),
+    };
   }
 }
