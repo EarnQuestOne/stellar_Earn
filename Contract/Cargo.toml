@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "stellar_earn",
-    "earn_quest",
+    "earn-quest",
 ]
 resolver = "2"
 
