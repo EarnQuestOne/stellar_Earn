@@ -192,6 +192,11 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     this.registerGauge('process_uptime_seconds', 'Application uptime in seconds');
     this.registerCounter('auth_attempts_total', 'Total authentication attempts');
     this.registerCounter('auth_failures_total', 'Total failed authentication attempts');
+    this.registerCounter('job_created_total', 'Total background jobs created');
+    this.registerCounter('job_failures_total', 'Total background jobs failed');
+    this.registerCounter('job_dead_letter_jobs_total', 'Total background jobs moved to the dead letter queue');
+    this.registerGauge('dead_letter_queue_size', 'Number of jobs currently in the dead letter queue');
+    this.registerHistogram('job_processing_duration_ms', 'Background job processing duration in milliseconds');
   }
 
   private startSystemCollection(): void {
