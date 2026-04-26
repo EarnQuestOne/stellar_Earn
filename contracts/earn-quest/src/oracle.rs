@@ -2,7 +2,7 @@ use crate::errors::Error;
 use crate::types::{
     AggregatedPrice, OracleConfig, OracleResponse, OracleType, PriceData, PriceFeedRequest,
 };
-use soroban_sdk::{Address, Env, Symbol, U256};
+use soroban_sdk::{Env, U256, Vec};
 
 /// Oracle module for decentralized price feeds
 pub struct Oracle;
@@ -37,13 +37,13 @@ impl Oracle {
         for config in oracle_configs.iter() {
             total_sources += 1;
             
-            if let Ok(price_data) = Self::get_price(env, config, request) {
-                // Check if price is fresh enough
+            if let Ok(price_data) = Self::get_price(env, &config, request) {
+                valid_prices.push_back((price_data.clone(), config.min_confidence));
                 let current_time = env.ledger().timestamp();
                 if current_time - price_data.timestamp <= config.max_age_seconds {
                     // Check confidence threshold
                     if price_data.confidence >= config.min_confidence {
-                        valid_prices.push((price_data, config.min_confidence));
+                        // No need to push again
                     }
                 }
             }
@@ -70,7 +70,7 @@ impl Oracle {
         Ok(PriceData {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
-            price: U256::from_u32(1000), // Mock price
+            price: U256::from_u32(env, 1000), // Mock price
             decimals: 7,
             timestamp: current_time,
             confidence: 95,
@@ -91,7 +91,7 @@ impl Oracle {
         Ok(PriceData {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
-            price: U256::from_u32(1050), // Mock price
+            price: U256::from_u32(env, 1050), // Mock price
             decimals: 7,
             timestamp: current_time,
             confidence: 90,
@@ -112,7 +112,7 @@ impl Oracle {
         Ok(PriceData {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
-            price: U256::from_u32(1025), // Mock price
+            price: U256::from_u32(env, 1025), // Mock price
             decimals: 7,
             timestamp: current_time,
             confidence: 85,
@@ -126,21 +126,24 @@ impl Oracle {
         total_sources: u32,
         request: &PriceFeedRequest,
     ) -> Result<AggregatedPrice, Error> {
-        let mut weighted_sum = U256::from_u32(0);
+        let mut weighted_sum = U256::from_u32(env, 0);
         let mut total_weight = 0u32;
         let mut confidence_sum = 0u32;
 
-        for (price_data, weight) in valid_prices.iter() {
-            weighted_sum += price_data.price * U256::from_u32(*weight);
+        for i in 0u32..valid_prices.len() {
+            let (price_data, weight) = valid_prices.get(i).unwrap();
+            let w = U256::from_u32(env, weight);
+            let weighted_price = price_data.price.mul(&w);
+            weighted_sum = weighted_sum.add(&weighted_price);
             total_weight += weight;
             confidence_sum += price_data.confidence;
         }
 
         if total_weight == 0 {
-            return Err(Error::InvalidOracleConfiguration);
+            return Err(Error::InvalidOracleConfig);
         }
 
-        let weighted_price = weighted_sum / U256::from_u32(total_weight);
+        let weighted_price = weighted_sum.div(&U256::from_u32(env, total_weight));
         let avg_confidence = confidence_sum / valid_prices.len() as u32;
 
         Ok(AggregatedPrice {
@@ -158,11 +161,11 @@ impl Oracle {
     /// Validate oracle configuration
     pub fn validate_config(config: &OracleConfig) -> Result<(), Error> {
         if config.max_age_seconds == 0 {
-            return Err(Error::InvalidOracleConfiguration);
+            return Err(Error::InvalidOracleConfig);
         }
 
         if config.min_confidence > 100 {
-            return Err(Error::InvalidOracleConfiguration);
+            return Err(Error::InvalidOracleConfig);
         }
 
         Ok(())
@@ -178,7 +181,7 @@ impl Oracle {
         if response.price_data.base_asset != request.base_asset
             || response.price_data.quote_asset != request.quote_asset
         {
-            return Err(Error::OracleResponseMismatch);
+            return Err(Error::OracleRespMismatch);
         }
 
         // Check if price is not stale
@@ -197,6 +200,7 @@ impl Oracle {
 
     /// Convert price between different decimal precisions
     pub fn normalize_price(
+        env: &Env,
         price: U256,
         from_decimals: u32,
         to_decimals: u32,
@@ -207,10 +211,10 @@ impl Oracle {
 
         if from_decimals > to_decimals {
             let diff = from_decimals - to_decimals;
-            Ok(price / U256::from_u32(10u32.pow(diff)))
+            Ok(price.div(&U256::from_u32(env, 10u32.pow(diff))))
         } else {
             let diff = to_decimals - from_decimals;
-            Ok(price * U256::from_u32(10u32.pow(diff)))
+            Ok(price.mul(&U256::from_u32(env, 10u32.pow(diff))))
         }
     }
 

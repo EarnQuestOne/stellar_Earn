@@ -33,6 +33,15 @@ pub const MAX_QUEST_IDS_TOTAL: u32 = 5000;
 /// Maximum number of iterations for query scans (prevents gas exhaustion)
 pub const MAX_SCAN_ITERATIONS: u32 = 100;
 
+/// Minimum deadline duration in seconds (prevents single-ledger timestamp nudging)
+pub const MIN_DEADLINE_DURATION: u64 = 60; // 1 minute
+
+/// Maximum deadline duration in seconds (prevents indefinite escrow lock-up)
+pub const MAX_DEADLINE_DURATION: u64 = 86400 * 365; // 1 year
+
+/// Minimum expiry buffer in seconds (absorbs normal validator clock drift)
+pub const MIN_EXPIRY_BUFFER: u64 = 10; // 10 seconds
+
 //================================================================================
 // Address Validation
 //================================================================================

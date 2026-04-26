@@ -136,10 +136,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                              }
+                            ]
                           }
                         }
                       ]
@@ -1209,10 +1213,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                              }
+                            ]
                           }
                         }
                       ]

@@ -51,7 +51,13 @@ pub fn deposit(
         if !existing.is_active {
             return Err(Error::EscrowInactive);
         }
-        b
+        EscrowBalances {
+            total_deposited: existing.total_deposited,
+            total_paid_out: existing.total_paid_out,
+            total_refunded: existing.total_refunded,
+            is_active: existing.is_active,
+            deposit_count: existing.deposit_count,
+        }
     } else {
         // First deposit — also write cold-path metadata (once only)
         storage::set_escrow_meta(
@@ -74,9 +80,9 @@ pub fn deposit(
 
     escrow.total_deposited += amount;
     escrow.deposit_count += 1;
-    storage::set_escrow(env, quest_id, &escrow);
+    storage::set_escrow_balances(env, quest_id, &escrow);
 
-    let available = balances.total_deposited - balances.total_paid_out - balances.total_refunded;
+    let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
     events::escrow_deposited(env, quest_id.clone(), depositor.clone(), amount, available);
 
     // Transfer tokens: creator → contract (external call, kept last)
@@ -148,17 +154,17 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
-    let depositor = escrow.depositor.clone();
-    let token = escrow.token.clone();
+    let available = b.total_deposited - b.total_paid_out - b.total_refunded;
+    let depositor = meta.depositor.clone();
+    let token = meta.token.clone();
 
     // CEI ordering: mark the escrow refunded and inactive FIRST so a
     // re-entrant call during the transfer below cannot trigger a second
     // refund (it would see is_active=false). On transfer failure the
     // transaction reverts and the storage write is rolled back atomically.
-    escrow.total_refunded += available;
-    escrow.is_active = false;
-    storage::set_escrow(env, quest_id, &escrow);
+    b.total_refunded += available;
+    b.is_active = false;
+    storage::set_escrow_balances(env, quest_id, &b);
 
     if available > 0 {
         let token_client = token::Client::new(env, &token);

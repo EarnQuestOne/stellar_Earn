@@ -221,9 +221,9 @@ fn test_grant_badge_by_admin() {
     client.initialize(&admin);
     client.grant_badge(&admin, &user, &Badge::Rookie);
 
-    let stats = client.get_user_stats(&user);
-    assert_eq!(stats.badges.len(), 1);
-    assert_eq!(stats.badges.get(0).unwrap(), Badge::Rookie);
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 1);
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::Rookie);
 }
 
 #[test]
@@ -241,11 +241,11 @@ fn test_grant_multiple_badges() {
     client.grant_badge(&admin, &user, &Badge::Explorer);
     client.grant_badge(&admin, &user, &Badge::Veteran);
 
-    let stats = client.get_user_stats(&user);
-    assert_eq!(stats.badges.len(), 3);
-    assert!(stats.badges.contains(&Badge::Rookie));
-    assert!(stats.badges.contains(&Badge::Explorer));
-    assert!(stats.badges.contains(&Badge::Veteran));
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 3);
+    assert!(badges.badges.contains(&Badge::Rookie));
+    assert!(badges.badges.contains(&Badge::Explorer));
+    assert!(badges.badges.contains(&Badge::Veteran));
 }
 
 #[test]
@@ -262,9 +262,9 @@ fn test_duplicate_badge_not_added() {
     client.grant_badge(&admin, &user, &Badge::Master);
     client.grant_badge(&admin, &user, &Badge::Master);
 
-    let stats = client.get_user_stats(&user);
-    assert_eq!(stats.badges.len(), 1);
-    assert_eq!(stats.badges.get(0).unwrap(), Badge::Master);
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 1);
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::Master);
 }
 
 #[test]
@@ -280,7 +280,8 @@ fn test_user_stats_query_for_new_user() {
     assert_eq!(stats.xp, 0);
     assert_eq!(stats.level, 1);
     assert_eq!(stats.quests_completed, 0);
-    assert_eq!(stats.badges.len(), 0);
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 0);
 }
 
 #[test]

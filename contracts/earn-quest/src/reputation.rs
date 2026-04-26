@@ -1,8 +1,7 @@
-use crate::admin;
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
-use crate::types::{Badge, UserBadges, UserCore};
+use crate::types::{Badge, Role, UserBadges, UserCore};
 use soroban_sdk::{Address, Env};
 
 const LEVEL_2_XP: u64 = 300;
@@ -51,7 +50,10 @@ pub fn calculate_level(xp: u64) -> u32 {
 /// Grant a badge to a user (admin-authorized).
 /// Only reads/writes UserBadges (cold path) — XP counters not touched.
 pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
-    admin::require_admin(env, caller)?;
+    caller.require_auth();
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
+        return Err(Error::Unauthorized);
+    }
 
     let mut user_badges = storage::get_user_badges(env, user);
 

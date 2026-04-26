@@ -3,11 +3,11 @@
 use soroban_sdk::testutils::Events as _;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{
-    symbol_short, testutils::Address as _, Address, BytesN, Env, IntoVal, Symbol, Vec, TryFromVal,
+    symbol_short, testutils::Address as _, Address, BytesN, Env, IntoVal, Symbol, Vec, String,
 };
 
 extern crate earn_quest;
-use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
+use earn_quest::types::{BatchApprovalInput, BatchQuestInput, Quest, QuestMetadata, MetadataDescription, QuestStatus};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 //================================================================================
@@ -39,24 +39,43 @@ fn setup_contract_and_token(
 fn make_quest_input(
     _env: &Env,
     id: &Symbol,
+    creator: &Address,
     reward_asset: &Address,
     reward_amount: i128,
     verifier: &Address,
     deadline: u64,
 ) -> BatchQuestInput {
-    BatchQuestInput {
+    let mut quests_vec = Vec::new(_env);
+    quests_vec.push_back(Quest {
         id: id.clone(),
+        creator: creator.clone(),
         reward_asset: reward_asset.clone(),
         reward_amount,
         verifier: verifier.clone(),
         deadline,
+        status: QuestStatus::Active,
+        total_claims: 0,
+    });
+    
+    let mut metadata_vec = Vec::new(_env);
+    metadata_vec.push_back(QuestMetadata {
+        title: String::from_str(_env, "Test Quest"),
+        description: MetadataDescription::Inline(String::from_str(_env, "Description")),
+        requirements: Vec::new(_env),
+        category: String::from_str(_env, "test"),
+        tags: Vec::new(_env),
+    });
+    
+    BatchQuestInput {
+        quests: quests_vec,
+        metadata: metadata_vec,
     }
 }
 
-fn make_approval_input(quest_id: &Symbol, submitter: &Address) -> BatchApprovalInput {
+fn make_approval_input(quest_id: &Symbol, submitters: &Vec<Address>) -> BatchApprovalInput {
     BatchApprovalInput {
         quest_id: quest_id.clone(),
-        submitter: submitter.clone(),
+        submissions: submitters.clone(),
     }
 }
 
@@ -78,6 +97,7 @@ fn test_register_quests_batch_success() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("BQ1"),
+        &creator,
         &token_contract,
         100,
         &verifier,
@@ -86,6 +106,7 @@ fn test_register_quests_batch_success() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("BQ2"),
+        &creator,
         &token_contract,
         200,
         &verifier,
@@ -94,6 +115,7 @@ fn test_register_quests_batch_success() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("BQ3"),
+        &creator,
         &token_contract,
         300,
         &verifier,
@@ -128,6 +150,7 @@ fn test_register_quests_batch_emits_events() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("E1"),
+        &creator,
         &token_contract,
         50,
         &verifier,
@@ -136,6 +159,7 @@ fn test_register_quests_batch_emits_events() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("E2"),
+        &creator,
         &token_contract,
         50,
         &verifier,
@@ -164,7 +188,7 @@ fn test_register_quests_batch_emits_events() {
         .iter()
         .filter(|e| {
             let topics = &e.1;
-            let t0: Symbol = Symbol::from_val(&env, &topics.get(0).unwrap());
+            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
             t0 == symbol_short!("quest_reg")
         })
         .count();
@@ -192,6 +216,7 @@ fn test_register_quests_batch_size_limit_enforced() {
         quests.push_back(make_quest_input(
             &env,
             &sym,
+            &creator,
             &token_contract,
             1,
             &verifier,
@@ -231,6 +256,7 @@ fn test_register_quests_batch_duplicate_in_batch_reverts() {
     quests.push_back(make_quest_input(
         &env,
         &id,
+        &creator,
         &token_contract,
         100,
         &verifier,
@@ -239,6 +265,7 @@ fn test_register_quests_batch_duplicate_in_batch_reverts() {
     quests.push_back(make_quest_input(
         &env,
         &id,
+        &creator,
         &token_contract,
         200,
         &verifier,
@@ -298,8 +325,12 @@ fn test_approve_submissions_batch_success() {
 
     // Batch approve
     let mut submissions = Vec::new(&env);
-    submissions.push_back(make_approval_input(&symbol_short!("AQ1"), &submitter1));
-    submissions.push_back(make_approval_input(&symbol_short!("AQ2"), &submitter2));
+    let mut submitters1 = Vec::new(&env);
+    submitters1.push_back(submitter1.clone());
+    submissions.push_back(make_approval_input(&symbol_short!("AQ1"), &submitters1));
+    let mut submitters2 = Vec::new(&env);
+    submitters2.push_back(submitter2.clone());
+    submissions.push_back(make_approval_input(&symbol_short!("AQ2"), &submitters2));
     client.approve_submissions_batch(&verifier, &submissions);
 
     // Claim both rewards
@@ -333,7 +364,9 @@ fn test_approve_submissions_batch_emits_events() {
     client.submit_proof(&symbol_short!("AE1"), &submitter, &proof);
 
     let mut submissions = Vec::new(&env);
-    submissions.push_back(make_approval_input(&symbol_short!("AE1"), &submitter));
+    let mut submitters_vec = Vec::new(&env);
+    submitters_vec.push_back(submitter.clone());
+    submissions.push_back(make_approval_input(&symbol_short!("AE1"), &submitters_vec));
     client.approve_submissions_batch(&verifier, &submissions);
 
     let events = env.events().all();
@@ -356,7 +389,7 @@ fn test_approve_submissions_batch_emits_events() {
         .iter()
         .filter(|e| {
             let topics = &e.1;
-            let t0: Symbol = Symbol::from_val(&env, &topics.get(0).unwrap());
+            let t0: Symbol = topics.get(0).unwrap().into_val(&env);
             t0 == symbol_short!("sub_appr")
         })
         .count();
@@ -392,8 +425,10 @@ fn test_approve_submissions_batch_size_limit_enforced() {
     client.submit_proof(&quest_id, &submitter, &proof);
 
     let mut submissions = Vec::new(&env);
+    let mut submitters_vec = Vec::new(&env);
+    submitters_vec.push_back(submitter.clone());
     for _ in 0u32..51 {
-        submissions.push_back(make_approval_input(&quest_id, &submitter));
+        submissions.push_back(make_approval_input(&quest_id, &submitters_vec));
     }
 
     let res = client.try_approve_submissions_batch(&verifier, &submissions);
@@ -437,7 +472,9 @@ fn test_approve_submissions_batch_unauthorized_reverts() {
     client.submit_proof(&symbol_short!("UQ1"), &submitter, &proof);
 
     let mut submissions = Vec::new(&env);
-    submissions.push_back(make_approval_input(&symbol_short!("UQ1"), &submitter));
+    let mut submitters_vec = Vec::new(&env);
+    submitters_vec.push_back(submitter.clone());
+    submissions.push_back(make_approval_input(&symbol_short!("UQ1"), &submitters_vec));
     // other_verifier is not the quest verifier
     let res = client.try_approve_submissions_batch(&other_verifier, &submissions);
     assert!(res.is_err(), "wrong verifier should cause batch to fail");
@@ -461,6 +498,7 @@ fn test_batch_registration_same_state_as_single_calls() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("S1"),
+        &creator,
         &token_contract,
         10,
         &verifier,
@@ -469,6 +507,7 @@ fn test_batch_registration_same_state_as_single_calls() {
     quests.push_back(make_quest_input(
         &env,
         &symbol_short!("S2"),
+        &creator,
         &token_contract,
         20,
         &verifier,

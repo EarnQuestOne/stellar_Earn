@@ -1,6 +1,7 @@
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
+use crate::types::Role;
 use soroban_sdk::{token, Address, Env};
 
 /// Is contract paused?
@@ -45,7 +46,7 @@ pub fn nonreentrant_exit(env: &Env) {
 pub fn emergency_pause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -58,7 +59,7 @@ pub fn emergency_pause(env: &Env, caller: &Address) -> Result<(), Error> {
 pub fn emergency_approve_unpause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -86,7 +87,7 @@ pub fn emergency_approve_unpause(env: &Env, caller: &Address) -> Result<(), Erro
 pub fn emergency_unpause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -117,7 +118,7 @@ pub fn emergency_withdraw(
 ) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -151,7 +152,7 @@ pub fn emergency_withdraw(
 /// Admins can configure the required approvals threshold
 pub fn set_unpause_threshold(env: &Env, caller: &Address, threshold: u32) -> Result<(), Error> {
     caller.require_auth();
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
     storage::set_unpause_threshold(env, threshold);
@@ -161,7 +162,7 @@ pub fn set_unpause_threshold(env: &Env, caller: &Address, threshold: u32) -> Res
 /// Admins can configure timelock seconds for unpause scheduling
 pub fn set_unpause_timelock(env: &Env, caller: &Address, seconds: u64) -> Result<(), Error> {
     caller.require_auth();
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
     storage::set_unpause_timelock_seconds(env, seconds);

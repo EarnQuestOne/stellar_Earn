@@ -198,10 +198,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                              }
+                            ]
                           }
                         }
                       ]
@@ -218,10 +222,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                              }
+                            ]
                           }
                         }
                       ]
@@ -710,14 +718,6 @@
                           "map": [
                             {
                               "key": {
-                                "symbol": "badges"
-                              },
-                              "val": {
-                                "vec": []
-                              }
-                            },
-                            {
-                              "key": {
                                 "symbol": "level"
                               },
                               "val": {
@@ -756,14 +756,6 @@
                         },
                         "val": {
                           "map": [
-                            {
-                              "key": {
-                                "symbol": "badges"
-                              },
-                              "val": {
-                                "vec": []
-                              }
-                            },
                             {
                               "key": {
                                 "symbol": "level"
@@ -2062,10 +2054,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                              }
+                            ]
                           }
                         }
                       ]
@@ -2082,10 +2078,14 @@
                         },
                         {
                           "key": {
-                            "symbol": "submitter"
+                            "symbol": "submissions"
                           },
                           "val": {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                            "vec": [
+                              {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                              }
+                            ]
                           }
                         }
                       ]

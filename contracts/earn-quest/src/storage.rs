@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo, QuestMetadata, PlatformStats, CreatorStats, OracleConfig};
+use crate::types::{CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest, QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore};
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 
@@ -23,6 +23,8 @@ pub enum DataKey {
     UserBadges(Address),
     /// Stores admin status, keyed by admin address
     Admin(Address),
+    /// Stores role membership, keyed by (role, address)
+    Role(Role, Address),
     /// Stores contract admin (single)
     ContractAdmin,
     /// Stores contract version
@@ -585,9 +587,11 @@ pub fn get_submission_if_exists(
 /// # Returns
 /// * `true` if the address is an admin, `false` otherwise
 pub fn is_admin(env: &Env, address: &Address) -> bool {
-    env.storage()
-        .instance()
-        .has(&DataKey::Admin(address.clone()))
+    has_role(env, address, &Role::Admin)
+        || env
+            .storage()
+            .instance()
+            .has(&DataKey::Admin(address.clone()))
 }
 
 /// Sets an address as an admin.
@@ -599,6 +603,7 @@ pub fn set_admin(env: &Env, address: &Address) {
     env.storage()
         .instance()
         .set(&DataKey::Admin(address.clone()), &true);
+    grant_role(env, address, &Role::Admin);
 }
 
 /// Removes admin status from an address.
@@ -610,6 +615,123 @@ pub fn remove_admin(env: &Env, address: &Address) {
     env.storage()
         .instance()
         .remove(&DataKey::Admin(address.clone()));
+    revoke_role(env, address, &Role::Admin);
+}
+
+pub fn has_role(env: &Env, address: &Address, role: &Role) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::Role(*role, address.clone()))
+}
+
+pub fn grant_role(env: &Env, address: &Address, role: &Role) {
+    env.storage()
+        .instance()
+        .set(&DataKey::Role(*role, address.clone()), &true);
+}
+
+pub fn revoke_role(env: &Env, address: &Address, role: &Role) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::Role(*role, address.clone()));
+}
+
+//================================================================================
+// Oracle Storage Functions
+//================================================================================
+
+pub fn get_oracle_config(env: &Env, oracle_address: &Address) -> Result<OracleConfig, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::OracleConfig(oracle_address.clone()))
+        .ok_or(Error::OracleInactive)
+}
+
+pub fn set_oracle_config(env: &Env, config: &OracleConfig) {
+    env.storage()
+        .instance()
+        .set(&DataKey::OracleConfig(config.oracle_address.clone()), config);
+}
+
+pub fn get_oracle_addresses(env: &Env) -> Vec<Address> {
+    env.storage()
+        .instance()
+        .get(&DataKey::OracleAddresses)
+        .unwrap_or(Vec::new(env))
+}
+
+pub fn set_oracle_addresses(env: &Env, addrs: &Vec<Address>) {
+    env.storage().instance().set(&DataKey::OracleAddresses, addrs);
+}
+
+pub fn add_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
+    let mut addrs = get_oracle_addresses(env);
+    if !addrs.contains(&config.oracle_address) {
+        addrs.push_back(config.oracle_address.clone());
+        set_oracle_addresses(env, &addrs);
+    }
+    set_oracle_config(env, config);
+    Ok(())
+}
+
+pub fn update_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
+    // Accept update even if address not yet tracked; keep list consistent.
+    add_oracle_config(env, config)
+}
+
+pub fn remove_oracle_config(env: &Env, oracle_address: &Address) -> Result<(), Error> {
+    env.storage()
+        .instance()
+        .remove(&DataKey::OracleConfig(oracle_address.clone()));
+
+    let mut addrs = get_oracle_addresses(env);
+    let mut i = 0u32;
+    while i < addrs.len() {
+        if addrs.get(i).unwrap() == *oracle_address {
+            addrs.remove(i);
+            break;
+        }
+        i += 1;
+    }
+    set_oracle_addresses(env, &addrs);
+    Ok(())
+}
+
+pub fn get_all_oracle_configs(env: &Env) -> Vec<OracleConfig> {
+    let addrs = get_oracle_addresses(env);
+    let mut out = Vec::new(env);
+    for i in 0u32..addrs.len() {
+        let a = addrs.get(i).unwrap();
+        if let Some(cfg) = env
+            .storage()
+            .instance()
+            .get(&DataKey::OracleConfig(a.clone()))
+        {
+            out.push_back(cfg);
+        }
+    }
+    out
+}
+
+pub fn get_active_oracle_configs(env: &Env) -> Vec<OracleConfig> {
+    let all = get_all_oracle_configs(env);
+    let mut out = Vec::new(env);
+    for i in 0u32..all.len() {
+        let cfg = all.get(i).unwrap();
+        if cfg.is_active {
+            out.push_back(cfg);
+        }
+    }
+    out
+}
+
+pub fn is_super_admin(env: &Env, address: &Address) -> bool {
+    if let Some(a) = env.storage().instance().get::<_, Address>(&DataKey::ContractAdmin) {
+        if a == *address {
+            return true;
+        }
+    }
+    has_role(env, address, &Role::SuperAdmin)
 }
 
 //================================================================================
@@ -991,6 +1113,7 @@ pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {
             total_rewards_posted: 0,
             total_submissions_received: 0,
             total_claims_paid: 0,
+            reputation_score: 0,
         })
 }
 

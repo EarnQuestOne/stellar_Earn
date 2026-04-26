@@ -684,8 +684,8 @@ fn test_edge_case_deadline_just_after_now() {
         li.timestamp = 1000;
     });
 
-    // Deadline is just 1 second after current timestamp
-    let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &1001);
+    // Deadline is exactly MIN_DEADLINE_DURATION (60 seconds) after current timestamp
+    let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &1060);
     assert!(result.is_ok());
 }
 

@@ -176,8 +176,8 @@ fn test_admin_can_grant_badge() {
     client.initialize(&admin);
     client.grant_badge(&admin, &user, &Badge::Rookie);
 
-    let stats = client.get_user_stats(&user);
-    assert!(stats.badges.contains(&Badge::Rookie));
+    let badges = client.get_user_badges(&user);
+    assert!(badges.badges.contains(&Badge::Rookie));
 }
 
 #[test]
@@ -211,8 +211,8 @@ fn test_second_admin_can_grant_badge() {
     // Second admin grants badge
     client.grant_badge(&admin2, &user, &Badge::Explorer);
 
-    let stats = client.get_user_stats(&user);
-    assert!(stats.badges.contains(&Badge::Explorer));
+    let badges = client.get_user_badges(&user);
+    assert!(badges.badges.contains(&Badge::Explorer));
 }
 
 #[test]
