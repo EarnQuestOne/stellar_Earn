@@ -78,7 +78,7 @@ pub fn transfer_reward_from_escrow(
     // balance and cannot drain the same funds twice.
     if has_escrow {
         escrow::validate_sufficient(env, quest_id, amount)?;
-        escrow::record_payout(env, quest_id, to, amount)?;
+        escrow::record_payout(env, quest_id, to, reward_asset, amount)?;
     }
 
     transfer_reward(env, reward_asset, to, amount)

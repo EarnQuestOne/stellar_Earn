@@ -34,6 +34,19 @@ cargo test
 cargo test -- --nocapture
 ```
 
+Targeted slices for the recent contract work:
+
+```bash
+# Escrow lifecycle and refunds
+cargo test test_escrow
+
+# Event topic/data layout for indexers
+cargo test test_events
+
+# Dispute record workflow and emitted events
+cargo test test_dispute
+```
+
 ## Project Structure
 
 ```
@@ -104,6 +117,38 @@ test test_double_claim_prevention ... ok
 
 test result: ok. 3 passed; 0 failed
 ```
+
+## Escrow Tracking
+
+Escrow tracking now uses a split-storage model so the hot path stays small and the accounting rules are easier to reason about:
+
+- `EscrowBalances` stores `total_deposited`, `total_paid_out`, `total_refunded`, `is_active`, and `deposit_count`
+- `EscrowMeta` stores the colder fields: `depositor`, `token`, and `created_at`
+- The available balance is always computed with the same formula: `total_deposited - total_paid_out - total_refunded`
+
+This keeps deposit, payout validation, payout recording, and refund logic on a single accounting model while `get_escrow_info()` still exposes the assembled public view.
+
+## Indexer-Ready Events
+
+The contract now keeps the most useful filter fields in event topics so indexers can query by actor, quest, and token without decoding event payloads first.
+
+- `quest_reg`: quest id, creator, reward asset are indexed
+- `sub_appr`: quest id, submitter, verifier are indexed
+- `claimed`: quest id, submitter, reward asset are indexed
+- `esc_dep`, `esc_pay`, `esc_ref`: quest id, user, token are indexed
+- `disp_open`, `disp_res`, `disp_wd`: quest id and dispute participants are indexed
+
+Amounts and other display-oriented values remain in event data so topic space is reserved for query keys.
+
+## Dispute Resolution
+
+Dispute handling is intentionally hybrid:
+
+- the contract records dispute state and emits auditable events
+- evidence review and adjudication remain off-chain
+- arbitrators resolve or close disputes by writing the result back on-chain
+
+The full operator flow is documented in [docs/DISPUTE_RESOLUTION.md](docs/DISPUTE_RESOLUTION.md).
 
 ## Build Output
 

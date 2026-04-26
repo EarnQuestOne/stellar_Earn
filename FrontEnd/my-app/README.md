@@ -246,6 +246,20 @@ pnpm test:integration
 pnpm test:coverage
 ```
 
+Coverage reports are written to `coverage/` with four outputs enabled by default:
+- terminal summary during the run
+- `coverage/index.html` for a browsable report
+- `coverage/lcov.info` for editor or CI tooling
+- `coverage/coverage-summary.json` for machine-readable summaries
+
+Unit tests are matched with the `*.test.ts` and `*.test.tsx` naming convention. Playwright end-to-end specs stay under `tests/e2e` so coverage runs do not accidentally execute browser tests.
+
+The current minimum coverage gate is intentionally modest while the suite grows:
+- statements: 20%
+- functions: 20%
+- lines: 20%
+- branches: 15%
+
 ## Linting & Type Checking
 
 ```bash
