@@ -232,8 +232,13 @@ impl EarnQuestContract {
         Ok(())
     }
 
-    pub fn get_user_stats(env: Env, user: Address) -> UserStats {
+    pub fn get_user_stats(env: Env, user: Address) -> UserCore {
         reputation::get_user_stats(&env, &user)
+    }
+
+    /// Get user badges separately (cold path — only loaded when needed).
+    pub fn get_user_badges(env: Env, user: Address) -> UserBadges {
+        storage::get_user_badges(&env, &user)
     }
 
     pub fn grant_badge(
@@ -243,8 +248,8 @@ impl EarnQuestContract {
         badge: Badge,
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
-        let stats = storage::get_user_stats_or_default(&env, &user);
-        validation::validate_badge_count(stats.badges.len())?;
+        let user_badges = storage::get_user_badges(&env, &user);
+        validation::validate_badge_count(user_badges.badges.len())?;
         reputation::grant_badge(&env, &admin, &user, badge)
     }
 
