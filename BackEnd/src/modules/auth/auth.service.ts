@@ -24,6 +24,7 @@ import {
   UserResponseDto,
   ChallengeResponseDto,
 } from './dto/auth.dto';
+import { TwoFactorLoginDto } from './dto/two-factor.dto';
 import * as crypto from 'crypto';
 import { Role } from '../../common/enums/role.enum';
 
@@ -86,7 +87,8 @@ export class AuthService {
   }
 
   /**
-   * Verify signature and login user
+   * Verify signature and login user (legacy — no 2FA check).
+   * Kept for backward compatibility; prefer verifySignatureAndLoginWith2fa.
    */
   async verifySignatureAndLogin(loginDto: LoginDto): Promise<TokenResponseDto> {
     const { stellarAddress, signature, challenge } = loginDto;

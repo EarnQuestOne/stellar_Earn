@@ -52,7 +52,12 @@ export const QuestList = memo(({
 }: QuestListProps) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+        role="status"
+        aria-label="Loading quests"
+        aria-busy="true"
+      >
         {[...Array(6)].map((_, i) => (
           <Skeleton.Card key={i} />
         ))}
@@ -74,9 +79,15 @@ export const QuestList = memo(({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+      role="list"
+      aria-label={`${quests.length} quest${quests.length !== 1 ? 's' : ''} found`}
+    >
       {quests.map((quest) => (
-        <QuestCard key={quest.id} quest={quest} onClick={onQuestClick} />
+        <div key={quest.id} role="listitem">
+          <QuestCard quest={quest} onClick={onQuestClick} />
+        </div>
       ))}
     </div>
   );

@@ -86,38 +86,79 @@ pub fn validate_reward_amount(amount: i128) -> Result<(), Error> {
 // Deadline Validation
 //================================================================================
 
-/// Validates that a deadline timestamp is in the future.
+/// Validates that a deadline timestamp is in the future **and** within the
+/// allowed relative window `[MIN_DEADLINE_DURATION, MAX_DEADLINE_DURATION]`
+/// seconds from the current ledger timestamp.
+///
+/// Using a *relative* window instead of an absolute timestamp comparison
+/// prevents timestamp-manipulation attacks where a validator nudges the ledger
+/// close time to immediately expire a quest or to accept an already-past
+/// deadline.
 ///
 /// # Arguments
 /// * `env` - The contract environment (to read current ledger timestamp)
 /// * `deadline` - The deadline timestamp to validate
 ///
 /// # Returns
-/// * `Ok(())` if deadline > current_timestamp
+/// * `Ok(())` if `current + MIN_DEADLINE_DURATION < deadline <= current + MAX_DEADLINE_DURATION`
 /// * `Err(Error::DeadlineInPast)` if deadline <= current_timestamp
+/// * `Err(Error::DeadlineTooSoon)` if deadline is within the minimum duration window
+/// * `Err(Error::DeadlineTooFar)` if deadline exceeds the maximum duration cap
 pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
     let current_time = env.ledger().timestamp();
+
+    // Basic past-deadline check
     if deadline <= current_time {
         return Err(Error::DeadlineInPast);
     }
+
+    let duration = deadline - current_time;
+
+    // Enforce minimum relative duration to prevent single-ledger timestamp nudging
+    if duration < MIN_DEADLINE_DURATION {
+        return Err(Error::DeadlineTooSoon);
+    }
+
+    // Enforce maximum relative duration to prevent indefinite escrow lock-up
+    if duration > MAX_DEADLINE_DURATION {
+        return Err(Error::DeadlineTooFar);
+    }
+
     Ok(())
 }
 
-/// Validates that a quest has not expired (its deadline has not passed).
+/// Validates that a quest has not expired, using a grace buffer to absorb
+/// normal validator clock drift.
+///
+/// A quest is considered expired only when:
+///   `current_time >= deadline + MIN_EXPIRY_BUFFER`
+///
+/// This prevents a validator from triggering expiry one ledger early by
+/// advancing the close time slightly within the consensus window.
 ///
 /// # Arguments
 /// * `env` - The contract environment
 /// * `deadline` - The quest deadline timestamp
 ///
 /// # Returns
-/// * `Ok(())` if the quest has not expired
-/// * `Err(Error::QuestExpired)` if the deadline has passed
+/// * `Ok(())` if the quest has not yet expired (with buffer)
+/// * `Err(Error::QuestExpired)` if the deadline + buffer has passed
 pub fn validate_quest_not_expired(env: &Env, deadline: u64) -> Result<(), Error> {
     let current_time = env.ledger().timestamp();
-    if current_time >= deadline {
+    // Use saturating_add to prevent u64 overflow on extreme deadline values
+    if current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER) {
         return Err(Error::QuestExpired);
     }
     Ok(())
+}
+
+/// Returns `true` if the quest deadline has definitively passed (with buffer).
+///
+/// Use this for read-only expiry checks (e.g. `expire_quest`, `auto_expire`).
+/// The buffer ensures we don't mark a quest expired due to minor clock drift.
+pub fn is_quest_expired(env: &Env, deadline: u64) -> bool {
+    let current_time = env.ledger().timestamp();
+    current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER)
 }
 
 //================================================================================

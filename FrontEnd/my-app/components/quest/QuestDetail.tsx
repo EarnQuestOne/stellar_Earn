@@ -71,7 +71,7 @@ export function QuestDetail({ quest }: QuestDetailProps) {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
               Quest Information
             </h3>
-            <dl className="space-y-3">
+            <dl className="space-y-3" aria-label="Quest information details">
               <div>
                 <dt className="text-xs text-zinc-500 dark:text-zinc-400">Created</dt>
                 <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">

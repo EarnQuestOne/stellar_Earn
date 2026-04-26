@@ -15,6 +15,7 @@ describe('Rate Limiting (e2e)', () => {
   const adminKeypair = Keypair.random();
   const userKeypair = Keypair.random();
   const secondUserKeypair = Keypair.random();
+  const verifierKeypair = Keypair.random();
 
   const fetchChallenge = async (stellarAddress: string): Promise<string> => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -48,10 +49,22 @@ describe('Rate Limiting (e2e)', () => {
   };
 
   beforeAll(async () => {
+    // Set per-user rate limit configuration for testing
     process.env.RATE_LIMIT_TTL = '2';
     process.env.RATE_LIMIT_LIMIT = '2';
     process.env.RATE_LIMIT_AUTH_TTL = '2';
     process.env.RATE_LIMIT_AUTH_LIMIT = '3';
+
+    // Per-user rate limits for testing
+    process.env.RATE_LIMIT_ANONYMOUS_LIMIT = '2';
+    process.env.RATE_LIMIT_ANONYMOUS_TTL = '2';
+    process.env.RATE_LIMIT_USER_LIMIT = '3';
+    process.env.RATE_LIMIT_USER_TTL = '2';
+    process.env.RATE_LIMIT_VERIFIER_LIMIT = '5';
+    process.env.RATE_LIMIT_VERIFIER_TTL = '2';
+    process.env.RATE_LIMIT_AUTH_USER_LIMIT = '2';
+    process.env.RATE_LIMIT_AUTH_USER_TTL = '2';
+
     process.env.ADMIN_ADDRESSES = adminKeypair.publicKey();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -137,4 +150,127 @@ describe('Rate Limiting (e2e)', () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe('Per-User Rate Limiting', () => {
+    it('applies correct limits to regular authenticated users', async () => {
+      await sleep();
+
+      const userToken = await login(userKeypair);
+
+      // User limit is 3 requests in 2 seconds
+      const first = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+      const second = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+      const third = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(third.status).toBe(200);
+
+      // Fourth request should be blocked
+      const blocked = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(blocked.status).toBe(429);
+    });
+
+    it('applies separate limits to different users', async () => {
+      await sleep();
+
+      const userToken1 = await login(userKeypair);
+      const userToken2 = await login(secondUserKeypair);
+
+      // Both users can make their own requests independently
+      const user1First = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken1}`);
+      const user2First = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken2}`);
+
+      expect(user1First.status).toBe(200);
+      expect(user2First.status).toBe(200);
+
+      // Each user has their own limit counter
+      const user1Second = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken1}`);
+      const user2Second = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken2}`);
+
+      expect(user1Second.status).toBe(200);
+      expect(user2Second.status).toBe(200);
+    });
+
+    it('enforces anonymous user limits based on IP', async () => {
+      await sleep();
+
+      // Anonymous requests are rate limited to 2 per 2 seconds
+      const first = await request(server).get('/');
+      const second = await request(server).get('/');
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+
+      // Third anonymous request should be blocked
+      const blocked = await request(server).get('/');
+
+      expect(blocked.status).toBe(429);
+    });
+
+    it('respects admin bypass regardless of rate', async () => {
+      await sleep();
+
+      const adminToken = await login(adminKeypair);
+
+      // Admins should bypass rate limiting completely
+      const responses = await Promise.all(
+        Array(10)
+          .fill(null)
+          .map(() =>
+            request(server)
+              .get('/auth/profile')
+              .set('Authorization', `Bearer ${adminToken}`),
+          ),
+      );
+
+      responses.forEach((response) => {
+        expect(response.status).toBe(200);
+      });
+    });
+
+    it('includes Retry-After header for rate-limited responses', async () => {
+      await sleep();
+
+      const userToken = await login(userKeypair);
+
+      // Make requests up to the limit
+      await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+      await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+      await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      // Hit the rate limit
+      const blocked = await request(server)
+        .get('/auth/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(blocked.status).toBe(429);
+      expect(blocked.headers['retry-after']).toBeDefined();
+      expect(parseInt(blocked.headers['retry-after'])).toBeGreaterThan(0);
+    });
+  });
 });
+

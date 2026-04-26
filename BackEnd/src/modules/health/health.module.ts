@@ -1,15 +1,21 @@
 import { Module } from '@nestjs/common';
-import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '../cache/cache.module';
 import { HealthController } from './health.controller';
-import { DatabaseIndicator } from './indicators/database.indicator';
-import { RedisIndicator } from './indicators/redis.indicator';
-// MetricsService is provided globally by LoggerModule — no local import needed.
+import { DatabaseHealthService } from './services/database-health.service';
+import { CacheHealthService } from './services/cache-health.service';
+import { ExternalHealthService } from './services/external-health.service';
+import { DatabasePoolMonitorService } from './services/database-pool-monitor.service';
 
 @Module({
-  imports: [TerminusModule, TypeOrmModule, ConfigModule],
+  imports: [TypeOrmModule, ConfigModule, CacheModule],
   controllers: [HealthController],
-  providers: [DatabaseIndicator, RedisIndicator],
+  providers: [
+    DatabaseHealthService,
+    CacheHealthService,
+    ExternalHealthService,
+    DatabasePoolMonitorService,
+  ],
 })
 export class HealthModule {}

@@ -110,8 +110,10 @@ pub fn pause_quest(env: &Env, id: &Symbol, caller: &Address) -> Result<(), Error
     // Validate status transition
     validation::validate_quest_status_transition(&quest.status, &QuestStatus::Paused)?;
 
-    // Update status
-    storage::update_quest_status(env, id, QuestStatus::Paused)?;
+    // Update status directly to avoid redundant read
+    let mut quest = quest;
+    quest.status = QuestStatus::Paused;
+    storage::set_quest(env, id, &quest);
 
     // EMIT EVENT: QuestPaused
     events::quest_paused(env, id.clone(), caller.clone());
@@ -130,8 +132,10 @@ pub fn resume_quest(env: &Env, id: &Symbol, caller: &Address) -> Result<(), Erro
     // Validate status transition
     validation::validate_quest_status_transition(&quest.status, &QuestStatus::Active)?;
 
-    // Update status
-    storage::update_quest_status(env, id, QuestStatus::Active)?;
+    // Update status directly to avoid redundant read
+    let mut quest = quest;
+    quest.status = QuestStatus::Active;
+    storage::set_quest(env, id, &quest);
 
     // EMIT EVENT: QuestResumed
     events::quest_resumed(env, id.clone(), caller.clone());
@@ -202,24 +206,19 @@ pub fn get_quests_by_status(
     let mut matched = 0u32;
     let mut count = 0u32;
 
-    // Optimized: cache status reference and avoid redundant lookups
     for i in 0..ids.len() {
         if i >= validation::MAX_SCAN_ITERATIONS || count >= limit {
             break;
         }
-        // Bounds check before accessing
-        if let Some(id) = ids.get(i) {
-            // Optimized: use has_quest first (cheaper) before full read
-            if storage::has_quest(env, &id) {
-                if let Ok(quest) = storage::get_quest(env, &id) {
-                    if &quest.status == status {
-                        if matched >= offset {
-                            results.push_back(quest);
-                            count += 1;
-                        }
-                        matched += 1;
-                    }
+        let id = ids.get(i).unwrap();
+        // Single read: get_quest returns Err if not found, which we ignore
+        if let Ok(quest) = storage::get_quest(env, &id) {
+            if &quest.status == status {
+                if matched >= offset {
+                    results.push_back(quest);
+                    count += 1;
                 }
+                matched += 1;
             }
         }
     }
@@ -238,7 +237,6 @@ pub fn get_quests_by_creator(
     let mut matched = 0u32;
     let mut count = 0u32;
 
-    // Optimized: cache creator reference
     for i in 0..ids.len() {
         if i >= validation::MAX_SCAN_ITERATIONS || count >= limit {
             break;

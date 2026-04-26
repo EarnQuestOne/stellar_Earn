@@ -18,6 +18,9 @@ const TOPIC_TIMELOCK_SCHEDULED: Symbol = symbol_short!("tl_sched");
 const TOPIC_QUEST_PAUSED: Symbol = symbol_short!("q_pause");
 const TOPIC_QUEST_RESUMED: Symbol = symbol_short!("q_resume");
 const TOPIC_QUEST_CANCELLED: Symbol = symbol_short!("q_cancel");
+const TOPIC_DISPUTE_OPENED: Symbol = symbol_short!("disp_open");
+const TOPIC_DISPUTE_RESOLVED: Symbol = symbol_short!("disp_res");
+const TOPIC_DISPUTE_WITHDRAWN: Symbol = symbol_short!("disp_wd");
 const TOPIC_ESCROW_DEPOSITED: Symbol = symbol_short!("esc_dep");
 const TOPIC_ESCROW_PAYOUT: Symbol = symbol_short!("esc_pay");
 const TOPIC_ESCROW_REFUNDED: Symbol = symbol_short!("esc_ref");
@@ -309,5 +312,30 @@ pub fn quest_resumed(env: &Env, quest_id: Symbol, by: Address) {
     let topics = (TOPIC_QUEST_RESUMED, quest_id, by.clone());
     // Data: admin info
     let data = (by,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when a dispute is opened (indexed: quest_id, initiator, arbitrator).
+///
+/// # Indexing Benefits
+/// * Track disputes per quest
+/// * Monitor initiator and arbitrator activity
+pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_OPENED, quest_id, initiator.clone(), arbitrator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emit when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
+pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_RESOLVED, quest_id, initiator.clone(), arbitrator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emit when a dispute is withdrawn by the initiator (indexed: quest_id, initiator).
+pub fn dispute_withdrawn(env: &Env, quest_id: Symbol, initiator: Address) {
+    let topics = (TOPIC_DISPUTE_WITHDRAWN, quest_id, initiator.clone());
+    let data = ();
     env.events().publish(topics, data);
 }

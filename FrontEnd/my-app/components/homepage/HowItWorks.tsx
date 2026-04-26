@@ -6,11 +6,12 @@ import { StepTimeline } from "./StepTimeline";
 
 export function HowItWorks() {
   return (
-    <section className="bg-[#071020] px-4 py-20 sm:py-28">
+    <section className="bg-[#071020] px-4 py-20 sm:py-28" aria-labelledby="how-it-works-heading">
       <div className="mx-auto max-w-7xl">
         {/* Heading */}
         <div className="mb-16 text-center">
           <motion.h2
+            id="how-it-works-heading"
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -46,7 +47,11 @@ export function HowItWorks() {
         >
           <div className="flex aspect-video items-center justify-center bg-slate-800/50 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-700/60 text-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.2)] transition-transform hover:scale-105 cursor-pointer">
+              <button
+                type="button"
+                aria-label="Watch the StellarEarn tutorial video"
+                className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-700/60 text-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.2)] transition-transform hover:scale-105 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              >
                 {/* Play icon */}
                 <svg
                   viewBox="0 0 24 24"
@@ -56,7 +61,7 @@ export function HowItWorks() {
                 >
                   <path d="M8 5v14l11-7z" />
                 </svg>
-              </div>
+              </button>
               <p className="text-sm text-slate-400">Watch the tutorial</p>
             </div>
           </div>

@@ -46,6 +46,9 @@ interface FAQItemProps {
 }
 
 function FAQItem({ question, answer, isOpen, onToggle, index }: FAQItemProps) {
+  const panelId = `faq-panel-${index}`;
+  const buttonId = `faq-button-${index}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -54,26 +57,34 @@ function FAQItem({ question, answer, isOpen, onToggle, index }: FAQItemProps) {
       transition={{ duration: 0.4, delay: index * 0.07 }}
       className="border-b border-slate-200 dark:border-slate-700/60 last:border-b-0"
     >
-      <button
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-      >
-        <span className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">
-          {question}
-        </span>
-        <motion.span
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-          className="shrink-0 text-cyan-500"
+      <h3 className="m-0">
+        <button
+          id={buttonId}
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          className="flex w-full items-center justify-between gap-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
         >
-          <ChevronDown className="h-5 w-5" />
-        </motion.span>
-      </button>
+          <span className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">
+            {question}
+          </span>
+          <motion.span
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.25 }}
+            className="shrink-0 text-cyan-500"
+            aria-hidden="true"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </motion.span>
+        </button>
+      </h3>
 
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
+            id={panelId}
+            role="region"
+            aria-labelledby={buttonId}
             key="answer"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -97,10 +108,11 @@ export function FAQAccordion() {
   const toggle = (i: number) => setOpenIndex((prev) => (prev === i ? null : i));
 
   return (
-    <section className="px-4 py-20 sm:py-28">
+    <section className="px-4 py-20 sm:py-28" aria-labelledby="faq-heading">
       <div className="mx-auto max-w-3xl">
         <div className="mb-12 text-center">
           <motion.h2
+            id="faq-heading"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

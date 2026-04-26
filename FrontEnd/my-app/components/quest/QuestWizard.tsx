@@ -311,6 +311,7 @@ const QuestWizard = () => {
     <section
       className="mx-auto w-full max-w-6xl py-4 sm:py-6"
       data-testid="quest-wizard"
+      aria-label="Quest creation wizard"
     >
       <div className="mb-5 rounded-3xl border border-zinc-200 bg-linear-to-br from-cyan-50 via-white to-amber-50 p-4 shadow-sm sm:p-6 dark:border-zinc-700 dark:from-cyan-950/30 dark:via-zinc-900 dark:to-amber-950/20">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -331,53 +332,80 @@ const QuestWizard = () => {
           />
         </div>
 
-        <div className="mb-2 flex items-center justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+        <div
+          className="mb-2 flex items-center justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-300"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span>
             Step {stepIndex + 1} of {QUEST_WIZARD_STEPS.length}:{" "}
             {QUEST_WIZARD_STEPS[stepIndex]}
           </span>
           <span>{progress}% complete</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+        <div
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Quest creation progress: ${progress}% complete, step ${stepIndex + 1} of ${QUEST_WIZARD_STEPS.length}`}
+          className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700"
+        >
           <div
             className="h-full rounded-full bg-linear-to-r from-cyan-500 to-amber-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
+            aria-hidden="true"
           />
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {QUEST_WIZARD_STEPS.map((stepLabel, index) => {
-          const active = index === stepIndex;
-          const completed = index < stepIndex;
-          return (
-            <div
-              key={stepLabel}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
-                active
-                  ? "border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200"
-                  : completed
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"
-                    : "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-              }`}
-            >
-              <div className="flex items-center gap-1">
-                {completed ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : (
-                  <span>{index + 1}.</span>
-                )}
-                <span>{stepLabel}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <nav aria-label="Quest creation steps">
+        <ol className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 list-none p-0 m-0">
+          {QUEST_WIZARD_STEPS.map((stepLabel, index) => {
+            const active = index === stepIndex;
+            const completed = index < stepIndex;
+            return (
+              <li
+                key={stepLabel}
+                aria-current={active ? "step" : undefined}
+                className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
+                  active
+                    ? "border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200"
+                    : completed
+                      ? "border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"
+                      : "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  {completed ? (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="sr-only">Completed: </span>
+                    </>
+                  ) : (
+                    <span aria-hidden="true">{index + 1}.</span>
+                  )}
+                  <span>{stepLabel}</span>
+                  {active && <span className="sr-only"> (current step)</span>}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
-      <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6 dark:border-zinc-700 dark:bg-zinc-900">
+      <div
+        className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6 dark:border-zinc-700 dark:bg-zinc-900"
+        role="region"
+        aria-label={`Step ${stepIndex + 1}: ${QUEST_WIZARD_STEPS[stepIndex]}`}
+        aria-live="polite"
+      >
         {!verifierAddress && stepIndex >= 4 && stepIndex <= 5 && (
-          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-            <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
+          <div
+            role="alert"
+            className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+          >
+            <Wallet className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div>
               <p className="font-semibold">Verifier address required</p>
               <p className="mt-1">
@@ -395,6 +423,7 @@ const QuestWizard = () => {
           type="button"
           onClick={goBack}
           disabled={stepIndex === 0}
+          aria-label={stepIndex === 0 ? "Back (unavailable on first step)" : `Go back to step ${stepIndex}: ${QUEST_WIZARD_STEPS[stepIndex - 1]}`}
           className="rounded-xl border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
           Back
@@ -412,6 +441,7 @@ const QuestWizard = () => {
                   setSubmitError(null);
                   setStepIndex(0);
                 }}
+                aria-label="Create another quest"
                 className="rounded-xl border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
                 Create Another
@@ -419,6 +449,7 @@ const QuestWizard = () => {
               <button
                 type="button"
                 onClick={() => router.push("/quests")}
+                aria-label="Go to quests listing page"
                 className="rounded-xl bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700"
               >
                 Go to Quests
@@ -429,6 +460,14 @@ const QuestWizard = () => {
               type="button"
               onClick={goNext}
               disabled={isCreating}
+              aria-label={
+                isCreating
+                  ? "Publishing quest, please wait"
+                  : stepIndex === 5
+                    ? "Publish quest"
+                    : `Continue to step ${stepIndex + 2}: ${QUEST_WIZARD_STEPS[stepIndex + 1]}`
+              }
+              aria-busy={isCreating}
               className="rounded-xl bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating

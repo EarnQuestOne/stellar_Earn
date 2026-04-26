@@ -21,6 +21,7 @@ import { EmailModule } from './modules/email/email.module';
 import { UsersModule } from './modules/users/users.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
 
 import { dataSourceOptions } from './database/data-source';
 import moderationConfig from './config/moderation.config';
@@ -28,9 +29,11 @@ import moderationConfig from './config/moderation.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { TracingMiddleware } from './common/tracing/tracing.middleware';
+import { QueryLoggerModule } from './common/query-logger/query-logger.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { HealthModule } from './modules/health/health.module';
 import { throttlerConfig } from './config/throttler.config';
+import { PerUserRateLimitConfigService } from './config/per-user-rate-limit.config';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { EventsModule } from './events/events.module';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
@@ -43,6 +46,7 @@ import { CsrfGuard } from './common/guards/csrf.guard';
       enableInterceptor: true,
       enableErrorFilter: true,
     }),
+    QueryLoggerModule,
     EventsModule,
     WebhooksModule,
     CacheModule,
@@ -68,11 +72,12 @@ import { CsrfGuard } from './common/guards/csrf.guard';
     UsersModule,
     ModerationModule,
     WebsocketModule,
+    QueryMonitoringModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    SecurityMiddleware,
+    PerUserRateLimitConfigService,
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,

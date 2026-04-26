@@ -45,15 +45,16 @@ export function FilterPanel({
   const hasActiveFilters = selectedStatus || selectedDifficulty || selectedCategory;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="search" aria-label="Quest filters">
       {/* Category Filter */}
-      <div>
-        <div className="mb-2 flex items-center gap-2">
+      <fieldset>
+        <legend className="mb-2 flex items-center gap-2">
           <svg
             className="h-4 w-4 text-zinc-500 dark:text-zinc-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -62,13 +63,15 @@ export function FilterPanel({
               d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
             />
           </svg>
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Category:
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-2">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Category
+          </span>
+        </legend>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
           <button
             onClick={() => onCategoryChange(undefined)}
+            aria-pressed={!selectedCategory}
+            aria-label="Show all categories"
             className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
               !selectedCategory
                 ? 'border-[#089ec3] bg-[#089ec3] text-white'
@@ -83,6 +86,8 @@ export function FilterPanel({
               <button
                 key={category}
                 onClick={() => onCategoryChange(isSelected ? undefined : category)}
+                aria-pressed={isSelected}
+                aria-label={`Filter by ${category} category${isSelected ? ' (active)' : ''}`}
                 className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
                   isSelected
                     ? 'border-[#089ec3] bg-[#089ec3] text-white'
@@ -94,15 +99,18 @@ export function FilterPanel({
             );
           })}
         </div>
-      </div>
+      </fieldset>
+
       {/* Difficulty Filter */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Difficulty:
-        </label>
-        <div className="flex flex-wrap gap-2">
+      <fieldset>
+        <legend className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Difficulty
+        </legend>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by difficulty">
           <button
             onClick={() => onDifficultyChange(undefined)}
+            aria-pressed={!selectedDifficulty}
+            aria-label="Show all difficulty levels"
             className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
               !selectedDifficulty
                 ? 'border-[#089ec3] bg-[#089ec3] text-white'
@@ -117,6 +125,8 @@ export function FilterPanel({
               <button
                 key={option.value}
                 onClick={() => onDifficultyChange(isSelected ? undefined : option.value)}
+                aria-pressed={isSelected}
+                aria-label={`Filter by ${option.label} difficulty${isSelected ? ' (active)' : ''}`}
                 className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
                   isSelected
                     ? 'border-[#089ec3] bg-[#089ec3] text-white'
@@ -128,15 +138,14 @@ export function FilterPanel({
             );
           })}
         </div>
-      </div>
-
-
+      </fieldset>
 
       {/* Clear Filters Button */}
       {hasActiveFilters && (
         <div>
           <button
             onClick={onClearFilters}
+            aria-label="Clear all active filters"
             className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
           >
             Clear all filters

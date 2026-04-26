@@ -49,13 +49,18 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
 
   if (isExpired || timeRemaining.total <= 0) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-900/10">
+      <div
+        role="status"
+        aria-label="Quest expired"
+        className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-900/10"
+      >
         <div className="flex items-center gap-3">
           <svg
             className="h-6 w-6 text-red-600 dark:text-red-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -76,6 +81,7 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
   }
 
   const isUrgent = timeRemaining.days === 0 && timeRemaining.hours < 24;
+  const humanReadableTime = `${timeRemaining.days} days, ${timeRemaining.hours} hours, ${timeRemaining.minutes} minutes, ${timeRemaining.seconds} seconds`;
 
   return (
     <div
@@ -91,6 +97,7 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -106,7 +113,12 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
         </h3>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      {/* Screen-reader accessible time announcement */}
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        Time remaining: {humanReadableTime}
+      </p>
+
+      <div className="grid grid-cols-4 gap-4" aria-hidden="true">
         <div className="text-center">
           <div
             className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-[#089ec3]'}`}
@@ -142,7 +154,7 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
       </div>
 
       {isUrgent && (
-        <div className="mt-4 text-sm text-orange-700 dark:text-orange-300">
+        <div className="mt-4 text-sm text-orange-700 dark:text-orange-300" role="alert">
           Less than 24 hours remaining!
         </div>
       )}

@@ -8,15 +8,24 @@ interface RewardDisplayProps {
 
 export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDisplayProps) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-gradient-to-br from-orange-50 to-yellow-50 p-6 dark:border-zinc-800 dark:from-orange-900/10 dark:to-yellow-900/10">
+    <div
+      className="rounded-lg border border-zinc-200 bg-gradient-to-br from-orange-50 to-yellow-50 p-6 dark:border-zinc-800 dark:from-orange-900/10 dark:to-yellow-900/10"
+      aria-label="Quest rewards"
+    >
       <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
         Quest Rewards
       </h3>
 
       <div className="space-y-4">
         {/* Primary Reward */}
-        <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+        <div
+          className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900"
+          aria-label={`Token reward: ${rewardAmount} ${rewardAsset}`}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30"
+            aria-hidden="true"
+          >
             <svg
               className="h-6 w-6 text-orange-600 dark:text-orange-400"
               fill="currentColor"
@@ -32,15 +41,21 @@ export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDis
           </div>
           <div className="flex-1">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">Token Reward</div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400" aria-hidden="true">
               {rewardAmount} {rewardAsset}
             </div>
           </div>
         </div>
 
         {/* XP Reward */}
-        <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#089ec3]/10">
+        <div
+          className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900"
+          aria-label={`Experience points reward: ${xpReward} XP`}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#089ec3]/10"
+            aria-hidden="true"
+          >
             <svg
               className="h-6 w-6 text-[#089ec3]"
               fill="currentColor"
@@ -55,7 +70,7 @@ export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDis
           </div>
           <div className="flex-1">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">Experience Points</div>
-            <div className="text-2xl font-bold text-[#089ec3]">+{xpReward} XP</div>
+            <div className="text-2xl font-bold text-[#089ec3]" aria-hidden="true">+{xpReward} XP</div>
           </div>
         </div>
       </div>
@@ -67,6 +82,7 @@ export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDis
             className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400"
             fill="currentColor"
             viewBox="0 0 20 20"
+            aria-hidden="true"
           >
             <path
               fillRule="evenodd"

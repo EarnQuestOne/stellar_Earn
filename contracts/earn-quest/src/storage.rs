@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo, QuestMetadata, PlatformStats, CreatorStats};
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, EscrowInfo, QuestMetadata, PlatformStats, CreatorStats, OracleConfig};
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 
@@ -11,12 +11,16 @@ use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 pub enum DataKey {
     /// Stores individual Quest data, keyed by quest ID (Symbol)
     Quest(Symbol),
-    /// Stores quest metadata, keyed by quest ID (Symbol)
+    /// Stores quest metadata core (title, description, category) — hot path
     QuestMetadata(Symbol),
+    /// Stores quest metadata extended (requirements, tags) — cold path
+    QuestMetadataExt(Symbol),
     /// Stores individual Submission data, keyed by quest ID and submitter address
     Submission(Symbol, Address),
-    /// Stores UserStats data, keyed by user address
+    /// Stores UserCore data (xp, level, quests_completed) — hot path
     UserStats(Address),
+    /// Stores UserBadges (badge Vec) — cold path, loaded only for badge ops
+    UserBadges(Address),
     /// Stores admin status, keyed by admin address
     Admin(Address),
     /// Stores contract admin (single)
@@ -41,12 +45,28 @@ pub enum DataKey {
     UnpauseTimelockSeconds,
     /// Scheduled unpause ledger timestamp
     ScheduledUnpauseTime,
+    /// Escrow hot-path balances (total_deposited, total_paid_out, total_refunded, is_active, deposit_count)
     Escrow(Symbol),
+    /// Escrow cold-path metadata (depositor, token, created_at)
+    EscrowMeta(Symbol),
     QuestIds,
+    /// Platform-wide stats assembled from individual counters on read
     PlatformStats,
+    /// Individual platform counter keys for atomic single-counter updates
+    PlatformQuestsCreated,
+    PlatformSubmissions,
+    PlatformRewardsDistributed,
+    PlatformActiveUsers,
+    PlatformRewardsClaimed,
     CreatorStats(Address),
+    /// Oracle configuration, keyed by oracle address
+    OracleConfig(Address),
+    /// List of all oracle addresses
+    OracleAddresses,
     /// Mutex flag set while a non-reentrant entry point is executing.
     ReentrancyGuard,
+    /// Dispute record keyed by (quest_id, initiator)
+    Dispute(Symbol, Address),
 }
 
 //================================================================================
@@ -116,19 +136,55 @@ pub fn has_quest_metadata(env: &Env, id: &Symbol) -> bool {
         .has(&DataKey::QuestMetadata(id.clone()))
 }
 
-/// Gets metadata for a quest, if present.
+/// Gets full metadata for a quest (assembled from Core + Extended).
 pub fn get_quest_metadata(env: &Env, id: &Symbol) -> Result<QuestMetadata, Error> {
+    let core: QuestMetadataCore = env
+        .storage()
+        .instance()
+        .get(&DataKey::QuestMetadata(id.clone()))
+        .ok_or(Error::MetadataNotFound)?;
+    let ext: QuestMetadataExtended = env
+        .storage()
+        .instance()
+        .get(&DataKey::QuestMetadataExt(id.clone()))
+        .unwrap_or_else(|| QuestMetadataExtended {
+            requirements: Vec::new(env),
+            tags: Vec::new(env),
+        });
+    Ok(QuestMetadata {
+        title: core.title,
+        description: core.description,
+        category: core.category,
+        requirements: ext.requirements,
+        tags: ext.tags,
+    })
+}
+
+/// Gets only the core metadata (title, description, category) — hot path.
+pub fn get_quest_metadata_core(env: &Env, id: &Symbol) -> Result<QuestMetadataCore, Error> {
     env.storage()
         .instance()
         .get(&DataKey::QuestMetadata(id.clone()))
         .ok_or(Error::MetadataNotFound)
 }
 
-/// Stores metadata for a quest.
+/// Stores metadata split into Core + Extended entries.
 pub fn set_quest_metadata(env: &Env, id: &Symbol, metadata: &QuestMetadata) {
+    let core = QuestMetadataCore {
+        title: metadata.title.clone(),
+        description: metadata.description.clone(),
+        category: metadata.category.clone(),
+    };
+    let ext = QuestMetadataExtended {
+        requirements: metadata.requirements.clone(),
+        tags: metadata.tags.clone(),
+    };
     env.storage()
         .instance()
-        .set(&DataKey::QuestMetadata(id.clone()), metadata);
+        .set(&DataKey::QuestMetadata(id.clone()), &core);
+    env.storage()
+        .instance()
+        .set(&DataKey::QuestMetadataExt(id.clone()), &ext);
 }
 
 //================================================================================
@@ -202,67 +258,46 @@ pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submiss
 }
 
 //================================================================================
-// UserStats Storage Functions
+// UserStats Storage Functions (split: UserCore hot-path + UserBadges cold-path)
 //================================================================================
 
-/// Checks if user stats exist for a specific user.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-///
-/// # Returns
-/// * `true` if the user has stats stored, `false` otherwise
-///
-/// # Storage Access
-/// * Reads from: Instance storage (existence check only)
-/// * Gas Cost: Low
+/// Checks if user core stats exist for a specific user.
 pub fn has_user_stats(env: &Env, user: &Address) -> bool {
     env.storage()
         .instance()
         .has(&DataKey::UserStats(user.clone()))
 }
 
-/// Retrieves user stats from storage.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-///
-/// # Returns
-/// * `Ok(UserStats)` - The user's stats if found
-/// * `Err(Error::UserStatsNotFound)` - If the user has no stats
-///
-/// # Storage Access
-/// * Reads from: Instance storage
-/// * Gas Cost: Moderate
-///
-/// # Notes
-/// * For new users who may not have stats, consider using `get_user_stats_or_default()`
-pub fn get_user_stats(env: &Env, user: &Address) -> Result<UserStats, Error> {
+/// Retrieves user core stats (xp, level, quests_completed) — hot path.
+pub fn get_user_stats(env: &Env, user: &Address) -> Result<UserCore, Error> {
     env.storage()
         .instance()
         .get(&DataKey::UserStats(user.clone()))
         .ok_or(Error::UserStatsNotFound)
 }
 
-/// Stores or updates user stats in storage.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-/// * `stats` - The user stats to store
-///
-/// # Storage Access
-/// * Writes to: Instance storage
-/// * Gas Cost: High
-///
-/// # Notes
-/// * For XP updates only, consider using `add_user_xp()` for atomic updates
-pub fn set_user_stats(env: &Env, user: &Address, stats: &UserStats) {
+/// Stores user core stats — hot path.
+pub fn set_user_stats(env: &Env, user: &Address, stats: &UserCore) {
     env.storage()
         .instance()
         .set(&DataKey::UserStats(user.clone()), stats);
+}
+
+/// Retrieves user badges — cold path (loaded only for badge operations).
+pub fn get_user_badges(env: &Env, user: &Address) -> UserBadges {
+    env.storage()
+        .instance()
+        .get(&DataKey::UserBadges(user.clone()))
+        .unwrap_or_else(|| UserBadges {
+            badges: Vec::new(env),
+        })
+}
+
+/// Stores user badges — cold path.
+pub fn set_user_badges(env: &Env, user: &Address, badges: &UserBadges) {
+    env.storage()
+        .instance()
+        .set(&DataKey::UserBadges(user.clone()), badges);
 }
 
 //================================================================================
@@ -459,11 +494,10 @@ pub fn update_submission_status(
 /// * Automatic level recalculation
 /// * Atomic XP update operation
 /// * Prevents overflow (saturating add)
-pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserStats, Error> {
+pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserCore, Error> {
     let mut stats = get_user_stats(env, user)?;
     stats.xp = stats.xp.saturating_add(xp_delta);
 
-    // Recalculate level based on XP thresholds (optimized branching)
     stats.level = match stats.xp {
         x if x >= 1500 => 5,
         x if x >= 1000 => 4,
@@ -503,12 +537,11 @@ pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserStats
 /// * Displaying user profiles for new users
 /// * Initializing stats before first quest completion
 /// * Avoiding error handling for optional stats queries
-pub fn get_user_stats_or_default(env: &Env, user: &Address) -> UserStats {
-    get_user_stats(env, user).unwrap_or_else(|_| UserStats {
+pub fn get_user_stats_or_default(env: &Env, user: &Address) -> UserCore {
+    get_user_stats(env, user).unwrap_or_else(|_| UserCore {
         xp: 0,
         level: 1,
         quests_completed: 0,
-        badges: Vec::new(env),
     })
 }
 
@@ -745,7 +778,7 @@ fn dec_unpause_approval_count(env: &Env) {
 }
 
 //================================================================================
-// Escrow Storage Functions
+// Escrow Storage Functions (split: EscrowBalances hot-path + EscrowMeta cold-path)
 //================================================================================
 
 /// Check if escrow exists for a quest
@@ -755,26 +788,64 @@ pub fn has_escrow(env: &Env, quest_id: &Symbol) -> bool {
         .has(&DataKey::Escrow(quest_id.clone()))
 }
 
-/// Get escrow info for a quest
-pub fn get_escrow(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
+/// Get escrow hot-path balances (total_deposited, total_paid_out, total_refunded,
+/// is_active, deposit_count).  Used on every deposit, payout, and balance check.
+pub fn get_escrow_balances(env: &Env, quest_id: &Symbol) -> Result<EscrowBalances, Error> {
     env.storage()
         .instance()
         .get(&DataKey::Escrow(quest_id.clone()))
         .ok_or(Error::EscrowNotFound)
 }
 
-/// Save escrow info for a quest
-pub fn set_escrow(env: &Env, quest_id: &Symbol, escrow: &EscrowInfo) {
+/// Save escrow hot-path balances.
+pub fn set_escrow_balances(env: &Env, quest_id: &Symbol, balances: &EscrowBalances) {
     env.storage()
         .instance()
-        .set(&DataKey::Escrow(quest_id.clone()), escrow);
+        .set(&DataKey::Escrow(quest_id.clone()), balances);
 }
 
-/// Delete escrow record for a quest (cleanup after terminal state)
+/// Get escrow cold-path metadata (depositor, token, created_at).
+/// Loaded only for refunds and display queries.
+pub fn get_escrow_meta(env: &Env, quest_id: &Symbol) -> Result<EscrowMeta, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::EscrowMeta(quest_id.clone()))
+        .ok_or(Error::EscrowNotFound)
+}
+
+/// Save escrow cold-path metadata.
+pub fn set_escrow_meta(env: &Env, quest_id: &Symbol, meta: &EscrowMeta) {
+    env.storage()
+        .instance()
+        .set(&DataKey::EscrowMeta(quest_id.clone()), meta);
+}
+
+/// Assemble full EscrowInfo view from the two split entries.
+/// Used only by the public `get_escrow_info()` query.
+pub fn get_escrow(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
+    let balances = get_escrow_balances(env, quest_id)?;
+    let meta = get_escrow_meta(env, quest_id)?;
+    Ok(EscrowInfo {
+        quest_id: quest_id.clone(),
+        depositor: meta.depositor,
+        token: meta.token,
+        total_deposited: balances.total_deposited,
+        total_paid_out: balances.total_paid_out,
+        total_refunded: balances.total_refunded,
+        is_active: balances.is_active,
+        created_at: meta.created_at,
+        deposit_count: balances.deposit_count,
+    })
+}
+
+/// Delete both escrow entries for a quest (cleanup after terminal state)
 pub fn delete_escrow(env: &Env, quest_id: &Symbol) {
     env.storage()
         .instance()
         .remove(&DataKey::Escrow(quest_id.clone()));
+    env.storage()
+        .instance()
+        .remove(&DataKey::EscrowMeta(quest_id.clone()));
 }
 
 //================================================================================
@@ -849,25 +920,66 @@ pub fn add_quest_id(env: &Env, id: &Symbol) -> Result<(), Error> {
 
 //================================================================================
 // Platform & Creator Stats Storage
+// PlatformStats is split into individual counters for atomic single-field updates.
+// The full PlatformStats struct is assembled on read only.
 //================================================================================
 
 pub fn get_platform_stats(env: &Env) -> PlatformStats {
-    env.storage()
-        .instance()
-        .get(&DataKey::PlatformStats)
-        .unwrap_or(PlatformStats {
-            total_quests_created: 0,
-            total_submissions: 0,
-            total_rewards_distributed: 0,
-            total_active_users: 0,
-            total_rewards_claimed: 0,
-        })
+    PlatformStats {
+        total_quests_created: env
+            .storage().instance()
+            .get(&DataKey::PlatformQuestsCreated)
+            .unwrap_or(0u64),
+        total_submissions: env
+            .storage().instance()
+            .get(&DataKey::PlatformSubmissions)
+            .unwrap_or(0u64),
+        total_rewards_distributed: env
+            .storage().instance()
+            .get(&DataKey::PlatformRewardsDistributed)
+            .unwrap_or(0u128),
+        total_active_users: env
+            .storage().instance()
+            .get(&DataKey::PlatformActiveUsers)
+            .unwrap_or(0u64),
+        total_rewards_claimed: env
+            .storage().instance()
+            .get(&DataKey::PlatformRewardsClaimed)
+            .unwrap_or(0u64),
+    }
 }
 
+/// Write all counters at once (used by reset_platform_stats and migration).
 pub fn set_platform_stats(env: &Env, stats: &PlatformStats) {
-    env.storage()
-        .instance()
-        .set(&DataKey::PlatformStats, stats);
+    env.storage().instance().set(&DataKey::PlatformQuestsCreated,     &stats.total_quests_created);
+    env.storage().instance().set(&DataKey::PlatformSubmissions,       &stats.total_submissions);
+    env.storage().instance().set(&DataKey::PlatformRewardsDistributed,&stats.total_rewards_distributed);
+    env.storage().instance().set(&DataKey::PlatformActiveUsers,       &stats.total_active_users);
+    env.storage().instance().set(&DataKey::PlatformRewardsClaimed,    &stats.total_rewards_claimed);
+}
+
+/// Increment only the quests-created counter (1 read + 1 write instead of 5+5).
+pub fn inc_platform_quests_created(env: &Env) {
+    let v: u64 = env.storage().instance().get(&DataKey::PlatformQuestsCreated).unwrap_or(0);
+    env.storage().instance().set(&DataKey::PlatformQuestsCreated, &v.saturating_add(1));
+}
+
+/// Increment only the submissions counter.
+pub fn inc_platform_submissions(env: &Env) {
+    let v: u64 = env.storage().instance().get(&DataKey::PlatformSubmissions).unwrap_or(0);
+    env.storage().instance().set(&DataKey::PlatformSubmissions, &v.saturating_add(1));
+}
+
+/// Increment only the rewards-claimed counter.
+pub fn inc_platform_rewards_claimed(env: &Env) {
+    let v: u64 = env.storage().instance().get(&DataKey::PlatformRewardsClaimed).unwrap_or(0);
+    env.storage().instance().set(&DataKey::PlatformRewardsClaimed, &v.saturating_add(1));
+}
+
+/// Add to the rewards-distributed counter.
+pub fn add_platform_rewards_distributed(env: &Env, amount: u128) {
+    let v: u128 = env.storage().instance().get(&DataKey::PlatformRewardsDistributed).unwrap_or(0);
+    env.storage().instance().set(&DataKey::PlatformRewardsDistributed, &v.saturating_add(amount));
 }
 
 pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {
@@ -886,4 +998,37 @@ pub fn set_creator_stats(env: &Env, creator: &Address, stats: &CreatorStats) {
     env.storage()
         .instance()
         .set(&DataKey::CreatorStats(creator.clone()), stats);
+}
+
+//================================================================================
+// Dispute Storage Functions
+//================================================================================
+
+/// Checks if a dispute exists for a specific quest and initiator.
+pub fn has_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::Dispute(quest_id.clone(), initiator.clone()))
+}
+
+/// Retrieves a dispute by quest_id and initiator.
+pub fn get_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> Result<crate::types::Dispute, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::Dispute(quest_id.clone(), initiator.clone()))
+        .ok_or(Error::DisputeNotFound)
+}
+
+/// Stores or updates a dispute record.
+pub fn set_dispute(env: &Env, quest_id: &Symbol, initiator: &Address, dispute: &crate::types::Dispute) {
+    env.storage()
+        .instance()
+        .set(&DataKey::Dispute(quest_id.clone(), initiator.clone()), dispute);
+}
+
+/// Deletes a dispute record.
+pub fn delete_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::Dispute(quest_id.clone(), initiator.clone()));
 }

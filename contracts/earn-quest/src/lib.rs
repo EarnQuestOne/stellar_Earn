@@ -2,9 +2,11 @@
 
 mod admin;
 pub mod errors;
+mod dispute;
 mod escrow;
 mod events;
 mod init;
+mod oracle;
 mod payout;
 mod quest;
 mod reputation;
@@ -15,7 +17,7 @@ pub mod types;
 pub mod validation;
 
 use crate::errors::Error;
-use crate::types::{Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, EscrowInfo, PlatformStats, Quest, QuestMetadata, QuestStatus, UserStats, Submission};
+use crate::types::{Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, Dispute, EscrowInfo, PlatformStats, Quest, QuestMetadata, QuestStatus, UserStats, Submission};
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec};
 
 #[contract]
@@ -186,22 +188,27 @@ impl EarnQuestContract {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
         submitter.require_auth();
-        submission::validate_claim(&env, &quest_id, &submitter)?;
 
+        // Single read of quest and submission for all subsequent operations
         let quest = storage::get_quest(&env, &quest_id)?;
+        let submission = storage::get_submission(&env, &quest_id, &submitter)?;
+
+        // Validate using pre-read data
+        submission::validate_claim_data(&quest, &submission)?;
 
         // CEI: flip the submission to Paid and increment claims BEFORE the
         // external token transfer. If a malicious token re-enters during
         // the transfer the AlreadyClaimed check in validate_claim will
         // reject the second attempt even before the reentrancy guard kicks
         // in, giving us defence in depth.
-        storage::update_submission_status(
-            &env,
-            &quest_id,
-            &submitter,
-            types::SubmissionStatus::Paid,
-        )?;
-        storage::increment_quest_claims(&env, &quest_id)?;
+        let mut submission = submission;
+        submission.status = types::SubmissionStatus::Paid;
+        storage::set_submission(&env, &quest_id, &submitter, &submission);
+
+        // Increment claims: directly update quest to avoid extra read
+        let mut quest = quest;
+        quest.total_claims += 1;
+        storage::set_quest(&env, &quest_id, &quest);
 
         payout::transfer_reward_from_escrow(
             &env,
@@ -225,8 +232,13 @@ impl EarnQuestContract {
         Ok(())
     }
 
-    pub fn get_user_stats(env: Env, user: Address) -> UserStats {
+    pub fn get_user_stats(env: Env, user: Address) -> UserCore {
         reputation::get_user_stats(&env, &user)
+    }
+
+    /// Get user badges separately (cold path — only loaded when needed).
+    pub fn get_user_badges(env: Env, user: Address) -> UserBadges {
+        storage::get_user_badges(&env, &user)
     }
 
     pub fn grant_badge(
@@ -236,9 +248,54 @@ impl EarnQuestContract {
         badge: Badge,
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
-        let stats = storage::get_user_stats_or_default(&env, &user);
-        validation::validate_badge_count(stats.badges.len())?;
+        let user_badges = storage::get_user_badges(&env, &user);
+        validation::validate_badge_count(user_badges.badges.len())?;
         reputation::grant_badge(&env, &admin, &user, badge)
+    }
+
+    // ── Dispute Resolution ──
+
+    /// Open a dispute for a rejected submission.
+    ///
+    /// Only the submitter can open a dispute. They must have a submission
+    /// on this quest that was previously rejected. The dispute is assigned
+    /// to an arbitrator (could be the verifier or a designated third party).
+    ///
+    /// Returns the created Dispute record.
+    pub fn open_dispute(
+        env: Env,
+        quest_id: Symbol,
+        initiator: Address,
+        arbitrator: Address,
+    ) -> Result<Dispute, Error> {
+        security::require_not_paused(&env)?;
+        dispute::open_dispute(&env, quest_id, initiator, arbitrator)
+    }
+
+    /// Resolve an open dispute. Only the assigned arbitrator can resolve.
+    pub fn resolve_dispute(
+        env: Env,
+        quest_id: Symbol,
+        initiator: Address,
+        arbitrator: Address,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        dispute::resolve_dispute(&env, quest_id, initiator, arbitrator)
+    }
+
+    /// Withdraw a pending dispute (only by initiator).
+    pub fn withdraw_dispute(
+        env: Env,
+        quest_id: Symbol,
+        initiator: Address,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        dispute::withdraw_dispute(&env, quest_id, initiator)
+    }
+
+    /// Get dispute details.
+    pub fn get_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<Dispute, Error> {
+        dispute::get_dispute(&env, quest_id, initiator)
     }
 
     pub fn emergency_pause(env: Env, caller: Address) -> Result<(), Error> {
@@ -422,6 +479,142 @@ impl EarnQuestContract {
                 total_rewards_claimed: 0,
             },
         );
+        Ok(())
+    }
+
+    //================================================================================
+    // Oracle Management Functions
+    //================================================================================
+
+    /// Add a new oracle configuration (admin only)
+    pub fn add_oracle(
+        env: Env,
+        caller: Address,
+        oracle_config: OracleConfig,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        admin::require_admin(&env, &caller)?;
+        
+        oracle::Oracle::validate_config(&oracle_config)?;
+        storage::add_oracle_config(&env, &oracle_config)?;
+        
+        Ok(())
+    }
+
+    /// Remove an oracle configuration (admin only)
+    pub fn remove_oracle(
+        env: Env,
+        caller: Address,
+        oracle_address: Address,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        admin::require_admin(&env, &caller)?;
+        
+        storage::remove_oracle_config(&env, &oracle_address)?;
+        
+        Ok(())
+    }
+
+    /// Update oracle configuration (admin only)
+    pub fn update_oracle(
+        env: Env,
+        caller: Address,
+        oracle_config: OracleConfig,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        admin::require_admin(&env, &caller)?;
+        
+        oracle::Oracle::validate_config(&oracle_config)?;
+        storage::update_oracle_config(&env, &oracle_config)?;
+        
+        Ok(())
+    }
+
+    /// Get price from all active oracles (aggregated)
+    pub fn get_price(
+        env: Env,
+        base_asset: Address,
+        quote_asset: Address,
+        max_age_seconds: u64,
+    ) -> Result<AggregatedPrice, Error> {
+        let oracle_configs = storage::get_active_oracle_configs(&env);
+        let request = PriceFeedRequest {
+            base_asset,
+            quote_asset,
+            max_age_seconds,
+        };
+        
+        oracle::Oracle::get_aggregated_price(&env, &oracle_configs, &request)
+    }
+
+    /// Get price from a specific oracle
+    pub fn get_price_from_oracle(
+        env: Env,
+        oracle_address: Address,
+        base_asset: Address,
+        quote_asset: Address,
+        max_age_seconds: u64,
+    ) -> Result<PriceData, Error> {
+        let oracle_config = storage::get_oracle_config(&env, &oracle_address)?;
+        let request = PriceFeedRequest {
+            base_asset,
+            quote_asset,
+            max_age_seconds,
+        };
+        
+        oracle::Oracle::get_price(&env, &oracle_config, &request)
+    }
+
+    /// Get all oracle configurations
+    pub fn get_oracle_configs(env: Env) -> Vec<OracleConfig> {
+        storage::get_all_oracle_configs(&env)
+    }
+
+    /// Get active oracle configurations
+    pub fn get_active_oracle_configs(env: Env) -> Vec<OracleConfig> {
+        storage::get_active_oracle_configs(&env)
+    }
+
+    /// Convert reward amount using oracle price
+    pub fn convert_reward_amount(
+        env: Env,
+        from_asset: Address,
+        to_asset: Address,
+        amount: i128,
+    ) -> Result<i128, Error> {
+        if from_asset == to_asset {
+            return Ok(amount);
+        }
+
+        let price = Self::get_price(env, from_asset, to_asset, 300)?; // 5 minutes max age
+        
+        // Convert amount using price (assuming 7 decimals)
+        let amount_u256 = U256::from_u128(amount as u128);
+        let converted_amount = (amount_u256 * price.weighted_price) / U256::from_u32(10_000_000); // Adjust for 7 decimals
+        
+        // Convert back to i128 safely
+        let converted_value = converted_amount.to_u128() as i128;
+        Ok(converted_value)
+    }
+
+    /// Validate reward amount against oracle price (anti-manipulation)
+    pub fn validate_reward_amount_with_oracle(
+        env: Env,
+        reward_asset: Address,
+        reward_amount: i128,
+        reference_asset: Address,
+        max_deviation_percent: u32,
+    ) -> Result<(), Error> {
+        let price = Self::get_price(env, reward_asset, reference_asset, 300)?;
+        
+        // Check if price confidence is sufficient
+        if price.confidence_score < 80 {
+            return Err(Error::InsufficientOracleConfidence);
+        }
+        
+        // Additional validation logic could be added here
+        // For example, checking against historical prices, volatility limits, etc.
+        
         Ok(())
     }
 }
