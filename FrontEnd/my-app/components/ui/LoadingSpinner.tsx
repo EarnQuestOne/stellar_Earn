@@ -3,6 +3,9 @@
 type SpinnerSize = "sm" | "md" | "lg";
 type SpinnerVariant = "primary" | "neutral" | "white";
 
+/**
+ * Props for the loading spinner component.
+ */
 interface LoadingSpinnerProps {
   size?: SpinnerSize;
   variant?: SpinnerVariant;
@@ -22,6 +25,9 @@ const variantClasses: Record<SpinnerVariant, string> = {
   white: "border-white border-t-transparent",
 };
 
+/**
+ * A simple spinner used to indicate loading states.
+ */
 export function LoadingSpinner({
   size = "md",
   variant = "primary",

@@ -1,5 +1,8 @@
 "use client";
 
+/**
+ * Props for the progress bar component.
+ */
 interface ProgressBarProps {
   value?: number;
   max?: number;
@@ -9,6 +12,9 @@ interface ProgressBarProps {
   className?: string;
 }
 
+/**
+ * Renders a progress bar with optional label and indeterminate state.
+ */
 export function ProgressBar({
   value = 0,
   max = 100,

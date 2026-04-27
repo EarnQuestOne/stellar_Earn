@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { LevelBadge } from '@/components/reputation/LevelBadge';
 
+/**
+ * Props for the level-up celebration modal.
+ */
 interface LevelUpModalProps {
   isOpen: boolean;
   newLevel: number;
@@ -26,6 +29,9 @@ function ConfettiParticle({ delay, duration, left }: { delay: number; duration: 
   );
 }
 
+/**
+ * Shows a celebratory level-up modal with confetti animation.
+ */
 export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);

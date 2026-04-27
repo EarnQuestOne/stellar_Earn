@@ -3,6 +3,9 @@
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 
+/**
+ * Props for the loading overlay that blocks interaction when active.
+ */
 interface LoadingOverlayProps {
   isOpen: boolean;
   message?: string;
@@ -10,6 +13,9 @@ interface LoadingOverlayProps {
   blockInteraction?: boolean;
 }
 
+/**
+ * Displays a full-screen loading overlay with optional progress state.
+ */
 export function LoadingOverlay({
   isOpen,
   message = "Loading...",
