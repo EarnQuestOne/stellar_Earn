@@ -7,6 +7,7 @@ import { DatabaseHealthService } from './services/database-health.service';
 import { CacheHealthService } from './services/cache-health.service';
 import { ExternalHealthService } from './services/external-health.service';
 import { DatabasePoolMonitorService } from './services/database-pool-monitor.service';
+import { MetricsService } from '../../common/services/metrics.service';
 
 @Module({
   imports: [TypeOrmModule, ConfigModule, CacheModule],
@@ -16,6 +17,8 @@ import { DatabasePoolMonitorService } from './services/database-pool-monitor.ser
     CacheHealthService,
     ExternalHealthService,
     DatabasePoolMonitorService,
+    MetricsService,
   ],
+  exports: [MetricsService],
 })
 export class HealthModule {}

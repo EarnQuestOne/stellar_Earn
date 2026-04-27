@@ -22,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
+import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
 
 import { dataSourceOptions } from './database/data-source';
 import moderationConfig from './config/moderation.config';
@@ -73,6 +74,7 @@ import { CsrfGuard } from './common/guards/csrf.guard';
     ModerationModule,
     WebsocketModule,
     QueryMonitoringModule,
+    FeatureFlagsModule,
   ],
   controllers: [AppController],
   providers: [

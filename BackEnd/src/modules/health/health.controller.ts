@@ -5,6 +5,7 @@ import { SkipLogging } from '../../common/interceptors/logging.interceptor';
 import { DatabaseHealthService } from './services/database-health.service';
 import { CacheHealthService } from './services/cache-health.service';
 import { ExternalHealthService } from './services/external-health.service';
+import { MetricsService } from '../../common/services/metrics.service';
 import {
   LiveHealthResponse,
   ReadyHealthResponse,
@@ -23,6 +24,7 @@ export class HealthController {
     private readonly dbHealth: DatabaseHealthService,
     private readonly cacheHealth: CacheHealthService,
     private readonly externalHealth: ExternalHealthService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   @Get('live')
@@ -146,6 +148,29 @@ export class HealthController {
       timestamp: new Date().toISOString(),
       services,
     };
+  }
+
+  @Get('metrics')
+  @SkipLogging()
+  @ApiOperation({ 
+    summary: 'Prometheus metrics endpoint',
+    description: 'Returns application metrics in Prometheus text exposition format for scraping by Prometheus/Grafana.',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Metrics in Prometheus format',
+    content: {
+      'text/plain': {
+        schema: {
+          type: 'string',
+          example: '# HELP http_requests_total Total HTTP requests received\n# TYPE http_requests_total counter\nhttp_requests_total 1234',
+        },
+      },
+    },
+  })
+  async metrics(@Res() res: Response): Promise<void> {
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+    res.send(this.metricsService.getPrometheusOutput());
   }
 
   private mapServiceHealth(result: HealthCheckResult): ServiceHealth {
