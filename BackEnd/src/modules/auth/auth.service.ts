@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   Res,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -103,16 +104,121 @@ export class AuthService {
       throw new UnauthorizedException('Challenge has expired');
     }
 
-    verifyStellarSignature(stellarAddress, signature, challenge);
+    // Check account lockout before attempting authentication
+    let user: User | null = null;
+    try {
+      user = await this.usersService.findByAddress(stellarAddress);
+      await this.checkAccountLockout(user);
+    } catch (error) {
+      // User doesn't exist yet, proceed with authentication
+    }
+
+    try {
+      verifyStellarSignature(stellarAddress, signature, challenge);
+    } catch (error) {
+      // Record failed attempt if user exists
+      if (user) {
+        await this.recordFailedLoginAttempt(user);
+      }
+      throw error;
+    }
 
     const role = this.getRoleForAddress(stellarAddress);
     const tokens = await this.generateTokens(stellarAddress, null, stellarAddress, role);
+
+    // Reset failed attempts on successful login
+    if (user) {
+      await this.resetFailedLoginAttempts(user);
+    }
 
     return {
       ...tokens,
       user: this.mapToUserResponse(stellarAddress, role),
     };
-}
+  }
+
+  /**
+   * Check if an account is locked due to too many failed login attempts
+   */
+  private async checkAccountLockout(user: User): Promise<void> {
+    if (!user.lockedUntil) {
+      return;
+    }
+
+    const now = new Date();
+    if (now < user.lockedUntil) {
+      const remainingTime = Math.ceil((user.lockedUntil.getTime() - now.getTime()) / 1000 / 60);
+      throw new UnauthorizedException(
+        `Account is locked. Try again in ${remainingTime} minutes.`,
+      );
+    }
+
+    // Lockout period has expired, reset the failed attempts
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    await this.usersService.update(user.id, user);
+  }
+
+  /**
+   * Record a failed login attempt and lock account if threshold reached
+   */
+  private async recordFailedLoginAttempt(user: User): Promise<void> {
+    const maxAttempts = parseInt(
+      this.configService.get<string>('AUTH_MAX_FAILED_ATTEMPTS', '5'),
+      10,
+    );
+    const lockoutDurationMinutes = parseInt(
+      this.configService.get<string>('AUTH_LOCKOUT_DURATION_MINUTES', '30'),
+      10,
+    );
+
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+    if (user.failedLoginAttempts >= maxAttempts) {
+      user.lockedUntil = new Date(
+        Date.now() + lockoutDurationMinutes * 60 * 1000,
+      );
+      this.logger.warn(
+        `Account ${user.stellarAddress || user.email} locked after ${user.failedLoginAttempts} failed attempts`,
+      );
+    }
+
+    await this.usersService.update(user.id, user);
+
+    if (user.lockedUntil) {
+      throw new UnauthorizedException(
+        `Too many failed login attempts. Account locked for ${lockoutDurationMinutes} minutes.`,
+      );
+    }
+  }
+
+  /**
+   * Reset failed login attempts on successful login
+   */
+  private async resetFailedLoginAttempts(user: User): Promise<void> {
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
+      await this.usersService.update(user.id, user);
+    }
+  }
+
+  /**
+   * Admin function to unlock a locked account
+   */
+  async unlockAccount(userId: string, adminUser: AuthUser): Promise<void> {
+    // Verify admin role
+    if (adminUser.role !== Role.ADMIN) {
+      throw new UnauthorizedException('Only admins can unlock accounts');
+    }
+
+    const user = await this.usersService.findById(userId);
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    await this.usersService.update(user.id, user);
+
+    this.logger.log(`Account ${user.stellarAddress || user.email} unlocked by admin ${adminUser.stellarAddress || adminUser.id}`);
+  }
 
   private clearAuthCookies(response: Response): void {
     const configService = this.configService;
@@ -124,9 +230,16 @@ export class AuthService {
 
   async loginOAuthUser(profile: OAuthUserProfile): Promise<TokenResponseDto> {
     const user = await this.findOrCreateOAuthUser(profile);
+
+    // Check account lockout before allowing login
+    await this.checkAccountLockout(user);
+
     const role = user.role;
 
     const tokens = await this.generateTokens(user.id, user.id, user.stellarAddress ?? null, role);
+
+    // Reset failed attempts on successful login
+    await this.resetFailedLoginAttempts(user);
 
     return {
       ...tokens,

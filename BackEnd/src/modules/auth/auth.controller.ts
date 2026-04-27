@@ -10,8 +10,9 @@ import {
   HttpException,
   UnauthorizedException,
   Res,
-  Req,
+  Param,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Response, Request } from 'express';
 import {
   ApiTags,
@@ -142,14 +143,8 @@ export class AuthController {
     @Res() response: Response,
   ): Promise<void> {
     const cookies = parseCookies(request.headers.cookie);
-    const refreshToken = cookies[REFRESH_TOKEN_COOKIE]
-      || request.headers?.['x-refresh-token'];
 
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
-    }
-
-    const result = await this.authService.refreshTokens(refreshToken);
+    const result = await this.authService.refreshTokens(cookies.refresh_token);
 
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN;
@@ -176,6 +171,25 @@ export class AuthController {
       user: result.user,
       expiresIn: result.expiresIn,
     });
+  }
+
+  @Post('unlock/:userId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unlock a locked account (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Account unlocked successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  async unlockAccount(
+    @Param('userId') userId: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<{ message: string }> {
+    await this.authService.unlockAccount(userId, user);
+    return { message: 'Account unlocked successfully' };
   }
 
   @Get('google')
