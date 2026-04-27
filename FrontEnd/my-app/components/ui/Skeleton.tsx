@@ -1,9 +1,15 @@
 "use client";
 
+/**
+ * Shared props for skeleton placeholder components.
+ */
 interface SkeletonBaseProps {
   className?: string;
 }
 
+/**
+ * A skeleton text block used during loading states.
+ */
 export function SkeletonText({ className = "h-4 w-full" }: SkeletonBaseProps) {
   return (
     <div
@@ -13,6 +19,9 @@ export function SkeletonText({ className = "h-4 w-full" }: SkeletonBaseProps) {
   );
 }
 
+/**
+ * A card-style skeleton used while content is loading.
+ */
 export function SkeletonCard({
   className = "",
   rows = 3,
@@ -38,6 +47,9 @@ export function SkeletonCard({
   );
 }
 
+/**
+ * A list-style skeleton placeholder for loading collections.
+ */
 export function SkeletonList({
   className = "",
   items = 3,

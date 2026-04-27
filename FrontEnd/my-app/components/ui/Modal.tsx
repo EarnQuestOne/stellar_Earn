@@ -3,6 +3,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { FocusTrap } from '@/components/a11y/FocusTrap';
 
+/**
+ * Props for the modal overlay component.
+ */
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +24,9 @@ const sizeClasses = {
   xl: 'max-w-xl',
 };
 
+/**
+ * Renders an accessible modal dialog with optional backdrop and escape handling.
+ */
 export function Modal({
   isOpen,
   onClose,
@@ -133,12 +139,18 @@ export function Modal({
   );
 }
 
+/**
+ * Props for the submission success confirmation modal.
+ */
 interface SubmissionSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   questTitle: string;
 }
 
+/**
+ * Shows a confirmation modal after a successful quest submission.
+ */
 export function SubmissionSuccessModal({
   isOpen,
   onClose,

@@ -2,11 +2,17 @@
 
 import { useTheme } from "@/lib/hooks/useTheme";
 
+/**
+ * Props for the theme toggle button.
+ */
 interface ThemeToggleProps {
   className?: string;
   showLabel?: boolean;
 }
 
+/**
+ * Toggles between light and dark mode for the application.
+ */
 export function ThemeToggle({ className = "", showLabel = false }: ThemeToggleProps) {
   const { isDark, toggleTheme } = useTheme();
   const nextThemeLabel = isDark ? "light" : "dark";

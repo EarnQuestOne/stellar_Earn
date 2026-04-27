@@ -55,6 +55,9 @@ export interface SubmissionFilters {
 // List submissions for a quest
 // ---------------------------------------------------------------------------
 
+/**
+ * Fetches submissions for a given quest, including total submission count.
+ */
 export async function getQuestSubmissions(
   questId: string,
   cancelToken?: CancelToken,
@@ -71,6 +74,9 @@ export async function getQuestSubmissions(
 // Fetch user's own submissions (paginated list from /submissions)
 // ---------------------------------------------------------------------------
 
+/**
+ * Fetches the current user's submissions with optional filtering and pagination.
+ */
 export async function fetchSubmissions(
   filters?: SubmissionFilters,
   pagination?: PaginationParams,
@@ -107,6 +113,9 @@ export async function fetchSubmissions(
 // Single submission
 // ---------------------------------------------------------------------------
 
+/**
+ * Fetches a single submission by quest and submission identifiers.
+ */
 export async function getSubmission(
   questId: string,
   submissionId: string,
@@ -168,6 +177,9 @@ export async function createSubmission(
 // Approve / Reject (verifier / admin)
 // ---------------------------------------------------------------------------
 
+/**
+ * Approves a submission and returns the updated submission record.
+ */
 export async function approveSubmission(
   questId: string,
   submissionId: string,
@@ -179,6 +191,9 @@ export async function approveSubmission(
   ).then((res) => res.data.submission);
 }
 
+/**
+ * Rejects a submission with an optional rejection reason.
+ */
 export async function rejectSubmission(
   questId: string,
   submissionId: string,
