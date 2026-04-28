@@ -1,6 +1,6 @@
-export const ONBOARDING_STORAGE_KEY = "stellar_earn_onboarding_state_v1";
+export const ONBOARDING_STORAGE_KEY = 'stellar_earn_onboarding_state_v1';
 
-export type TourTooltipPlacement = "top" | "bottom" | "left" | "right";
+export type TourTooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
 
 export interface OnboardingStepConfig {
   id: string;
@@ -31,126 +31,126 @@ export const defaultOnboardingState: OnboardingState = {
 
 export const onboardingSteps: OnboardingStepConfig[] = [
   {
-    id: "dashboard",
-    title: "Dashboard Overview",
+    id: 'dashboard',
+    title: 'Dashboard Overview',
     description:
-      "This is your command center. Track progress, activity, and rewards at a glance.",
-    route: "/dashboard",
+      'This is your command center. Track progress, activity, and rewards at a glance.',
+    route: '/dashboard',
     targetSelector: '[data-onboarding="dashboard-header"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "stats",
-    title: "Performance Stats",
+    id: 'stats',
+    title: 'Performance Stats',
     description:
-      "Monitor completed quests, XP, earnings, and streaks from this section.",
-    route: "/dashboard",
+      'Monitor completed quests, XP, earnings, and streaks from this section.',
+    route: '/dashboard',
     targetSelector: '[data-onboarding="dashboard-stats"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "dashboard-active-quests",
-    title: "Active Quest Feed",
+    id: 'dashboard-active-quests',
+    title: 'Active Quest Feed',
     description:
-      "Use this section to see the quests that need your attention right now.",
-    route: "/dashboard",
+      'Use this section to see the quests that need your attention right now.',
+    route: '/dashboard',
     targetSelector: '[data-onboarding="dashboard-active-quests"]',
-    placement: "top",
+    placement: 'top',
   },
   {
-    id: "quests-header",
-    title: "Quest Board",
+    id: 'quests-header',
+    title: 'Quest Board',
     description:
-      "Explore open quests and filter by category, status, and difficulty to find work quickly.",
-    route: "/quests",
+      'Explore open quests and filter by category, status, and difficulty to find work quickly.',
+    route: '/quests',
     targetSelector: '[data-onboarding="quest-board-header"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "quests-filters",
-    title: "Search and Filters",
+    id: 'quests-filters',
+    title: 'Search and Filters',
     description:
-      "Narrow down quests by keyword, status, difficulty, and category.",
-    route: "/quests",
+      'Narrow down quests by keyword, status, difficulty, and category.',
+    route: '/quests',
     targetSelector: '[data-onboarding="quest-board-filters"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "quests-list",
-    title: "Quest Results",
+    id: 'quests-list',
+    title: 'Quest Results',
     description:
-      "This list updates with your filters and lets you open full quest details.",
-    route: "/quests",
+      'This list updates with your filters and lets you open full quest details.',
+    route: '/quests',
     targetSelector: '[data-onboarding="quest-board-list"]',
-    placement: "top",
+    placement: 'top',
   },
   {
-    id: "submissions-header",
-    title: "Submissions",
+    id: 'submissions-header',
+    title: 'Submissions',
     description:
-      "Track review status and manage proof submissions from this page.",
-    route: "/submissions",
+      'Track review status and manage proof submissions from this page.',
+    route: '/submissions',
     targetSelector: '[data-onboarding="submissions-header"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "submissions-summary",
-    title: "Submission Metrics",
+    id: 'submissions-summary',
+    title: 'Submission Metrics',
     description:
-      "Get a quick snapshot of approvals, pending reviews, and overall activity.",
-    route: "/submissions",
+      'Get a quick snapshot of approvals, pending reviews, and overall activity.',
+    route: '/submissions',
     targetSelector: '[data-onboarding="submissions-summary"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "submissions-filters",
-    title: "Submission Filters",
+    id: 'submissions-filters',
+    title: 'Submission Filters',
     description:
-      "Search and filter submissions to quickly find a specific proof or status.",
-    route: "/submissions",
+      'Search and filter submissions to quickly find a specific proof or status.',
+    route: '/submissions',
     targetSelector: '[data-onboarding="submissions-filters"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "submissions-table",
-    title: "Submission List",
+    id: 'submissions-table',
+    title: 'Submission List',
     description:
-      "Review individual submissions, then open details for timeline and evidence.",
-    route: "/submissions",
+      'Review individual submissions, then open details for timeline and evidence.',
+    route: '/submissions',
     targetSelector: '[data-onboarding="submissions-table"]',
-    placement: "top",
+    placement: 'top',
   },
   {
-    id: "settings-overview",
-    title: "Settings Overview",
+    id: 'settings-overview',
+    title: 'Settings Overview',
     description:
-      "Manage preferences and restart onboarding any time from this page.",
-    route: "/settings",
+      'Manage preferences and restart onboarding any time from this page.',
+    route: '/settings',
     targetSelector: '[data-onboarding="settings-overview"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "notifications-header",
-    title: "Notification Preferences",
+    id: 'notifications-header',
+    title: 'Notification Preferences',
     description:
-      "Control alerts and communication settings based on what matters to you.",
-    route: "/settings/notifications",
+      'Control alerts and communication settings based on what matters to you.',
+    route: '/settings/notifications',
     targetSelector: '[data-onboarding="notification-settings-header"]',
-    placement: "bottom",
+    placement: 'bottom',
   },
   {
-    id: "wallet",
-    title: "Wallet Connection",
+    id: 'wallet',
+    title: 'Wallet Connection',
     description:
-      "Connect your Stellar wallet to claim rewards and complete on-chain actions.",
-    route: "/quests",
+      'Connect your Stellar wallet to claim rewards and complete on-chain actions.',
+    route: '/quests',
     targetSelector: '[data-onboarding="wallet-connect"]',
-    placement: "left",
+    placement: 'left',
   },
 ];
 
 export function getOnboardingState(): OnboardingState {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return defaultOnboardingState;
   }
 
@@ -175,7 +175,7 @@ export function getOnboardingState(): OnboardingState {
 }
 
 export function setOnboardingState(state: OnboardingState): void {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return;
   }
 

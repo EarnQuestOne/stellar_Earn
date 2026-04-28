@@ -1,13 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useWallet } from "@/context/WalletContext";
-import { createQuest } from "@/lib/api/quests";
-import type {
-  CreateQuestRequest,
-  QuestResponse,
-} from "@/lib/types/api.types";
+import { useCallback, useMemo, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useWallet } from '@/context/WalletContext';
+import { createQuest } from '@/lib/api/quests';
+import type { CreateQuestRequest, QuestResponse } from '@/lib/types/api.types';
 
 interface CreateQuestResult {
   success: boolean;
@@ -23,7 +20,7 @@ export function useQuestCreation() {
 
   const verifierAddress = useMemo(
     () => user?.stellarAddress ?? address ?? null,
-    [address, user?.stellarAddress],
+    [address, user?.stellarAddress]
   );
 
   const create = useCallback(
@@ -36,14 +33,14 @@ export function useQuestCreation() {
         return { success: true, quest };
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to create quest";
+          err instanceof Error ? err.message : 'Failed to create quest';
         setError(errorMessage);
         return { success: false, error: errorMessage };
       } finally {
         setIsCreating(false);
       }
     },
-    [],
+    []
   );
 
   return {

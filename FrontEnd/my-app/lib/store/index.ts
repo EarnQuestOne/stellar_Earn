@@ -1,21 +1,26 @@
-import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
 
-import { createUserSlice, UserSlice } from "./slices/userSlice";
-import { createQuestSlice, QuestSlice } from "./slices/questSlice";
-import { createSubmissionSlice, SubmissionSlice } from "./slices/submissionSlice";
-import { createNotificationSlice, NotificationSlice } from "./slices/notificationSlice";
-import { createUISlice, UISlice } from "./slices/uiSlice";
-import { createWalletSlice, WalletSlice } from "./slices/walletSlice";
-import { storage } from "./middlewear/persistence";
+import { createUserSlice, UserSlice } from './slices/userSlice';
+import { createQuestSlice, QuestSlice } from './slices/questSlice';
+import {
+  createSubmissionSlice,
+  SubmissionSlice,
+} from './slices/submissionSlice';
+import {
+  createNotificationSlice,
+  NotificationSlice,
+} from './slices/notificationSlice';
+import { createUISlice, UISlice } from './slices/uiSlice';
+import { createWalletSlice, WalletSlice } from './slices/walletSlice';
+import { storage } from './middlewear/persistence';
 
-export type StoreState =
-  & UserSlice
-  & QuestSlice
-  & SubmissionSlice
-  & NotificationSlice
-  & UISlice
-  & WalletSlice;
+export type StoreState = UserSlice &
+  QuestSlice &
+  SubmissionSlice &
+  NotificationSlice &
+  UISlice &
+  WalletSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -29,7 +34,7 @@ export const useStore = create<StoreState>()(
         ...createWalletSlice(...a),
       }),
       {
-        name: "stellar-earn-store",
+        name: 'stellar-earn-store',
         storage,
         partialize: (state) => ({
           // only persist what needs to survive page reload
@@ -43,7 +48,7 @@ export const useStore = create<StoreState>()(
         }),
       }
     ),
-    { name: "StellarEarnStore" }
+    { name: 'StellarEarnStore' }
   )
 );
 

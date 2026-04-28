@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { OnboardingStep } from "@/components/onboarding/OnboardingStep";
-import { TourTooltip } from "@/components/onboarding/TourTooltip";
-import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
-import { useOnboarding } from "@/lib/hooks/useOnboarding";
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { OnboardingStep } from '@/components/onboarding/OnboardingStep';
+import { TourTooltip } from '@/components/onboarding/TourTooltip';
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
+import { useOnboarding } from '@/lib/hooks/useOnboarding';
 
 interface OnboardingWizardProps {
   forceOpen?: boolean;
@@ -77,7 +77,7 @@ export function OnboardingWizard({ forceOpen = false }: OnboardingWizardProps) {
       return;
     }
 
-    if (searchParams.get("onboarding") === "restart") {
+    if (searchParams.get('onboarding') === 'restart') {
       lastRoutedStepIndexRef.current = null;
       restart();
       router.replace(pathname);

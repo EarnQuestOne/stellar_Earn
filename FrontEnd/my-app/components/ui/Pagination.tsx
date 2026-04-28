@@ -101,9 +101,7 @@ export function Pagination({
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
-              <span className="px-2 text-zinc-500 dark:text-zinc-400">
-                ...
-              </span>
+              <span className="px-2 text-zinc-500 dark:text-zinc-400">...</span>
             )}
             <button
               onClick={() => onPageChange(totalPages)}

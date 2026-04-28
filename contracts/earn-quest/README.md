@@ -32,6 +32,13 @@ cargo test
 
 # Run with output
 cargo test -- --nocapture
+
+# Using Make
+make test
+make test-verbose
+
+# Run cross-contract tests
+cargo test --test test_cross_contract
 ```
 
 Targeted slices for the recent contract work:
@@ -45,7 +52,24 @@ cargo test test_events
 
 # Dispute record workflow and emitted events
 cargo test test_dispute
+
+# Cross-contract interface tests
+cargo test test_cross_contract
 ```
+
+### Snapshot Management
+```bash
+# Update test snapshots (174 files)
+make snapshots
+
+# Verify snapshots
+make snapshots-verify
+
+# Show statistics
+make snapshots-stats
+```
+
+See [SNAPSHOT_MANAGEMENT.md](./SNAPSHOT_MANAGEMENT.md) for complete documentation.
 
 ## Project Structure
 
@@ -149,6 +173,16 @@ Dispute handling is intentionally hybrid:
 - arbitrators resolve or close disputes by writing the result back on-chain
 
 The full operator flow is documented in [docs/DISPUTE_RESOLUTION.md](docs/DISPUTE_RESOLUTION.md).
+
+## Appeal Process
+
+To ensure fairness, the contract supports an escalation path for resolved disputes:
+
+- **Escalation**: Initiators can appeal a resolved dispute if they disagree with the outcome.
+- **Senior Review**: Appeals are escalated to a senior reviewer or admin for a final verdict.
+- **On-Chain Tracking**: The appeal status and final resolution are recorded on the ledger.
+
+Detailed documentation is available in [docs/APPEAL_PROCESS.md](docs/APPEAL_PROCESS.md).
 
 ## Build Output
 

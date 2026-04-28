@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CheckCircle2, Wallet } from "lucide-react";
-import DraftManager from "@/components/quest/DraftManager";
-import QuestBasicsStep from "@/components/quest/steps/QuestBasicsStep";
-import RequirementsCriteriaStep from "@/components/quest/steps/RequirementsCriteriaStep";
-import RewardConfigurationStep from "@/components/quest/steps/RewardConfigurationStep";
-import TimelineStep from "@/components/quest/steps/TimelineStep";
-import VerificationSettingsStep from "@/components/quest/steps/VerificationSettingsStep";
-import ReviewPreviewStep from "@/components/quest/steps/ReviewPreviewStep";
-import ConfirmationStep from "@/components/quest/steps/ConfirmationStep";
-import { useWallet } from "@/context/WalletContext";
-import { useQuestCreation } from "@/lib/hooks/useQuestCreation";
-import { useQuestDraft } from "@/lib/hooks/useQuestDraft";
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle2, Wallet } from 'lucide-react';
+import DraftManager from '@/components/quest/DraftManager';
+import QuestBasicsStep from '@/components/quest/steps/QuestBasicsStep';
+import RequirementsCriteriaStep from '@/components/quest/steps/RequirementsCriteriaStep';
+import RewardConfigurationStep from '@/components/quest/steps/RewardConfigurationStep';
+import TimelineStep from '@/components/quest/steps/TimelineStep';
+import VerificationSettingsStep from '@/components/quest/steps/VerificationSettingsStep';
+import ReviewPreviewStep from '@/components/quest/steps/ReviewPreviewStep';
+import ConfirmationStep from '@/components/quest/steps/ConfirmationStep';
+import { useWallet } from '@/context/WalletContext';
+import { useQuestCreation } from '@/lib/hooks/useQuestCreation';
+import { useQuestDraft } from '@/lib/hooks/useQuestDraft';
 import {
   defaultQuestWizardData,
   QUEST_WIZARD_STEPS,
@@ -23,42 +23,42 @@ import {
   zonedDateTimeToIso,
   type QuestWizardData,
   type QuestWizardStepIndex,
-} from "@/lib/schemas/quest.schema";
-import type { CreateQuestRequest } from "@/lib/types/api.types";
+} from '@/lib/schemas/quest.schema';
+import type { CreateQuestRequest } from '@/lib/types/api.types';
 
 function escapeHtml(value: string): string {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function toQuestCreatePayload(
   data: QuestWizardData,
-  verifierAddress: string,
+  verifierAddress: string
 ): CreateQuestRequest {
   const deadline = data.timeline.deadline
     ? zonedDateTimeToIso(data.timeline.deadline, data.timeline.timezone)
     : null;
 
   const milestoneItems = data.timeline.milestones.filter(
-    (item) => item.title.trim() && item.dueDate.trim(),
+    (item) => item.title.trim() && item.dueDate.trim()
   );
 
   const verificationSections = [
     `<section><h2>Quest Summary</h2><p>${escapeHtml(data.basics.shortDescription)}</p></section>`,
     `<section><h2>Verification Settings</h2><p><strong>Mode:</strong> ${escapeHtml(
-      data.verification.mode === "auto" ? "Auto Verification" : "Manual Review",
+      data.verification.mode === 'auto' ? 'Auto Verification' : 'Manual Review'
     )}</p><p>${escapeHtml(data.verification.instructions)}</p></section>`,
-    data.verification.mode === "auto" && data.verification.autoCriteria
+    data.verification.mode === 'auto' && data.verification.autoCriteria
       ? `<section><h3>Automation Criteria</h3><p>${escapeHtml(data.verification.autoCriteria)}</p></section>`
-      : "",
+      : '',
     `<section><h2>Timeline</h2><p><strong>Deadline:</strong> ${escapeHtml(
       data.timeline.deadline
         ? `${formatWizardDateTime(data.timeline.deadline, data.timeline.timezone)} (${data.timeline.timezone})`
-        : "Not set",
+        : 'Not set'
     )}</p></section>`,
   ];
 
@@ -68,10 +68,10 @@ function toQuestCreatePayload(
         .map(
           (item) =>
             `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(
-              `${formatWizardDateTime(item.dueDate, data.timeline.timezone)} (${data.timeline.timezone})`,
-            )}</li>`,
+              `${formatWizardDateTime(item.dueDate, data.timeline.timezone)} (${data.timeline.timezone})`
+            )}</li>`
         )
-        .join("")}</ul></section>`,
+        .join('')}</ul></section>`
     );
   }
 
@@ -79,9 +79,9 @@ function toQuestCreatePayload(
     title: data.basics.title,
     description: [data.basics.description, ...verificationSections]
       .filter(Boolean)
-      .join(""),
+      .join(''),
     category: data.basics.category,
-    difficulty: "intermediate",
+    difficulty: 'intermediate',
     rewardAsset: data.reward.assetType,
     rewardAmount: data.reward.amount,
     xpReward: data.reward.xpReward,
@@ -92,14 +92,14 @@ function toQuestCreatePayload(
       ...data.requirements.skills.map((skill) => `Skill: ${skill}`),
       ...data.requirements.deliverables.map(
         (item) =>
-          `Deliverable: ${item.title}${item.details ? ` (${item.details})` : ""}${item.required ? " [required]" : ""}`,
+          `Deliverable: ${item.title}${item.details ? ` (${item.details})` : ''}${item.required ? ' [required]' : ''}`
       ),
     ],
     tags: [
-      "wizard-created",
+      'wizard-created',
       `asset-${data.reward.assetType.toLowerCase()}`,
       `verification-${data.verification.mode}`,
-      `timezone-${data.timeline.timezone.toLowerCase().replaceAll("/", "-")}`,
+      `timezone-${data.timeline.timezone.toLowerCase().replaceAll('/', '-')}`,
     ],
   };
 }
@@ -124,15 +124,15 @@ const QuestWizard = () => {
 
   const getStepErrors = (
     currentStep: QuestWizardStepIndex,
-    data: QuestWizardData,
+    data: QuestWizardData
   ) => {
     const errors = [...validateStep(currentStep, data)];
 
     if ((currentStep === 4 || currentStep === 5) && !verifierAddress) {
       errors.push({
-        field: "verification.verifierAddress",
+        field: 'verification.verifierAddress',
         message:
-          "Connect a wallet or sign in so the quest can be assigned to a verifier address.",
+          'Connect a wallet or sign in so the quest can be assigned to a verifier address.',
       });
     }
 
@@ -141,12 +141,12 @@ const QuestWizard = () => {
 
   const { saveDraft, loadDraft, clearDraft, draftMeta } = useQuestDraft(
     wizardData,
-    stepIndex,
+    stepIndex
   );
 
   const progress = useMemo(
     () => Math.round(((stepIndex + 1) / QUEST_WIZARD_STEPS.length) * 100),
-    [stepIndex],
+    [stepIndex]
   );
 
   const validateCurrent = () => {
@@ -160,7 +160,7 @@ const QuestWizard = () => {
   }, [stepIndex, verifierAddress, wizardData]);
 
   const applyStepUpdate = (
-    updater: (prev: QuestWizardData) => QuestWizardData,
+    updater: (prev: QuestWizardData) => QuestWizardData
   ) => {
     setWizardData((prev) => {
       const next = updater(prev);
@@ -180,11 +180,11 @@ const QuestWizard = () => {
         setFieldErrors(
           parseErrors([
             {
-              field: "verification.verifierAddress",
+              field: 'verification.verifierAddress',
               message:
-                "Connect a wallet or sign in so the quest can be assigned to a verifier address.",
+                'Connect a wallet or sign in so the quest can be assigned to a verifier address.',
             },
-          ]),
+          ])
         );
         setStepIndex(4);
         return;
@@ -192,11 +192,11 @@ const QuestWizard = () => {
 
       const payload = toQuestCreatePayload(
         sanitizeWizardData(wizardData),
-        verifierAddress,
+        verifierAddress
       );
       const result = await create(payload);
       if (!result.success) {
-        setSubmitError(result.error ?? "Failed to create quest.");
+        setSubmitError(result.error ?? 'Failed to create quest.');
         setStepIndex(6);
         return;
       }
@@ -338,7 +338,7 @@ const QuestWizard = () => {
           aria-atomic="true"
         >
           <span>
-            Step {stepIndex + 1} of {QUEST_WIZARD_STEPS.length}:{" "}
+            Step {stepIndex + 1} of {QUEST_WIZARD_STEPS.length}:{' '}
             {QUEST_WIZARD_STEPS[stepIndex]}
           </span>
           <span>{progress}% complete</span>
@@ -367,19 +367,22 @@ const QuestWizard = () => {
             return (
               <li
                 key={stepLabel}
-                aria-current={active ? "step" : undefined}
+                aria-current={active ? 'step' : undefined}
                 className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
                   active
-                    ? "border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200"
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200'
                     : completed
-                      ? "border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"
-                      : "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200'
+                      : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300'
                 }`}
               >
                 <div className="flex items-center gap-1">
                   {completed ? (
                     <>
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <CheckCircle2
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
                       <span className="sr-only">Completed: </span>
                     </>
                   ) : (
@@ -423,7 +426,11 @@ const QuestWizard = () => {
           type="button"
           onClick={goBack}
           disabled={stepIndex === 0}
-          aria-label={stepIndex === 0 ? "Back (unavailable on first step)" : `Go back to step ${stepIndex}: ${QUEST_WIZARD_STEPS[stepIndex - 1]}`}
+          aria-label={
+            stepIndex === 0
+              ? 'Back (unavailable on first step)'
+              : `Go back to step ${stepIndex}: ${QUEST_WIZARD_STEPS[stepIndex - 1]}`
+          }
           className="rounded-xl border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
           Back
@@ -448,7 +455,7 @@ const QuestWizard = () => {
               </button>
               <button
                 type="button"
-                onClick={() => router.push("/quests")}
+                onClick={() => router.push('/quests')}
                 aria-label="Go to quests listing page"
                 className="rounded-xl bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700"
               >
@@ -462,19 +469,19 @@ const QuestWizard = () => {
               disabled={isCreating}
               aria-label={
                 isCreating
-                  ? "Publishing quest, please wait"
+                  ? 'Publishing quest, please wait'
                   : stepIndex === 5
-                    ? "Publish quest"
+                    ? 'Publish quest'
                     : `Continue to step ${stepIndex + 2}: ${QUEST_WIZARD_STEPS[stepIndex + 1]}`
               }
               aria-busy={isCreating}
               className="rounded-xl bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating
-                ? "Publishing..."
+                ? 'Publishing...'
                 : stepIndex === 5
-                  ? "Publish Quest"
-                  : "Continue"}
+                  ? 'Publish Quest'
+                  : 'Continue'}
             </button>
           )}
         </div>

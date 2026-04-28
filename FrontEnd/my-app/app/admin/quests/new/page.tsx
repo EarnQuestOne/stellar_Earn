@@ -1,8 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAdminAccess, useCreateQuest, useNotificationState } from '@/lib/hooks/useAdmin';
-import { AdminLayout, CreateQuestForm, Notifications } from '@/components/admin';
+import {
+  useAdminAccess,
+  useCreateQuest,
+  useNotificationState,
+} from '@/lib/hooks/useAdmin';
+import {
+  AdminLayout,
+  CreateQuestForm,
+  Notifications,
+} from '@/components/admin';
 import { NotificationContext } from '@/lib/hooks/useAdmin';
 import type { QuestFormData } from '@/lib/types/admin';
 
@@ -36,11 +44,17 @@ function NewQuestContent() {
         {/* Page Header */}
         <div>
           <nav className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-            <a href="/admin" className="hover:text-zinc-700 dark:hover:text-zinc-300">
+            <a
+              href="/admin"
+              className="hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
               Admin
             </a>
             <span>/</span>
-            <a href="/admin" className="hover:text-zinc-700 dark:hover:text-zinc-300">
+            <a
+              href="/admin"
+              className="hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
               Quests
             </a>
             <span>/</span>
@@ -68,7 +82,12 @@ function NewQuestContent() {
 }
 
 export default function NewQuestPage() {
-  const { isAdmin, adminUser, isLoading: accessLoading, error: accessError } = useAdminAccess();
+  const {
+    isAdmin,
+    adminUser,
+    isLoading: accessLoading,
+    error: accessError,
+  } = useAdminAccess();
   const notificationState = useNotificationState();
 
   if (accessLoading) {
@@ -76,7 +95,9 @@ export default function NewQuestPage() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-100 dark:bg-zinc-950">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto" />
-          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Verifying admin access...</p>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+            Verifying admin access...
+          </p>
         </div>
       </div>
     );

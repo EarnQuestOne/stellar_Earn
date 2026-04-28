@@ -26,6 +26,7 @@ export enum DisputeStatus {
   UnderReview = 'UnderReview',
   Resolved = 'Resolved',
   Withdrawn = 'Withdrawn',
+  Appealed = 'Appealed',
 }
 
 export enum BadgeType {
@@ -208,6 +209,12 @@ export interface DisputeWithdrawnData {
   initiator: string;
 }
 
+export interface DisputeAppealedData {
+  questId: string;
+  initiator: string;
+  arbitrator: string;
+}
+
 export interface EscrowDepositedData {
   questId: string;
   depositor: string;
@@ -264,6 +271,7 @@ export type EventData =
   | DisputeOpenedData
   | DisputeResolvedData
   | DisputeWithdrawnData
+  | DisputeAppealedData
   | EscrowDepositedData
   | EscrowPayoutData
   | EscrowRefundedData

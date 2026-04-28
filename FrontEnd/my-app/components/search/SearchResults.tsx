@@ -26,7 +26,9 @@ export function SearchResults({
       <div className="border-t border-zinc-200 p-8 dark:border-zinc-700">
         <div className="mb-4 flex items-center justify-center gap-2 text-zinc-500">
           <LoadingSpinner size="sm" variant="neutral" label="Searching" />
-          <span className="text-sm" aria-live="polite">Searching...</span>
+          <span className="text-sm" aria-live="polite">
+            Searching...
+          </span>
         </div>
         <div className="space-y-2">
           <Skeleton.Text className="h-4 w-1/3" />
@@ -53,8 +55,12 @@ export function SearchResults({
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-white">Search Error</p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{error.message}</p>
+          <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-white">
+            Search Error
+          </p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {error.message}
+          </p>
         </div>
       </div>
     );
@@ -77,7 +83,9 @@ export function SearchResults({
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-white">No results found</p>
+          <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-white">
+            No results found
+          </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Try adjusting your search or filters
           </p>
@@ -94,14 +102,19 @@ export function SearchResults({
       acc[result.type].push(result);
       return acc;
     },
-    {} as Record<string, SearchResult[]>,
+    {} as Record<string, SearchResult[]>
   );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'quest':
         return (
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -112,7 +125,12 @@ export function SearchResults({
         );
       case 'user':
         return (
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -123,7 +141,12 @@ export function SearchResults({
         );
       case 'submission':
         return (
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

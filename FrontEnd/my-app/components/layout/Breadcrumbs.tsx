@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { getRouteLabel } from "@/lib/config/navigation";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { getRouteLabel } from '@/lib/config/navigation';
 
 interface Crumb {
   href: string;
@@ -11,10 +11,10 @@ interface Crumb {
 
 export function Breadcrumbs() {
   const pathname = usePathname();
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname.split('/').filter(Boolean);
 
   const crumbs: Crumb[] = segments.map((segment, index) => ({
-    href: `/${segments.slice(0, index + 1).join("/")}`,
+    href: `/${segments.slice(0, index + 1).join('/')}`,
     label: getRouteLabel(segment),
   }));
 
@@ -23,7 +23,9 @@ export function Breadcrumbs() {
       <nav aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           <li>
-            <span className="font-medium text-zinc-700 dark:text-zinc-200">Home</span>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              Home
+            </span>
           </li>
         </ol>
       </nav>

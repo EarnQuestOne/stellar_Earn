@@ -81,3 +81,43 @@ fn test_withdraw_dispute_emits_indexed_event() {
     assert_eq!(event_quest, quest_id);
     assert_eq!(event_initiator, initiator);
 }
+
+#[test]
+fn test_appeal_process_emits_indexed_events() {
+    let (env, client, admin, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp03");
+    let appeals_arbitrator = Address::generate(&env);
+
+    // Open and resolve initial dispute
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator);
+
+    // Appeal the resolution
+    client.appeal_dispute(&quest_id, &initiator, &appeals_arbitrator);
+
+    let appealed = client.get_dispute(&quest_id, &initiator);
+    assert_eq!(appealed.status, DisputeStatus::Appealed);
+    assert_eq!(appealed.arbitrator, appeals_arbitrator);
+
+    let (_, appeal_topics, _) = env.events().all().last().unwrap();
+    let appeal_name: Symbol = appeal_topics.get(0).unwrap().into_val(&env);
+    let appeal_quest: Symbol = appeal_topics.get(1).unwrap().into_val(&env);
+    let appeal_initiator: Address = appeal_topics.get(2).unwrap().into_val(&env);
+    let appeal_arbitrator: Address = appeal_topics.get(3).unwrap().into_val(&env);
+
+    assert_eq!(appeal_name, symbol_short!("disp_appl"));
+    assert_eq!(appeal_quest, quest_id);
+    assert_eq!(appeal_initiator, initiator);
+    assert_eq!(appeal_arbitrator, appeals_arbitrator);
+
+    // Resolve the appeal (only admin can resolve)
+    // We use the admin account as the arbitrator for resolution
+    client.resolve_dispute(&quest_id, &initiator, &admin);
+
+    let final_dispute = client.get_dispute(&quest_id, &initiator);
+    assert_eq!(final_dispute.status, DisputeStatus::Resolved);
+
+    let (_, resolve_topics, _) = env.events().all().last().unwrap();
+    let resolve_name: Symbol = resolve_topics.get(0).unwrap().into_val(&env);
+    assert_eq!(resolve_name, symbol_short!("disp_res"));
+}

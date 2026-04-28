@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 interface OptimizedImageProps {
   src: string;
@@ -25,7 +25,7 @@ export default function OptimizedImage({
       placeholder="blur"
       blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      style={{ objectFit: "cover" }}
+      style={{ objectFit: 'cover' }}
     />
   );
 }

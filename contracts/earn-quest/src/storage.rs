@@ -1,8 +1,14 @@
 use crate::errors::Error;
 use crate::types::{
+
     CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest, 
     QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission, 
     SubmissionStatus, UserBadges, UserCore, UserStats, Commitment
+
+    CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest,
+    QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission,
+    SubmissionStatus, UserBadges, UserCore, Commitment
+
 };
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
@@ -75,6 +81,16 @@ pub enum DataKey {
     Dispute(Symbol, Address),
     /// Commitment record for front-running prevention, keyed by (quest_id, submitter)
     Commitment(Symbol, Address),
+    /// Token balance for an address
+    Balance(Address),
+    /// Token allowance for (owner, spender)
+    Allowance(Address, Address),
+    /// Token name
+    TokenName,
+    /// Token symbol
+    TokenSymbol,
+    /// Token decimals
+    TokenDecimals,
 }
 
 //================================================================================

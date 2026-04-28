@@ -110,6 +110,7 @@ pub enum DisputeStatus {
     Resolved,
     /// Dispute was withdrawn by the initiator.
     Withdrawn,
+    Appealed,
 }
 
 /// Represents a dispute over a rejected submission.
@@ -130,6 +131,7 @@ pub struct Dispute {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+
 /// A commitment for a submission to prevent front-running.
 pub struct Commitment {
     /// Hash of the submission proof + salt.
@@ -143,11 +145,21 @@ pub struct Commitment {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UserCore {
     /// Total experience points earned.
+
+pub struct UserCore {
+
     pub xp: u64,
     /// Current user level.
     pub level: u32,
     /// Total number of quests successfully completed.
     pub quests_completed: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Commitment {
+    pub hash: BytesN<32>,
+    pub timestamp: u64,
 }
 
 /// Separate storage entry for a user's badge collection.

@@ -6,7 +6,11 @@ interface RewardDisplayProps {
   xpReward: number;
 }
 
-export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDisplayProps) {
+export function RewardDisplay({
+  rewardAmount,
+  rewardAsset,
+  xpReward,
+}: RewardDisplayProps) {
   return (
     <div
       className="rounded-lg border border-zinc-200 bg-gradient-to-br from-orange-50 to-yellow-50 p-6 dark:border-zinc-800 dark:from-orange-900/10 dark:to-yellow-900/10"
@@ -40,8 +44,13 @@ export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDis
             </svg>
           </div>
           <div className="flex-1">
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">Token Reward</div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400" aria-hidden="true">
+            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+              Token Reward
+            </div>
+            <div
+              className="text-2xl font-bold text-orange-600 dark:text-orange-400"
+              aria-hidden="true"
+            >
               {rewardAmount} {rewardAsset}
             </div>
           </div>
@@ -69,8 +78,15 @@ export function RewardDisplay({ rewardAmount, rewardAsset, xpReward }: RewardDis
             </svg>
           </div>
           <div className="flex-1">
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">Experience Points</div>
-            <div className="text-2xl font-bold text-[#089ec3]" aria-hidden="true">+{xpReward} XP</div>
+            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+              Experience Points
+            </div>
+            <div
+              className="text-2xl font-bold text-[#089ec3]"
+              aria-hidden="true"
+            >
+              +{xpReward} XP
+            </div>
           </div>
         </div>
       </div>

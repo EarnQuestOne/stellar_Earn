@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { apiClient } from "../../lib/api/client";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, RefreshCw, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { apiClient } from '../../lib/api/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 
 /**
  * SessionManager handles:
@@ -16,7 +16,7 @@ export function SessionManager() {
   const { isAuthenticated, refreshProfile, logout, user } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const warningTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -41,7 +41,7 @@ export function SessionManager() {
         try {
           await refreshProfile();
         } catch (error) {
-          console.error("Proactive session refresh failed:", error);
+          console.error('Proactive session refresh failed:', error);
         } finally {
           setIsRefreshing(false);
         }
@@ -67,7 +67,9 @@ export function SessionManager() {
             className="fixed bottom-4 right-4 z-[100] flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-medium shadow-lg dark:border-[#2A3338] dark:bg-[#161E22]"
           >
             <RefreshCw className="h-3 w-3 animate-spin text-[#33C5E0]" />
-            <span className="text-zinc-500 dark:text-[#92A5A8]">Refreshing session...</span>
+            <span className="text-zinc-500 dark:text-[#92A5A8]">
+              Refreshing session...
+            </span>
           </motion.div>
         )}
 
@@ -82,9 +84,12 @@ export function SessionManager() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-zinc-900 dark:text-white">Session Expiring</h3>
+              <h3 className="mb-2 text-lg font-bold text-zinc-900 dark:text-white">
+                Session Expiring
+              </h3>
               <p className="mb-6 text-sm text-zinc-500 dark:text-[#92A5A8]">
-                Your session is about to expire. Would you like to stay logged in?
+                Your session is about to expire. Would you like to stay logged
+                in?
               </p>
               <div className="flex gap-3">
                 <button

@@ -1,9 +1,9 @@
-"use client";
-import { useWallet } from "../../context/WalletContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, Check, AlertCircle } from "lucide-react";
-import React from "react";
-import UserIcon from "./userIcon";
+'use client';
+import { useWallet } from '../../context/WalletContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wallet, Check, AlertCircle } from 'lucide-react';
+import React from 'react';
+import UserIcon from './userIcon';
 
 export function WalletModal() {
   const {
@@ -16,7 +16,7 @@ export function WalletModal() {
   } = useWallet();
 
   const [activeSelection, setActiveSelection] = React.useState<string | null>(
-    null,
+    null
   );
 
   React.useEffect(() => {
@@ -28,7 +28,7 @@ export function WalletModal() {
       try {
         await connect(activeSelection);
       } catch (err) {
-        console.error("Connection error:", err);
+        console.error('Connection error:', err);
       }
     }
   };
@@ -47,7 +47,7 @@ export function WalletModal() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-96 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-300 bg-white p-5 shadow-2xl dark:border-[#2A3338] dark:bg-[#161E22] sm:w-96 sm:p-8"
           >
             <div className="flex flex-col items-center">
@@ -77,15 +77,15 @@ export function WalletModal() {
                       onClick={() => setActiveSelection(wallet.id)}
                       className={`flex w-full items-center gap-4 rounded-xl border p-4 transition-all ${
                         isSelected
-                          ? "border-[#33C5E0]/30 bg-[#1a2333]/10 dark:bg-[#1a2333]"
-                          : "border-zinc-300 bg-transparent hover:border-[#33C5E0]/20 hover:bg-zinc-100 dark:border-[#2A3338] dark:hover:bg-[#1a2333]"
+                          ? 'border-[#33C5E0]/30 bg-[#1a2333]/10 dark:bg-[#1a2333]'
+                          : 'border-zinc-300 bg-transparent hover:border-[#33C5E0]/20 hover:bg-zinc-100 dark:border-[#2A3338] dark:hover:bg-[#1a2333]'
                       }`}
                     >
                       <div
                         className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${
                           isSelected
-                            ? "border-[#33C5E0] bg-[#33C5E0]"
-                            : "border-zinc-400 dark:border-[#2d3b4f]"
+                            ? 'border-[#33C5E0] bg-[#33C5E0]'
+                            : 'border-zinc-400 dark:border-[#2d3b4f]'
                         }`}
                       >
                         {isSelected && (
@@ -114,12 +114,12 @@ export function WalletModal() {
                 disabled={!activeSelection || isConnecting}
                 className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-medium transition-all ${
                   activeSelection && !isConnecting
-                    ? "bg-[#33C5E0] text-black hover:bg-[#33C5E0]/90"
-                    : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-[#2A3338] dark:text-gray-500"
+                    ? 'bg-[#33C5E0] text-black hover:bg-[#33C5E0]/90'
+                    : 'cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-[#2A3338] dark:text-gray-500'
                 }`}
               >
                 <UserIcon />
-                <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+                <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
               </button>
             </div>
           </motion.div>

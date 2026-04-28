@@ -21,6 +21,7 @@ const TOPIC_QUEST_CANCELLED: Symbol = symbol_short!("q_cancel");
 const TOPIC_DISPUTE_OPENED: Symbol = symbol_short!("disp_open");
 const TOPIC_DISPUTE_RESOLVED: Symbol = symbol_short!("disp_res");
 const TOPIC_DISPUTE_WITHDRAWN: Symbol = symbol_short!("disp_wd");
+const TOPIC_DISPUTE_APPEALED: Symbol = symbol_short!("disp_appl");
 const TOPIC_ESCROW_DEPOSITED: Symbol = symbol_short!("esc_dep");
 const TOPIC_ESCROW_PAYOUT: Symbol = symbol_short!("esc_pay");
 const TOPIC_ESCROW_REFUNDED: Symbol = symbol_short!("esc_ref");
@@ -351,6 +352,12 @@ pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitra
 /// Emit when a dispute is withdrawn by the initiator (indexed: quest_id, initiator).
 pub fn dispute_withdrawn(env: &Env, quest_id: Symbol, initiator: Address) {
     let topics = (TOPIC_DISPUTE_WITHDRAWN, quest_id, initiator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+pub fn dispute_appealed(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_APPEALED, quest_id, initiator, arbitrator);
     let data = ();
     env.events().publish(topics, data);
 }

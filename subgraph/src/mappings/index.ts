@@ -49,6 +49,7 @@ import {
   DisputeOpenedData,
   DisputeResolvedData,
   DisputeWithdrawnData,
+  DisputeAppealedData,
   EscrowDepositedData,
   EscrowPayoutData,
   EscrowRefundedData,
@@ -248,6 +249,9 @@ export async function handleEvent(rawEvent: any): Promise<void> {
         break;
       case 'DISPUTE_WITHDRAWN':
         handleDisputeWithdrawn(topicStrs, dataValues, ledger, timestamp);
+        break;
+      case 'DISPUTE_APPEALED':
+        handleDisputeAppealed(topicStrs, dataValues, ledger, timestamp);
         break;
       case 'ESCROW_DEPOSITED':
         handleEscrowDeposited(topicStrs, dataValues, ledger, timestamp);
@@ -687,6 +691,31 @@ function handleDisputeWithdrawn(
   });
 
   logger.info(`Dispute withdrawn: ${questId} by ${initiator}`);
+}
+
+/**
+ * disp_appl: topics [quest_id, initiator, arbitrator], data []
+ */
+function handleDisputeAppealed(
+  topics: string[],
+  data: any[],
+  ledger: number,
+  timestamp: string,
+): void {
+  const questId = topics[1];
+  const initiator = topics[2];
+  const arbitrator = topics[3];
+
+  saveDispute({
+    id: `${questId}:${initiator}`,
+    quest_id: questId,
+    initiator,
+    arbitrator,
+    status: DisputeStatus.Appealed,
+    filed_at: timestamp,
+  });
+
+  logger.info(`Dispute appealed: ${questId} by ${initiator}`);
 }
 
 /**

@@ -20,7 +20,14 @@ interface StatCardProps {
   isLoading?: boolean;
 }
 
-function StatCard({ title, value, icon, iconBg, trend, isLoading }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  icon,
+  iconBg,
+  trend,
+  isLoading,
+}: StatCardProps) {
   if (isLoading) {
     return (
       <div
@@ -62,31 +69,56 @@ function StatCard({ title, value, icon, iconBg, trend, isLoading }: StatCardProp
             }`}
             aria-label={trendLabel}
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d={trend.isPositive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"}
+                d={
+                  trend.isPositive
+                    ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
+                    : 'M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6'
+                }
               />
             </svg>
             <span aria-hidden="true">{trend.value}</span>
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50" aria-hidden="true">{value}</p>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400" aria-hidden="true">{title}</p>
+      <p
+        className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+        aria-hidden="true"
+      >
+        {value}
+      </p>
+      <p
+        className="text-sm text-zinc-500 dark:text-zinc-400"
+        aria-hidden="true"
+      >
+        {title}
+      </p>
     </div>
   );
 }
 
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   // Use success rate from stats if available, otherwise calculate
-  const successRate = stats?.successRate !== undefined
-    ? stats.successRate
-    : (stats?.questsCompleted ?? 0) > 0
-      ? Math.round((stats?.questsCompleted ?? 0) / ((stats?.questsCompleted ?? 0) + (stats?.failedQuests ?? 0)) * 100)
-      : 94;
+  const successRate =
+    stats?.successRate !== undefined
+      ? stats.successRate
+      : (stats?.questsCompleted ?? 0) > 0
+        ? Math.round(
+            ((stats?.questsCompleted ?? 0) /
+              ((stats?.questsCompleted ?? 0) + (stats?.failedQuests ?? 0))) *
+              100
+          )
+        : 94;
 
   const totalEarned = Number(stats?.totalEarned || 2450);
 
@@ -99,7 +131,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <StatCard
         title="Active Quests"
         value={5}
-        icon={<span className="text-cyan-400" aria-hidden="true">🎯</span>}
+        icon={
+          <span className="text-cyan-400" aria-hidden="true">
+            🎯
+          </span>
+        }
         iconBg="bg-cyan-400/10"
         trend={{ value: '+2', isPositive: true }}
         isLoading={isLoading}
@@ -107,7 +143,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <StatCard
         title="Completed"
         value={stats?.questsCompleted ?? 42}
-        icon={<span className="text-emerald-400" aria-hidden="true">✓</span>}
+        icon={
+          <span className="text-emerald-400" aria-hidden="true">
+            ✓
+          </span>
+        }
         iconBg="bg-emerald-400/10"
         trend={{ value: '+8', isPositive: true }}
         isLoading={isLoading}
@@ -115,7 +155,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <StatCard
         title="Earned"
         value={`${totalEarned.toLocaleString()} XLM`}
-        icon={<span className="text-amber-400" aria-hidden="true">💰</span>}
+        icon={
+          <span className="text-amber-400" aria-hidden="true">
+            💰
+          </span>
+        }
         iconBg="bg-amber-400/10"
         trend={{ value: '+12%', isPositive: true }}
         isLoading={isLoading}
@@ -123,7 +167,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <StatCard
         title="Success Rate"
         value={`${successRate}%`}
-        icon={<span className="text-purple-400" aria-hidden="true">📈</span>}
+        icon={
+          <span className="text-purple-400" aria-hidden="true">
+            📈
+          </span>
+        }
         iconBg="bg-purple-400/10"
         trend={{ value: '+2%', isPositive: true }}
         isLoading={isLoading}

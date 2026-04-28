@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
 /**
  * Rewards / claim flow E2E tests.
@@ -16,25 +16,25 @@ import { test, expect } from "@playwright/test";
  * *just before* the click (rather than via `addInitScript`) because patching
  * it before React hydrates breaks `useId` and other hashing inside React 19.
  */
-test.describe("Rewards Claim Flow", () => {
+test.describe('Rewards Claim Flow', () => {
   // Suppress the analytics consent banner so it cannot intercept clicks on
   // the page-level "Claim All Rewards" button.
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
-        "stellar_earn_analytics_consent",
-        JSON.stringify({ status: "denied", version: "1" })
+        'stellar_earn_analytics_consent',
+        JSON.stringify({ status: 'denied', version: '1' })
       );
     });
   });
 
-  test("renders the rewards header and informational sidebar", async ({
+  test('renders the rewards header and informational sidebar', async ({
     page,
   }) => {
-    await page.goto("/rewards");
+    await page.goto('/rewards');
 
     await expect(
-      page.getByRole("heading", { name: "Rewards", level: 1 })
+      page.getByRole('heading', { name: 'Rewards', level: 1 })
     ).toBeVisible();
     await expect(
       page.getByText(
@@ -43,23 +43,23 @@ test.describe("Rewards Claim Flow", () => {
     ).toBeVisible();
 
     await expect(
-      page.getByRole("heading", { name: /stellar rewards/i })
+      page.getByRole('heading', { name: /stellar rewards/i })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /claim history/i })
+      page.getByRole('heading', { name: /claim history/i })
     ).toBeVisible();
   });
 
-  test("lists at least one pending reward and exposes the Claim All button", async ({
+  test('lists at least one pending reward and exposes the Claim All button', async ({
     page,
   }) => {
-    await page.goto("/rewards");
+    await page.goto('/rewards');
 
     await expect(
-      page.getByRole("heading", { name: /claimable rewards/i })
+      page.getByRole('heading', { name: /claimable rewards/i })
     ).toBeVisible();
 
-    const claimBtn = page.getByRole("button", { name: /claim all rewards/i });
+    const claimBtn = page.getByRole('button', { name: /claim all rewards/i });
     await expect(claimBtn).toBeVisible();
     await expect(claimBtn).toBeEnabled();
 
@@ -69,12 +69,12 @@ test.describe("Rewards Claim Flow", () => {
     ).toBeVisible();
   });
 
-  test("a successful claim opens the modal, shows the tx hash, and clears the pending list", async ({
+  test('a successful claim opens the modal, shows the tx hash, and clears the pending list', async ({
     page,
   }) => {
-    await page.goto("/rewards");
+    await page.goto('/rewards');
 
-    const claimBtn = page.getByRole("button", { name: /claim all rewards/i });
+    const claimBtn = page.getByRole('button', { name: /claim all rewards/i });
     await expect(claimBtn).toBeEnabled({ timeout: 10_000 });
 
     // Force the success branch (claimReward checks Math.random() > 0.05).
@@ -83,15 +83,15 @@ test.describe("Rewards Claim Flow", () => {
     });
     await claimBtn.click();
 
-    const dialog = page.getByRole("dialog", { name: /claim transaction/i });
+    const dialog = page.getByRole('dialog', { name: /claim transaction/i });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /claim successful/i })
+      dialog.getByRole('heading', { name: /claim successful/i })
     ).toBeVisible({ timeout: 10_000 });
     await expect(dialog.getByText(/transaction hash/i)).toBeVisible();
-    await expect(dialog.locator("code")).toBeVisible();
+    await expect(dialog.locator('code')).toBeVisible();
 
-    await dialog.getByRole("button", { name: /^Done$/ }).click();
+    await dialog.getByRole('button', { name: /^Done$/ }).click();
     await expect(dialog).toBeHidden();
 
     // The pending list is now empty, and a row has been recorded in Claim
@@ -100,15 +100,15 @@ test.describe("Rewards Claim Flow", () => {
     await expect(
       page.getByText(/you haven't claimed any rewards yet/i)
     ).toBeHidden();
-    await expect(page.getByRole("cell", { name: /^Success$/ })).toBeVisible();
+    await expect(page.getByRole('cell', { name: /^Success$/ })).toBeVisible();
   });
 
-  test("a failed claim shows the error modal with a Try Again action", async ({
+  test('a failed claim shows the error modal with a Try Again action', async ({
     page,
   }) => {
-    await page.goto("/rewards");
+    await page.goto('/rewards');
 
-    const claimBtn = page.getByRole("button", { name: /claim all rewards/i });
+    const claimBtn = page.getByRole('button', { name: /claim all rewards/i });
     await expect(claimBtn).toBeEnabled({ timeout: 10_000 });
 
     // Force the failure branch (Math.random() <= 0.05).
@@ -117,21 +117,21 @@ test.describe("Rewards Claim Flow", () => {
     });
     await claimBtn.click();
 
-    const dialog = page.getByRole("dialog", { name: /claim transaction/i });
+    const dialog = page.getByRole('dialog', { name: /claim transaction/i });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /transaction failed/i })
+      dialog.getByRole('heading', { name: /transaction failed/i })
     ).toBeVisible({ timeout: 10_000 });
     await expect(
-      dialog.getByRole("button", { name: /try again/i })
+      dialog.getByRole('button', { name: /try again/i })
     ).toBeVisible();
 
-    await dialog.getByRole("button", { name: /try again/i }).click();
+    await dialog.getByRole('button', { name: /try again/i }).click();
     await expect(dialog).toBeHidden();
 
     // After the error, the pending list still has rewards available.
     await expect(
-      page.getByRole("heading", { name: /claimable rewards/i })
+      page.getByRole('heading', { name: /claimable rewards/i })
     ).toBeVisible();
   });
 });

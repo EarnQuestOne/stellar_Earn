@@ -1,17 +1,40 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { QuestFormData, QuestCategory, QuestDifficulty } from '@/lib/types/admin';
-import { validateQuestForm, getFieldError, sanitizeQuestData, type ValidationError } from '@/lib/validation/quest';
+import type {
+  QuestFormData,
+  QuestCategory,
+  QuestDifficulty,
+} from '@/lib/types/admin';
+import {
+  validateQuestForm,
+  getFieldError,
+  sanitizeQuestData,
+  type ValidationError,
+} from '@/lib/validation/quest';
 
 interface CreateQuestFormProps {
-  onSubmit: (data: QuestFormData) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (
+    data: QuestFormData
+  ) => Promise<{ success: boolean; error?: string }>;
   isSubmitting: boolean;
   initialData?: Partial<QuestFormData>;
 }
 
-const CATEGORIES: QuestCategory[] = ['Development', 'Blockchain', 'Documentation', 'Design', 'Testing', 'Community'];
-const DIFFICULTIES: QuestDifficulty[] = ['beginner', 'intermediate', 'advanced', 'expert'];
+const CATEGORIES: QuestCategory[] = [
+  'Development',
+  'Blockchain',
+  'Documentation',
+  'Design',
+  'Testing',
+  'Community',
+];
+const DIFFICULTIES: QuestDifficulty[] = [
+  'beginner',
+  'intermediate',
+  'advanced',
+  'expert',
+];
 
 const defaultFormData: QuestFormData = {
   title: '',
@@ -27,7 +50,11 @@ const defaultFormData: QuestFormData = {
   tags: [],
 };
 
-export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQuestFormProps) {
+export function CreateQuestForm({
+  onSubmit,
+  isSubmitting,
+  initialData,
+}: CreateQuestFormProps) {
   const [formData, setFormData] = useState<QuestFormData>({
     ...defaultFormData,
     ...initialData,
@@ -35,95 +62,116 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [tagInput, setTagInput] = useState('');
 
-  const handleChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? Number(value) : value,
-    }));
-    // Clear error for this field when user starts typing
-    setErrors(prev => prev.filter(err => err.field !== name));
-  }, []);
+  const handleChange = useCallback(
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >
+    ) => {
+      const { name, value, type } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'number' ? Number(value) : value,
+      }));
+      // Clear error for this field when user starts typing
+      setErrors((prev) => prev.filter((err) => err.field !== name));
+    },
+    []
+  );
 
-  const handleRequirementChange = useCallback((index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      requirements: prev.requirements.map((req, i) => (i === index ? value : req)),
-    }));
-  }, []);
+  const handleRequirementChange = useCallback(
+    (index: number, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        requirements: prev.requirements.map((req, i) =>
+          i === index ? value : req
+        ),
+      }));
+    },
+    []
+  );
 
   const addRequirement = useCallback(() => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       requirements: [...prev.requirements, ''],
     }));
   }, []);
 
   const removeRequirement = useCallback((index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       requirements: prev.requirements.filter((_, i) => i !== index),
     }));
   }, []);
 
-  const handleAddTag = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      const newTag = tagInput.trim().toLowerCase();
-      if (!formData.tags.includes(newTag)) {
-        setFormData(prev => ({
-          ...prev,
-          tags: [...prev.tags, newTag],
-        }));
+  const handleAddTag = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && tagInput.trim()) {
+        e.preventDefault();
+        const newTag = tagInput.trim().toLowerCase();
+        if (!formData.tags.includes(newTag)) {
+          setFormData((prev) => ({
+            ...prev,
+            tags: [...prev.tags, newTag],
+          }));
+        }
+        setTagInput('');
       }
-      setTagInput('');
-    }
-  }, [tagInput, formData.tags]);
+    },
+    [tagInput, formData.tags]
+  );
 
   const removeTag = useCallback((tag: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag),
+      tags: prev.tags.filter((t) => t !== tag),
     }));
   }, []);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const validation = validateQuestForm(formData);
-    if (!validation.isValid) {
-      setErrors(validation.errors);
-      return;
-    }
+      const validation = validateQuestForm(formData);
+      if (!validation.isValid) {
+        setErrors(validation.errors);
+        return;
+      }
 
-    const sanitizedData = sanitizeQuestData(formData);
-    const result = await onSubmit(sanitizedData);
+      const sanitizedData = sanitizeQuestData(formData);
+      const result = await onSubmit(sanitizedData);
 
-    if (!result.success && result.error) {
-      setErrors([{ field: 'submit', message: result.error }]);
-    }
-  }, [formData, onSubmit]);
+      if (!result.success && result.error) {
+        setErrors([{ field: 'submit', message: result.error }]);
+      }
+    },
+    [formData, onSubmit]
+  );
 
   const inputClasses = (field: string) => `
     w-full rounded-lg border px-4 py-2.5 text-sm transition-colors
     focus:outline-none focus:ring-2 focus:ring-blue-500
-    ${getFieldError(errors, field)
-      ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
-      : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'}
+    ${
+      getFieldError(errors, field)
+        ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+        : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+    }
     text-zinc-900 dark:text-zinc-50
     placeholder:text-zinc-400 dark:placeholder:text-zinc-500
   `;
 
-  const labelClasses = 'block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5';
+  const labelClasses =
+    'block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Submit Error */}
       {getFieldError(errors, 'submit') && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-          <p className="text-sm text-red-600 dark:text-red-400">{getFieldError(errors, 'submit')}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {getFieldError(errors, 'submit')}
+          </p>
         </div>
       )}
 
@@ -142,7 +190,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
           className={inputClasses('title')}
         />
         {getFieldError(errors, 'title') && (
-          <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'title')}</p>
+          <p className="mt-1 text-sm text-red-500">
+            {getFieldError(errors, 'title')}
+          </p>
         )}
       </div>
 
@@ -163,11 +213,15 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
         />
         <div className="mt-1 flex justify-between">
           {getFieldError(errors, 'shortDescription') ? (
-            <p className="text-sm text-red-500">{getFieldError(errors, 'shortDescription')}</p>
+            <p className="text-sm text-red-500">
+              {getFieldError(errors, 'shortDescription')}
+            </p>
           ) : (
             <span />
           )}
-          <span className="text-xs text-zinc-400">{formData.shortDescription.length}/200</span>
+          <span className="text-xs text-zinc-400">
+            {formData.shortDescription.length}/200
+          </span>
         </div>
       </div>
 
@@ -186,7 +240,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
           className={inputClasses('description')}
         />
         {getFieldError(errors, 'description') && (
-          <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'description')}</p>
+          <p className="mt-1 text-sm text-red-500">
+            {getFieldError(errors, 'description')}
+          </p>
         )}
         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
           Tip: Use markdown for formatting (headers, lists, code blocks)
@@ -206,12 +262,16 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             onChange={handleChange}
             className={inputClasses('category')}
           >
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
           {getFieldError(errors, 'category') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'category')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'category')}
+            </p>
           )}
         </div>
 
@@ -226,14 +286,16 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             onChange={handleChange}
             className={inputClasses('difficulty')}
           >
-            {DIFFICULTIES.map(diff => (
+            {DIFFICULTIES.map((diff) => (
               <option key={diff} value={diff}>
                 {diff.charAt(0).toUpperCase() + diff.slice(1)}
               </option>
             ))}
           </select>
           {getFieldError(errors, 'difficulty') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'difficulty')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'difficulty')}
+            </p>
           )}
         </div>
       </div>
@@ -255,7 +317,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             className={inputClasses('reward')}
           />
           {getFieldError(errors, 'reward') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'reward')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'reward')}
+            </p>
           )}
         </div>
 
@@ -274,7 +338,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             className={inputClasses('xpReward')}
           />
           {getFieldError(errors, 'xpReward') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'xpReward')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'xpReward')}
+            </p>
           )}
         </div>
       </div>
@@ -294,7 +360,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             className={inputClasses('deadline')}
           />
           {getFieldError(errors, 'deadline') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'deadline')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'deadline')}
+            </p>
           )}
         </div>
 
@@ -313,7 +381,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
             className={inputClasses('maxParticipants')}
           />
           {getFieldError(errors, 'maxParticipants') && (
-            <p className="mt-1 text-sm text-red-500">{getFieldError(errors, 'maxParticipants')}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {getFieldError(errors, 'maxParticipants')}
+            </p>
           )}
         </div>
       </div>
@@ -354,9 +424,11 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
 
       {/* Tags */}
       <div>
-        <label htmlFor="tags" className={labelClasses}>Tags</label>
+        <label htmlFor="tags" className={labelClasses}>
+          Tags
+        </label>
         <div className="flex flex-wrap gap-2 mb-2">
-          {formData.tags.map(tag => (
+          {formData.tags.map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
@@ -390,7 +462,9 @@ export function CreateQuestForm({ onSubmit, isSubmitting, initialData }: CreateQ
           type="submit"
           disabled={isSubmitting}
           className="flex-1 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={isSubmitting ? 'Creating quest, please wait' : 'Create quest'}
+          aria-label={
+            isSubmitting ? 'Creating quest, please wait' : 'Create quest'
+          }
         >
           {isSubmitting ? 'Creating Quest...' : 'Create Quest'}
         </button>

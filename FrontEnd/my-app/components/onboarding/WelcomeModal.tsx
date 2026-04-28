@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Modal } from "@/components/ui/Modal";
+import { Modal } from '@/components/ui/Modal';
 
 interface WelcomeModalProps {
   isOpen: boolean;

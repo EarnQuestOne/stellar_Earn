@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Header } from "./Header";
-import { MobileMenu } from "./MobileMenu";
-import { Sidebar } from "./Sidebar";
+import { createContext, useContext, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { Header } from './Header';
+import { MobileMenu } from './MobileMenu';
+import { Sidebar } from './Sidebar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isDashboardRoute =
-    pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+    pathname === '/dashboard' || pathname.startsWith('/dashboard/');
 
   if (isNestedLayout) {
     return <>{children}</>;

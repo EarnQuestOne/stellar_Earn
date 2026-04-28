@@ -7,11 +7,15 @@ interface NotificationsProps {
   onDismiss: (id: string) => void;
 }
 
-const typeStyles: Record<Notification['type'], { bg: string; icon: string; iconBg: string }> = {
+const typeStyles: Record<
+  Notification['type'],
+  { bg: string; icon: string; iconBg: string }
+> = {
   success: {
     bg: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
     icon: '✓',
-    iconBg: 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400',
+    iconBg:
+      'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400',
   },
   error: {
     bg: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
@@ -21,7 +25,8 @@ const typeStyles: Record<Notification['type'], { bg: string; icon: string; iconB
   warning: {
     bg: 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800',
     icon: '⚠',
-    iconBg: 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400',
+    iconBg:
+      'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400',
   },
   info: {
     bg: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
@@ -30,7 +35,10 @@ const typeStyles: Record<Notification['type'], { bg: string; icon: string; iconB
   },
 };
 
-export function Notifications({ notifications, onDismiss }: NotificationsProps) {
+export function Notifications({
+  notifications,
+  onDismiss,
+}: NotificationsProps) {
   if (notifications.length === 0) return null;
 
   return (
@@ -42,7 +50,9 @@ export function Notifications({ notifications, onDismiss }: NotificationsProps) 
             key={notification.id}
             className={`flex items-start gap-3 rounded-lg border p-4 shadow-lg animate-in slide-in-from-right ${styles.bg}`}
           >
-            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm ${styles.iconBg}`}>
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm ${styles.iconBg}`}
+            >
               {styles.icon}
             </span>
             <div className="flex-1 min-w-0">

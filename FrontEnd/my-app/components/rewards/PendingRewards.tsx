@@ -29,9 +29,22 @@ export function PendingRewards({ rewards }: PendingRewardsProps) {
           role="status"
           aria-label="No pending rewards"
         >
-          <div className="rounded-full bg-zinc-100 p-3 dark:bg-zinc-800" aria-hidden="true">
-            <svg className="w-6 h-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            className="rounded-full bg-zinc-100 p-3 dark:bg-zinc-800"
+            aria-hidden="true"
+          >
+            <svg
+              className="w-6 h-6 text-zinc-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
@@ -39,7 +52,10 @@ export function PendingRewards({ rewards }: PendingRewardsProps) {
           </p>
         </div>
       ) : (
-        <ul className="grid gap-3" aria-label={`${rewards.length} claimable reward${rewards.length !== 1 ? 's' : ''}`}>
+        <ul
+          className="grid gap-3"
+          aria-label={`${rewards.length} claimable reward${rewards.length !== 1 ? 's' : ''}`}
+        >
           {rewards.map((reward) => (
             <li
               key={reward.id}
@@ -51,8 +67,18 @@ export function PendingRewards({ rewards }: PendingRewardsProps) {
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
                   aria-hidden="true"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
                   </svg>
                 </div>
                 <div>
@@ -60,7 +86,8 @@ export function PendingRewards({ rewards }: PendingRewardsProps) {
                     {reward.questTitle}
                   </h4>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Approved on {new Date(reward.submittedAt).toLocaleDateString()}
+                    Approved on{' '}
+                    {new Date(reward.submittedAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>

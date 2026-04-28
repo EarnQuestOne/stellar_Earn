@@ -10,7 +10,13 @@
  *  POST /logout-all     – revoke all sessions
  */
 
-import { get, post, withRetry, createCancelToken, type CancelToken } from './client';
+import {
+  get,
+  post,
+  withRetry,
+  createCancelToken,
+  type CancelToken,
+} from './client';
 import { tokenManager } from './client';
 import type {
   ChallengeRequest,
@@ -33,7 +39,7 @@ import type {
  * and then passed to `login()`.
  */
 export async function generateChallenge(
-  stellarAddress: string,
+  stellarAddress: string
 ): Promise<ChallengeResponse> {
   const payload: ChallengeRequest = { stellarAddress };
   return post<ChallengeResponse>('/auth/challenge', payload);
@@ -63,7 +69,7 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
  * automatically; call this directly only when you need explicit control.
  */
 export async function refreshTokens(
-  refreshToken?: string,
+  refreshToken?: string
 ): Promise<RefreshResponse> {
   const token = refreshToken ?? tokenManager.getRefreshToken();
   if (!token) {
@@ -83,7 +89,7 @@ export async function refreshTokens(
  * Fetch the currently authenticated user's profile (requires access token).
  */
 export async function getAuthProfile(
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<AuthUserProfile> {
   return get<AuthUserProfile>('/auth/profile', {
     signal: cancelToken?.signal,

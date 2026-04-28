@@ -133,7 +133,8 @@ export function SubmissionDetail({
                     Reward:
                   </span>
                   <span className="ml-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {submission.quest.rewardAmount} {submission.quest.rewardAsset}
+                    {submission.quest.rewardAmount}{' '}
+                    {submission.quest.rewardAsset}
                   </span>
                 </div>
                 {submission.quest.deadline && (

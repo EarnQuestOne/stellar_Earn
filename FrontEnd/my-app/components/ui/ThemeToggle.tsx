@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useTheme } from "@/lib/hooks/useTheme";
+import { useTheme } from '@/lib/hooks/useTheme';
 
 /**
  * Props for the theme toggle button.
@@ -13,9 +13,12 @@ interface ThemeToggleProps {
 /**
  * Toggles between light and dark mode for the application.
  */
-export function ThemeToggle({ className = "", showLabel = false }: ThemeToggleProps) {
+export function ThemeToggle({
+  className = '',
+  showLabel = false,
+}: ThemeToggleProps) {
   const { isDark, toggleTheme } = useTheme();
-  const nextThemeLabel = isDark ? "light" : "dark";
+  const nextThemeLabel = isDark ? 'light' : 'dark';
 
   return (
     <button
@@ -26,7 +29,12 @@ export function ThemeToggle({ className = "", showLabel = false }: ThemeTogglePr
       title={`Switch to ${nextThemeLabel} mode`}
     >
       {isDark ? (
-        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -35,7 +43,12 @@ export function ThemeToggle({ className = "", showLabel = false }: ThemeTogglePr
           />
         </svg>
       ) : (
-        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -45,7 +58,7 @@ export function ThemeToggle({ className = "", showLabel = false }: ThemeTogglePr
         </svg>
       )}
 
-      {showLabel ? <span>{isDark ? "Dark" : "Light"}</span> : null}
+      {showLabel ? <span>{isDark ? 'Dark' : 'Light'}</span> : null}
     </button>
   );
 }

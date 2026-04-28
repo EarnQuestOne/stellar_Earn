@@ -31,7 +31,7 @@ export function EmptyQuestState({
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         {hasActiveFilters
           ? 'Try adjusting your search or filter criteria to find more quests.'
-          : "There are no quests available at the moment. Check back later!"}
+          : 'There are no quests available at the moment. Check back later!'}
       </p>
       {hasActiveFilters && onClearFilters && (
         <button

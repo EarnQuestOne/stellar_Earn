@@ -43,7 +43,10 @@ export function QuestCarousel({ quests, onQuestClick }: QuestCarouselProps) {
     if (!el) return;
     const cardWidth =
       (el.firstElementChild as HTMLElement | null)?.offsetWidth ?? 300;
-    el.scrollBy({ left: dir === 'right' ? cardWidth + 16 : -(cardWidth + 16), behavior: 'smooth' });
+    el.scrollBy({
+      left: dir === 'right' ? cardWidth + 16 : -(cardWidth + 16),
+      behavior: 'smooth',
+    });
   };
 
   const onMouseDown = (e: React.MouseEvent) => {
@@ -57,7 +60,8 @@ export function QuestCarousel({ quests, onQuestClick }: QuestCarouselProps) {
     if (!isDragging.current || !trackRef.current) return;
     e.preventDefault();
     const x = e.pageX - trackRef.current.offsetLeft;
-    trackRef.current.scrollLeft = dragScrollLeft.current - (x - dragStartX.current);
+    trackRef.current.scrollLeft =
+      dragScrollLeft.current - (x - dragStartX.current);
   };
 
   const stopDrag = () => {
@@ -103,7 +107,11 @@ export function QuestCarousel({ quests, onQuestClick }: QuestCarouselProps) {
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M15 18l-6-6 6-6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
 
@@ -143,15 +151,16 @@ export function QuestCarousel({ quests, onQuestClick }: QuestCarouselProps) {
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M9 18l6-6-6-6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
 
       {/* Pagination dots - visual only, position announced via aria-label on section */}
-      <div
-        className="carousel-dots"
-        aria-hidden="true"
-      >
+      <div className="carousel-dots" aria-hidden="true">
         {quests.map((_, i) => (
           <span
             key={i}

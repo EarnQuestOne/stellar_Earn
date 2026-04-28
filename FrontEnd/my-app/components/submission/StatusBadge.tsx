@@ -36,8 +36,7 @@ const statusConfig = {
   },
   [SubmissionStatus.REJECTED]: {
     label: 'Rejected',
-    className:
-      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     icon: (
       <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
         <path

@@ -11,7 +11,6 @@ interface BadgeItemProps {
   badge: Badge;
 }
 
-
 function formatDate(dateString: string): string {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -23,7 +22,10 @@ function formatDate(dateString: string): string {
   });
 }
 
-const rarityStyles: Record<Badge['rarity'], { border: string; bg: string; glow: string }> = {
+const rarityStyles: Record<
+  Badge['rarity'],
+  { border: string; bg: string; glow: string }
+> = {
   common: {
     border: 'border-zinc-300 dark:border-zinc-600',
     bg: 'bg-zinc-100 dark:bg-zinc-800',
@@ -46,21 +48,23 @@ const rarityStyles: Record<Badge['rarity'], { border: string; bg: string; glow: 
   },
 };
 
-const rarityLabels: Record<Badge['rarity'], { label: string; color: string }> = {
-  common: { label: 'Common', color: 'text-zinc-500 dark:text-zinc-400' },
-  rare: { label: 'Rare', color: 'text-blue-600 dark:text-blue-400' },
-  epic: { label: 'Epic', color: 'text-purple-600 dark:text-purple-400' },
-  legendary: { label: 'Legendary', color: 'text-amber-600 dark:text-amber-400' },
-};
+const rarityLabels: Record<Badge['rarity'], { label: string; color: string }> =
+  {
+    common: { label: 'Common', color: 'text-zinc-500 dark:text-zinc-400' },
+    rare: { label: 'Rare', color: 'text-blue-600 dark:text-blue-400' },
+    epic: { label: 'Epic', color: 'text-purple-600 dark:text-purple-400' },
+    legendary: {
+      label: 'Legendary',
+      color: 'text-amber-600 dark:text-amber-400',
+    },
+  };
 
 function BadgeItem({ badge }: BadgeItemProps) {
   const styles = rarityStyles[badge.rarity];
   const rarityLabel = rarityLabels[badge.rarity];
 
   return (
-    <div
-      className="relative"
-    >
+    <div className="relative">
       {/* Badge */}
       <div
         className={`flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-2 text-2xl transition-transform hover:scale-110 ${styles.border} ${styles.bg} ${styles.glow}`}
@@ -75,7 +79,9 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="text-4xl mb-3">🏅</div>
-      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">No badges yet</h4>
+      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">
+        No badges yet
+      </h4>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
         Complete quests and achievements to earn badges
       </p>

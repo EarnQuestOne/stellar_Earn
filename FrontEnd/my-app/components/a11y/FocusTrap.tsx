@@ -20,7 +20,7 @@ interface FocusTrapProps {
 
 /**
  * FocusTrap component
- * 
+ *
  * Traps keyboard focus within a container (e.g., modal, dropdown).
  * Essential for accessibility when modals or dialogs are open.
  */

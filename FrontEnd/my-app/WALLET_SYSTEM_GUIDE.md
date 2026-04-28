@@ -27,10 +27,10 @@ FrontEnd/my-app/
 Update `app/layout.tsx`:
 
 ```tsx
-"use client";
-import { WalletProvider } from "@/context/WalletContext";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { WalletModal } from "@/components/wallet/WalletModal";
+'use client';
+import { WalletProvider } from '@/context/WalletContext';
+import { ConnectButton } from '@/components/wallet/ConnectButton';
+import { WalletModal } from '@/components/wallet/WalletModal';
 
 export default function RootLayout({
   children,
@@ -62,16 +62,11 @@ export default function RootLayout({
 ### Step 2: Use Wallet in Your Components
 
 ```tsx
-"use client";
-import { useWallet } from "@/context/WalletContext";
+'use client';
+import { useWallet } from '@/context/WalletContext';
 
 export function Dashboard() {
-  const { 
-    address, 
-    isConnected, 
-    disconnect,
-    error 
-  } = useWallet();
+  const { address, isConnected, disconnect, error } = useWallet();
 
   if (!isConnected) {
     return <p>Please connect your wallet</p>;
@@ -90,18 +85,19 @@ export function Dashboard() {
 
 All dependencies have been installed:
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `@creit.tech/stellar-wallets-kit` | ^1.9.5 | Stellar wallet integration |
-| `framer-motion` | ^12.26.2 | Smooth animations |
-| `lucide-react` | ^0.562.0 | Beautiful icons |
-| `class-variance-authority` | ^0.7.1 | Component variants |
-| `clsx` | ^2.1.1 | Conditional CSS classes |
-| `tailwind-merge` | ^3.4.0 | Merge Tailwind utilities |
+| Package                           | Version  | Purpose                    |
+| --------------------------------- | -------- | -------------------------- |
+| `@creit.tech/stellar-wallets-kit` | ^1.9.5   | Stellar wallet integration |
+| `framer-motion`                   | ^12.26.2 | Smooth animations          |
+| `lucide-react`                    | ^0.562.0 | Beautiful icons            |
+| `class-variance-authority`        | ^0.7.1   | Component variants         |
+| `clsx`                            | ^2.1.1   | Conditional CSS classes    |
+| `tailwind-merge`                  | ^3.4.0   | Merge Tailwind utilities   |
 
 ## 📋 Features Implemented
 
 ✅ **Multi-Wallet Support**
+
 - Freighter
 - Albedo
 - xBull
@@ -109,16 +105,19 @@ All dependencies have been installed:
 - Lobstr
 
 ✅ **Session Persistence**
+
 - Auto-restore wallet on page reload
 - localStorage integration
 
 ✅ **User Experience**
+
 - Modal-based wallet selection
 - Loading states and error handling
 - Formatted address display (XXXX...XXXX)
 - Disconnect functionality with dropdown
 
 ✅ **Developer Experience**
+
 - TypeScript support with full typing
 - React Context API for state management
 - Custom `useWallet()` hook
@@ -127,29 +126,37 @@ All dependencies have been installed:
 ## 🎨 Customization Options
 
 ### Change Network (TESTNET → MAINNET)
+
 Edit [context/WalletContext.tsx](context/WalletContext.tsx#L42):
+
 ```tsx
 network: walletKitModule.WalletNetwork.MAINNET,
 ```
 
 ### Update Storage Keys
+
 Edit [context/WalletContext.tsx](context/WalletContext.tsx#L58-L61):
+
 ```tsx
-localStorage.setItem("your_app_name_wallet_address", walletAddress);
-localStorage.setItem("your_app_name_wallet_id", moduleId);
+localStorage.setItem('your_app_name_wallet_address', walletAddress);
+localStorage.setItem('your_app_name_wallet_id', moduleId);
 ```
 
 ### Add/Remove Supported Wallets
+
 Edit [context/WalletContext.tsx](context/WalletContext.tsx#L66-L73):
+
 ```tsx
 const supportedWallets = [
-  { id: "freighter", name: "Freighter", icon: "/icons/freighter.png" },
+  { id: 'freighter', name: 'Freighter', icon: '/icons/freighter.png' },
   // Add custom wallets here
 ];
 ```
 
 ### Style Customization
+
 All components use Tailwind CSS with custom colors:
+
 - Primary: `#33C5E0` (Cyan)
 - Dark Background: `#0F1621`, `#161E22`
 - Text: White, `#92A5A8`
@@ -159,6 +166,7 @@ Edit [components/wallet/ConnectButton.tsx](components/wallet/ConnectButton.tsx) 
 ## 🚀 Testing
 
 ### Test Connection Flow
+
 1. Start dev server: `npm run dev`
 2. Navigate to your app
 3. Click "Connect Wallet" button
@@ -167,11 +175,13 @@ Edit [components/wallet/ConnectButton.tsx](components/wallet/ConnectButton.tsx) 
 6. Verify address displays when connected
 
 ### Test Session Persistence
+
 1. Connect wallet
 2. Refresh page
 3. Verify wallet remains connected
 
 ### Test Disconnection
+
 1. Click address dropdown
 2. Click "Disconnect"
 3. Verify button returns to "Connect Wallet"
@@ -213,18 +223,21 @@ const {
 ## 📖 Component Details
 
 ### WalletContext.tsx
+
 - Manages global wallet state
 - Handles wallet kit initialization
 - Provides session persistence
 - Error state management
 
 ### ConnectButton.tsx
+
 - Displays wallet status
 - Opens modal when disconnected
 - Shows dropdown menu when connected
 - Handles disconnect action
 
 ### WalletModal.tsx
+
 - Wallet selection interface
 - Radio button selection
 - Error message display
@@ -233,14 +246,17 @@ const {
 ## 🐛 Troubleshooting
 
 **Issue**: "Failed to initialize wallet kit"
+
 - Ensure you're in a browser environment
 - Check wallet extensions are installed
 
 **Issue**: Connection timeout
+
 - Verify wallet extension is responsive
 - Check browser console for errors
 
 **Issue**: Address not persisting
+
 - Clear browser localStorage
 - Check localStorage isn't disabled
 - Verify localStorage keys in WalletContext
@@ -248,6 +264,7 @@ const {
 ## 📞 Support
 
 For detailed wallet integration documentation:
+
 - [Stellar Wallets Kit Docs](https://github.com/creittech/stellar-wallets-kit)
 - [Stellar Documentation](https://developers.stellar.org/)
 

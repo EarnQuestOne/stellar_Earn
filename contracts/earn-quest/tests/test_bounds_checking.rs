@@ -37,12 +37,20 @@ fn test_batch_quest_registration_valid_bounds() {
         let quest_id = Symbol::new(&env, &format!("quest_{}", i));
         let deadline = env.ledger().timestamp() + 86_400;
         
-        quests.push_back(BatchQuestInput {
+        let mut batch_quests = Vec::new(&env);
+        batch_quests.push_back(earn_quest::types::Quest {
             id: quest_id,
+            creator: creator.clone(),
             reward_asset: token.clone(),
             reward_amount: 1000,
             verifier: verifier.clone(),
             deadline,
+            status: earn_quest::types::QuestStatus::Active,
+            total_claims: 0,
+        });
+        quests.push_back(BatchQuestInput {
+            quests: batch_quests,
+            metadata: Vec::new(&env),
         });
     }
 
@@ -76,13 +84,17 @@ fn test_batch_approval_valid_bounds() {
 
     // Batch approve
     let mut approvals = Vec::new(&env);
+    let mut submissions1 = Vec::new(&env);
+    submissions1.push_back(submitter1.clone());
     approvals.push_back(BatchApprovalInput {
         quest_id: quest_id1.clone(),
-        submitter: submitter1.clone(),
+        submissions: submissions1,
     });
+    let mut submissions2 = Vec::new(&env);
+    submissions2.push_back(submitter2.clone());
     approvals.push_back(BatchApprovalInput {
         quest_id: quest_id2.clone(),
-        submitter: submitter2.clone(),
+        submissions: submissions2,
     });
 
     // Should succeed - all indices are valid
@@ -195,12 +207,20 @@ fn test_single_item_batch_operations() {
     let quest_id = Symbol::new(&env, "single_quest");
     let deadline = env.ledger().timestamp() + 86_400;
     
-    quests.push_back(BatchQuestInput {
+    let mut batch_quests = Vec::new(&env);
+    batch_quests.push_back(earn_quest::types::Quest {
         id: quest_id.clone(),
+        creator: creator.clone(),
         reward_asset: token.clone(),
         reward_amount: 1000,
         verifier: verifier.clone(),
         deadline,
+        status: earn_quest::types::QuestStatus::Active,
+        total_claims: 0,
+    });
+    quests.push_back(BatchQuestInput {
+        quests: batch_quests,
+        metadata: Vec::new(&env),
     });
 
     client.register_quests_batch(&creator, &quests);

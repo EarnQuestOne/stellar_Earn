@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { QuestWizardData } from "@/lib/schemas/quest.schema";
+import type { QuestWizardData } from '@/lib/schemas/quest.schema';
 import QuestPreview from '@/components/quest/QuestPreview';
 
 interface ReviewPreviewStepProps {

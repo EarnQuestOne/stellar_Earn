@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { UserProfile, Achievement, Activity, EditProfileData } from '@/lib/types/profile';
+import type {
+  UserProfile,
+  Achievement,
+  Activity,
+  EditProfileData,
+} from '@/lib/types/profile';
 import type { ProfileStats } from '@/lib/types/profile';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileStats as ProfileStatsComponent } from './ProfileStats';
@@ -23,16 +28,16 @@ export function UserProfile({
   onFollow,
   onUnfollow,
 }: UserProfileProps) {
-  const profile      = useStore((s) => s.profile);
-  const stats        = useStore((s) => s.stats);
+  const profile = useStore((s) => s.profile);
+  const stats = useStore((s) => s.stats);
   const achievements = useStore((s) => s.achievements);
-  const activities   = useStore((s) => s.activities);
-  const isLoading    = useStore((s) => s.isLoading);
-  const error        = useStore((s) => s.error);
-  const isUpdating   = useStore((s) => s.isUpdating);
-  const updateError  = useStore((s) => s.updateError);
+  const activities = useStore((s) => s.activities);
+  const isLoading = useStore((s) => s.isLoading);
+  const error = useStore((s) => s.error);
+  const isUpdating = useStore((s) => s.isUpdating);
+  const updateError = useStore((s) => s.updateError);
 
-const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleEditProfile = () => {
     if (profile?.isOwnProfile) {
@@ -48,7 +53,7 @@ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     setIsEditModalOpen(false);
   };
 
-   // 🔴 Error state
+  // 🔴 Error state
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -85,22 +90,13 @@ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
         />
 
         {/* Profile Stats */}
-        <ProfileStatsComponent
-          stats={stats}
-          isLoading={isLoading}
-        />
+        <ProfileStatsComponent stats={stats} isLoading={isLoading} />
 
         {/* Achievements */}
-        <AchievementsList
-          achievements={achievements}
-          isLoading={isLoading}
-        />
+        <AchievementsList achievements={achievements} isLoading={isLoading} />
 
         {/* Activity Feed */}
-        <ActivityFeed
-          activities={activities}
-          isLoading={isLoading}
-        />
+        <ActivityFeed activities={activities} isLoading={isLoading} />
       </div>
 
       {/* Edit Profile Modal */}

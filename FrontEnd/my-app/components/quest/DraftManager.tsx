@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface DraftManagerProps {
   hasDraft: boolean;
@@ -17,10 +17,10 @@ const DraftManager = ({
 }: DraftManagerProps) => {
   const formatted = lastSavedAt
     ? new Date(lastSavedAt).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
+        dateStyle: 'medium',
+        timeStyle: 'short',
       })
-    : "Not yet saved";
+    : 'Not yet saved';
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">

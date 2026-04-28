@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface ConfirmationStepProps {
   submitted: boolean;
@@ -43,7 +43,7 @@ const ConfirmationStep = ({
         Quest created successfully
       </h3>
       <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-300">
-        {questTitle || "Your quest"} is now saved. You can return to the quest
+        {questTitle || 'Your quest'} is now saved. You can return to the quest
         board and manage status from admin pages.
       </p>
     </section>

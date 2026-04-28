@@ -12,7 +12,9 @@ export default function ServerError() {
         {/* 500 Illustration */}
         <div className="mb-8">
           <div className="text-9xl font-bold text-zinc-700 mb-4">500</div>
-          <div className="text-2xl font-bold text-zinc-200 mb-2">Server Error</div>
+          <div className="text-2xl font-bold text-zinc-200 mb-2">
+            Server Error
+          </div>
           <p className="text-zinc-400 text-lg">
             Something went wrong on our end. We're working to fix it.
           </p>
@@ -22,15 +24,18 @@ export default function ServerError() {
         <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="text-2xl">🔧</div>
-            <h3 className="text-lg font-medium text-zinc-200">What Happened?</h3>
+            <h3 className="text-lg font-medium text-zinc-200">
+              What Happened?
+            </h3>
           </div>
           <div className="text-zinc-400 text-left max-w-md mx-auto">
             <p className="mb-3">
-              Our servers are experiencing technical difficulties. This is usually temporary and 
-              our team has been notified.
+              Our servers are experiencing technical difficulties. This is
+              usually temporary and our team has been notified.
             </p>
             <p>
-              You can try refreshing the page or come back in a few minutes while we resolve this issue.
+              You can try refreshing the page or come back in a few minutes
+              while we resolve this issue.
             </p>
           </div>
         </div>
@@ -41,28 +46,58 @@ export default function ServerError() {
             onClick={() => router.refresh()}
             className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Refresh Page
           </button>
-          
+
           <Link
             href="/"
             className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
             </svg>
             Home
           </Link>
-          
+
           <button
             onClick={() => router.back()}
             className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Go Back
           </button>

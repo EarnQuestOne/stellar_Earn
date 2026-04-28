@@ -33,7 +33,8 @@ export function LevelBadge({
         <div
           className="absolute inset-0 rounded-full animate-pulse"
           style={{
-            boxShadow: '0 0 12px rgba(8, 158, 195, 0.6), 0 0 24px rgba(8, 158, 195, 0.4)',
+            boxShadow:
+              '0 0 12px rgba(8, 158, 195, 0.6), 0 0 24px rgba(8, 158, 195, 0.4)',
           }}
         />
       )}

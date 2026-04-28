@@ -13,19 +13,19 @@ import {
 } from '../api/profile';
 
 export function useProfile(address: string) {
-  const profile      = useStore((s) => s.profile);
-  const stats        = useStore((s) => s.stats);
+  const profile = useStore((s) => s.profile);
+  const stats = useStore((s) => s.stats);
   const achievements = useStore((s) => s.achievements);
-  const activities   = useStore((s) => s.activities);
-  const isLoading    = useStore((s) => s.isLoading);
-  const error        = useStore((s) => s.error);
-  const isUpdating   = useStore((s) => s.isUpdating);
-  const updateError  = useStore((s) => s.updateError);
+  const activities = useStore((s) => s.activities);
+  const isLoading = useStore((s) => s.isLoading);
+  const error = useStore((s) => s.error);
+  const isUpdating = useStore((s) => s.isUpdating);
+  const updateError = useStore((s) => s.updateError);
 
-  const setUserData   = useStore((s) => s.setUserData);
-  const setLoading    = useStore((s) => s.setLoading);
-  const setError      = useStore((s) => s.setError);
-  const setUpdating   = useStore((s) => s.setUpdating);
+  const setUserData = useStore((s) => s.setUserData);
+  const setLoading = useStore((s) => s.setLoading);
+  const setError = useStore((s) => s.setError);
+  const setUpdating = useStore((s) => s.setUpdating);
   const setUpdateError = useStore((s) => s.setUpdateError);
 
   const fetchData = useCallback(async () => {
@@ -42,34 +42,44 @@ export function useProfile(address: string) {
       const data: ProfileData = await fetchUserProfile(address);
       setUserData(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch profile data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch profile data'
+      );
     } finally {
       setLoading(false);
     }
   }, [address]);
 
-  const updateProfileData = useCallback(async (data: EditProfileData) => {
-    if (!profile) return;
+  const updateProfileData = useCallback(
+    async (data: EditProfileData) => {
+      if (!profile) return;
 
-    setUpdating(true);
-    setUpdateError(null);
+      setUpdating(true);
+      setUpdateError(null);
 
-    try {
-      const updatedProfile = await updateProfile(profile.stellarAddress, data);
-      setUserData({
-        profile: updatedProfile,
-        stats:   stats
-          ? { ...stats, xp: updatedProfile.xp, level: updatedProfile.level }
-          : stats!,
-        achievements,
-        activities,
-      });
-    } catch (err) {
-      setUpdateError(err instanceof Error ? err.message : 'Failed to update profile');
-    } finally {
-      setUpdating(false);
-    }
-  }, [profile, stats, achievements, activities]);
+      try {
+        const updatedProfile = await updateProfile(
+          profile.stellarAddress,
+          data
+        );
+        setUserData({
+          profile: updatedProfile,
+          stats: stats
+            ? { ...stats, xp: updatedProfile.xp, level: updatedProfile.level }
+            : stats!,
+          achievements,
+          activities,
+        });
+      } catch (err) {
+        setUpdateError(
+          err instanceof Error ? err.message : 'Failed to update profile'
+        );
+      } finally {
+        setUpdating(false);
+      }
+    },
+    [profile, stats, achievements, activities]
+  );
 
   const follow = useCallback(async () => {
     if (!profile || profile.isOwnProfile) return;
@@ -78,10 +88,10 @@ export function useProfile(address: string) {
       setUserData({
         profile: {
           ...profile,
-          isFollowing:    true,
+          isFollowing: true,
           followersCount: profile.followersCount + 1,
         },
-        stats:        stats!,
+        stats: stats!,
         achievements,
         activities,
       });
@@ -97,10 +107,10 @@ export function useProfile(address: string) {
       setUserData({
         profile: {
           ...profile,
-          isFollowing:    false,
+          isFollowing: false,
           followersCount: profile.followersCount - 1,
         },
-        stats:        stats!,
+        stats: stats!,
         achievements,
         activities,
       });
@@ -113,9 +123,16 @@ export function useProfile(address: string) {
     if (!profile) return;
     try {
       const data = await fetchUserAchievements(profile.stellarAddress);
-      setUserData({ profile: profile!, stats: stats!, achievements: data, activities });
+      setUserData({
+        profile: profile!,
+        stats: stats!,
+        achievements: data,
+        activities,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch achievements');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch achievements'
+      );
     }
   }, [profile, stats, activities]);
 
@@ -123,9 +140,16 @@ export function useProfile(address: string) {
     if (!profile) return;
     try {
       const data = await fetchUserActivities(profile.stellarAddress);
-      setUserData({ profile: profile!, stats: stats!, achievements, activities: data });
+      setUserData({
+        profile: profile!,
+        stats: stats!,
+        achievements,
+        activities: data,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch activities');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch activities'
+      );
     }
   }, [profile, stats, achievements]);
 
@@ -142,7 +166,7 @@ export function useProfile(address: string) {
     error,
     isUpdating,
     updateError,
-    refetch:          fetchData,
+    refetch: fetchData,
     updateProfileData,
     follow,
     unfollow,

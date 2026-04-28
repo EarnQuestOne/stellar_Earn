@@ -22,6 +22,7 @@ export const EVENT_TOPICS = {
   DISPUTE_OPENED: 'disp_open',
   DISPUTE_RESOLVED: 'disp_res',
   DISPUTE_WITHDRAWN: 'disp_wd',
+  DISPUTE_APPEALED: 'disp_appl',
   ESCROW_DEPOSITED: 'esc_dep',
   ESCROW_PAYOUT: 'esc_pay',
   ESCROW_REFUNDED: 'esc_ref',

@@ -31,8 +31,8 @@ fn test_commit_reveal_success() {
     let mut data = Bytes::new(&env);
     data.append(&proof_hash.clone().into());
     data.append(&salt.clone().into());
-    data.append(&submitter.to_xdr(&env));
-    let commitment_hash = env.crypto().sha256(&data);
+    data.append(&submitter.clone().to_xdr(&env));
+    let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
     // 2. Commit
     client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
@@ -72,8 +72,8 @@ fn test_reveal_with_invalid_salt_fails() {
     let mut data = Bytes::new(&env);
     data.append(&proof_hash.clone().into());
     data.append(&salt.clone().into());
-    data.append(&submitter.to_xdr(&env));
-    let commitment_hash = env.crypto().sha256(&data);
+    data.append(&submitter.clone().to_xdr(&env));
+    let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
     client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
 
@@ -106,8 +106,8 @@ fn test_front_running_prevention() {
     let mut data = Bytes::new(&env);
     data.append(&proof_hash.clone().into());
     data.append(&salt.clone().into());
-    data.append(&submitter.to_xdr(&env));
-    let commitment_hash = env.crypto().sha256(&data);
+    data.append(&submitter.clone().to_xdr(&env));
+    let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
     client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
 

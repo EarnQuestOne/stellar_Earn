@@ -77,35 +77,30 @@ export interface WalletModalProps {
 }
 
 export interface StellarWalletsKitOptions {
-  network: "TESTNET" | "MAINNET" | "FUTURENET";
+  network: 'TESTNET' | 'MAINNET' | 'FUTURENET';
   selectedWalletId: string;
   modules: any[];
 }
 
-export type WalletId = 
-  | "freighter" 
-  | "albedo" 
-  | "xbull" 
-  | "rabet" 
-  | "lobstr";
+export type WalletId = 'freighter' | 'albedo' | 'xbull' | 'rabet' | 'lobstr';
 
 export const WALLET_IDS: Record<WalletId, string> = {
-  freighter: "freighter",
-  albedo: "albedo",
-  xbull: "xbull",
-  rabet: "rabet",
-  lobstr: "lobstr",
+  freighter: 'freighter',
+  albedo: 'albedo',
+  xbull: 'xbull',
+  rabet: 'rabet',
+  lobstr: 'lobstr',
 };
 
 export const WALLET_DISPLAY_NAMES: Record<WalletId, string> = {
-  freighter: "Freighter",
-  albedo: "Albedo",
-  xbull: "xBull",
-  rabet: "Rabet",
-  lobstr: "Lobstr",
+  freighter: 'Freighter',
+  albedo: 'Albedo',
+  xbull: 'xBull',
+  rabet: 'Rabet',
+  lobstr: 'Lobstr',
 };
 
 export const STORAGE_KEYS = {
-  WALLET_ADDRESS: "inheritx_wallet_address",
-  WALLET_ID: "inheritx_wallet_id",
+  WALLET_ADDRESS: 'inheritx_wallet_address',
+  WALLET_ID: 'inheritx_wallet_id',
 } as const;

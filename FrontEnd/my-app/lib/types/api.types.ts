@@ -296,7 +296,12 @@ export interface LeaderboardEntry {
 // Payout
 // ---------------------------------------------------------------------------
 
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'retry_scheduled';
+export type PayoutStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'retry_scheduled';
 export type PayoutType = 'quest_reward' | 'bonus' | 'referral';
 
 export interface PayoutResponse {

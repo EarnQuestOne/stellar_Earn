@@ -8,9 +8,9 @@ export const useToast = () => {
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
-  
+
   const { showToast } = context;
-  
+
   return {
     success: (message: string) => showToast(message, 'success'),
     error: (message: string) => showToast(message, 'error'),

@@ -51,7 +51,8 @@ export function Modal({
 
   useEffect(() => {
     if (isOpen) {
-      previousActiveElement.current = document.activeElement as HTMLElement | null;
+      previousActiveElement.current =
+        document.activeElement as HTMLElement | null;
       modalRef.current?.focus();
       document.body.style.overflow = 'hidden';
     } else {
@@ -178,8 +179,8 @@ export function SubmissionSuccessModal({
           Submission Successful!
         </h3>
         <p className="mb-6 text-zinc-600 dark:text-zinc-400">
-          Your proof for <span className="font-medium">{questTitle}</span> has been submitted
-          and is now under review.
+          Your proof for <span className="font-medium">{questTitle}</span> has
+          been submitted and is now under review.
         </p>
         <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-500">
           You will be notified once your submission has been reviewed.
@@ -195,4 +196,3 @@ export function SubmissionSuccessModal({
     </Modal>
   );
 }
-

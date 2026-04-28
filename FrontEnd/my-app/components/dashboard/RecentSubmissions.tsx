@@ -39,17 +39,18 @@ function formatDate(dateString: string): string {
   });
 }
 
-
 function StatusBadge({ status }: { status: Submission['status'] }) {
   const statusConfig = {
     Pending: {
       label: 'Pending',
-      className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      className:
+        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       icon: '⏳',
     },
     Approved: {
       label: 'Approved',
-      className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      className:
+        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       icon: '✓',
     },
     Rejected: {
@@ -59,12 +60,14 @@ function StatusBadge({ status }: { status: Submission['status'] }) {
     },
     Paid: {
       label: 'Paid',
-      className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+      className:
+        'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
       icon: '💰',
     },
   };
 
-  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
+  const config =
+    statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
 
   return (
     <span
@@ -79,7 +82,8 @@ function StatusBadge({ status }: { status: Submission['status'] }) {
 function SubmissionRow({ submission }: SubmissionRowProps) {
   const questTitle = submission.quest?.title || 'Unknown Quest';
   const reward = submission.quest?.rewardAmount || 0;
-  const isApproved = submission.status === 'Approved' || submission.status === 'Paid';
+  const isApproved =
+    submission.status === 'Approved' || submission.status === 'Paid';
 
   return (
     <tr className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
@@ -106,7 +110,8 @@ function SubmissionRow({ submission }: SubmissionRowProps) {
               : 'text-zinc-500 dark:text-zinc-400'
           }`}
         >
-          {isApproved ? '+' : ''}{reward} XLM
+          {isApproved ? '+' : ''}
+          {reward} XLM
         </span>
       </td>
       <td className="py-3 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
@@ -120,7 +125,9 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="text-4xl mb-3">📋</div>
-      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">No submissions yet</h4>
+      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">
+        No submissions yet
+      </h4>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
         Complete quests to see your submissions here
       </p>
@@ -128,7 +135,10 @@ function EmptyState() {
   );
 }
 
-export function RecentSubmissions({ submissions, isLoading }: RecentSubmissionsProps) {
+export function RecentSubmissions({
+  submissions,
+  isLoading,
+}: RecentSubmissionsProps) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between mb-4">
@@ -161,7 +171,10 @@ export function RecentSubmissions({ submissions, isLoading }: RecentSubmissionsP
             </thead>
             <tbody>
               {Array.from({ length: 3 }).map((_, index) => (
-                <tr key={index} className="border-b border-zinc-100 dark:border-zinc-800">
+                <tr
+                  key={index}
+                  className="border-b border-zinc-100 dark:border-zinc-800"
+                >
                   <td className="py-3 pr-4">
                     <Skeleton.Text className="h-5 w-40" />
                   </td>

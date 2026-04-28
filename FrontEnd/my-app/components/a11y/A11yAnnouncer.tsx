@@ -30,7 +30,7 @@ interface A11yAnnouncerProviderProps {
 
 /**
  * A11yAnnouncerProvider component
- * 
+ *
  * Provides a context for announcing messages to screen readers.
  * Use the useA11yAnnouncer hook to announce dynamic content changes.
  */
@@ -41,7 +41,10 @@ export function A11yAnnouncerProvider({
     Array<{ id: number; message: string; priority: 'polite' | 'assertive' }>
   >([]);
 
-  const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+  const announce = (
+    message: string,
+    priority: 'polite' | 'assertive' = 'polite'
+  ) => {
     const id = Date.now();
     setAnnouncements((prev) => [...prev, { id, message, priority }]);
 
@@ -104,7 +107,7 @@ export function A11yAnnouncerProvider({
 
 /**
  * A11yAnnouncer component (standalone version)
- * 
+ *
  * Standalone component for announcing messages without context.
  * Prefer using A11yAnnouncerProvider + useA11yAnnouncer hook for better integration.
  */

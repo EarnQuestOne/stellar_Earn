@@ -25,8 +25,16 @@ export function GlobalSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { results, suggestions, recentSearches, isLoading, error, total, search, clearRecent } =
-    useSearch(query, filters);
+  const {
+    results,
+    suggestions,
+    recentSearches,
+    isLoading,
+    error,
+    total,
+    search,
+    clearRecent,
+  } = useSearch(query, filters);
 
   useEffect(() => {
     search(query);
@@ -34,7 +42,10 @@ export function GlobalSearch({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -129,7 +140,9 @@ export function GlobalSearch({
           aria-label="Global search"
           aria-controls="search-results"
           aria-activedescendant={
-            highlightedIndex >= 0 ? `search-item-${highlightedIndex}` : undefined
+            highlightedIndex >= 0
+              ? `search-item-${highlightedIndex}`
+              : undefined
           }
         />
 
@@ -139,7 +152,12 @@ export function GlobalSearch({
             className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
             aria-label="Clear search"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

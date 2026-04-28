@@ -128,6 +128,12 @@ impl EarnQuestContract {
         sub.status = SubmissionStatus::Paid;
         storage::set_submission(&env, &sub);
 
+        // Emit paid status event
+        env.events().publish(
+            (Symbol::new(&env, "sub_paid"), quest_id),
+            submitter,
+        );
+
         Ok(())
     }
 
@@ -361,6 +367,11 @@ impl EarnQuestContract {
         }
 
         // Perform the withdrawal (same as normal withdrawal)
-        escrow::withdraw_unclaimed(&env, &quest_id, &creator)
+        let amount = escrow::withdraw_unclaimed(&env, &quest_id, &creator)?;
+        
+        // Emit emergency withdrawal event
+        storage::emit_emergency_withdrawal(&env, creator, amount, quest_id);
+        
+        Ok(amount)
     }
 }

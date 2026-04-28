@@ -1,11 +1,13 @@
 # User Profile Page Implementation
 
 ## Overview
+
 This implementation creates a comprehensive user profile page for the StellarEarn platform with all requested features.
 
 ## Files Created
 
 ### Components
+
 - `components/profile/UserProfile.tsx` - Main profile component that orchestrates all other components
 - `components/profile/ProfileHeader.tsx` - Profile header with avatar, username, and follow/edit buttons
 - `components/profile/ProfileStats.tsx` - Statistics display with progress bar
@@ -14,15 +16,19 @@ This implementation creates a comprehensive user profile page for the StellarEar
 - `components/profile/EditProfileModal.tsx` - Modal for editing profile information
 
 ### Types
+
 - `lib/types/profile.ts` - TypeScript interfaces for all profile-related data structures
 
 ### Hooks
+
 - `lib/hooks/useProfile.ts` - Custom hook for fetching and managing profile data
 
 ### API
+
 - `lib/api/profile.ts` - API functions for profile operations with mock data
 
 ### Route
+
 - `app/profile/[address]/page.tsx` - Dynamic route for user profiles
 
 ## Features Implemented
@@ -42,6 +48,7 @@ This implementation creates a comprehensive user profile page for the StellarEar
 ## Data Structure
 
 The implementation includes comprehensive TypeScript interfaces for:
+
 - `UserProfile` - Main user information
 - `ProfileStats` - Statistical data
 - `Achievement` - Badges and accomplishments
@@ -55,6 +62,7 @@ All API functions currently use mock data for demonstration purposes. The implem
 ## Styling
 
 Uses the existing project's dark theme with:
+
 - Zinc-based color palette
 - Consistent border and spacing
 - Animated transitions
@@ -64,6 +72,7 @@ Uses the existing project's dark theme with:
 ## Next Steps
 
 To complete the implementation:
+
 1. Connect API functions to real backend endpoints
 2. Implement proper authentication/authorization
 3. Add actual image upload functionality
@@ -73,6 +82,7 @@ To complete the implementation:
 ## Note on TypeScript Errors
 
 The implementation shows TypeScript errors due to missing React/Next.js type definitions in the project. These are configuration issues that can be resolved by:
+
 1. Installing proper TypeScript dependencies
 2. Adding React and Next.js type definitions
 3. Configuring tsconfig.json appropriately

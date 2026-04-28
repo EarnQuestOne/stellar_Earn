@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
 /**
  * Submission flow E2E tests.
@@ -12,26 +12,26 @@ import { test, expect } from "@playwright/test";
  *   - Starting and submitting the "New Submission" form (start quest → upload
  *     proof → submit → success state)
  */
-test.describe("Submissions Flow", () => {
+test.describe('Submissions Flow', () => {
   // Suppress the analytics consent banner. On smaller viewports it occupies
   // the bottom of the page and intercepts clicks on the modal action buttons.
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
-        "stellar_earn_analytics_consent",
-        JSON.stringify({ status: "denied", version: "1" })
+        'stellar_earn_analytics_consent',
+        JSON.stringify({ status: 'denied', version: '1' })
       );
     });
   });
 
-  test("renders the submissions header and summary cards", async ({ page }) => {
-    await page.goto("/submissions");
+  test('renders the submissions header and summary cards', async ({ page }) => {
+    await page.goto('/submissions');
 
     await expect(
-      page.getByRole("heading", { name: "Submissions", level: 1 })
+      page.getByRole('heading', { name: 'Submissions', level: 1 })
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /new submission/i })
+      page.getByRole('button', { name: /new submission/i })
     ).toBeVisible();
 
     // Summary cards are sourced from the mock submissions list. Scope the
@@ -45,21 +45,21 @@ test.describe("Submissions Flow", () => {
     await expect(summary.getByText(/under review/i)).toBeVisible();
   });
 
-  test("lists submission rows with their IDs and quests", async ({ page }) => {
-    await page.goto("/submissions");
+  test('lists submission rows with their IDs and quests', async ({ page }) => {
+    await page.goto('/submissions');
 
-    await expect(page.getByRole("table")).toBeVisible();
+    await expect(page.getByRole('table')).toBeVisible();
     // Mock submissions use IDs of the form SUB-XXX.
-    const firstRow = page.getByRole("row", { name: /SUB-\d+/ }).first();
+    const firstRow = page.getByRole('row', { name: /SUB-\d+/ }).first();
     await expect(firstRow).toBeVisible();
   });
 
-  test("filters submissions by status via the status pill", async ({
+  test('filters submissions by status via the status pill', async ({
     page,
   }) => {
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
-    await page.getByRole("tab", { name: /^Approved$/ }).click();
+    await page.getByRole('tab', { name: /^Approved$/ }).click();
     await expect(page).toHaveURL(/status=Approved/);
 
     // Every row's StatusBadge should now read "Approved".
@@ -68,24 +68,24 @@ test.describe("Submissions Flow", () => {
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {
       await expect(badges.nth(i)).toHaveAttribute(
-        "aria-label",
-        "Status: Approved"
+        'aria-label',
+        'Status: Approved'
       );
     }
 
     // Toggling the same pill clears the filter.
-    await page.getByRole("tab", { name: /^Approved$/ }).click();
+    await page.getByRole('tab', { name: /^Approved$/ }).click();
     await expect(page).not.toHaveURL(/status=Approved/);
   });
 
-  test("searches submissions by quest title", async ({ page }) => {
-    await page.goto("/submissions");
+  test('searches submissions by quest title', async ({ page }) => {
+    await page.goto('/submissions');
 
     await page
       .getByPlaceholder(/search by quest or submission id/i)
-      .fill("Smart Contract");
+      .fill('Smart Contract');
 
-    const rows = page.getByRole("row");
+    const rows = page.getByRole('row');
     // First row is the header; subsequent rows should mention the query.
     const dataRowCount = (await rows.count()) - 1;
     expect(dataRowCount).toBeGreaterThan(0);
@@ -94,101 +94,106 @@ test.describe("Submissions Flow", () => {
     }
   });
 
-  test("shows the empty state when no submissions match the search", async ({
+  test('shows the empty state when no submissions match the search', async ({
     page,
   }) => {
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
     await page
       .getByPlaceholder(/search by quest or submission id/i)
-      .fill("zzz-no-such-submission-xyz");
+      .fill('zzz-no-such-submission-xyz');
 
     await expect(page.getByText(/no submissions found/i)).toBeVisible();
   });
 
-  test("opens a submission detail modal when a row is clicked", async ({
+  test('opens a submission detail modal when a row is clicked', async ({
     page,
   }) => {
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
-    const firstRow = page.getByRole("row", { name: /SUB-\d+/ }).first();
+    const firstRow = page.getByRole('row', { name: /SUB-\d+/ }).first();
     await firstRow.click();
 
-    const dialog = page.getByRole("dialog", { name: /submission details|submit proof/i });
+    const dialog = page.getByRole('dialog', {
+      name: /submission details|submit proof/i,
+    });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /submission details/i })
+      dialog.getByRole('heading', { name: /submission details/i })
     ).toBeVisible();
     await expect(dialog.getByText(/^Quest$/)).toBeVisible();
     await expect(dialog.getByText(/^Status$/)).toBeVisible();
     await expect(dialog.getByText(/^Proof$/)).toBeVisible();
 
     // Close via the close button.
-    await dialog.getByRole("button", { name: /close modal/i }).click();
+    await dialog.getByRole('button', { name: /close modal/i }).click();
     await expect(
-      page.getByRole("dialog", { name: /submission details|submit proof/i })
+      page.getByRole('dialog', { name: /submission details|submit proof/i })
     ).toBeHidden();
   });
 
-  test("closes the submission detail modal when Escape is pressed", async ({
+  test('closes the submission detail modal when Escape is pressed', async ({
     page,
   }) => {
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
-    await page.getByRole("row", { name: /SUB-\d+/ }).first().click();
+    await page
+      .getByRole('row', { name: /SUB-\d+/ })
+      .first()
+      .click();
     await expect(
-      page.getByRole("dialog", { name: /submission details|submit proof/i })
+      page.getByRole('dialog', { name: /submission details|submit proof/i })
     ).toBeVisible();
 
-    await page.keyboard.press("Escape");
+    await page.keyboard.press('Escape');
     await expect(
-      page.getByRole("dialog", { name: /submission details|submit proof/i })
+      page.getByRole('dialog', { name: /submission details|submit proof/i })
     ).toBeHidden();
   });
 
-  test("the New Submission flow walks Start Quest → Submit Work → success", async ({
+  test('the New Submission flow walks Start Quest → Submit Work → success', async ({
     page,
   }) => {
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
-    await page.getByRole("button", { name: /new submission/i }).click();
+    await page.getByRole('button', { name: /new submission/i }).click();
 
-    const dialog = page.getByRole("dialog", { name: /submission details|submit proof/i });
+    const dialog = page.getByRole('dialog', {
+      name: /submission details|submit proof/i,
+    });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /submit proof/i })
+      dialog.getByRole('heading', { name: /submit proof/i })
     ).toBeVisible();
     await expect(
-      dialog.getByRole("heading", { name: /ready to start\?/i })
+      dialog.getByRole('heading', { name: /ready to start\?/i })
     ).toBeVisible();
 
     // Step 1: start the quest to reveal the upload form.
-    await dialog.getByRole("button", { name: /start quest/i }).click();
+    await dialog.getByRole('button', { name: /start quest/i }).click();
     await expect(
-      dialog.getByRole("heading", { name: /submit your work/i })
+      dialog.getByRole('heading', { name: /submit your work/i })
     ).toBeVisible();
 
     // Before any proof is attached, the submit button advertises that proof is
     // required and is disabled.
-    const noProofBtn = dialog.getByRole("button", {
+    const noProofBtn = dialog.getByRole('button', {
       name: /please upload proof before submitting/i,
     });
     await expect(noProofBtn).toBeDisabled();
 
     // Step 2: attach a proof file via the hidden <input type=file>.
-    await dialog
-      .locator('input[type="file"]')
-      .setInputFiles({
-        name: "proof.txt",
-        mimeType: "text/plain",
-        buffer: Buffer.from("proof of work"),
-      });
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'proof.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('proof of work'),
+    });
 
-    await expect(dialog.getByText("proof.txt")).toBeVisible();
+    await expect(dialog.getByText('proof.txt')).toBeVisible();
 
     // Once a file is attached, the button's aria-label becomes
     // "Submit work for quest: ...".
-    const submitBtn = dialog.getByRole("button", {
+    const submitBtn = dialog.getByRole('button', {
       name: /submit work for quest/i,
     });
     await expect(submitBtn).toBeEnabled();
@@ -200,18 +205,20 @@ test.describe("Submissions Flow", () => {
     await expect(dialog).toBeHidden({ timeout: 10_000 });
   });
 
-  test("the Start Quest button is disabled when the quest is expired", async ({
+  test('the Start Quest button is disabled when the quest is expired', async ({
     page,
   }) => {
     // The default test-modal quest is not expired; verify by checking the
     // button is enabled (the Start Quest happy path is exercised above) and
     // that the cancel/close action returns the user to the dashboard.
-    await page.goto("/submissions");
+    await page.goto('/submissions');
 
-    await page.getByRole("button", { name: /new submission/i }).click();
-    const dialog = page.getByRole("dialog", { name: /submission details|submit proof/i });
+    await page.getByRole('button', { name: /new submission/i }).click();
+    const dialog = page.getByRole('dialog', {
+      name: /submission details|submit proof/i,
+    });
     await expect(
-      dialog.getByRole("button", { name: /start quest/i })
+      dialog.getByRole('button', { name: /start quest/i })
     ).toBeEnabled();
   });
 });

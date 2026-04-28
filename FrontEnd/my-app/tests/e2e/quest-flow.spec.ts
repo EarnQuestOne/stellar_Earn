@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
 /**
  * Quest browsing flow E2E tests.
@@ -12,34 +12,36 @@ import { test, expect } from "@playwright/test";
  *   - Navigating to the create-quest wizard
  *   - Drilling into a quest detail page
  */
-test.describe("Quest Browsing Flow", () => {
+test.describe('Quest Browsing Flow', () => {
   // Suppress the analytics consent banner so it cannot intercept clicks on
   // bottom-of-viewport elements when running against narrow viewports.
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
-        "stellar_earn_analytics_consent",
-        JSON.stringify({ status: "denied", version: "1" })
+        'stellar_earn_analytics_consent',
+        JSON.stringify({ status: 'denied', version: '1' })
       );
     });
   });
 
-  test("renders the quest board with header and create CTA", async ({ page }) => {
-    await page.goto("/quests");
+  test('renders the quest board with header and create CTA', async ({
+    page,
+  }) => {
+    await page.goto('/quests');
 
     await expect(
-      page.getByRole("heading", { name: "Quest Board", level: 1 })
+      page.getByRole('heading', { name: 'Quest Board', level: 1 })
     ).toBeVisible();
     await expect(
       page.getByText(/browse available quests and start earning rewards/i)
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /create quest/i })
-    ).toHaveAttribute("href", "/quests/create");
+      page.getByRole('link', { name: /create quest/i })
+    ).toHaveAttribute('href', '/quests/create');
   });
 
-  test("lists at least one quest card by default", async ({ page }) => {
-    await page.goto("/quests");
+  test('lists at least one quest card by default', async ({ page }) => {
+    await page.goto('/quests');
 
     const firstCard = page
       .locator('[role="button"][aria-label^="View quest:"]')
@@ -47,12 +49,12 @@ test.describe("Quest Browsing Flow", () => {
     await expect(firstCard).toBeVisible();
   });
 
-  test("filters quests by difficulty via the difficulty pill", async ({
+  test('filters quests by difficulty via the difficulty pill', async ({
     page,
   }) => {
-    await page.goto("/quests");
+    await page.goto('/quests');
 
-    await page.getByRole("button", { name: /^Easy$/ }).click();
+    await page.getByRole('button', { name: /^Easy$/ }).click();
 
     await expect(page).toHaveURL(/difficulty=beginner/);
 
@@ -65,10 +67,10 @@ test.describe("Quest Browsing Flow", () => {
     }
   });
 
-  test("filters quests by category and resets pagination", async ({ page }) => {
-    await page.goto("/quests?page=2");
+  test('filters quests by category and resets pagination', async ({ page }) => {
+    await page.goto('/quests?page=2');
 
-    await page.getByRole("button", { name: /^Security$/ }).click();
+    await page.getByRole('button', { name: /^Security$/ }).click();
 
     await expect(page).toHaveURL(/category=Security/);
     await expect(page).toHaveURL(/page=1/);
@@ -81,12 +83,12 @@ test.describe("Quest Browsing Flow", () => {
     }
   });
 
-  test("searching for a title narrows the list", async ({ page }) => {
-    await page.goto("/quests");
+  test('searching for a title narrows the list', async ({ page }) => {
+    await page.goto('/quests');
 
     await page
-      .getByRole("textbox", { name: /search quests/i })
-      .fill("Documentation");
+      .getByRole('textbox', { name: /search quests/i })
+      .fill('Documentation');
 
     const firstCard = page
       .locator('[role="button"][aria-label^="View quest:"]')
@@ -94,64 +96,64 @@ test.describe("Quest Browsing Flow", () => {
     await expect(firstCard).toContainText(/documentation/i);
   });
 
-  test("shows the empty state for a query that matches no quests", async ({
+  test('shows the empty state for a query that matches no quests', async ({
     page,
   }) => {
-    await page.goto("/quests");
+    await page.goto('/quests');
 
     await page
-      .getByRole("textbox", { name: /search quests/i })
-      .fill("zzz-no-such-quest-xyz");
+      .getByRole('textbox', { name: /search quests/i })
+      .fill('zzz-no-such-quest-xyz');
 
     await expect(page.getByText(/no quests found/i)).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /clear filters/i })
+      page.getByRole('button', { name: /clear filters/i })
     ).toBeVisible();
   });
 
-  test("clear filters returns the catalog to the default view", async ({
+  test('clear filters returns the catalog to the default view', async ({
     page,
   }) => {
-    await page.goto("/quests?status=Active&difficulty=beginner");
+    await page.goto('/quests?status=Active&difficulty=beginner');
 
     await expect(
-      page.getByRole("button", { name: /clear all filters/i })
+      page.getByRole('button', { name: /clear all filters/i })
     ).toBeVisible();
-    await page.getByRole("button", { name: /clear all filters/i }).click();
+    await page.getByRole('button', { name: /clear all filters/i }).click();
 
     await expect(page).toHaveURL(/\/quests$/);
   });
 
-  test("clicking a quest card navigates to its detail page", async ({
+  test('clicking a quest card navigates to its detail page', async ({
     page,
   }) => {
     // The detail page fetches the quest via the backend API; intercept the
     // request so the test is deterministic and does not depend on a running
     // backend.
-    await page.route("**/api/v1/quests/**", async (route) => {
-      if (route.request().method() !== "GET") {
+    await page.route('**/api/v1/quests/**', async (route) => {
+      if (route.request().method() !== 'GET') {
         await route.fallback();
         return;
       }
 
       await route.fulfill({
         status: 200,
-        contentType: "application/json",
+        contentType: 'application/json',
         body: JSON.stringify({
-          id: "quest-1",
-          contractQuestId: "1",
-          title: "Smart Contract Security Review",
+          id: 'quest-1',
+          contractQuestId: '1',
+          title: 'Smart Contract Security Review',
           description:
-            "Review and audit a smart contract for security vulnerabilities.",
-          category: "Security",
-          difficulty: "advanced",
-          rewardAmount: "500",
-          rewardAsset: "XLM",
+            'Review and audit a smart contract for security vulnerabilities.',
+          category: 'Security',
+          difficulty: 'advanced',
+          rewardAmount: '500',
+          rewardAsset: 'XLM',
           xpReward: 300,
-          status: "Active",
+          status: 'Active',
           deadline: new Date(Date.now() + 7 * 86_400_000).toISOString(),
-          verifierAddress: "GDX7...456",
-          requirements: ["Review the smart contract code"],
+          verifierAddress: 'GDX7...456',
+          requirements: ['Review the smart contract code'],
           maxParticipants: 5,
           currentParticipants: 2,
           totalClaims: 0,
@@ -164,7 +166,7 @@ test.describe("Quest Browsing Flow", () => {
       });
     });
 
-    await page.goto("/quests");
+    await page.goto('/quests');
 
     const firstCard = page
       .locator('[role="button"][aria-label^="View quest:"]')
@@ -173,17 +175,17 @@ test.describe("Quest Browsing Flow", () => {
 
     await expect(page).toHaveURL(/\/quests\/[^/]+$/);
     await expect(
-      page.getByRole("link", { name: /back to quests/i })
+      page.getByRole('link', { name: /back to quests/i })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /smart contract security review/i })
+      page.getByRole('heading', { name: /smart contract security review/i })
     ).toBeVisible();
   });
 
-  test("create quest CTA links to the wizard", async ({ page }) => {
-    await page.goto("/quests");
+  test('create quest CTA links to the wizard', async ({ page }) => {
+    await page.goto('/quests');
 
-    await page.getByRole("link", { name: /create quest/i }).click();
+    await page.getByRole('link', { name: /create quest/i }).click();
     await expect(page).toHaveURL(/\/quests\/create$/);
   });
 });

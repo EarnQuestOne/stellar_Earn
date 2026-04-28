@@ -6,7 +6,7 @@ const nextConfig = {
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
-      '@creit.tech/stellar-wallets-kit'
+      '@creit.tech/stellar-wallets-kit',
     ],
   },
   images: {
@@ -22,9 +22,12 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
 };
 

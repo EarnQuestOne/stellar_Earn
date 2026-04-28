@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Shield, Key, Loader2, AlertCircle } from "lucide-react";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Shield, Key, Loader2, AlertCircle } from 'lucide-react';
 
 interface SignInChallengeProps {
   challenge: string;
@@ -21,7 +21,7 @@ export function SignInChallenge({
 }: SignInChallengeProps) {
   return (
     <div className="flex flex-col items-center text-center">
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#33C5E0]/10 text-[#33C5E0] shadow-inner shadow-[#33C5E0]/5"
@@ -33,14 +33,15 @@ export function SignInChallenge({
         Verify Ownership
       </h2>
       <p className="mb-6 text-sm leading-relaxed text-zinc-500 dark:text-[#92A5A8]">
-        To finalize your secure sign-in, please sign this unique challenge with your wallet:
+        To finalize your secure sign-in, please sign this unique challenge with
+        your wallet:
         <br />
         <span className="mt-1 inline-block font-mono text-xs font-bold text-[#33C5E0] bg-[#33C5E0]/5 px-2 py-0.5 rounded-md">
           {stellarAddress.slice(0, 6)}...{stellarAddress.slice(-6)}
         </span>
       </p>
 
-      <motion.div 
+      <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
@@ -55,7 +56,7 @@ export function SignInChallenge({
       </motion.div>
 
       {error && (
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="mb-4 flex w-full items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-left"
@@ -87,7 +88,7 @@ export function SignInChallenge({
       </button>
 
       <p className="mt-6 text-[10px] leading-relaxed text-zinc-400 dark:text-[#5D6B6E]">
-        Signing is a secure, off-chain action that proves your identity. 
+        Signing is a secure, off-chain action that proves your identity.
         <br />
         It does not involve any transaction or fees.
       </p>

@@ -20,33 +20,37 @@ export function useClaim(): UseClaimReturn {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
 
-  const claim = useCallback(async (rewardId: string, amount: number) => {
-    setStatus('pending');
-    setError(null);
-    setResult(null);
+  const claim = useCallback(
+    async (rewardId: string, amount: number) => {
+      setStatus('pending');
+      setError(null);
+      setResult(null);
 
-    try {
-      const response = await claimReward(rewardId, amount);
+      try {
+        const response = await claimReward(rewardId, amount);
 
-      if (response.success) {
-        setStatus('success');
-        setResult(response);
-        showToast(`Successfully claimed ${amount} tokens!`, 'success');
-        return response;
-      } else {
+        if (response.success) {
+          setStatus('success');
+          setResult(response);
+          showToast(`Successfully claimed ${amount} tokens!`, 'success');
+          return response;
+        } else {
+          setStatus('error');
+          setError(response.error || 'Claim failed');
+          showToast(response.error || 'Failed to claim reward', 'error');
+          return response;
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'An unexpected error occurred';
         setStatus('error');
-        setError(response.error || 'Claim failed');
-        showToast(response.error || 'Failed to claim reward', 'error');
-        return response;
+        setError(message);
+        showToast(message, 'error');
+        return null;
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setStatus('error');
-      setError(message);
-      showToast(message, 'error');
-      return null;
-    }
-  }, [showToast]);
+    },
+    [showToast]
+  );
 
   const reset = useCallback(() => {
     setStatus('idle');

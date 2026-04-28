@@ -10,10 +10,16 @@ pub fn upgrade_contract(env: &Env, admin: Address, new_wasm_hash: BytesN<32>) ->
     init::authorize_upgrade(env, admin)?;
 
     // 1. Perform WASM update
-    upgrade::upgrade_code(env, new_wasm_hash)?;
+    upgrade::upgrade_code(env, new_wasm_hash.clone())?;
 
     // 2. Perform state migration to current version
     upgrade::migrate(env)?;
+
+    // Emit upgrade event
+    env.events().publish(
+        (soroban_sdk::Symbol::new(env, "upgrade"), admin),
+        new_wasm_hash,
+    );
 
     Ok(())
 }
@@ -21,13 +27,32 @@ pub fn upgrade_contract(env: &Env, admin: Address, new_wasm_hash: BytesN<32>) ->
 /// Explicitly trigger state migrations to current CONTRACT_VERSION.
 /// Useful if WASM was updated separately or schema version increased without code changes.
 pub fn trigger_migration(env: &Env, admin: Address) -> Result<(), Error> {
-    init::authorize_upgrade(env, admin)?;
-    upgrade::migrate(env)
+    init::authorize_upgrade(env, admin.clone())?;
+    let old_version = crate::storage::get_data_version(env);
+    upgrade::migrate(env)?;
+    let new_version = crate::storage::get_data_version(env);
+    
+    // Emit migration event
+    env.events().publish(
+        (soroban_sdk::Symbol::new(env, "migrate"), admin),
+        (old_version, new_version),
+    );
+    
+    Ok(())
 }
 
 /// Explicitly trigger state rollback to a previous version.
 /// This should be used with extreme caution.
 pub fn trigger_rollback(env: &Env, admin: Address, target_version: u32) -> Result<(), Error> {
-    init::authorize_upgrade(env, admin)?;
-    upgrade::rollback(env, target_version)
+    init::authorize_upgrade(env, admin.clone())?;
+    let old_version = crate::storage::get_data_version(env);
+    upgrade::rollback(env, target_version)?;
+    
+    // Emit rollback event
+    env.events().publish(
+        (soroban_sdk::Symbol::new(env, "rollback"), admin),
+        (old_version, target_version),
+    );
+    
+    Ok(())
 }

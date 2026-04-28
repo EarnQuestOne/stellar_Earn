@@ -1,5 +1,3 @@
-
-
 export interface ClaimResult {
   success: boolean;
   transactionHash?: string;
@@ -8,22 +6,25 @@ export interface ClaimResult {
   timestamp: string;
 }
 
-export async function claimReward(rewardId: string, amount: number): Promise<ClaimResult> {
+export async function claimReward(
+  rewardId: string,
+  amount: number
+): Promise<ClaimResult> {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  const isSuccessful = Math.random() > 0.05; 
+  const isSuccessful = Math.random() > 0.05;
 
   if (!isSuccessful) {
     return {
       success: false,
-      error: "User rejected transaction or network error",
+      error: 'User rejected transaction or network error',
       amount,
       timestamp: new Date().toISOString(),
     };
   }
 
   // Generate a mock transaction hash
-  const transactionHash = Array.from({ length: 32 }, () => 
+  const transactionHash = Array.from({ length: 32 }, () =>
     Math.floor(Math.random() * 16).toString(16)
   ).join('');
 

@@ -95,7 +95,27 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 # Optional: Analytics, monitoring
 NEXT_PUBLIC_ANALYTICS_ID=
 ```
+
+**Environment Validation**: The application includes automatic environment variable validation that runs at startup. If required variables are missing, you'll see a clear error page with setup instructions. See [ENV_VALIDATION.md](./ENV_VALIDATION.md) for details.
+
+**Quick Setup**:
+
+```bash
+# Copy example file
+cp .env.example .env.local
+
+# Edit with your values
+# Restart the dev server
+```
+
+For more information, see:
+
+- [ENV_VALIDATION.md](./ENV_VALIDATION.md) - Comprehensive validation guide
+- [ENV_VALIDATION_QUICK_REFERENCE.md](./ENV_VALIDATION_QUICK_REFERENCE.md) - Quick reference
+- [.env.example](./.env.example) - Example environment file
+
 FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
+
 ### Development
 
 ```bash
@@ -125,7 +145,7 @@ import { FreighterModule } from '@stellar/freighter-api';
 
 export async function connectWallet() {
   const { isConnected, getPublicKey } = FreighterModule;
-  
+
   if (await isConnected()) {
     const publicKey = await getPublicKey();
     return publicKey;
@@ -247,6 +267,7 @@ pnpm test:coverage
 ```
 
 Coverage reports are written to `coverage/` with four outputs enabled by default:
+
 - terminal summary during the run
 - `coverage/index.html` for a browsable report
 - `coverage/lcov.info` for editor or CI tooling
@@ -255,6 +276,7 @@ Coverage reports are written to `coverage/` with four outputs enabled by default
 Unit tests are matched with the `*.test.ts` and `*.test.tsx` naming convention. Playwright end-to-end specs stay under `tests/e2e` so coverage runs do not accidentally execute browser tests.
 
 The current minimum coverage gate is intentionally modest while the suite grows:
+
 - statements: 20%
 - functions: 20%
 - lines: 20%
@@ -319,7 +341,7 @@ pnpm build
 - Verify `NEXT_PUBLIC_CONTRACT_ID` is correct
 - Ensure contract is deployed to the specified network
 - Check Soroban RPC URL connectivity
-FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
+  FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
 
 ## Resources
 

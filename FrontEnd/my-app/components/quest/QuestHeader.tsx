@@ -14,7 +14,8 @@ interface QuestHeaderProps {
 const statusConfig = {
   [QuestStatus.ACTIVE]: {
     label: 'Active',
-    className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    className:
+      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -27,7 +28,8 @@ const statusConfig = {
   },
   [QuestStatus.PAUSED]: {
     label: 'Paused',
-    className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+    className:
+      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -40,7 +42,8 @@ const statusConfig = {
   },
   [QuestStatus.COMPLETED]: {
     label: 'Completed',
-    className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    className:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -84,10 +87,12 @@ const difficultyConfig = {
 const categoryColors: Record<string, string> = {
   Security: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
   Frontend: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  Backend: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  Backend:
+    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   Docs: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   Testing: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  Community: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  Community:
+    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
 };
 
 export function QuestHeader({
@@ -100,12 +105,18 @@ export function QuestHeader({
 }: QuestHeaderProps) {
   const statusInfo = statusConfig[status];
   const difficultyInfo = difficultyConfig[difficulty];
-  const categoryColor = categoryColors[category] || 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
+  const categoryColor =
+    categoryColors[category] ||
+    'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
       {/* Status and Badges */}
-      <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Quest metadata">
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2"
+        role="group"
+        aria-label="Quest metadata"
+      >
         <span
           className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusInfo.className}`}
           aria-label={`Status: ${statusInfo.label}`}
@@ -128,7 +139,9 @@ export function QuestHeader({
       </div>
 
       {/* Title */}
-      <h1 className="mb-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h1>
+      <h1 className="mb-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+        {title}
+      </h1>
 
       {/* Participants Info */}
       {maxParticipants !== undefined && (
@@ -136,7 +149,13 @@ export function QuestHeader({
           className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400"
           aria-label={`Participants: ${currentParticipants} of ${maxParticipants}${currentParticipants >= maxParticipants ? ', quest is full' : ''}`}
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

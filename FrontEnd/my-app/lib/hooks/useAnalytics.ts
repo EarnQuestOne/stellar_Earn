@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useContext } from 'react';
-import { ANALYTICS_EVENTS, type AnalyticsEventName, type AnalyticsEventPayload } from '@/lib/analytics/events';
+import {
+  ANALYTICS_EVENTS,
+  type AnalyticsEventName,
+  type AnalyticsEventPayload,
+} from '@/lib/analytics/events';
 import { sanitizePayload } from '@/lib/utils/tracking';
 import { AnalyticsContext } from '@/app/providers/AnalyticsProvider';
 
@@ -24,7 +28,13 @@ export function useAnalytics() {
     };
   }
 
-  const { trackEvent: ctxTrack, trackPageView: ctxPageView, consentStatus, setConsent, isTestMode } = ctx;
+  const {
+    trackEvent: ctxTrack,
+    trackPageView: ctxPageView,
+    consentStatus,
+    setConsent,
+    isTestMode,
+  } = ctx;
   const hasConsent = consentStatus === 'granted';
 
   const trackEvent = useCallback(
@@ -33,7 +43,7 @@ export function useAnalytics() {
       const safe = sanitizePayload(payload);
       ctxTrack(name, safe);
     },
-    [hasConsent, ctxTrack],
+    [hasConsent, ctxTrack]
   );
 
   const trackPageView = useCallback(
@@ -41,7 +51,7 @@ export function useAnalytics() {
       if (!hasConsent) return;
       ctxPageView(path, title);
     },
-    [hasConsent, ctxPageView],
+    [hasConsent, ctxPageView]
   );
 
   return {

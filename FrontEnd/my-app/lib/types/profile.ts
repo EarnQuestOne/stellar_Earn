@@ -41,7 +41,12 @@ export interface Achievement {
 
 export interface Activity {
   id: string;
-  type: 'quest_completed' | 'quest_created' | 'submission_approved' | 'level_up' | 'badge_earned';
+  type:
+    | 'quest_completed'
+    | 'quest_created'
+    | 'submission_approved'
+    | 'level_up'
+    | 'badge_earned';
   title: string;
   description: string;
   timestamp: string;

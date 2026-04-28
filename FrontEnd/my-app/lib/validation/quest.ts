@@ -1,4 +1,8 @@
-import type { QuestFormData, QuestCategory, QuestDifficulty } from '../types/api.types';
+import type {
+  QuestFormData,
+  QuestCategory,
+  QuestDifficulty,
+} from '../types/api.types';
 
 export interface ValidationError {
   field: string;
@@ -26,30 +30,47 @@ const VALID_DIFFICULTIES: QuestDifficulty[] = [
   'expert',
 ];
 
-export function validateQuestForm(data: Partial<QuestFormData>): ValidationResult {
+export function validateQuestForm(
+  data: Partial<QuestFormData>
+): ValidationResult {
   const errors: ValidationError[] = [];
 
   // Title validation
   if (!data.title || data.title.trim().length === 0) {
     errors.push({ field: 'title', message: 'Title is required' });
   } else if (data.title.length < 5) {
-    errors.push({ field: 'title', message: 'Title must be at least 5 characters' });
+    errors.push({
+      field: 'title',
+      message: 'Title must be at least 5 characters',
+    });
   } else if (data.title.length > 100) {
-    errors.push({ field: 'title', message: 'Title must be less than 100 characters' });
+    errors.push({
+      field: 'title',
+      message: 'Title must be less than 100 characters',
+    });
   }
 
   // Short description validation
   if (!data.shortDescription || data.shortDescription.trim().length === 0) {
-    errors.push({ field: 'shortDescription', message: 'Short description is required' });
+    errors.push({
+      field: 'shortDescription',
+      message: 'Short description is required',
+    });
   } else if (data.shortDescription.length > 200) {
-    errors.push({ field: 'shortDescription', message: 'Short description must be less than 200 characters' });
+    errors.push({
+      field: 'shortDescription',
+      message: 'Short description must be less than 200 characters',
+    });
   }
 
   // Description validation
   if (!data.description || data.description.trim().length === 0) {
     errors.push({ field: 'description', message: 'Description is required' });
   } else if (data.description.length < 20) {
-    errors.push({ field: 'description', message: 'Description must be at least 20 characters' });
+    errors.push({
+      field: 'description',
+      message: 'Description must be at least 20 characters',
+    });
   }
 
   // Category validation
@@ -63,7 +84,10 @@ export function validateQuestForm(data: Partial<QuestFormData>): ValidationResul
   if (!data.difficulty) {
     errors.push({ field: 'difficulty', message: 'Difficulty is required' });
   } else if (!VALID_DIFFICULTIES.includes(data.difficulty)) {
-    errors.push({ field: 'difficulty', message: 'Invalid difficulty selected' });
+    errors.push({
+      field: 'difficulty',
+      message: 'Invalid difficulty selected',
+    });
   }
 
   // Reward validation
@@ -72,7 +96,10 @@ export function validateQuestForm(data: Partial<QuestFormData>): ValidationResul
   } else if (data.reward < 0) {
     errors.push({ field: 'reward', message: 'Reward cannot be negative' });
   } else if (data.reward > 10000) {
-    errors.push({ field: 'reward', message: 'Reward cannot exceed 10,000 XLM' });
+    errors.push({
+      field: 'reward',
+      message: 'Reward cannot exceed 10,000 XLM',
+    });
   }
 
   // XP Reward validation
@@ -81,7 +108,10 @@ export function validateQuestForm(data: Partial<QuestFormData>): ValidationResul
   } else if (data.xpReward < 0) {
     errors.push({ field: 'xpReward', message: 'XP reward cannot be negative' });
   } else if (data.xpReward > 5000) {
-    errors.push({ field: 'xpReward', message: 'XP reward cannot exceed 5,000' });
+    errors.push({
+      field: 'xpReward',
+      message: 'XP reward cannot exceed 5,000',
+    });
   }
 
   // Deadline validation
@@ -93,24 +123,41 @@ export function validateQuestForm(data: Partial<QuestFormData>): ValidationResul
     if (isNaN(deadlineDate.getTime())) {
       errors.push({ field: 'deadline', message: 'Invalid deadline date' });
     } else if (deadlineDate <= now) {
-      errors.push({ field: 'deadline', message: 'Deadline must be in the future' });
+      errors.push({
+        field: 'deadline',
+        message: 'Deadline must be in the future',
+      });
     }
   }
 
   // Max participants validation
   if (data.maxParticipants === undefined || data.maxParticipants === null) {
-    errors.push({ field: 'maxParticipants', message: 'Max participants is required' });
+    errors.push({
+      field: 'maxParticipants',
+      message: 'Max participants is required',
+    });
   } else if (data.maxParticipants < 1) {
-    errors.push({ field: 'maxParticipants', message: 'Must allow at least 1 participant' });
+    errors.push({
+      field: 'maxParticipants',
+      message: 'Must allow at least 1 participant',
+    });
   } else if (data.maxParticipants > 10000) {
-    errors.push({ field: 'maxParticipants', message: 'Cannot exceed 10,000 participants' });
+    errors.push({
+      field: 'maxParticipants',
+      message: 'Cannot exceed 10,000 participants',
+    });
   }
 
   // Requirements validation (optional but if provided, validate)
   if (data.requirements && data.requirements.length > 0) {
-    const emptyRequirements = data.requirements.filter(r => !r || r.trim().length === 0);
+    const emptyRequirements = data.requirements.filter(
+      (r) => !r || r.trim().length === 0
+    );
     if (emptyRequirements.length > 0) {
-      errors.push({ field: 'requirements', message: 'Requirements cannot be empty' });
+      errors.push({
+        field: 'requirements',
+        message: 'Requirements cannot be empty',
+      });
     }
   }
 
@@ -120,8 +167,11 @@ export function validateQuestForm(data: Partial<QuestFormData>): ValidationResul
   };
 }
 
-export function getFieldError(errors: ValidationError[], field: string): string | undefined {
-  const error = errors.find(e => e.field === field);
+export function getFieldError(
+  errors: ValidationError[],
+  field: string
+): string | undefined {
+  const error = errors.find((e) => e.field === field);
   return error?.message;
 }
 
@@ -131,7 +181,11 @@ export function sanitizeQuestData(data: QuestFormData): QuestFormData {
     title: data.title.trim(),
     description: data.description.trim(),
     shortDescription: data.shortDescription.trim(),
-    requirements: data.requirements.filter(r => r && r.trim().length > 0).map(r => r.trim()),
-    tags: data.tags.filter(t => t && t.trim().length > 0).map(t => t.trim().toLowerCase()),
+    requirements: data.requirements
+      .filter((r) => r && r.trim().length > 0)
+      .map((r) => r.trim()),
+    tags: data.tags
+      .filter((t) => t && t.trim().length > 0)
+      .map((t) => t.trim().toLowerCase()),
   };
 }

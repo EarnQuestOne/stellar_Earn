@@ -23,7 +23,7 @@ interface KeyboardShortcutsProps {
 
 /**
  * KeyboardShortcuts component
- * 
+ *
  * Displays a panel showing available keyboard shortcuts.
  * Can be toggled with Shift+/ by default.
  */
@@ -142,7 +142,11 @@ export function KeyboardShortcuts({
         {/* Footer */}
         <div className="border-t border-zinc-200 px-6 py-3 dark:border-zinc-800">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Press <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1 py-0.5 text-xs dark:border-zinc-700 dark:bg-zinc-800">Esc</kbd> or click outside to close
+            Press{' '}
+            <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1 py-0.5 text-xs dark:border-zinc-700 dark:bg-zinc-800">
+              Esc
+            </kbd>{' '}
+            or click outside to close
           </p>
         </div>
       </div>
@@ -152,7 +156,7 @@ export function KeyboardShortcuts({
 
 /**
  * KeyboardShortcutsButton component
- * 
+ *
  * A button that opens the keyboard shortcuts panel.
  */
 export function KeyboardShortcutsButton({

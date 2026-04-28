@@ -4,6 +4,7 @@
  */
 
 import type { AnalyticsEventPayload } from './events';
+import { env } from '@/lib/config/env';
 
 export interface AnalyticsProvider {
   trackPageView(path: string, title?: string): void;
@@ -22,12 +23,12 @@ export function createNoopProvider(): AnalyticsProvider {
 export function createConsoleProvider(): AnalyticsProvider {
   return {
     trackPageView(path: string, title?: string) {
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      if (typeof window !== 'undefined' && env.isDevelopment) {
         console.debug('[Analytics] page_view', { path, title });
       }
     },
     trackEvent(name: string, payload?: AnalyticsEventPayload) {
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      if (typeof window !== 'undefined' && env.isDevelopment) {
         console.debug('[Analytics] event', name, payload ?? {});
       }
     },
@@ -36,7 +37,7 @@ export function createConsoleProvider(): AnalyticsProvider {
 }
 
 export function getAnalyticsProvider(_hasConsent: boolean): AnalyticsProvider {
-  const testMode = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE === 'true';
+  const testMode = typeof window !== 'undefined' && env.analyticsTestMode();
   if (testMode) return createConsoleProvider();
   return createConsoleProvider();
 }

@@ -36,8 +36,8 @@ function EmptyState() {
         No submissions found
       </h3>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        You haven&apos;t submitted any quests yet. Start completing quests to see
-        your submissions here.
+        You haven&apos;t submitted any quests yet. Start completing quests to
+        see your submissions here.
       </p>
     </div>
   );

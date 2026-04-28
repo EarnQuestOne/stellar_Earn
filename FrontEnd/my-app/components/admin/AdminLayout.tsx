@@ -43,7 +43,9 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="text-2xl">⭐</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-50">StellarEarn</span>
+            <span className="font-bold text-zinc-900 dark:text-zinc-50">
+              StellarEarn
+            </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -56,7 +58,8 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
         {/* Navigation */}
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href ||
+            const isActive =
+              pathname === item.href ||
               (item.href !== '/admin' && pathname.startsWith(item.href));
             return (
               <Link
@@ -104,8 +107,18 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
             onClick={() => setSidebarOpen(true)}
             className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
 
@@ -126,9 +139,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

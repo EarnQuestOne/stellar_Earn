@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useAuth } from "../../context/AuthContext";
-import { Shield, ShieldAlert, ShieldCheck, Loader2 } from "lucide-react";
+import React from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { Shield, ShieldAlert, ShieldCheck, Loader2 } from 'lucide-react';
 
 export function AuthStatusIndicator() {
   const { user, isAuthenticated, isLoading } = useAuth();

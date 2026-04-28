@@ -20,19 +20,16 @@ import {
   withRetry,
   createCancelToken,
   type CancelToken,
-} from "./client";
+} from './client';
 import type {
   UserResponse,
   UserStatsResponse,
   UpdateProfileRequest,
   UserSearchParams,
   PaginationParams,
-} from "@/lib/types/api.types";
+} from '@/lib/types/api.types';
 
-import type {
-  QuestResponse,
-  SubmissionResponse,
-} from "@/lib/types/api.types";
+import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
 
 // Re-export legacy dashboard types for backward compat
 export type {
@@ -42,11 +39,8 @@ export type {
   EarningsData,
   Badge,
   DashboardData,
-} from "../types/dashboard";
-import type {
-  EarningsData,
-  Badge,
-} from "../types/dashboard";
+} from '../types/dashboard';
+import type { EarningsData, Badge } from '../types/dashboard';
 
 const dashboardDelay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -54,143 +48,143 @@ const dashboardDelay = (ms: number) =>
 const mockUserStats: UserStatsResponse = {
   xp: 2840,
   level: 12,
-  totalEarned: "2450",
+  totalEarned: '2450',
   questsCompleted: 42,
   failedQuests: 2,
   successRate: 95.4,
-  badges: ["badge-1", "badge-2"],
+  badges: ['badge-1', 'badge-2'],
 };
 
 const mockActiveQuests: QuestResponse[] = [
   {
-    id: "active-1",
-    contractQuestId: "1",
-    title: "Smart Contract Security Review",
+    id: 'active-1',
+    contractQuestId: '1',
+    title: 'Smart Contract Security Review',
     description:
-      "Audit reward distribution contract flow and document findings.",
-    rewardAsset: "XLM",
-    rewardAmount: "250",
+      'Audit reward distribution contract flow and document findings.',
+    rewardAsset: 'XLM',
+    rewardAmount: '250',
     deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "Active",
-    category: "Blockchain",
+    status: 'Active',
+    category: 'Blockchain',
     totalClaims: 10,
     totalSubmissions: 5,
     approvedSubmissions: 3,
     rejectedSubmissions: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    verifierAddress: "G...",
+    verifierAddress: 'G...',
   },
   {
-    id: "active-2",
-    contractQuestId: "2",
-    title: "Documentation Update",
-    description: "Refresh contributor docs and integration notes.",
-    rewardAsset: "XLM",
-    rewardAmount: "75",
+    id: 'active-2',
+    contractQuestId: '2',
+    title: 'Documentation Update',
+    description: 'Refresh contributor docs and integration notes.',
+    rewardAsset: 'XLM',
+    rewardAmount: '75',
     deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "Active",
-    category: "Documentation",
+    status: 'Active',
+    category: 'Documentation',
     totalClaims: 5,
     totalSubmissions: 2,
     approvedSubmissions: 2,
     rejectedSubmissions: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    verifierAddress: "G...",
+    verifierAddress: 'G...',
   },
   {
-    id: "active-3",
-    contractQuestId: "3",
-    title: "UI Component Library",
-    description: "Extend reusable quest card and moderation components.",
-    rewardAsset: "XLM",
-    rewardAmount: "150",
+    id: 'active-3',
+    contractQuestId: '3',
+    title: 'UI Component Library',
+    description: 'Extend reusable quest card and moderation components.',
+    rewardAsset: 'XLM',
+    rewardAmount: '150',
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "Active",
-    category: "Development",
+    status: 'Active',
+    category: 'Development',
     totalClaims: 8,
     totalSubmissions: 4,
     approvedSubmissions: 2,
     rejectedSubmissions: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    verifierAddress: "G...",
+    verifierAddress: 'G...',
   },
 ];
 
 const mockRecentSubmissions: SubmissionResponse[] = [
   {
-    id: "submission-1",
-    questId: "active-1",
-    userId: "user-1",
-    status: "Approved",
-    proof: { type: "link", value: "https://github.com/..." },
+    id: 'submission-1',
+    questId: 'active-1',
+    userId: 'user-1',
+    status: 'Approved',
+    proof: { type: 'link', value: 'https://github.com/...' },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     quest: {
-      id: "active-1",
-      title: "Smart Contract Security Review",
-      rewardAmount: "250",
-      rewardAsset: "XLM",
+      id: 'active-1',
+      title: 'Smart Contract Security Review',
+      rewardAmount: '250',
+      rewardAsset: 'XLM',
     },
   },
   {
-    id: "submission-2",
-    questId: "active-2",
-    userId: "user-1",
-    status: "Pending",
-    proof: { type: "link", value: "https://github.com/..." },
+    id: 'submission-2',
+    questId: 'active-2',
+    userId: 'user-1',
+    status: 'Pending',
+    proof: { type: 'link', value: 'https://github.com/...' },
     createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
     quest: {
-      id: "active-2",
-      title: "Documentation Update",
-      rewardAmount: "75",
-      rewardAsset: "XLM",
+      id: 'active-2',
+      title: 'Documentation Update',
+      rewardAmount: '75',
+      rewardAsset: 'XLM',
     },
   },
   {
-    id: "submission-3",
-    questId: "archive-1",
-    userId: "user-1",
-    status: "Rejected",
-    proof: { type: "link", value: "https://github.com/..." },
-    rejectionReason: "Missing required test coverage.",
+    id: 'submission-3',
+    questId: 'archive-1',
+    userId: 'user-1',
+    status: 'Rejected',
+    proof: { type: 'link', value: 'https://github.com/...' },
+    rejectionReason: 'Missing required test coverage.',
     createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     quest: {
-      id: "archive-1",
-      title: "API Error Handling Improvements",
-      rewardAmount: "125",
-      rewardAsset: "XLM",
+      id: 'archive-1',
+      title: 'API Error Handling Improvements',
+      rewardAmount: '125',
+      rewardAsset: 'XLM',
     },
   },
 ];
 
 const mockEarningsHistory: EarningsData[] = [
-  { date: "2026-03-01", amount: 120 },
-  { date: "2026-03-08", amount: 300 },
-  { date: "2026-03-15", amount: 180 },
-  { date: "2026-03-22", amount: 450 },
+  { date: '2026-03-01', amount: 120 },
+  { date: '2026-03-08', amount: 300 },
+  { date: '2026-03-15', amount: 180 },
+  { date: '2026-03-22', amount: 450 },
 ];
 
 const mockBadges: Badge[] = [
   {
-    id: "badge-1",
-    name: "Fast Finisher",
-    description: "Completed 10 quests before deadline.",
-    icon: "bolt",
+    id: 'badge-1',
+    name: 'Fast Finisher',
+    description: 'Completed 10 quests before deadline.',
+    icon: 'bolt',
     earnedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    rarity: "rare",
+    rarity: 'rare',
   },
   {
-    id: "badge-2",
-    name: "Code Guardian",
-    description: "Delivered multiple high-quality review submissions.",
-    icon: "shield",
+    id: 'badge-2',
+    name: 'Code Guardian',
+    description: 'Delivered multiple high-quality review submissions.',
+    icon: 'shield',
     earnedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-    rarity: "epic",
+    rarity: 'epic',
   },
 ];
 
@@ -200,12 +194,12 @@ const mockBadges: Badge[] = [
 
 export async function fetchUserByAddress(
   address: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<UserResponse> {
   return withRetry(() =>
     get<UserResponse>(`/users/${address}`, {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -215,12 +209,12 @@ export async function fetchUserByAddress(
 
 export async function fetchUserStats(
   address: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<UserStatsResponse> {
   return withRetry(() =>
     get<UserStatsResponse>(`/users/${address}/stats`, {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -232,7 +226,7 @@ export async function fetchUserQuests(
   address: string,
   page = 1,
   limit = 20,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<{ quests: unknown[]; total: number; page: number; limit: number }> {
   return withRetry(() =>
     get<{ quests: unknown[]; total: number; page: number; limit: number }>(
@@ -240,8 +234,8 @@ export async function fetchUserQuests(
       {
         params: { page, limit },
         signal: cancelToken?.signal,
-      },
-    ),
+      }
+    )
   );
 }
 
@@ -250,9 +244,9 @@ export async function fetchUserQuests(
 // ---------------------------------------------------------------------------
 
 export async function updateProfile(
-  payload: UpdateProfileRequest,
+  payload: UpdateProfileRequest
 ): Promise<UserResponse> {
-  return patch<UserResponse>("/users/profile", payload);
+  return patch<UserResponse>('/users/profile', payload);
 }
 
 // ---------------------------------------------------------------------------
@@ -261,13 +255,13 @@ export async function updateProfile(
 
 export async function searchUsers(
   params: UserSearchParams,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<{ users: UserResponse[]; total: number }> {
   return withRetry(() =>
-    get<{ users: UserResponse[]; total: number }>("/users/search", {
+    get<{ users: UserResponse[]; total: number }>('/users/search', {
       params: params as Record<string, unknown>,
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -278,13 +272,13 @@ export async function searchUsers(
 export async function fetchLeaderboard(
   page = 1,
   limit = 50,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<{ users: UserResponse[]; total: number }> {
   return withRetry(() =>
-    get<{ users: UserResponse[]; total: number }>("/users/leaderboard", {
+    get<{ users: UserResponse[]; total: number }>('/users/leaderboard', {
       params: { page, limit },
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -328,7 +322,7 @@ export async function fetchBadges(): Promise<Badge[]> {
  * Fetch all dashboard data in parallel for the given Stellar address.
  */
 export async function fetchDashboardData(
-  address?: string,
+  address?: string
 ): Promise<
   DashboardData | { userProfile: UserResponse; userStats: UserStatsResponse }
 > {
@@ -367,7 +361,7 @@ export async function fetchUserProfile(address: string) {
 
 export async function updateUserProfile(
   _address: string,
-  data: UpdateProfileRequest,
+  data: UpdateProfileRequest
 ) {
   return updateProfile(data);
 }

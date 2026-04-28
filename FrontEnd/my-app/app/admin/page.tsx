@@ -1,7 +1,18 @@
 'use client';
 
-import { useAdminAccess, useAdminStats, useQuestManagement, useNotificationState } from '@/lib/hooks/useAdmin';
-import { AdminLayout, AdminStats, QuestManager, Notifications, Analytics } from '@/components/admin';
+import {
+  useAdminAccess,
+  useAdminStats,
+  useQuestManagement,
+  useNotificationState,
+} from '@/lib/hooks/useAdmin';
+import {
+  AdminLayout,
+  AdminStats,
+  QuestManager,
+  Notifications,
+  Analytics,
+} from '@/components/admin';
 import { NotificationContext } from '@/lib/hooks/useAdmin';
 
 function AdminDashboardContent() {
@@ -70,7 +81,12 @@ function AdminDashboardContent() {
 }
 
 export default function AdminPage() {
-  const { isAdmin, adminUser, isLoading: accessLoading, error: accessError } = useAdminAccess();
+  const {
+    isAdmin,
+    adminUser,
+    isLoading: accessLoading,
+    error: accessError,
+  } = useAdminAccess();
   const notificationState = useNotificationState();
 
   // Loading state
@@ -79,7 +95,9 @@ export default function AdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-100 dark:bg-zinc-950">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto" />
-          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Verifying admin access...</p>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+            Verifying admin access...
+          </p>
         </div>
       </div>
     );
@@ -95,7 +113,8 @@ export default function AdminPage() {
             Access Denied
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mb-6">
-            {accessError || 'You do not have permission to access the admin panel.'}
+            {accessError ||
+              'You do not have permission to access the admin panel.'}
           </p>
           <a
             href="/dashboard"

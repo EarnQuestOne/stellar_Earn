@@ -29,7 +29,9 @@ export default function QuestDetailPage() {
         setQuest(data as unknown as Quest);
         trackEvent(ANALYTICS_EVENTS.QUEST_VIEW, { questId });
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch quest'));
+        setError(
+          err instanceof Error ? err : new Error('Failed to fetch quest')
+        );
       } finally {
         setIsLoading(false);
       }
@@ -85,7 +87,12 @@ export default function QuestDetailPage() {
             href="/quests"
             className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -141,7 +148,12 @@ export default function QuestDetailPage() {
           href="/quests"
           className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
