@@ -160,7 +160,7 @@ fn test_award_xp_only_updates_user_core() {
     let proof = BytesN::from_array(&env, &[1u8; 32]);
     client.submit_proof(&quest_id, &submitter, &proof);
     client.approve_submission(&quest_id, &submitter, &verifier);
-    client.claim_reward(&quest_id, &submitter);
+    client.claim_reward(&quest_id, &submitter, &100);
 
     // UserCore should have XP
     let stats = client.get_user_stats(&submitter);
@@ -398,7 +398,7 @@ fn test_full_lifecycle_with_split_structs() {
     let proof = BytesN::from_array(&env, &[2u8; 32]);
     client.submit_proof(&quest_id, &submitter, &proof);
     client.approve_submission(&quest_id, &submitter, &verifier);
-    client.claim_reward(&quest_id, &submitter);
+    client.claim_reward(&quest_id, &submitter, &100);
 
     // Grant badge (writes UserBadges only)
     client.grant_badge(&admin, &submitter, &Badge::Rookie);

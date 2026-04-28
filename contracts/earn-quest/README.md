@@ -76,15 +76,16 @@ pub fn claim_reward(
     env: Env,
     quest_id: Symbol,
     submitter: Address,
+    amount: i128,
 ) -> Result<(), Error>
 ```
 
 **Flow:**
 1. User authentication
-2. Validate submission is approved
-3. Check not already claimed
-4. Transfer reward tokens
-5. Update submission status to Paid
+2. Validate submission is approved or partially paid
+3. Validate requested amount against remaining reward balance
+4. Transfer the requested amount from escrow
+5. Update submission status to `PartiallyPaid` or `Paid`
 6. Emit claim event
 
 ### ✅ Comprehensive Error Handling
@@ -164,6 +165,7 @@ Optimized for deployment to Stellar network.
 | Asset validation | ✅ |
 | Balance checking | ✅ |
 | Claim reward function | ✅ |
+| Partial claims supported | ✅ |
 | Duplicate prevention | ✅ |
 | Event emission | ✅ |
 | Comprehensive tests | ✅ |
@@ -188,7 +190,7 @@ client.submit_proof(&quest_id, &user, &proof_hash);
 client.approve_submission(&quest_id, &user, &verifier);
 
 // 4. User claims reward
-client.claim_reward(&quest_id, &user);
+client.claim_reward(&quest_id, &user, &100);
 // ✅ Tokens transferred to user's account
 ```
 

@@ -292,7 +292,10 @@ pub fn validate_submission_status_transition(
     let valid = match (from, to) {
         (SubmissionStatus::Pending, SubmissionStatus::Approved) => true,
         (SubmissionStatus::Pending, SubmissionStatus::Rejected) => true,
+        (SubmissionStatus::Approved, SubmissionStatus::PartiallyPaid) => true,
         (SubmissionStatus::Approved, SubmissionStatus::Paid) => true,
+        (SubmissionStatus::PartiallyPaid, SubmissionStatus::PartiallyPaid) => true,
+        (SubmissionStatus::PartiallyPaid, SubmissionStatus::Paid) => true,
         _ => false,
     };
 

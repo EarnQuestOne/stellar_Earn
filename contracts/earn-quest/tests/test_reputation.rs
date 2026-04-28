@@ -52,7 +52,7 @@ fn complete_quest(
     let proof = BytesN::from_array(env, &[1u8; 32]);
     client.submit_proof(&quest_id, submitter, &proof);
     client.approve_submission(&quest_id, submitter, verifier);
-    client.claim_reward(&quest_id, submitter);
+    client.claim_reward(&quest_id, submitter, &reward_amount);
 }
 
 #[test]

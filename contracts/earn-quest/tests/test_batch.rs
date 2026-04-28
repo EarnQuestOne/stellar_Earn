@@ -303,8 +303,8 @@ fn test_approve_submissions_batch_success() {
     client.approve_submissions_batch(&verifier, &submissions);
 
     // Claim both rewards
-    client.claim_reward(&symbol_short!("AQ1"), &submitter1);
-    client.claim_reward(&symbol_short!("AQ2"), &submitter2);
+    client.claim_reward(&symbol_short!("AQ1"), &submitter1, &100);
+    client.claim_reward(&symbol_short!("AQ2"), &submitter2, &200);
 
     assert_eq!(token_client.balance(&submitter1), 100);
     assert_eq!(token_client.balance(&submitter2), 200);

@@ -209,7 +209,12 @@ impl EarnQuestContract {
         submission::approve_submissions_batch(&env, &verifier, &submissions)
     }
 
-    pub fn claim_reward(env: Env, quest_id: Symbol, submitter: Address) -> Result<(), Error> {
+    pub fn claim_reward(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
         submitter.require_auth();
@@ -220,14 +225,18 @@ impl EarnQuestContract {
 
         // Validate using pre-read data
         submission::validate_claim_data(&quest, &submission)?;
+        submission::validate_claim_amount(&quest, &submission, amount)?;
 
-        // CEI: flip the submission to Paid and increment claims BEFORE the
-        // external token transfer. If a malicious token re-enters during
-        // the transfer the AlreadyClaimed check in validate_claim will
-        // reject the second attempt even before the reentrancy guard kicks
-        // in, giving us defence in depth.
+        // CEI: record claim status and increment claims before the external
+        // transfer. If a malicious token re-enters during the transfer the
+        // AlreadyClaimed check in validate_claim_data rejects the second call.
         let mut submission = submission;
-        submission.status = types::SubmissionStatus::Paid;
+        submission.claimed_amount += amount;
+        submission.status = if submission.claimed_amount == quest.reward_amount {
+            types::SubmissionStatus::Paid
+        } else {
+            types::SubmissionStatus::PartiallyPaid
+        };
         storage::set_submission(&env, &quest_id, &submitter, &submission);
 
         // Increment claims: directly update quest to avoid extra read
@@ -240,7 +249,7 @@ impl EarnQuestContract {
             &quest_id,
             &quest.reward_asset,
             &submitter,
-            quest.reward_amount,
+            amount,
         )?;
 
         events::reward_claimed(
@@ -248,7 +257,7 @@ impl EarnQuestContract {
             quest_id.clone(),
             submitter.clone(),
             quest.reward_asset,
-            quest.reward_amount,
+            amount,
         );
 
         reputation::award_xp(&env, &submitter, 100)?;

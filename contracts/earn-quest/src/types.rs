@@ -40,6 +40,7 @@ pub struct Submission {
     pub submitter: Address,
     pub proof_hash: BytesN<32>,
     pub status: SubmissionStatus,
+    pub claimed_amount: i128,
     pub timestamp: u64,
 }
 
@@ -48,6 +49,7 @@ pub struct Submission {
 pub enum SubmissionStatus {
     Pending,
     Approved,
+    PartiallyPaid,
     Rejected,
     Paid,
 }

@@ -222,7 +222,7 @@ The Soroban smart contract includes these conceptual modules:
 register_task(id, reward_asset, amount, verifier)
 submit_proof(id, proof_ref)
 approve(id, address, amount)
-claim_reward(id)
+claim_reward(id, amount)
 get_user_stats(address)
 get_task(id)
 ```
