@@ -78,39 +78,52 @@ pub fn calculate_level(xp: u64) -> u32 {
     }
 }
 
-/// Grant a badge to a user (admin-authorized).
-/// Only reads/writes UserBadges (cold path) — XP counters not touched.
-/// Grants a badge to a user.
-///
-/// Only accounts with administrative or `BadgeAdmin` roles can grant badges.
-///
-/// # Arguments
-///
-/// * `env` - The contract environment.
-/// * `caller` - The address of the account performing the action.
-/// * `user` - The address of the user receiving the badge.
-/// * `badge` - The type of badge to grant.
-///
-/// # Returns
-///
-/// * `Ok(())` if the badge is successfully granted or if the user already has it.
-/// * `Err(Error::Unauthorized)` if the caller lacks permission.
-pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
-    caller.require_auth();
-    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
-        return Err(Error::Unauthorized);
+    // Map badge to XP reward
+    fn badge_xp(badge: &Badge) -> u64 {
+        match badge {
+            Badge::Rookie => 10,
+            Badge::Explorer => 20,
+            Badge::Veteran => 30,
+            Badge::Master => 50,
+            Badge::Legend => 100,
+        }
     }
 
-    let mut user_badges = storage::get_user_badges(env, user);
+    /// Grant a badge to a user (admin-authorized).
+    /// Only reads/writes UserBadges (cold path) — XP counters not touched.
+    /// Grants a badge to a user.
+    ///
+    /// Only accounts with administrative or `BadgeAdmin` roles can grant badges.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The contract environment.
+    /// * `caller` - The address of the account performing the action.
+    /// * `user` - The address of the user receiving the badge.
+    /// * `badge` - The type of badge to grant.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the badge is successfully granted or if the user already has it.
+    /// * `Err(Error::Unauthorized)` if the caller lacks permission.
+    pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
+        caller.require_auth();
+        if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
+            return Err(Error::Unauthorized);
+        }
 
-    if !user_badges.badges.contains(&badge) {
-        user_badges.badges.push_back(badge.clone());
-        storage::set_user_badges(env, user, &user_badges);
-        events::badge_granted(env, user.clone(), badge);
+        let mut user_badges = storage::get_user_badges(env, user);
+
+        if !user_badges.badges.contains(&badge) {
+            user_badges.badges.push_back(badge.clone());
+            storage::set_user_badges(env, user, &user_badges);
+            events::badge_granted(env, user.clone(), badge.clone());
+            // Award XP based on badge
+            let _ = award_xp(env, user, badge_xp(&badge));
+        }
+
+        Ok(())
     }
-
-    Ok(())
-}
 
 /// Get user reputation stats (UserCore only — no badge Vec).
 /// Retrieves the core reputation statistics for a user.

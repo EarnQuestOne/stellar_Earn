@@ -70,8 +70,8 @@ pub fn open_dispute(
 }
 
 /// Resolve an open dispute. Only the assigned arbitrator can call this.
-9
 /// Resolves an open dispute.
+
 ///
 /// Only the assigned arbitrator can resolve the dispute.
 /// The dispute must be in `Pending` or `UnderReview` status.

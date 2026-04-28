@@ -373,33 +373,15 @@ fn test_batch_registration_deadline_too_soon_rejected() {
     use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
     use soroban_sdk::Vec;
 
-    let mut quests_vec = Vec::new(&env);
-    let mut metadata_vec = Vec::new(&env);
-    
-    quests_vec.push_back(Quest {
+    let mut batch_inputs = Vec::new(&env);
+    batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ1"),
-        creator: creator.clone(),
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION - 1, // too soon
-        status: earn_quest::types::QuestStatus::Active,
-        total_claims: 0,
-    });
-    
-    metadata_vec.push_back(QuestMetadata {
-        title: soroban_sdk::String::from_str(&env, "Test Quest"),
-        description: MetadataDescription::Inline(soroban_sdk::String::from_str(&env, "Description")),
-        requirements: Vec::new(&env),
-        category: soroban_sdk::String::from_str(&env, "test"),
-        tags: Vec::new(&env),
+        deadline: now + MIN_DEADLINE_DURATION - 1,
     });
 
-    let mut batch_inputs = Vec::new(&env);
-    batch_inputs.push_back(BatchQuestInput {
-        quests: quests_vec,
-        metadata: metadata_vec,
-    });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
     assert!(result.is_err(), "batch with too-soon deadline must be rejected");
@@ -422,33 +404,15 @@ fn test_batch_registration_valid_deadline_accepted() {
     use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
     use soroban_sdk::Vec;
 
-    let mut quests_vec = Vec::new(&env);
-    let mut metadata_vec = Vec::new(&env);
-    
-    quests_vec.push_back(Quest {
+    let mut batch_inputs = Vec::new(&env);
+    batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ2"),
-        creator: creator.clone(),
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
         deadline: now + MIN_DEADLINE_DURATION + 1_000,
-        status: earn_quest::types::QuestStatus::Active,
-        total_claims: 0,
-    });
-    
-    metadata_vec.push_back(QuestMetadata {
-        title: soroban_sdk::String::from_str(&env, "Test Quest"),
-        description: MetadataDescription::Inline(soroban_sdk::String::from_str(&env, "Description")),
-        requirements: Vec::new(&env),
-        category: soroban_sdk::String::from_str(&env, "test"),
-        tags: Vec::new(&env),
     });
 
-    let mut batch_inputs = Vec::new(&env);
-    batch_inputs.push_back(BatchQuestInput {
-        quests: quests_vec,
-        metadata: metadata_vec,
-    });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
     assert!(result.is_ok(), "batch with valid deadline must be accepted");

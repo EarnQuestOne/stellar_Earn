@@ -147,20 +147,18 @@ pub fn register_quests_batch(
     validation::validate_batch_quest_size(len)?;
 
     for i in 0u32..len {
-        let batch = quests.get(i).unwrap();
-        for j in 0u32..batch.quests.len() {
-            let q = batch.quests.get(j).unwrap();
-            register_quest(
-                env,
-                &q.id,
-                creator,
-                &q.reward_asset,
-                q.reward_amount,
-                &q.verifier,
-                q.deadline,
-            )?;
-        }
+        let q = quests.get(i).unwrap();
+        register_quest(
+            env,
+            &q.id,
+            creator,
+            &q.reward_asset,
+            q.reward_amount,
+            &q.verifier,
+            q.deadline,
+        )?;
     }
+
 
     Ok(())
 }
