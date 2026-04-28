@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect } from "react";
-import { useNotifications } from "../../lib/hooks/useNotifications";
-import NotificationCenter from "./NotificationCenter";
+import React, { useState, useRef, useEffect } from 'react';
+import { useNotifications } from '../../lib/hooks/useNotifications';
+import NotificationCenter from './NotificationCenter';
 
 interface NotificationBellProps {
   className?: string;
@@ -32,11 +32,11 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
 
@@ -45,7 +45,11 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-label={
+          unreadCount > 0
+            ? `Notifications, ${unreadCount} unread`
+            : 'Notifications'
+        }
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -64,7 +68,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
         </svg>
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white border-2 border-white dark:border-zinc-900">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>

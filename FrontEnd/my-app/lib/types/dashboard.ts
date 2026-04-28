@@ -2,7 +2,7 @@ import type {
   QuestResponse,
   SubmissionResponse,
   UserStatsResponse,
-} from "./api.types";
+} from './api.types';
 
 export type UserStats = UserStatsResponse;
 export type Quest = QuestResponse;

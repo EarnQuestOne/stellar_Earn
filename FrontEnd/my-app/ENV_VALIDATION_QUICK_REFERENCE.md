@@ -30,24 +30,24 @@ const url = env.apiBaseUrl();
 import { env } from '@/lib/config/env';
 
 // API
-env.apiBaseUrl()           // Required: Backend API URL
+env.apiBaseUrl(); // Required: Backend API URL
 
 // Stellar
-env.stellarNetwork()       // Optional: 'testnet' | 'mainnet'
-env.sorobanRpcUrl()        // Optional: Soroban RPC endpoint
-env.contractId()           // Optional: Contract ID
+env.stellarNetwork(); // Optional: 'testnet' | 'mainnet'
+env.sorobanRpcUrl(); // Optional: Soroban RPC endpoint
+env.contractId(); // Optional: Contract ID
 
 // Analytics
-env.analyticsTestMode()    // Optional: boolean
-env.analyticsId()          // Optional: Analytics ID
+env.analyticsTestMode(); // Optional: boolean
+env.analyticsId(); // Optional: Analytics ID
 
 // Testing
-env.e2eBaseUrl()          // Optional: E2E test URL
+env.e2eBaseUrl(); // Optional: E2E test URL
 
 // Environment
-env.isDevelopment         // boolean
-env.isProduction          // boolean
-env.isTest                // boolean
+env.isDevelopment; // boolean
+env.isProduction; // boolean
+env.isTest; // boolean
 ```
 
 ## Adding New Variables
@@ -124,6 +124,7 @@ npm run test:coverage
 **Problem**: Missing required environment variables
 
 **Solution**:
+
 ```bash
 # Check .env.local exists
 ls -la .env.local
@@ -140,6 +141,7 @@ npm run dev
 **Problem**: Variables must have `NEXT_PUBLIC_` prefix for browser access
 
 **Solution**: Rename variable to include prefix:
+
 ```bash
 # ❌ Wrong
 API_URL=http://localhost:3001
@@ -153,6 +155,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 **Problem**: Next.js caches environment variables
 
 **Solution**: Restart the development server:
+
 ```bash
 # Stop server (Ctrl+C)
 # Start again
@@ -161,20 +164,20 @@ npm run dev
 
 ## Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable                   | Description     | Example                 |
+| -------------------------- | --------------- | ----------------------- |
 | `NEXT_PUBLIC_API_BASE_URL` | Backend API URL | `http://localhost:3001` |
 
 ## Optional Variables (with defaults)
 
-| Variable | Default | Example |
-|----------|---------|---------|
-| `NEXT_PUBLIC_STELLAR_NETWORK` | `testnet` | `testnet` or `mainnet` |
-| `NEXT_PUBLIC_SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` | RPC URL |
-| `NEXT_PUBLIC_CONTRACT_ID` | `""` | `CXXXXX...` |
-| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | `false` | `true` or `false` |
-| `NEXT_PUBLIC_ANALYTICS_ID` | `""` | `G-XXXXXXXXXX` |
-| `E2E_BASE_URL` | `http://localhost:3000` | Test URL |
+| Variable                          | Default                               | Example                |
+| --------------------------------- | ------------------------------------- | ---------------------- |
+| `NEXT_PUBLIC_STELLAR_NETWORK`     | `testnet`                             | `testnet` or `mainnet` |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL`     | `https://soroban-testnet.stellar.org` | RPC URL                |
+| `NEXT_PUBLIC_CONTRACT_ID`         | `""`                                  | `CXXXXX...`            |
+| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | `false`                               | `true` or `false`      |
+| `NEXT_PUBLIC_ANALYTICS_ID`        | `""`                                  | `G-XXXXXXXXXX`         |
+| `E2E_BASE_URL`                    | `http://localhost:3000`               | Test URL               |
 
 ## File Structure
 
@@ -228,6 +231,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ## Best Practices
 
 ✅ **Do**:
+
 - Use type-safe helpers (`env.apiBaseUrl()`)
 - Add new variables to configuration
 - Update `.env.example`
@@ -235,6 +239,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 - Restart server after changes
 
 ❌ **Don't**:
+
 - Access `process.env` directly
 - Hardcode default values
 - Forget `NEXT_PUBLIC_` prefix

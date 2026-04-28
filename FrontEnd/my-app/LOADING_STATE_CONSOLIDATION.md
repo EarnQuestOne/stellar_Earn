@@ -1,14 +1,17 @@
 # Loading State Consolidation - Issue #227
 
 ## Overview
+
 This document outlines the standardization of loading states across the EarnQuestOne/stellar_Earn application to ensure consistent user experience.
 
 ## Problem Statement
+
 Different components handled loading states inconsistently - some used skeletons, others used spinners or nothing at all, leading to inconsistent user experience.
 
 ## Solution Implemented
 
 ### Standard Loading Approach
+
 We've established a standardized approach for loading states:
 
 1. **Skeleton Loaders** - For content loading (lists, tables, cards)
@@ -29,42 +32,50 @@ We've established a standardized approach for loading states:
 ### Components Updated
 
 #### 1. ActiveQuests (`components/dashboard/ActiveQuests.tsx`)
+
 - **Before**: Custom `QuestRowSkeleton` with inline `animate-pulse` divs
 - **After**: Standardized `Skeleton.List` component
 - **Benefit**: Consistent skeleton styling and reduced code duplication
 
 #### 2. QuestManager (`components/admin/QuestManager.tsx`)
+
 - **Before**: Custom `QuestRowSkeleton` for table rows
 - **After**: Standardized `Skeleton.Text` components for table cells
 - **Benefit**: Maintains table structure while using consistent skeleton patterns
 
 #### 3. BadgeDisplay (`components/dashboard/BadgeDisplay.tsx`)
+
 - **Before**: Custom `BadgeSkeleton` with circular badge placeholders
 - **After**: Standardized `Skeleton.Text` with rounded-full styling
 - **Benefit**: Consistent badge loading appearance
 
 #### 4. RecentSubmissions (`components/dashboard/RecentSubmissions.tsx`)
+
 - **Before**: Custom `SubmissionRowSkeleton` for table loading
 - **After**: Standardized `Skeleton.Text` components
 - **Benefit**: Unified table loading experience
 
 #### 5. SearchResults (`components/search/SearchResults.tsx`)
+
 - **Already compliant**: Used both `LoadingSpinner` and `Skeleton` appropriately
 - **Pattern**: Spinner for search action + Skeleton for results
 
 ### Existing Components (Already Compliant)
 
 #### LoadingSpinner (`components/ui/LoadingSpinner.tsx`)
+
 - Provides consistent spinner variants: `primary`, `neutral`, `white`
 - Size options: `sm`, `md`, `lg`
 - Accessibility: `role="status"` and `aria-live="polite"`
 
 #### Skeleton (`components/ui/Skeleton.tsx`)
+
 - Three variants: `SkeletonText`, `SkeletonCard`, `SkeletonList`
 - Consistent shimmer animation
 - Accessibility: `aria-hidden="true"`
 
 #### LoadingOverlay (`components/ui/LoadingOverlay.tsx`)
+
 - Combines spinner with optional progress bar
 - Blocks interaction when needed
 - Consistent modal styling
@@ -72,26 +83,29 @@ We've established a standardized approach for loading states:
 ## Usage Guidelines
 
 ### When to Use Skeleton Loaders
+
 ```tsx
 // For lists, tables, and content loading
-{isLoading ? (
-  <Skeleton.List items={3} />
-) : (
-  <ActualContent />
-)}
+{
+  isLoading ? <Skeleton.List items={3} /> : <ActualContent />;
+}
 ```
 
 ### When to Use Spinners
+
 ```tsx
 // For button actions and form submissions
-{isSubmitting ? (
-  <LoadingSpinner size="sm" variant="white" label="Submitting" />
-) : (
-  "Submit"
-)}
+{
+  isSubmitting ? (
+    <LoadingSpinner size="sm" variant="white" label="Submitting" />
+  ) : (
+    'Submit'
+  );
+}
 ```
 
 ### When to Use LoadingOverlay
+
 ```tsx
 // For blocking operations
 <LoadingOverlay
@@ -119,7 +133,7 @@ We've established a standardized approach for loading states:
 ## Files Modified
 
 - `components/dashboard/ActiveQuests.tsx` ✅
-- `components/admin/QuestManager.tsx` ✅ 
+- `components/admin/QuestManager.tsx` ✅
 - `components/dashboard/BadgeDisplay.tsx` ✅
 - `components/dashboard/RecentSubmissions.tsx` ✅
 - `components/admin/AdminStats.tsx` ✅
@@ -139,12 +153,14 @@ We've established a standardized approach for loading states:
 The following components still use custom `animate-pulse` implementations and could be updated in a future iteration:
 
 ### App Pages
+
 - `app/admin/quests/[id]/edit/page.tsx` - Admin quest edit page
-- `app/quests/page.tsx` - Main quests page  
+- `app/quests/page.tsx` - Main quests page
 - `app/quests/[id]/page.tsx` - Individual quest page
 - `app/submissions/page.tsx` - Submissions page
 
 ### Components
+
 - `components/dashboard/EarningsChart.tsx` - Chart component
 - `components/profile/AchievementsList.tsx` - Profile achievements
 - `components/profile/ActivityFeed.tsx` - Profile activity feed
@@ -153,6 +169,7 @@ The following components still use custom `animate-pulse` implementations and co
 - `components/rewards/ClaimRewards.tsx` - Rewards claiming
 
 ### UI Components
+
 - `components/ui/LazyLoad.tsx` - Lazy loading placeholder
 - `components/ui/OptimizedImage.tsx` - Image loading state
 

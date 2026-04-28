@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { AppError } from '../utils/error-handler';
-import { 
-  getFriendlyErrorMessage, 
-  isRecoverableError, 
+import {
+  getFriendlyErrorMessage,
+  isRecoverableError,
   logError,
   formatErrorForDisplay,
-  withErrorHandling
+  withErrorHandling,
 } from '../utils/error-handler';
 
 interface UseErrorHandlerReturn {
@@ -17,7 +17,10 @@ interface UseErrorHandlerReturn {
   setError: (error: AppError | null) => void;
   clearError: () => void;
   handleError: (error: AppError | Error, context?: string) => void;
-  withErrorHandling: <T>(operation: () => Promise<T>, context?: string) => Promise<[T | null, AppError | null]>;
+  withErrorHandling: <T>(
+    operation: () => Promise<T>,
+    context?: string
+  ) => Promise<[T | null, AppError | null]>;
   formatError: (error: AppError | Error) => {
     title: string;
     message: string;
@@ -31,15 +34,18 @@ export function useErrorHandler(): UseErrorHandlerReturn {
 
   // Get friendly error message
   const errorMessage = error ? getFriendlyErrorMessage(error) : '';
-  
+
   // Check if error is recoverable
   const isRecoverable = error ? isRecoverableError(error) : false;
 
   // Handle error with logging
-  const handleError = useCallback((error: AppError | Error, context?: string) => {
-    logError(error, context);
-    setError(error as AppError);
-  }, []);
+  const handleError = useCallback(
+    (error: AppError | Error, context?: string) => {
+      logError(error, context);
+      setError(error as AppError);
+    },
+    []
+  );
 
   // Clear error state
   const clearError = useCallback(() => {
@@ -53,13 +59,16 @@ export function useErrorHandler(): UseErrorHandlerReturn {
 
   // Enhanced withErrorHandling that also sets state
   const enhancedWithErrorHandling = useCallback(
-    async <T,>(operation: () => Promise<T>, context?: string): Promise<[T | null, AppError | null]> => {
+    async <T>(
+      operation: () => Promise<T>,
+      context?: string
+    ): Promise<[T | null, AppError | null]> => {
       const [result, error] = await withErrorHandling(operation, context);
-      
+
       if (error) {
         handleError(error, context);
       }
-      
+
       return [result, error];
     },
     [handleError]
@@ -87,15 +96,18 @@ export function useAsyncOperation<T>() {
     async (operation: () => Promise<T>, context?: string) => {
       setIsLoading(true);
       errorHandler.clearError();
-      
+
       try {
-        const [result, error] = await errorHandler.withErrorHandling(operation, context);
-        
+        const [result, error] = await errorHandler.withErrorHandling(
+          operation,
+          context
+        );
+
         if (error) {
           setData(null);
           return [null, error] as const;
         }
-        
+
         setData(result);
         return [result, null] as const;
       } finally {
@@ -129,22 +141,25 @@ export function useErrorForm() {
   const errorHandler = useErrorHandler();
 
   const handleSubmit = useCallback(
-    async <T,>(
+    async <T>(
       submitFunction: () => Promise<T>,
       onSuccess?: (data: T) => void,
       onError?: (error: AppError) => void
     ) => {
       setIsSubmitting(true);
       errorHandler.clearError();
-      
+
       try {
-        const [result, error] = await errorHandler.withErrorHandling(submitFunction, 'Form submission');
-        
+        const [result, error] = await errorHandler.withErrorHandling(
+          submitFunction,
+          'Form submission'
+        );
+
         if (error) {
           onError?.(error);
           return false;
         }
-        
+
         onSuccess?.(result!);
         return true;
       } finally {

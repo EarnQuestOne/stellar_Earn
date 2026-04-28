@@ -1,39 +1,39 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
 const faqs = [
   {
-    question: "Do I need a Stellar wallet to get started?",
+    question: 'Do I need a Stellar wallet to get started?',
     answer:
       "Yes. You'll need a Stellar-compatible wallet (such as Freighter or LOBSTR) to connect to the platform, submit quests, and receive XLM rewards. Connecting takes less than a minute.",
   },
   {
-    question: "How long does verification take?",
+    question: 'How long does verification take?',
     answer:
       "Most submissions are reviewed within 24–48 hours. Complex technical quests may take slightly longer. You'll receive an on-platform notification once a decision is made.",
   },
   {
-    question: "What types of quests are available?",
+    question: 'What types of quests are available?',
     answer:
-      "Quests span development, design, content creation, community engagement, bug bounties, and more. Each quest specifies the required skills, estimated effort, and XLM reward upfront.",
+      'Quests span development, design, content creation, community engagement, bug bounties, and more. Each quest specifies the required skills, estimated effort, and XLM reward upfront.',
   },
   {
-    question: "Can I submit proof for multiple quests at once?",
+    question: 'Can I submit proof for multiple quests at once?',
     answer:
       "Absolutely. You can work on and submit proof for as many quests simultaneously as you'd like. Each submission is tracked independently in your dashboard.",
   },
   {
-    question: "What happens if my submission is rejected?",
+    question: 'What happens if my submission is rejected?',
     answer:
-      "If a submission is rejected, verifiers are required to provide feedback. You can revise and resubmit if the quest is still open. Your on-chain reputation is only affected by verified completions.",
+      'If a submission is rejected, verifiers are required to provide feedback. You can revise and resubmit if the quest is still open. Your on-chain reputation is only affected by verified completions.',
   },
   {
-    question: "How are rewards distributed?",
+    question: 'How are rewards distributed?',
     answer:
-      "Rewards are held in a Soroban smart contract and released automatically upon verification approval. The XLM lands directly in your connected Stellar wallet — no manual claims needed.",
+      'Rewards are held in a Soroban smart contract and released automatically upon verification approval. The XLM lands directly in your connected Stellar wallet — no manual claims needed.',
   },
 ];
 
@@ -53,7 +53,7 @@ function FAQItem({ question, answer, isOpen, onToggle, index }: FAQItemProps) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
+      viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.4, delay: index * 0.07 }}
       className="border-b border-slate-200 dark:border-slate-700/60 last:border-b-0"
     >
@@ -87,9 +87,9 @@ function FAQItem({ question, answer, isOpen, onToggle, index }: FAQItemProps) {
             aria-labelledby={buttonId}
             key="answer"
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+            animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
             <p className="pb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">

@@ -17,7 +17,7 @@ interface SkipToContentProps {
 
 /**
  * SkipToContent component
- * 
+ *
  * Provides a keyboard-accessible link to skip navigation and jump directly to main content.
  * This is especially helpful for keyboard and screen reader users.
  */

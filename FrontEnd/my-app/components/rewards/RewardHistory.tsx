@@ -25,15 +25,26 @@ export function RewardHistory({ claims }: RewardHistoryProps) {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">Date</th>
-                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">Amount</th>
-                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">Status</th>
-                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">Transaction</th>
+                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
+                    Amount
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
+                    Transaction
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                 {claims.map((claim, index) => (
-                  <tr key={claim.transactionHash || index} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                  <tr
+                    key={claim.transactionHash || index}
+                    className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                  >
                     <td className="px-4 py-4 text-zinc-600 dark:text-zinc-400">
                       {new Date(claim.timestamp).toLocaleDateString()}
                     </td>
@@ -52,13 +63,26 @@ export function RewardHistory({ claims }: RewardHistoryProps) {
                         <code className="text-xs text-zinc-400 truncate max-w-30">
                           {claim.transactionHash}
                         </code>
-                        <button 
-                          onClick={() => claim.transactionHash && navigator.clipboard.writeText(claim.transactionHash)}
+                        <button
+                          onClick={() =>
+                            claim.transactionHash &&
+                            navigator.clipboard.writeText(claim.transactionHash)
+                          }
                           className="text-zinc-400 hover:text-[#089ec3] transition-colors"
                           title="Copy Hash"
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                            />
                           </svg>
                         </button>
                       </div>

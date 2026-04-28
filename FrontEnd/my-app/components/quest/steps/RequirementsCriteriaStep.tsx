@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Plus } from "lucide-react";
-import type { QuestWizardData } from "@/lib/schemas/quest.schema";
-import RequirementsBuilder from "@/components/quest/RequirementsBuilder";
+import { Plus } from 'lucide-react';
+import type { QuestWizardData } from '@/lib/schemas/quest.schema';
+import RequirementsBuilder from '@/components/quest/RequirementsBuilder';
 
 interface RequirementsCriteriaStepProps {
   data: QuestWizardData;
   errors: Record<string, string>;
-  onChange: (next: QuestWizardData["requirements"]) => void;
+  onChange: (next: QuestWizardData['requirements']) => void;
 }
 
 const RequirementsCriteriaStep = ({
@@ -15,12 +15,12 @@ const RequirementsCriteriaStep = ({
   errors,
   onChange,
 }: RequirementsCriteriaStepProps) => {
-  const hasSkillsError = Boolean(errors["requirements.skills"]);
-  const hasDeliverablesError = Boolean(errors["requirements.deliverables"]);
+  const hasSkillsError = Boolean(errors['requirements.skills']);
+  const hasDeliverablesError = Boolean(errors['requirements.deliverables']);
 
   const updateSkill = (index: number, value: string) => {
     const nextSkills = data.requirements.skills.map((skill, idx) =>
-      idx === index ? value : skill,
+      idx === index ? value : skill
     );
     onChange({ ...data.requirements, skills: nextSkills });
   };
@@ -28,7 +28,7 @@ const RequirementsCriteriaStep = ({
   const addSkill = () => {
     onChange({
       ...data.requirements,
-      skills: [...data.requirements.skills, ""],
+      skills: [...data.requirements.skills, ''],
     });
   };
 
@@ -67,8 +67,8 @@ const RequirementsCriteriaStep = ({
                 placeholder={`Skill ${index + 1}`}
                 className={`w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm focus:outline-none dark:bg-zinc-800 ${
                   hasSkillsError
-                    ? "border-red-400 focus:border-red-500 dark:border-red-800"
-                    : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+                    ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+                    : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
                 }`}
               />
               <button
@@ -81,9 +81,9 @@ const RequirementsCriteriaStep = ({
             </div>
           ))}
         </div>
-        {errors["requirements.skills"] && (
+        {errors['requirements.skills'] && (
           <p className="mt-1 text-xs text-red-600">
-            {errors["requirements.skills"]}
+            {errors['requirements.skills']}
           </p>
         )}
       </div>
@@ -91,8 +91,8 @@ const RequirementsCriteriaStep = ({
       <div
         className={
           hasDeliverablesError
-            ? "rounded-2xl border border-red-300/70 p-3 dark:border-red-900/60"
-            : ""
+            ? 'rounded-2xl border border-red-300/70 p-3 dark:border-red-900/60'
+            : ''
         }
       >
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
@@ -104,9 +104,9 @@ const RequirementsCriteriaStep = ({
             onChange({ ...data.requirements, deliverables })
           }
         />
-        {errors["requirements.deliverables"] && (
+        {errors['requirements.deliverables'] && (
           <p className="mt-1 text-xs text-red-600">
-            {errors["requirements.deliverables"]}
+            {errors['requirements.deliverables']}
           </p>
         )}
       </div>

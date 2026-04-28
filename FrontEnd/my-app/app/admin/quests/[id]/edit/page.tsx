@@ -1,7 +1,11 @@
 'use client';
 
 import { use } from 'react';
-import { useAdminAccess, useQuest, useNotificationState } from '@/lib/hooks/useAdmin';
+import {
+  useAdminAccess,
+  useQuest,
+  useNotificationState,
+} from '@/lib/hooks/useAdmin';
 import { AdminLayout, QuestEditor, Notifications } from '@/components/admin';
 import { NotificationContext } from '@/lib/hooks/useAdmin';
 import { updateQuestStatus } from '@/lib/api/admin';
@@ -96,11 +100,17 @@ function EditQuestContent({ questId }: EditQuestContentProps) {
       <div className="space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-          <a href="/admin" className="hover:text-zinc-700 dark:hover:text-zinc-300">
+          <a
+            href="/admin"
+            className="hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
             Admin
           </a>
           <span>/</span>
-          <a href="/admin" className="hover:text-zinc-700 dark:hover:text-zinc-300">
+          <a
+            href="/admin"
+            className="hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
             Quests
           </a>
           <span>/</span>
@@ -133,7 +143,12 @@ interface PageProps {
 
 export default function EditQuestPage({ params }: PageProps) {
   const resolvedParams = use(params);
-  const { isAdmin, adminUser, isLoading: accessLoading, error: accessError } = useAdminAccess();
+  const {
+    isAdmin,
+    adminUser,
+    isLoading: accessLoading,
+    error: accessError,
+  } = useAdminAccess();
   const notificationState = useNotificationState();
 
   if (accessLoading) {
@@ -141,7 +156,9 @@ export default function EditQuestPage({ params }: PageProps) {
       <div className="flex min-h-screen items-center justify-center bg-zinc-100 dark:bg-zinc-950">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto" />
-          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Verifying admin access...</p>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+            Verifying admin access...
+          </p>
         </div>
       </div>
     );

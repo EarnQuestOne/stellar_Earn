@@ -42,7 +42,8 @@ export function FilterPanel({
   onCategoryChange,
   onClearFilters,
 }: FilterPanelProps) {
-  const hasActiveFilters = selectedStatus || selectedDifficulty || selectedCategory;
+  const hasActiveFilters =
+    selectedStatus || selectedDifficulty || selectedCategory;
 
   return (
     <div className="space-y-4" role="search" aria-label="Quest filters">
@@ -67,7 +68,11 @@ export function FilterPanel({
             Category
           </span>
         </legend>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filter by category"
+        >
           <button
             onClick={() => onCategoryChange(undefined)}
             aria-pressed={!selectedCategory}
@@ -85,7 +90,9 @@ export function FilterPanel({
             return (
               <button
                 key={category}
-                onClick={() => onCategoryChange(isSelected ? undefined : category)}
+                onClick={() =>
+                  onCategoryChange(isSelected ? undefined : category)
+                }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${category} category${isSelected ? ' (active)' : ''}`}
                 className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
@@ -106,7 +113,11 @@ export function FilterPanel({
         <legend className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Difficulty
         </legend>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by difficulty">
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filter by difficulty"
+        >
           <button
             onClick={() => onDifficultyChange(undefined)}
             aria-pressed={!selectedDifficulty}
@@ -124,7 +135,9 @@ export function FilterPanel({
             return (
               <button
                 key={option.value}
-                onClick={() => onDifficultyChange(isSelected ? undefined : option.value)}
+                onClick={() =>
+                  onDifficultyChange(isSelected ? undefined : option.value)
+                }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${option.label} difficulty${isSelected ? ' (active)' : ''}`}
                 className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${

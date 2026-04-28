@@ -2,7 +2,7 @@
 
 /**
  * Environment Validator Component
- * 
+ *
  * This component validates environment variables on the client side
  * and displays a user-friendly error page if validation fails.
  */
@@ -21,28 +21,30 @@ export function EnvValidator({ children }: EnvValidatorProps) {
   useEffect(() => {
     try {
       const result = validateEnv();
-      
+
       if (!result.valid) {
-        const errorMessages = result.errors.map(error => 
-          `• ${error.variable}: ${error.description}`
-        ).join('\n');
-        
+        const errorMessages = result.errors
+          .map((error) => `• ${error.variable}: ${error.description}`)
+          .join('\n');
+
         setValidationError(
           `Missing required environment variables:\n\n${errorMessages}\n\n` +
-          `Please check your .env.local file and restart the application.`
+            `Please check your .env.local file and restart the application.`
         );
       }
-      
+
       // Log warnings
-      if (result.warnings.length > 0 && process.env.NODE_ENV === 'development') {
+      if (
+        result.warnings.length > 0 &&
+        process.env.NODE_ENV === 'development'
+      ) {
         console.warn('⚠️  Environment Variable Warnings:');
-        result.warnings.forEach(warning => console.warn(`   ${warning}`));
+        result.warnings.forEach((warning) => console.warn(`   ${warning}`));
       }
-      
     } catch (error) {
       setValidationError(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : 'An unexpected error occurred during environment validation'
       );
     } finally {
@@ -98,7 +100,13 @@ export function EnvValidator({ children }: EnvValidatorProps) {
                     How to fix this:
                   </h2>
                   <ol className="list-decimal list-inside space-y-2 text-zinc-400">
-                    <li>Create a <code className="bg-zinc-800 px-2 py-1 rounded text-sm">.env.local</code> file in the project root</li>
+                    <li>
+                      Create a{' '}
+                      <code className="bg-zinc-800 px-2 py-1 rounded text-sm">
+                        .env.local
+                      </code>{' '}
+                      file in the project root
+                    </li>
                     <li>Add the required environment variables</li>
                     <li>Restart the development server</li>
                   </ol>
@@ -108,7 +116,7 @@ export function EnvValidator({ children }: EnvValidatorProps) {
                     Example .env.local:
                   </h2>
                   <pre className="bg-zinc-950 border border-zinc-800 rounded p-4 text-sm text-zinc-300 overflow-x-auto">
-{`NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+                    {`NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_STELLAR_NETWORK=testnet
 NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
 NEXT_PUBLIC_CONTRACT_ID=your-contract-id`}

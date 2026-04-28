@@ -1,7 +1,7 @@
-import { StateCreator } from "zustand";
-import type { Submission, SubmissionFilters } from "@/lib/types/submission";
+import { StateCreator } from 'zustand';
+import type { Submission, SubmissionFilters } from '@/lib/types/submission';
 
-export type SubmissionStatus = "idle" | "loading" | "success" | "error";
+export type SubmissionStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export interface SubmissionPagination {
   page: number;
@@ -31,7 +31,10 @@ export interface SubmissionSlice {
   setSubmissionPagination: (pagination: Partial<SubmissionPagination>) => void;
 
   // optimistic update
-  optimisticallyUpdateSubmission: (id: string, patch: Partial<Submission>) => void;
+  optimisticallyUpdateSubmission: (
+    id: string,
+    patch: Partial<Submission>
+  ) => void;
 }
 
 const DEFAULT_PAGINATION: SubmissionPagination = {
@@ -45,7 +48,7 @@ const DEFAULT_PAGINATION: SubmissionPagination = {
 export const createSubmissionSlice: StateCreator<SubmissionSlice> = (set) => ({
   submissions: [],
   drafts: [],
-  submissionStatus: "idle",
+  submissionStatus: 'idle',
   submissionsLoading: false,
   submissionsError: null,
   submissionFilters: {},

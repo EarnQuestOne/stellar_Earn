@@ -38,7 +38,7 @@ import type {
  */
 export async function getNotifications(
   query?: NotificationQueryParams,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<NotificationsListResponse> {
   const params: Record<string, string | number | boolean | undefined> = {};
   if (query?.page) params.page = query.page;
@@ -51,7 +51,7 @@ export async function getNotifications(
       get<NotificationsListResponse>('/notifications', {
         params,
         signal: cancelToken?.signal,
-      }),
+      })
     );
   } catch (err: unknown) {
     // Backend stub not yet implemented – return empty list
@@ -71,7 +71,7 @@ export async function getNotifications(
  * Mark a single notification as read.
  */
 export async function markNotificationAsRead(
-  id: string,
+  id: string
 ): Promise<NotificationResponse> {
   return patch<NotificationResponse>(`/notifications/${id}/read`);
 }

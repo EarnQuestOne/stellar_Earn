@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Notification } from "../../lib/utils/notifications";
+import React from 'react';
+import { Notification } from '../../lib/utils/notifications';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -18,7 +18,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const getIcon = () => {
     switch (type) {
-      case "success":
+      case 'success':
         return (
           <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
             <svg
@@ -36,7 +36,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
             </svg>
           </div>
         );
-      case "warning":
+      case 'warning':
         return (
           <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
             <svg
@@ -54,7 +54,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
             </svg>
           </div>
         );
-      case "error":
+      case 'error':
         return (
           <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
             <svg
@@ -93,18 +93,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     }
   };
 
-  const [timeAgo, setTimeAgo] = React.useState("");
+  const [timeAgo, setTimeAgo] = React.useState('');
 
   React.useEffect(() => {
     const formatTimestamp = (ts: number) => {
-      if (!ts) return "N/A";
+      if (!ts) return 'N/A';
       const now = Date.now();
       const diff = now - ts;
-      if (diff < 60000) return "Just now";
+      if (diff < 60000) return 'Just now';
       if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
       if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
       const date = new Date(ts);
-      return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
+      return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
     };
 
     setTimeAgo(formatTimestamp(timestamp));
@@ -112,14 +112,14 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
   return (
     <div
-      className={`flex items-start gap-4 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-800/50 ${!read ? "bg-blue-50/30 dark:bg-blue-900/5" : ""}`}
+      className={`flex items-start gap-4 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-800/50 ${!read ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}`}
       onClick={() => !read && onMarkAsRead(id)}
     >
       {getIcon()}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <p
-            className={`text-sm font-medium ${!read ? "text-zinc-900 dark:text-white" : "text-zinc-600 dark:text-zinc-400"}`}
+            className={`text-sm font-medium ${!read ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
           >
             {title}
           </p>
@@ -128,7 +128,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           </span>
         </div>
         <p
-          className={`text-xs ${!read ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-500 dark:text-zinc-500"} line-clamp-2`}
+          className={`text-xs ${!read ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'} line-clamp-2`}
         >
           {message}
         </p>

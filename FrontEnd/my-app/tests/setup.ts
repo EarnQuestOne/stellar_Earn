@@ -1,6 +1,6 @@
-import { cleanup } from "@testing-library/react";
-import { beforeAll, afterEach, afterAll } from "vitest";
-import { server } from "./mocks/server";
+import { cleanup } from '@testing-library/react';
+import { beforeAll, afterEach, afterAll } from 'vitest';
+import { server } from './mocks/server';
 
 // Start server before all tests
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

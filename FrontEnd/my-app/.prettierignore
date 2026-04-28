@@ -1,0 +1,11 @@
+.next
+node_modules
+build
+dist
+public
+*.pem
+.env*
+next-env.d.ts
+coverage
+playwright-report
+test-results

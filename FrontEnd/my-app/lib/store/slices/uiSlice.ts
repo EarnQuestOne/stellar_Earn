@@ -1,23 +1,22 @@
-import { StateCreator } from "zustand";
+import { StateCreator } from 'zustand';
 
 export interface UISlice {
-  theme: "light" | "dark";
+  theme: 'light' | 'dark';
   sidebarOpen: boolean;
   modal: string | null;
 
   toggleSidebar: () => void;
-  setTheme: (theme: UISlice["theme"]) => void;
+  setTheme: (theme: UISlice['theme']) => void;
   openModal: (modal: string) => void;
   closeModal: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
-  theme: "light",
+  theme: 'light',
   sidebarOpen: false,
   modal: null,
 
-  toggleSidebar: () =>
-    set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
   setTheme: (theme) => set({ theme }),
 

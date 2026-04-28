@@ -16,7 +16,15 @@ const rarityColors = {
   legendary: 'border-yellow-400 dark:border-yellow-600',
 };
 
-function BadgeCard({ badge, isEarned, onClick }: { badge: Badge; isEarned: boolean; onClick?: () => void }) {
+function BadgeCard({
+  badge,
+  isEarned,
+  onClick,
+}: {
+  badge: Badge;
+  isEarned: boolean;
+  onClick?: () => void;
+}) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (

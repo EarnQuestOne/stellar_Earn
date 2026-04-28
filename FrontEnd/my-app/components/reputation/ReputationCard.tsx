@@ -2,7 +2,11 @@
 
 import { LevelBadge } from './LevelBadge';
 import { XPProgressBar } from './XPProgressBar';
-import { formatReputationScore, getLevelTitle, getXPProgress } from '@/lib/utils/reputation';
+import {
+  formatReputationScore,
+  getLevelTitle,
+  getXPProgress,
+} from '@/lib/utils/reputation';
 
 interface ReputationCardProps {
   user: {
@@ -50,7 +54,8 @@ export function ReputationCard({ user, xpForNextLevel }: ReputationCardProps) {
           xpForNextLevel={progress.needed}
         />
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-          {progress.needed - progress.current} XP needed for Level {user.level + 1}
+          {progress.needed - progress.current} XP needed for Level{' '}
+          {user.level + 1}
         </p>
       </div>
 

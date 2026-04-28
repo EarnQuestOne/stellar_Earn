@@ -10,7 +10,7 @@ interface ScreenReaderOnlyProps {
 
 /**
  * ScreenReaderOnly component
- * 
+ *
  * Hides content visually but keeps it accessible to screen readers.
  * Useful for adding context or labels that are only needed for assistive technologies.
  */

@@ -32,7 +32,10 @@ function calculateTimeRemaining(deadline: string): TimeRemaining {
   return { days, hours, minutes, seconds, total };
 }
 
-export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProps) {
+export function DeadlineTimer({
+  deadline,
+  isExpired = false,
+}: DeadlineTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() =>
     calculateTimeRemaining(deadline)
   );
@@ -70,7 +73,9 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
             />
           </svg>
           <div>
-            <h3 className="font-semibold text-red-900 dark:text-red-100">Quest Expired</h3>
+            <h3 className="font-semibold text-red-900 dark:text-red-100">
+              Quest Expired
+            </h3>
             <p className="text-sm text-red-700 dark:text-red-300">
               This quest is no longer accepting submissions
             </p>
@@ -141,7 +146,9 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
           >
             {String(timeRemaining.minutes).padStart(2, '0')}
           </div>
-          <div className="text-xs text-zinc-600 dark:text-zinc-400">Minutes</div>
+          <div className="text-xs text-zinc-600 dark:text-zinc-400">
+            Minutes
+          </div>
         </div>
         <div className="text-center">
           <div
@@ -149,12 +156,17 @@ export function DeadlineTimer({ deadline, isExpired = false }: DeadlineTimerProp
           >
             {String(timeRemaining.seconds).padStart(2, '0')}
           </div>
-          <div className="text-xs text-zinc-600 dark:text-zinc-400">Seconds</div>
+          <div className="text-xs text-zinc-600 dark:text-zinc-400">
+            Seconds
+          </div>
         </div>
       </div>
 
       {isUrgent && (
-        <div className="mt-4 text-sm text-orange-700 dark:text-orange-300" role="alert">
+        <div
+          className="mt-4 text-sm text-orange-700 dark:text-orange-300"
+          role="alert"
+        >
           Less than 24 hours remaining!
         </div>
       )}

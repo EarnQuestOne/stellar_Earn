@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
-import { userMenuItems } from "@/lib/config/navigation";
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { userMenuItems } from '@/lib/config/navigation';
 
 interface UserMenuProps {
   username?: string;
 }
 
-export function UserMenu({ username = "john.doe" }: UserMenuProps) {
+export function UserMenu({ username = 'john.doe' }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const initials = useMemo(
     () =>
       username
-        .split(".")
+        .split('.')
         .map((part) => part.charAt(0))
-        .join("")
+        .join('')
         .slice(0, 2)
         .toUpperCase(),
-    [username],
+    [username]
   );
 
   useEffect(() => {
@@ -31,32 +31,35 @@ export function UserMenu({ username = "john.doe" }: UserMenuProps) {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!isOpen) return;
 
-    const focusableItems = itemRefs.current.filter(Boolean) as HTMLAnchorElement[];
+    const focusableItems = itemRefs.current.filter(
+      Boolean
+    ) as HTMLAnchorElement[];
     if (focusableItems.length === 0) return;
 
     const currentIndex = focusableItems.findIndex(
-      (item) => item === document.activeElement,
+      (item) => item === document.activeElement
     );
 
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       setIsOpen(false);
       return;
     }
 
-    if (event.key === "ArrowDown") {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
-      const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % focusableItems.length;
+      const nextIndex =
+        currentIndex < 0 ? 0 : (currentIndex + 1) % focusableItems.length;
       focusableItems[nextIndex].focus();
     }
 
-    if (event.key === "ArrowUp") {
+    if (event.key === 'ArrowUp') {
       event.preventDefault();
       const previousIndex =
         currentIndex <= 0 ? focusableItems.length - 1 : currentIndex - 1;
@@ -80,7 +83,7 @@ export function UserMenu({ username = "john.doe" }: UserMenuProps) {
         <span className="hidden md:block">{username}</span>
         <svg
           aria-hidden="true"
-          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -98,8 +101,8 @@ export function UserMenu({ username = "john.doe" }: UserMenuProps) {
         aria-label="User menu"
         className={`absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-900 ${
           isOpen
-            ? "pointer-events-auto translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-1 opacity-0"
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : 'pointer-events-none -translate-y-1 opacity-0'
         }`}
         role="menu"
       >

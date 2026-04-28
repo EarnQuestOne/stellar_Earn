@@ -12,9 +12,14 @@ interface QuestManagerProps {
   onToggleSelect: (id: string) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
-  onStatusChange: (id: string, status: QuestStatus) => Promise<{ success: boolean }>;
+  onStatusChange: (
+    id: string,
+    status: QuestStatus
+  ) => Promise<{ success: boolean }>;
   onDelete: (id: string) => Promise<{ success: boolean }>;
-  onBulkOperation: (action: 'activate' | 'pause' | 'complete' | 'cancel' | 'delete') => Promise<{ success: boolean }>;
+  onBulkOperation: (
+    action: 'activate' | 'pause' | 'complete' | 'cancel' | 'delete'
+  ) => Promise<{ success: boolean }>;
 }
 
 type SortField = 'title' | 'status' | 'reward' | 'deadline' | 'participants';
@@ -22,12 +27,13 @@ type SortOrder = 'asc' | 'desc';
 
 const STATUS_COLORS: Record<QuestStatus, string> = {
   draft: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-  active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  paused: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  active:
+    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  paused:
+    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
-
 
 export function QuestManager({
   quests,
@@ -53,7 +59,7 @@ export function QuestManager({
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        q =>
+        (q) =>
           q.title.toLowerCase().includes(query) ||
           q.description.toLowerCase().includes(query) ||
           q.category.toLowerCase().includes(query)
@@ -62,7 +68,7 @@ export function QuestManager({
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      result = result.filter(q => q.status === statusFilter);
+      result = result.filter((q) => q.status === statusFilter);
     }
 
     // Apply sorting
@@ -96,7 +102,7 @@ export function QuestManager({
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortOrder('asc');
@@ -104,11 +110,13 @@ export function QuestManager({
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <span className="text-zinc-300 dark:text-zinc-600">↕</span>;
+    if (sortField !== field)
+      return <span className="text-zinc-300 dark:text-zinc-600">↕</span>;
     return <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const allSelected = quests.length > 0 && selectedQuests.size === quests.length;
+  const allSelected =
+    quests.length > 0 && selectedQuests.size === quests.length;
   const someSelected = selectedQuests.size > 0;
 
   return (
@@ -130,13 +138,20 @@ export function QuestManager({
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as QuestStatus | 'all')}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as QuestStatus | 'all')
+            }
             className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           >
             <option value="all">All Status</option>
@@ -173,32 +188,47 @@ export function QuestManager({
             {showBulkMenu && (
               <div className="absolute left-0 top-full z-10 mt-1 w-40 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                 <button
-                  onClick={() => { onBulkOperation('activate'); setShowBulkMenu(false); }}
+                  onClick={() => {
+                    onBulkOperation('activate');
+                    setShowBulkMenu(false);
+                  }}
                   className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 >
                   Activate
                 </button>
                 <button
-                  onClick={() => { onBulkOperation('pause'); setShowBulkMenu(false); }}
+                  onClick={() => {
+                    onBulkOperation('pause');
+                    setShowBulkMenu(false);
+                  }}
                   className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 >
                   Pause
                 </button>
                 <button
-                  onClick={() => { onBulkOperation('complete'); setShowBulkMenu(false); }}
+                  onClick={() => {
+                    onBulkOperation('complete');
+                    setShowBulkMenu(false);
+                  }}
                   className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 >
                   Complete
                 </button>
                 <button
-                  onClick={() => { onBulkOperation('cancel'); setShowBulkMenu(false); }}
+                  onClick={() => {
+                    onBulkOperation('cancel');
+                    setShowBulkMenu(false);
+                  }}
                   className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 >
                   Cancel
                 </button>
                 <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
                 <button
-                  onClick={() => { onBulkOperation('delete'); setShowBulkMenu(false); }}
+                  onClick={() => {
+                    onBulkOperation('delete');
+                    setShowBulkMenu(false);
+                  }}
                   className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
                   Delete
@@ -224,7 +254,9 @@ export function QuestManager({
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  onChange={() => (allSelected ? onClearSelection() : onSelectAll())}
+                  onChange={() =>
+                    allSelected ? onClearSelection() : onSelectAll()
+                  }
                   className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                 />
               </th>
@@ -267,7 +299,10 @@ export function QuestManager({
             {isLoading ? (
               <>
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <tr key={index} className="border-b border-zinc-100 dark:border-zinc-800">
+                  <tr
+                    key={index}
+                    className="border-b border-zinc-100 dark:border-zinc-800"
+                  >
                     <td className="py-4 pr-3">
                       <Skeleton.Text className="h-5 w-5" />
                     </td>
@@ -294,12 +329,15 @@ export function QuestManager({
               </>
             ) : filteredAndSortedQuests.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-zinc-500 dark:text-zinc-400">
+                <td
+                  colSpan={7}
+                  className="py-8 text-center text-zinc-500 dark:text-zinc-400"
+                >
                   No quests found
                 </td>
               </tr>
             ) : (
-              filteredAndSortedQuests.map(quest => (
+              filteredAndSortedQuests.map((quest) => (
                 <tr
                   key={quest.id}
                   className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
@@ -323,7 +361,9 @@ export function QuestManager({
                     </div>
                   </td>
                   <td className="py-4 pr-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLORS[quest.status]}`}>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLORS[quest.status]}`}
+                    >
                       {quest.status}
                     </span>
                   </td>
@@ -334,7 +374,9 @@ export function QuestManager({
                     {quest.currentParticipants}/{quest.maxParticipants}
                   </td>
                   <td className="py-4 pr-4 text-sm text-zinc-500 dark:text-zinc-400">
-                    {quest.deadline ? new Date(quest.deadline).toLocaleDateString() : 'No deadline'}
+                    {quest.deadline
+                      ? new Date(quest.deadline).toLocaleDateString()
+                      : 'No deadline'}
                   </td>
                   <td className="py-4 pr-4">
                     <div className="flex gap-2">

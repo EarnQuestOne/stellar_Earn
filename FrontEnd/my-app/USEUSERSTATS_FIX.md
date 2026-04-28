@@ -9,21 +9,24 @@
 ## Solution Applied
 
 ### Before (Problematic Code):
+
 ```typescript
 export function useUserStats(): UseUserStatsReturn {
   const [stats, setStats] = useState<UserStats | null>(null);
   // ... other state
-  
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await fetchDashboardData() as DashboardData; // ❌ No address passed
+      const data = (await fetchDashboardData()) as DashboardData; // ❌ No address passed
       setStats(data.stats);
       // ... set other data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch dashboard data'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -32,14 +35,16 @@ export function useUserStats(): UseUserStatsReturn {
 ```
 
 ### After (Fixed Code):
+
 ```typescript
 export function useUserStats(): UseUserStatsReturn {
   const { user } = useAuth(); // ✅ Import and use useAuth
   const [stats, setStats] = useState<UserStats | null>(null);
   // ... other state
-  
+
   const fetchData = useCallback(async () => {
-    if (!user?.stellarAddress) { // ✅ Check if user is authenticated
+    if (!user?.stellarAddress) {
+      // ✅ Check if user is authenticated
       setIsLoading(false);
       return;
     }
@@ -48,11 +53,15 @@ export function useUserStats(): UseUserStatsReturn {
     setError(null);
 
     try {
-      const data = await fetchDashboardData(user.stellarAddress) as DashboardData; // ✅ Pass user address
+      const data = (await fetchDashboardData(
+        user.stellarAddress
+      )) as DashboardData; // ✅ Pass user address
       setStats(data.stats);
       // ... set other data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch dashboard data'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -71,11 +80,13 @@ export function useUserStats(): UseUserStatsReturn {
 ## Behavior Changes
 
 ### Before Fix:
+
 - ❌ Hook would attempt to fetch data even when user is not authenticated
 - ❌ API would receive no address parameter
 - ❌ Likely causing 401/403 errors or incorrect data
 
 ### After Fix:
+
 - ✅ Hook only fetches data when user is authenticated
 - ✅ API receives the correct user address
 - ✅ Proper error handling for unauthenticated state
@@ -84,6 +95,7 @@ export function useUserStats(): UseUserStatsReturn {
 ## Verification Steps
 
 ### 1. Unauthenticated State
+
 ```typescript
 // When user is null or not authenticated
 const { user } = useAuth(); // user = null
@@ -94,6 +106,7 @@ const { user } = useAuth(); // user = null
 ```
 
 ### 2. Authenticated State
+
 ```typescript
 // When user is authenticated
 const { user } = useAuth(); // user = { stellarAddress: 'GD5DJ3...', role: 'USER' }
@@ -104,6 +117,7 @@ const { user } = useAuth(); // user = { stellarAddress: 'GD5DJ3...', role: 'USER
 ```
 
 ### 3. Authentication State Changes
+
 - When user logs in/out, the hook will automatically refetch data
 - Dependencies array ensures proper re-rendering
 
@@ -117,18 +131,22 @@ const { user } = useAuth(); // user = { stellarAddress: 'GD5DJ3...', role: 'USER
 ## Testing Scenarios
 
 ### ✅ Test Case 1: Unauthenticated User
+
 - **Expected**: Hook doesn't call API, returns loading: false, stats: null
 - **Implementation**: `if (!user?.stellarAddress)` check prevents API call
 
-### ✅ Test Case 2: Authenticated User  
+### ✅ Test Case 2: Authenticated User
+
 - **Expected**: Hook calls API with user address, returns user data
 - **Implementation**: `fetchDashboardData(user.stellarAddress)`
 
 ### ✅ Test Case 3: API Error
+
 - **Expected**: Hook handles error gracefully, sets error message
 - **Implementation**: try/catch block with proper error handling
 
 ### ✅ Test Case 4: User State Changes
+
 - **Expected**: Hook refetches data when user logs in/out
 - **Implementation**: Dependencies in useCallback trigger refetch
 
@@ -138,18 +156,21 @@ The fix ensures proper integration with the backend API:
 
 ```typescript
 // API function signature
-export async function fetchDashboardData(address?: string): Promise<DashboardData>
+export async function fetchDashboardData(
+  address?: string
+): Promise<DashboardData>;
 
 // Before: Called without address
-fetchDashboardData() // address = undefined
+fetchDashboardData(); // address = undefined
 
-// After: Called with user address  
-fetchDashboardData(user.stellarAddress) // address = 'GD5DJ3...'
+// After: Called with user address
+fetchDashboardData(user.stellarAddress); // address = 'GD5DJ3...'
 ```
 
 ## Conclusion
 
 The `useUserStats` hook now correctly:
+
 - ✅ Uses authenticated user address from AuthContext
 - ✅ Passes address parameter to `fetchDashboardData`
 - ✅ Handles unauthenticated state properly

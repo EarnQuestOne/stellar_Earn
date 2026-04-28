@@ -53,6 +53,7 @@ FrontEnd/my-app/
 Core validation logic with three main sections:
 
 **Required Variables**:
+
 ```typescript
 const REQUIRED_ENV_VARS = {
   NEXT_PUBLIC_API_BASE_URL: {
@@ -64,6 +65,7 @@ const REQUIRED_ENV_VARS = {
 ```
 
 **Optional Variables**:
+
 ```typescript
 const OPTIONAL_ENV_VARS = {
   NEXT_PUBLIC_STELLAR_NETWORK: {
@@ -76,6 +78,7 @@ const OPTIONAL_ENV_VARS = {
 ```
 
 **Type-Safe Helpers**:
+
 ```typescript
 export const env = {
   apiBaseUrl: () => getRequiredEnv('NEXT_PUBLIC_API_BASE_URL'),
@@ -99,6 +102,7 @@ export function validateStartup(): void {
 #### 3. Client-Side Validator (`components/providers/EnvValidator.tsx`)
 
 React component that:
+
 - Validates environment variables on mount
 - Shows loading state during validation
 - Displays user-friendly error page if validation fails
@@ -110,9 +114,7 @@ EnvValidator wraps the entire application:
 
 ```tsx
 <EnvValidator>
-  <ThemeProvider>
-    {/* ... rest of app */}
-  </ThemeProvider>
+  <ThemeProvider>{/* ... rest of app */}</ThemeProvider>
 </EnvValidator>
 ```
 
@@ -121,15 +123,17 @@ EnvValidator wraps the entire application:
 ### Setting Up Environment Variables
 
 1. **Copy the example file**:
+
    ```bash
    cp .env.example .env.local
    ```
 
 2. **Fill in required variables**:
+
    ```bash
    # Required
    NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-   
+
    # Optional (with defaults)
    NEXT_PUBLIC_STELLAR_NETWORK=testnet
    NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
@@ -143,11 +147,13 @@ EnvValidator wraps the entire application:
 ### Using Environment Variables in Code
 
 **❌ Old Way (Direct Access)**:
+
 ```typescript
 const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 ```
 
 **✅ New Way (Type-Safe Helper)**:
+
 ```typescript
 import { env } from '@/lib/config/env';
 
@@ -159,6 +165,7 @@ const apiUrl = env.apiBaseUrl(); // Type-safe, validated
 1. **Add to configuration** (`lib/config/env.ts`):
 
    For required variables:
+
    ```typescript
    const REQUIRED_ENV_VARS = {
      // ... existing variables
@@ -171,6 +178,7 @@ const apiUrl = env.apiBaseUrl(); // Type-safe, validated
    ```
 
    For optional variables:
+
    ```typescript
    const OPTIONAL_ENV_VARS = {
      // ... existing variables
@@ -183,6 +191,7 @@ const apiUrl = env.apiBaseUrl(); // Type-safe, validated
    ```
 
 2. **Add type-safe helper**:
+
    ```typescript
    export const env = {
      // ... existing helpers
@@ -192,6 +201,7 @@ const apiUrl = env.apiBaseUrl(); // Type-safe, validated
    ```
 
 3. **Update `.env.example`**:
+
    ```bash
    # New Variable
    # Description of what this does
@@ -210,20 +220,20 @@ const apiUrl = env.apiBaseUrl(); // Type-safe, validated
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable                   | Description          | Example                 |
+| -------------------------- | -------------------- | ----------------------- |
 | `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | `http://localhost:3001` |
 
 ### Optional Variables
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `NEXT_PUBLIC_STELLAR_NETWORK` | Stellar network | `testnet` | `testnet` or `mainnet` |
-| `NEXT_PUBLIC_SOROBAN_RPC_URL` | Soroban RPC endpoint | `https://soroban-testnet.stellar.org` | `https://soroban-testnet.stellar.org` |
-| `NEXT_PUBLIC_CONTRACT_ID` | Deployed contract ID | `""` | `CXXXXX...` |
-| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | Analytics test mode | `false` | `true` or `false` |
-| `NEXT_PUBLIC_ANALYTICS_ID` | Analytics tracking ID | `""` | `G-XXXXXXXXXX` |
-| `E2E_BASE_URL` | E2E test base URL | `http://localhost:3000` | `http://localhost:3000` |
+| Variable                          | Description           | Default                               | Example                               |
+| --------------------------------- | --------------------- | ------------------------------------- | ------------------------------------- |
+| `NEXT_PUBLIC_STELLAR_NETWORK`     | Stellar network       | `testnet`                             | `testnet` or `mainnet`                |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL`     | Soroban RPC endpoint  | `https://soroban-testnet.stellar.org` | `https://soroban-testnet.stellar.org` |
+| `NEXT_PUBLIC_CONTRACT_ID`         | Deployed contract ID  | `""`                                  | `CXXXXX...`                           |
+| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | Analytics test mode   | `false`                               | `true` or `false`                     |
+| `NEXT_PUBLIC_ANALYTICS_ID`        | Analytics tracking ID | `""`                                  | `G-XXXXXXXXXX`                        |
+| `E2E_BASE_URL`                    | E2E test base URL     | `http://localhost:3000`               | `http://localhost:3000`               |
 
 ## Error Handling
 
@@ -306,9 +316,11 @@ it('should fail validation when required variables are missing', () => {
 Replace direct `process.env` access with type-safe helpers:
 
 **Before**:
+
 ```typescript
 // lib/api/client.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 // lib/analytics/provider.ts
 const testMode = process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE === 'true';
@@ -320,6 +332,7 @@ if (process.env.NODE_ENV === 'development') {
 ```
 
 **After**:
+
 ```typescript
 // lib/api/client.ts
 import { env } from '@/lib/config/env';
@@ -384,6 +397,7 @@ const url = env.apiBaseUrl();
 ### 2. Add New Variables to Configuration
 
 When adding a new environment variable:
+
 1. Add to `REQUIRED_ENV_VARS` or `OPTIONAL_ENV_VARS`
 2. Add type-safe helper to `env` object
 3. Update `.env.example`
@@ -428,6 +442,7 @@ Make defaults explicit and documented:
 **Cause**: Required environment variables are missing.
 
 **Solution**:
+
 1. Check the error message for which variables are missing
 2. Create or update `.env.local` file
 3. Add the required variables

@@ -16,7 +16,14 @@ interface StatCardProps {
   isLoading?: boolean;
 }
 
-function StatCard({ title, value, icon, change, color, isLoading }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  icon,
+  change,
+  color,
+  isLoading,
+}: StatCardProps) {
   if (isLoading) {
     return (
       <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -34,9 +41,12 @@ function StatCard({ title, value, icon, change, color, isLoading }: StatCardProp
 
   const colorClasses: Record<string, string> = {
     blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-    purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-    amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+    green:
+      'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+    purple:
+      'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+    amber:
+      'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
     red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     zinc: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
   };
@@ -44,12 +54,17 @@ function StatCard({ title, value, icon, change, color, isLoading }: StatCardProp
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${colorClasses[color]}`}>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${colorClasses[color]}`}
+        >
           {icon}
         </div>
         {change && (
-          <span className={`text-sm font-medium ${change.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {change.isPositive ? '+' : ''}{change.value}%
+          <span
+            className={`text-sm font-medium ${change.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+          >
+            {change.isPositive ? '+' : ''}
+            {change.value}%
           </span>
         )}
       </div>
@@ -104,7 +119,11 @@ export function AdminStats({ stats, isLoading }: AdminStatsProps) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Rewards Distributed"
-          value={stats ? `${stats.totalRewardsDistributed.toLocaleString()} XLM` : '0 XLM'}
+          value={
+            stats
+              ? `${stats.totalRewardsDistributed.toLocaleString()} XLM`
+              : '0 XLM'
+          }
           icon="💎"
           color="blue"
           isLoading={isLoading}
@@ -142,8 +161,14 @@ export function AdminStats({ stats, isLoading }: AdminStatsProps) {
               </p>
               <p className="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
                 {stats.approvedSubmissions + stats.rejectedSubmissions > 0
-                  ? Math.round((stats.approvedSubmissions / (stats.approvedSubmissions + stats.rejectedSubmissions)) * 100)
-                  : 0}%
+                  ? Math.round(
+                      (stats.approvedSubmissions /
+                        (stats.approvedSubmissions +
+                          stats.rejectedSubmissions)) *
+                        100
+                    )
+                  : 0}
+                %
               </p>
             </div>
             <div>
@@ -162,8 +187,11 @@ export function AdminStats({ stats, isLoading }: AdminStatsProps) {
               </p>
               <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 {stats.completedQuests > 0
-                  ? Math.round(stats.totalRewardsDistributed / stats.completedQuests)
-                  : 0} XLM
+                  ? Math.round(
+                      stats.totalRewardsDistributed / stats.completedQuests
+                    )
+                  : 0}{' '}
+                XLM
               </p>
             </div>
             <div>
@@ -172,8 +200,11 @@ export function AdminStats({ stats, isLoading }: AdminStatsProps) {
               </p>
               <p className="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">
                 {stats.totalQuests > 0
-                  ? Math.round((stats.completedQuests / stats.totalQuests) * 100)
-                  : 0}%
+                  ? Math.round(
+                      (stats.completedQuests / stats.totalQuests) * 100
+                    )
+                  : 0}
+                %
               </p>
             </div>
           </div>

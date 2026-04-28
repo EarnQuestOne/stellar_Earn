@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import type {
   DashboardData,
   UserStats,
@@ -8,7 +8,7 @@ import type {
   Submission,
   EarningsData,
   Badge,
-} from "../types/dashboard";
+} from '../types/dashboard';
 import {
   fetchUserStats,
   fetchActiveQuests,
@@ -16,8 +16,8 @@ import {
   fetchEarningsHistory,
   fetchBadges,
   fetchDashboardData,
-} from "../api/user";
-import { useAuth } from "@/context/AuthContext";
+} from '../api/user';
+import { useAuth } from '@/context/AuthContext';
 
 interface UseUserStatsReturn {
   stats: UserStats | null;
@@ -51,7 +51,7 @@ export function useUserStats(): UseUserStatsReturn {
 
     try {
       const data = (await fetchDashboardData(
-        user.stellarAddress,
+        user.stellarAddress
       )) as DashboardData;
       setStats(data.stats);
       setActiveQuests(data.activeQuests);
@@ -60,7 +60,7 @@ export function useUserStats(): UseUserStatsReturn {
       setBadges(data.badges);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to fetch dashboard data",
+        err instanceof Error ? err.message : 'Failed to fetch dashboard data'
       );
     } finally {
       setIsLoading(false);
@@ -131,7 +131,7 @@ export function useRecentSubmissions() {
       setSubmissions(data);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to fetch submissions",
+        err instanceof Error ? err.message : 'Failed to fetch submissions'
       );
     } finally {
       setIsLoading(false);

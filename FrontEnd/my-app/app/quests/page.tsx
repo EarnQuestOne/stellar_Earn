@@ -1,44 +1,44 @@
-"use client";
+'use client';
 
-import { useState, Suspense, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { SearchBar } from "@/components/ui/SearchBar";
-import { FilterPanel } from "@/components/quest/FilterPanel";
-import { QuestList } from "@/components/quest/QuestList";
-import { Pagination } from "@/components/ui/Pagination";
-import { mockQuests } from "@/lib/mock/quests";
-import { QuestStatus, QuestDifficulty } from "@/lib/types/quest";
-import type { Quest } from "@/lib/types/quest";
-import LazyLoad from "@/components/ui/LazyLoad";
-import { ComponentErrorBoundary } from "@/components/error/ErrorBoundary";
+import { useState, Suspense, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { FilterPanel } from '@/components/quest/FilterPanel';
+import { QuestList } from '@/components/quest/QuestList';
+import { Pagination } from '@/components/ui/Pagination';
+import { mockQuests } from '@/lib/mock/quests';
+import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
+import type { Quest } from '@/lib/types/quest';
+import LazyLoad from '@/components/ui/LazyLoad';
+import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 
 function QuestsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get filters from URL params
-  const statusParam = searchParams.get("status");
+  const statusParam = searchParams.get('status');
   const statusFilter =
     statusParam &&
-      Object.values(QuestStatus).includes(statusParam as QuestStatus)
+    Object.values(QuestStatus).includes(statusParam as QuestStatus)
       ? (statusParam as QuestStatus)
       : undefined;
 
-  const difficultyParam = searchParams.get("difficulty");
+  const difficultyParam = searchParams.get('difficulty');
   const difficultyFilter =
     difficultyParam &&
-      Object.values(QuestDifficulty).includes(difficultyParam as QuestDifficulty)
+    Object.values(QuestDifficulty).includes(difficultyParam as QuestDifficulty)
       ? (difficultyParam as QuestDifficulty)
       : undefined;
 
-  const categoryParam = searchParams.get("category");
+  const categoryParam = searchParams.get('category');
   const categoryFilter = categoryParam || undefined;
 
   // Get page from URL params
-  const pageParam = searchParams.get("page");
+  const pageParam = searchParams.get('page');
   const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
   const limit = 12;
 
@@ -67,7 +67,7 @@ function QuestsContent() {
       filtered = filtered.filter(
         (q) =>
           q.title.toLowerCase().includes(query) ||
-          q.description.toLowerCase().includes(query),
+          q.description.toLowerCase().includes(query)
       );
     }
 
@@ -100,7 +100,7 @@ function QuestsContent() {
         params.delete(key);
       }
     });
-    params.set("page", "1"); // Reset to first page when filters change
+    params.set('page', '1'); // Reset to first page when filters change
     router.push(`/quests?${params.toString()}`);
   };
 
@@ -122,14 +122,14 @@ function QuestsContent() {
   };
 
   const handleClearFilters = () => {
-    setSearchQuery("");
-    router.push("/quests");
+    setSearchQuery('');
+    router.push('/quests');
   };
 
   // Update URL when page changes
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page.toString());
+    params.set('page', page.toString());
     router.push(`/quests?${params.toString()}`);
   };
 
@@ -141,7 +141,10 @@ function QuestsContent() {
     <AppLayout>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Header content */}
-        <div className="mb-6 flex items-center justify-between lg:mb-8" data-onboarding="quest-board-header">
+        <div
+          className="mb-6 flex items-center justify-between lg:mb-8"
+          data-onboarding="quest-board-header"
+        >
           <div>
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               Quest Board

@@ -13,8 +13,23 @@ interface LevelUpModalProps {
 }
 
 // Confetti particle component
-function ConfettiParticle({ delay, duration, left }: { delay: number; duration: number; left: string }) {
-  const colors = ['#089ec3', '#0ab8d4', '#fbbf24', '#f59e0b', '#ef4444', '#8b5cf6'];
+function ConfettiParticle({
+  delay,
+  duration,
+  left,
+}: {
+  delay: number;
+  duration: number;
+  left: string;
+}) {
+  const colors = [
+    '#089ec3',
+    '#0ab8d4',
+    '#fbbf24',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+  ];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
   return (
@@ -47,7 +62,8 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
   useEffect(() => {
     if (isOpen) {
       // Store the previously focused element
-      previousActiveElement.current = document.activeElement as HTMLElement | null;
+      previousActiveElement.current =
+        document.activeElement as HTMLElement | null;
 
       // Focus the modal
       modalRef.current?.focus();

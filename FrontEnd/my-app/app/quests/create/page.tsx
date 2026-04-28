@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { AppLayout } from "@/components/layout/AppLayout";
-import QuestWizard from "@/components/quest/QuestWizard";
+import Link from 'next/link';
+import { AppLayout } from '@/components/layout/AppLayout';
+import QuestWizard from '@/components/quest/QuestWizard';
 
 export default function CreateQuestPage() {
   return (

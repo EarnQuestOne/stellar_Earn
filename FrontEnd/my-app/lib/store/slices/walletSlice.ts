@@ -1,4 +1,4 @@
-import { StateCreator } from "zustand";
+import { StateCreator } from 'zustand';
 
 export interface WalletSlice {
   // state
@@ -26,8 +26,7 @@ export const createWalletSlice: StateCreator<WalletSlice> = (set) => ({
   isModalOpen: false,
   walletError: null,
 
-  setWalletAddress: (address) =>
-    set({ address, isConnected: !!address }),
+  setWalletAddress: (address) => set({ address, isConnected: !!address }),
 
   setIsConnecting: (isConnecting) => set({ isConnecting }),
 

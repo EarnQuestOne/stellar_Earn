@@ -18,7 +18,10 @@ export function getConsent(): ConsentStatus {
   try {
     const raw = localStorage.getItem(CONSENT_KEY);
     if (!raw) return 'pending';
-    const { status, version } = JSON.parse(raw) as { status: ConsentStatus; version: string };
+    const { status, version } = JSON.parse(raw) as {
+      status: ConsentStatus;
+      version: string;
+    };
     if (version !== CONSENT_VERSION) return 'pending';
     return status;
   } catch {
@@ -30,15 +33,27 @@ export function getConsent(): ConsentStatus {
 export function setConsent(status: 'granted' | 'denied'): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status, version: CONSENT_VERSION }));
+    localStorage.setItem(
+      CONSENT_KEY,
+      JSON.stringify({ status, version: CONSENT_VERSION })
+    );
   } catch {
     // ignore
   }
 }
 
 /** Sanitize payload: strip known PII keys. Never send these without explicit consent. */
-const PII_KEYS = new Set(['email', 'userId', 'address', 'wallet', 'name', 'ip']);
-export function sanitizePayload(payload?: AnalyticsEventPayload): AnalyticsEventPayload | undefined {
+const PII_KEYS = new Set([
+  'email',
+  'userId',
+  'address',
+  'wallet',
+  'name',
+  'ip',
+]);
+export function sanitizePayload(
+  payload?: AnalyticsEventPayload
+): AnalyticsEventPayload | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const out: AnalyticsEventPayload = {};
   for (const [k, v] of Object.entries(payload)) {

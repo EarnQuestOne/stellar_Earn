@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useUserStats } from "@/lib/hooks/useUserStats";
+import { useUserStats } from '@/lib/hooks/useUserStats';
 import {
   DashboardLayout,
   StatsCards,
   ActiveQuests,
-} from "@/components/dashboard";
-import { ComponentErrorBoundary } from "@/components/error/ErrorBoundary";
+} from '@/components/dashboard';
+import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 
 export default function DashboardPage() {
   const { stats, activeQuests, isLoading, error, refetch } = useUserStats();
 
   if (error) {
     return (
-      <DashboardLayout user={{ username: "john.doe", level: 12 }}>
+      <DashboardLayout user={{ username: 'john.doe', level: 12 }}>
         <div className="flex flex-col items-center justify-center rounded-xl border border-red-800 bg-red-900/20 p-8 text-center">
           <div className="text-4xl mb-3">⚠️</div>
           <h2 className="text-lg font-semibold text-red-200">
@@ -32,11 +32,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout user={{ username: "john.doe", level: 12 }}>
+    <DashboardLayout user={{ username: 'john.doe', level: 12 }}>
       {/* Welcome Header */}
       <header className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 sm:text-3xl">
-          Welcome back, John{" "}
+          Welcome back, John{' '}
           <span className="inline-block animate-wave">👋</span>
         </h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">

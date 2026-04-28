@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useTheme } from "@/lib/hooks/useTheme";
+import Link from 'next/link';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 export default function SettingsPage() {
   const { isDark } = useTheme();
@@ -26,9 +26,9 @@ export default function SettingsPage() {
               Appearance
             </h2>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-              Choose a theme for the interface. Current:{" "}
+              Choose a theme for the interface. Current:{' '}
               <span className="font-medium text-zinc-700 dark:text-zinc-200">
-                {isDark ? "Dark" : "Light"}
+                {isDark ? 'Dark' : 'Light'}
               </span>
             </p>
             <div className="mt-4">

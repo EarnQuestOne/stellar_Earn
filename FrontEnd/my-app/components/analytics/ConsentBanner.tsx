@@ -23,8 +23,9 @@ export function ConsentBanner() {
     >
       <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          We use analytics to improve the platform (page views and anonymized events). No PII is collected without your
-          consent. See our privacy policy for details.
+          We use analytics to improve the platform (page views and anonymized
+          events). No PII is collected without your consent. See our privacy
+          policy for details.
         </p>
         <div className="flex shrink-0 gap-2">
           <button

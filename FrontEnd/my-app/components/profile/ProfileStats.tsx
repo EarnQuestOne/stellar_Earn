@@ -92,11 +92,13 @@ export function ProfileStats({ stats, isLoading }: ProfileStatsProps) {
           </div>
         ))}
       </div>
-      
+
       {/* Progress bar for next level */}
       <div className="mt-8 pt-6 border-t border-zinc-800">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-zinc-400">Progress to Level {stats.level + 1}</span>
+          <span className="text-sm text-zinc-400">
+            Progress to Level {stats.level + 1}
+          </span>
           <span className="text-sm text-zinc-300">65% Complete</span>
         </div>
         <ProgressBar value={65} max={100} />

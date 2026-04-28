@@ -14,7 +14,7 @@ export function calculateXPForLevel(level: number): number {
  */
 export function calculateLevelFromXP(totalXP: number): number {
   if (totalXP < 100) return 1;
-  
+
   let level = 1;
   while (calculateXPForLevel(level + 1) <= totalXP) {
     level++;
@@ -30,7 +30,10 @@ export function getXPProgress(currentXP: number, level: number): XPProgress {
   const xpForNextLevel = calculateXPForLevel(level + 1);
   const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
   const xpInCurrentLevel = currentXP - xpForCurrentLevel;
-  const percentage = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100));
+  const percentage = Math.min(
+    100,
+    Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100)
+  );
 
   return {
     current: xpInCurrentLevel,
@@ -64,5 +67,7 @@ export function getLevelTitle(level: number): string {
  * Check if a level should show glow effect
  */
 export function shouldShowGlow(level: number): boolean {
-  return level >= 10 && (level % 10 === 0 || level % 25 === 0 || level % 50 === 0);
+  return (
+    level >= 10 && (level % 10 === 0 || level % 25 === 0 || level % 50 === 0)
+  );
 }

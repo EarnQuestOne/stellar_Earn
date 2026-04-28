@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface Node {
   x: number;
@@ -19,7 +19,7 @@ export default function NetworkVisualization() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const setSize = () => {
@@ -34,7 +34,7 @@ export default function NetworkVisualization() {
     );
     const MAX_DIST = 120;
     // Cyan palette matching the project
-    const COLORS = ["#22d3ee", "#06b6d4", "#67e8f9", "#a5f3fc", "#0891b2"];
+    const COLORS = ['#22d3ee', '#06b6d4', '#67e8f9', '#a5f3fc', '#0891b2'];
 
     const nodes: Node[] = Array.from({ length: NODE_COUNT }, () => ({
       x: Math.random() * canvas.width,
@@ -90,8 +90,8 @@ export default function NetworkVisualization() {
 
         // Glow
         const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 4);
-        grd.addColorStop(0, color + "99");
-        grd.addColorStop(1, color + "00");
+        grd.addColorStop(0, color + '99');
+        grd.addColorStop(1, color + '00');
         ctx.beginPath();
         ctx.arc(n.x, n.y, r * 4, 0, Math.PI * 2);
         ctx.fillStyle = grd;
@@ -112,11 +112,11 @@ export default function NetworkVisualization() {
     const handleResize = () => {
       setSize();
     };
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 

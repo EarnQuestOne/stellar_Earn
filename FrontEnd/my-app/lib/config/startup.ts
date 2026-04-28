@@ -1,6 +1,6 @@
 /**
  * Application Startup Validation
- * 
+ *
  * This module performs all necessary validation checks at application startup
  * to ensure the app fails fast with clear error messages.
  */
@@ -15,10 +15,9 @@ export function validateStartup(): void {
   try {
     // Validate environment variables
     validateEnvOrThrow();
-    
+
     // Add more startup validations here as needed
     // e.g., validateBrowserSupport(), validateFeatureFlags(), etc.
-    
   } catch (error) {
     // Log the error and re-throw to prevent app from starting
     console.error('❌ Application startup validation failed');
@@ -36,6 +35,6 @@ export function validateStartupSafe(): void {
   if (typeof window === 'undefined') {
     return;
   }
-  
+
   validateStartup();
 }

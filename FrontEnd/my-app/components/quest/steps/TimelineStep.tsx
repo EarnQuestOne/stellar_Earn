@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { Plus, Trash2 } from "lucide-react";
-import type { QuestWizardData } from "@/lib/schemas/quest.schema";
-import { TIMEZONE_OPTIONS } from "@/lib/schemas/quest.schema";
+import { Plus, Trash2 } from 'lucide-react';
+import type { QuestWizardData } from '@/lib/schemas/quest.schema';
+import { TIMEZONE_OPTIONS } from '@/lib/schemas/quest.schema';
 
 interface TimelineStepProps {
   data: QuestWizardData;
   errors: Record<string, string>;
-  onChange: (next: QuestWizardData["timeline"]) => void;
+  onChange: (next: QuestWizardData['timeline']) => void;
 }
 
 const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
-  const hasDeadlineError = Boolean(errors["timeline.deadline"]);
-  const hasMilestoneError = Boolean(errors["timeline.milestones"]);
+  const hasDeadlineError = Boolean(errors['timeline.deadline']);
+  const hasMilestoneError = Boolean(errors['timeline.milestones']);
 
   const updateMilestone = (
     id: string,
-    field: "title" | "dueDate",
-    value: string,
+    field: 'title' | 'dueDate',
+    value: string
   ) => {
     onChange({
       ...data.timeline,
@@ -27,7 +27,7 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
               ...item,
               [field]: value,
             }
-          : item,
+          : item
       ),
     });
   };
@@ -39,8 +39,8 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
         ...data.timeline.milestones,
         {
           id: `milestone-${Date.now()}`,
-          title: "",
-          dueDate: "",
+          title: '',
+          dueDate: '',
         },
       ],
     });
@@ -68,13 +68,13 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
             }
             className={`w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm focus:outline-none dark:bg-zinc-800 ${
               hasDeadlineError
-                ? "border-red-400 focus:border-red-500 dark:border-red-800"
-                : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+                ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+                : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
             }`}
           />
-          {errors["timeline.deadline"] && (
+          {errors['timeline.deadline'] && (
             <p className="mt-1 text-xs text-red-600">
-              {errors["timeline.deadline"]}
+              {errors['timeline.deadline']}
             </p>
           )}
         </label>
@@ -102,8 +102,8 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
       <div
         className={
           hasMilestoneError
-            ? "rounded-2xl border border-red-300/70 p-3 dark:border-red-900/60"
-            : ""
+            ? 'rounded-2xl border border-red-300/70 p-3 dark:border-red-900/60'
+            : ''
         }
       >
         <div className="mb-2 flex items-center justify-between">
@@ -129,7 +129,7 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
               <input
                 value={item.title}
                 onChange={(event) =>
-                  updateMilestone(item.id, "title", event.target.value)
+                  updateMilestone(item.id, 'title', event.target.value)
                 }
                 placeholder={`Milestone ${index + 1}`}
                 className="sm:col-span-7 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
@@ -138,7 +138,7 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
                 type="datetime-local"
                 value={item.dueDate}
                 onChange={(event) =>
-                  updateMilestone(item.id, "dueDate", event.target.value)
+                  updateMilestone(item.id, 'dueDate', event.target.value)
                 }
                 className="sm:col-span-4 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
               />
@@ -154,14 +154,14 @@ const TimelineStep = ({ data, errors, onChange }: TimelineStepProps) => {
           ))}
           {data.timeline.milestones.length === 0 && (
             <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-              No milestones added yet. Add optional milestones to break the quest
-              into checkpoints.
+              No milestones added yet. Add optional milestones to break the
+              quest into checkpoints.
             </div>
           )}
         </div>
-        {errors["timeline.milestones"] && (
+        {errors['timeline.milestones'] && (
           <p className="mt-2 text-xs text-red-600">
-            {errors["timeline.milestones"]}
+            {errors['timeline.milestones']}
           </p>
         )}
       </div>

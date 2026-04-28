@@ -1,7 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import type { Quest, AdminStats, AdminUser, QuestFormData, QuestStatus, BulkOperation, Notification } from '../types/admin';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+} from 'react';
+import type {
+  Quest,
+  AdminStats,
+  AdminUser,
+  QuestFormData,
+  QuestStatus,
+  BulkOperation,
+  Notification,
+} from '../types/admin';
 import {
   fetchAdminUser,
   checkAdminAccess,
@@ -22,12 +36,15 @@ interface NotificationContextType {
   removeNotification: (id: string) => void;
 }
 
-export const NotificationContext = createContext<NotificationContextType | null>(null);
+export const NotificationContext =
+  createContext<NotificationContextType | null>(null);
 
 export function useNotifications() {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
+    throw new Error(
+      'useNotifications must be used within NotificationProvider'
+    );
   }
   return context;
 }
@@ -36,20 +53,23 @@ export function useNotifications() {
 export function useNotificationState() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const id = String(Date.now());
-    const newNotification: Notification = { ...notification, id };
-    setNotifications(prev => [...prev, newNotification]);
+  const addNotification = useCallback(
+    (notification: Omit<Notification, 'id'>) => {
+      const id = String(Date.now());
+      const newNotification: Notification = { ...notification, id };
+      setNotifications((prev) => [...prev, newNotification]);
 
-    // Auto-remove after duration (default 5 seconds)
-    const duration = notification.duration || 5000;
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, duration);
-  }, []);
+      // Auto-remove after duration (default 5 seconds)
+      const duration = notification.duration || 5000;
+      setTimeout(() => {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+      }, duration);
+    },
+    []
+  );
 
   const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   return { notifications, addNotification, removeNotification };
@@ -72,7 +92,9 @@ export function useAdminAccess() {
           setAdminUser(user);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to verify admin access');
+        setError(
+          err instanceof Error ? err.message : 'Failed to verify admin access'
+        );
         setIsAdmin(false);
       } finally {
         setIsLoading(false);
@@ -135,7 +157,7 @@ export function useQuestManagement() {
   }, [loadQuests]);
 
   const toggleQuestSelection = useCallback((id: string) => {
-    setSelectedQuests(prev => {
+    setSelectedQuests((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -147,55 +169,70 @@ export function useQuestManagement() {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedQuests(new Set(quests.map(q => q.id)));
+    setSelectedQuests(new Set(quests.map((q) => q.id)));
   }, [quests]);
 
   const clearSelection = useCallback(() => {
     setSelectedQuests(new Set());
   }, []);
 
-  const handleStatusChange = useCallback(async (id: string, status: QuestStatus) => {
-    try {
-      const updated = await updateQuestStatus(id, status);
-      setQuests(prev => prev.map(q => (q.id === id ? updated : q)));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to update status' };
-    }
-  }, []);
+  const handleStatusChange = useCallback(
+    async (id: string, status: QuestStatus) => {
+      try {
+        const updated = await updateQuestStatus(id, status);
+        setQuests((prev) => prev.map((q) => (q.id === id ? updated : q)));
+        return { success: true };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Failed to update status',
+        };
+      }
+    },
+    []
+  );
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteQuest(id);
-      setQuests(prev => prev.filter(q => q.id !== id));
-      setSelectedQuests(prev => {
+      setQuests((prev) => prev.filter((q) => q.id !== id));
+      setSelectedQuests((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
       return { success: true };
     } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to delete quest' };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to delete quest',
+      };
     }
   }, []);
 
-  const handleBulkOperation = useCallback(async (action: BulkOperation['action']) => {
-    if (selectedQuests.size === 0) {
-      return { success: false, error: 'No quests selected' };
-    }
+  const handleBulkOperation = useCallback(
+    async (action: BulkOperation['action']) => {
+      if (selectedQuests.size === 0) {
+        return { success: false, error: 'No quests selected' };
+      }
 
-    try {
-      const result = await executeBulkOperation({
-        action,
-        questIds: Array.from(selectedQuests),
-      });
-      await loadQuests();
-      clearSelection();
-      return { success: true, result };
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Bulk operation failed' };
-    }
-  }, [selectedQuests, loadQuests, clearSelection]);
+      try {
+        const result = await executeBulkOperation({
+          action,
+          questIds: Array.from(selectedQuests),
+        });
+        await loadQuests();
+        clearSelection();
+        return { success: true, result };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Bulk operation failed',
+        };
+      }
+    },
+    [selectedQuests, loadQuests, clearSelection]
+  );
 
   return {
     quests,
@@ -241,20 +278,26 @@ export function useQuest(id: string | null) {
     load();
   }, [id]);
 
-  const save = useCallback(async (data: Partial<QuestFormData>) => {
-    if (!id) return { success: false, error: 'No quest ID' };
+  const save = useCallback(
+    async (data: Partial<QuestFormData>) => {
+      if (!id) return { success: false, error: 'No quest ID' };
 
-    setIsSaving(true);
-    try {
-      const updated = await updateQuest(id, data);
-      setQuest(updated);
-      return { success: true, quest: updated };
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to save quest' };
-    } finally {
-      setIsSaving(false);
-    }
-  }, [id]);
+      setIsSaving(true);
+      try {
+        const updated = await updateQuest(id, data);
+        setQuest(updated);
+        return { success: true, quest: updated };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Failed to save quest',
+        };
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [id]
+  );
 
   return { quest, isLoading, error, isSaving, save };
 }
@@ -271,7 +314,8 @@ export function useCreateQuest() {
       const quest = await createQuest(data);
       return { success: true, quest };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create quest';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create quest';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

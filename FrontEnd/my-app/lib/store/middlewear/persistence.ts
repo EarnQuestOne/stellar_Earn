@@ -1,5 +1,4 @@
-
-import { createJSONStorage, StateStorage } from "zustand/middleware";
+import { createJSONStorage, StateStorage } from 'zustand/middleware';
 
 const noopStorage: StateStorage = {
   getItem: () => null,
@@ -8,5 +7,5 @@ const noopStorage: StateStorage = {
 };
 
 export const storage = createJSONStorage(() =>
-  typeof window !== "undefined" ? localStorage : (noopStorage as Storage)
+  typeof window !== 'undefined' ? localStorage : (noopStorage as Storage)
 );

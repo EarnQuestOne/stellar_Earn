@@ -112,20 +112,20 @@ Successfully implemented comprehensive environment variable validation for the S
 
 ### Required (1)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable                   | Description          | Example                 |
+| -------------------------- | -------------------- | ----------------------- |
 | `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | `http://localhost:3001` |
 
 ### Optional (6)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NEXT_PUBLIC_STELLAR_NETWORK` | `testnet` | Stellar network |
-| `NEXT_PUBLIC_SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint |
-| `NEXT_PUBLIC_CONTRACT_ID` | `""` | Deployed contract ID |
-| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | `false` | Analytics test mode |
-| `NEXT_PUBLIC_ANALYTICS_ID` | `""` | Analytics tracking ID |
-| `E2E_BASE_URL` | `http://localhost:3000` | E2E test base URL |
+| Variable                          | Default                               | Description           |
+| --------------------------------- | ------------------------------------- | --------------------- |
+| `NEXT_PUBLIC_STELLAR_NETWORK`     | `testnet`                             | Stellar network       |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL`     | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint  |
+| `NEXT_PUBLIC_CONTRACT_ID`         | `""`                                  | Deployed contract ID  |
+| `NEXT_PUBLIC_ANALYTICS_TEST_MODE` | `false`                               | Analytics test mode   |
+| `NEXT_PUBLIC_ANALYTICS_ID`        | `""`                                  | Analytics tracking ID |
+| `E2E_BASE_URL`                    | `http://localhost:3000`               | E2E test base URL     |
 
 ## Architecture
 
@@ -216,6 +216,7 @@ const url = env.apiBaseUrl();
 ### Benefits
 
 **Before**:
+
 - ❌ Silent failures when env vars missing
 - ❌ Runtime errors deep in application
 - ❌ Inconsistent default values
@@ -224,6 +225,7 @@ const url = env.apiBaseUrl();
 - ❌ No documentation
 
 **After**:
+
 - ✅ Fail-fast validation at startup
 - ✅ Clear error messages with instructions
 - ✅ Centralized default values
@@ -284,7 +286,7 @@ export const env = {
 };
 
 // 3. Update .env.example
-NEXT_PUBLIC_NEW_VAR=example-value
+NEXT_PUBLIC_NEW_VAR = example - value;
 
 // 4. Add test
 it('should provide access to new variable', () => {
@@ -380,12 +382,12 @@ In development mode, warnings are logged:
 
 All requirements from AGENTS.md met:
 
-| Requirement | Status | Implementation |
-|-------------|--------|----------------|
-| Create env validator | ✅ | `lib/config/env.ts` with validation logic |
-| Validate at startup | ✅ | `EnvValidator` component in root layout |
-| Fails fast on missing envs | ✅ | Shows error page, prevents app start |
-| Close #25 | ✅ | PR description includes "Close #25" |
+| Requirement                | Status | Implementation                            |
+| -------------------------- | ------ | ----------------------------------------- |
+| Create env validator       | ✅     | `lib/config/env.ts` with validation logic |
+| Validate at startup        | ✅     | `EnvValidator` component in root layout   |
+| Fails fast on missing envs | ✅     | Shows error page, prevents app start      |
+| Close #25                  | ✅     | PR description includes "Close #25"       |
 
 ## Next Steps
 

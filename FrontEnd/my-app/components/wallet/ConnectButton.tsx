@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useWallet } from "../../context/WalletContext";
-import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
-import { LogOut, User } from "lucide-react";
+import { useWallet } from '../../context/WalletContext';
+import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { LogOut, User } from 'lucide-react';
 
 const ArrowDownIcon = () => (
   <svg
@@ -29,7 +29,7 @@ export function ConnectButton() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const formatAddress = (addr: string) => {
-    if (!addr) return "";
+    if (!addr) return '';
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
@@ -47,8 +47,8 @@ export function ConnectButton() {
         setDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (isAuthenticated && address) {
@@ -65,7 +65,7 @@ export function ConnectButton() {
           </span>
           <div
             className={`transition-transform duration-200 ${
-              dropdownOpen ? "rotate-180" : ""
+              dropdownOpen ? 'rotate-180' : ''
             }`}
           >
             <ArrowDownIcon />

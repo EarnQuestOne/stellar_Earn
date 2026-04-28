@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useCallback, useState } from "react";
+import { useCallback, useState } from 'react';
 
 interface UseLoadingOptions {
   initialLoading?: boolean;
@@ -25,7 +25,7 @@ export function useLoading(options: UseLoadingOptions = {}) {
     setProgress(0);
   }, []);
 
-  const withLoading = useCallback(async <T,>(task: () => Promise<T>) => {
+  const withLoading = useCallback(async <T>(task: () => Promise<T>) => {
     setIsLoading(true);
     try {
       return await task();

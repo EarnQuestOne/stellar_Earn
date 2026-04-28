@@ -1,4 +1,3 @@
-
 export interface Submission extends Partial<SubmissionResponse> {
   id: string;
   questId: string;

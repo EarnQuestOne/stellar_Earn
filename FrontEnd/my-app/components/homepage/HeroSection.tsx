@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import CTAButtons from "./CTAButtons";
-import StatsCounter from "./StatsCounter";
-import TrustIndicators from "./TrustIndicators";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import CTAButtons from './CTAButtons';
+import StatsCounter from './StatsCounter';
+import TrustIndicators from './TrustIndicators';
 
-const ROTATING_WORDS = ["Achievements", "Rewards", "Reputation", "Income"];
+const ROTATING_WORDS = ['Achievements', 'Rewards', 'Reputation', 'Income'];
 
 export default function HeroSection() {
   const [wordIndex, setWordIndex] = useState(0);
@@ -34,10 +34,10 @@ export default function HeroSection() {
         aria-hidden="true"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(34,211,238,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.04) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
+            'linear-gradient(rgba(34,211,238,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.04) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
           maskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+            'radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)',
         }}
       />
 
@@ -47,12 +47,11 @@ export default function HeroSection() {
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, transparent 70%)",
+            'radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, transparent 70%)',
         }}
       />
 
       <div className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-6">
-
         {/* "Built on Stellar & Soroban" badge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -73,13 +72,12 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.08 }}
           className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
         >
-          Turn Work Into{" "}
-          <br className="hidden sm:block" />
+          Turn Work Into <br className="hidden sm:block" />
           <span
             className="inline-block bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent transition-all duration-300"
             style={{
               opacity: visible ? 1 : 0,
-              transform: visible ? "translateY(0)" : "translateY(-8px)",
+              transform: visible ? 'translateY(0)' : 'translateY(-8px)',
             }}
             aria-live="polite"
           >

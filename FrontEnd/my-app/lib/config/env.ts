@@ -1,6 +1,6 @@
 /**
  * Environment Variable Validation
- * 
+ *
  * This module validates required environment variables at application startup
  * to ensure the app fails fast with clear error messages rather than failing
  * silently at runtime.
@@ -38,7 +38,7 @@ const OPTIONAL_ENV_VARS = {
     example: 'CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
     default: '',
   },
-  
+
   // Analytics Configuration
   NEXT_PUBLIC_ANALYTICS_TEST_MODE: {
     description: 'Enable analytics test mode',
@@ -50,7 +50,7 @@ const OPTIONAL_ENV_VARS = {
     example: 'G-XXXXXXXXXX',
     default: '',
   },
-  
+
   // E2E Testing
   E2E_BASE_URL: {
     description: 'Base URL for E2E tests',
@@ -82,10 +82,15 @@ interface ValidationResult {
  */
 function validateEnvVar(
   name: string,
-  config: { description: string; example: string; required?: boolean; default?: string }
+  config: {
+    description: string;
+    example: string;
+    required?: boolean;
+    default?: string;
+  }
 ): ValidationError | null {
   const value = process.env[name];
-  
+
   // Check if required variable is missing
   if (config.required && !value) {
     return {
@@ -94,7 +99,7 @@ function validateEnvVar(
       example: config.example,
     };
   }
-  
+
   return null;
 }
 
@@ -104,7 +109,7 @@ function validateEnvVar(
 export function validateEnv(): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: string[] = [];
-  
+
   // Validate required variables
   for (const [name, config] of Object.entries(REQUIRED_ENV_VARS)) {
     const error = validateEnvVar(name, config);
@@ -112,17 +117,15 @@ export function validateEnv(): ValidationResult {
       errors.push(error);
     }
   }
-  
+
   // Check optional variables and warn about missing ones
   for (const [name, config] of Object.entries(OPTIONAL_ENV_VARS)) {
     const value = process.env[name];
     if (!value && config.default) {
-      warnings.push(
-        `${name} not set, using default: "${config.default}"`
-      );
+      warnings.push(`${name} not set, using default: "${config.default}"`);
     }
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,
@@ -140,17 +143,17 @@ function formatValidationErrors(errors: ValidationError[]): string {
     'The following environment variables are required but not set:',
     '',
   ];
-  
+
   errors.forEach((error, index) => {
     lines.push(`${index + 1}. ${error.variable}`);
     lines.push(`   Description: ${error.description}`);
     lines.push(`   Example: ${error.example}`);
     lines.push('');
   });
-  
+
   lines.push('Please create a .env.local file with the required variables.');
   lines.push('See the README.md for more information.');
-  
+
   return lines.join('\n');
 }
 
@@ -160,21 +163,21 @@ function formatValidationErrors(errors: ValidationError[]): string {
  */
 export function validateEnvOrThrow(): void {
   const result = validateEnv();
-  
+
   // Log warnings
   if (result.warnings.length > 0) {
     console.warn('⚠️  Environment Variable Warnings:');
-    result.warnings.forEach(warning => console.warn(`   ${warning}`));
+    result.warnings.forEach((warning) => console.warn(`   ${warning}`));
     console.warn('');
   }
-  
+
   // Throw error if validation fails
   if (!result.valid) {
     const errorMessage = formatValidationErrors(result.errors);
     console.error(errorMessage);
     throw new Error('Environment variable validation failed');
   }
-  
+
   // Log success in development
   if (process.env.NODE_ENV === 'development') {
     console.log('✅ Environment variables validated successfully');
@@ -190,10 +193,10 @@ export function getEnv(
 ): string {
   const value = process.env[name];
   if (value) return value;
-  
+
   const config = OPTIONAL_ENV_VARS[name];
   if (config.default) return config.default;
-  
+
   return defaultValue || '';
 }
 
@@ -206,7 +209,7 @@ export function getRequiredEnv(name: keyof typeof REQUIRED_ENV_VARS): string {
   if (!value) {
     throw new Error(
       `Required environment variable ${name} is not set. ` +
-      `Please check your .env.local file.`
+        `Please check your .env.local file.`
     );
   }
   return value;
@@ -218,19 +221,19 @@ export function getRequiredEnv(name: keyof typeof REQUIRED_ENV_VARS): string {
 export const env = {
   // API
   apiBaseUrl: () => getRequiredEnv('NEXT_PUBLIC_API_BASE_URL'),
-  
+
   // Stellar
   stellarNetwork: () => getEnv('NEXT_PUBLIC_STELLAR_NETWORK'),
   sorobanRpcUrl: () => getEnv('NEXT_PUBLIC_SOROBAN_RPC_URL'),
   contractId: () => getEnv('NEXT_PUBLIC_CONTRACT_ID'),
-  
+
   // Analytics
   analyticsTestMode: () => getEnv('NEXT_PUBLIC_ANALYTICS_TEST_MODE') === 'true',
   analyticsId: () => getEnv('NEXT_PUBLIC_ANALYTICS_ID'),
-  
+
   // Testing
   e2eBaseUrl: () => getEnv('E2E_BASE_URL'),
-  
+
   // Node environment
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',

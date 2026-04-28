@@ -61,13 +61,15 @@ export interface SubmissionFilters {
  */
 export async function getQuestSubmissions(
   questId: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<{ submissions: SubmissionResponse[]; total: number }> {
   return withRetry(() =>
-    get<{ success: boolean; data: { submissions: SubmissionResponse[]; total: number } }>(
-      `/quests/${questId}/submissions`,
-      { signal: cancelToken?.signal },
-    ).then((res) => res.data),
+    get<{
+      success: boolean;
+      data: { submissions: SubmissionResponse[]; total: number };
+    }>(`/quests/${questId}/submissions`, { signal: cancelToken?.signal }).then(
+      (res) => res.data
+    )
   );
 }
 
@@ -81,8 +83,17 @@ export async function getQuestSubmissions(
 export async function fetchSubmissions(
   filters?: SubmissionFilters,
   pagination?: PaginationParams,
-  cancelToken?: CancelToken,
-): Promise<{ data: SubmissionResponse[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasMore: boolean } }> {
+  cancelToken?: CancelToken
+): Promise<{
+  data: SubmissionResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}> {
   const params: Record<string, string | number | undefined> = {};
   if (filters?.status) params.status = filters.status;
   if (pagination?.page) params.page = pagination.page;
@@ -106,7 +117,7 @@ export async function fetchSubmissions(
           hasMore: false,
         },
       };
-    }),
+    })
   );
 }
 
@@ -120,13 +131,13 @@ export async function fetchSubmissions(
 export async function getSubmission(
   questId: string,
   submissionId: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<SubmissionResponse> {
   return withRetry(() =>
     get<{ success: boolean; data: { submission: SubmissionResponse } }>(
       `/quests/${questId}/submissions/${submissionId}`,
-      { signal: cancelToken?.signal },
-    ).then((res) => res.data.submission),
+      { signal: cancelToken?.signal }
+    ).then((res) => res.data.submission)
   );
 }
 
@@ -140,7 +151,7 @@ export async function getSubmission(
  */
 export async function createSubmission(
   data: CreateSubmissionData,
-  file?: File | null,
+  file?: File | null
 ): Promise<SubmissionResponse> {
   const proof: ProofPayload = { type: data.proofType };
 
@@ -170,7 +181,7 @@ export async function createSubmission(
 
   return post<SubmissionResponse>(
     `/quests/${data.questId}/submissions`,
-    payload,
+    payload
   );
 }
 
@@ -184,11 +195,11 @@ export async function createSubmission(
 export async function approveSubmission(
   questId: string,
   submissionId: string,
-  payload?: ApproveSubmissionRequest,
+  payload?: ApproveSubmissionRequest
 ): Promise<SubmissionResponse> {
   return post<{ success: boolean; data: { submission: SubmissionResponse } }>(
     `/quests/${questId}/submissions/${submissionId}/approve`,
-    payload ?? {},
+    payload ?? {}
   ).then((res) => res.data.submission);
 }
 
@@ -198,11 +209,11 @@ export async function approveSubmission(
 export async function rejectSubmission(
   questId: string,
   submissionId: string,
-  payload: RejectSubmissionRequest,
+  payload: RejectSubmissionRequest
 ): Promise<SubmissionResponse> {
   return post<{ success: boolean; data: { submission: SubmissionResponse } }>(
     `/quests/${questId}/submissions/${submissionId}/reject`,
-    payload,
+    payload
   ).then((res) => res.data.submission);
 }
 
@@ -217,7 +228,7 @@ export async function rejectSubmission(
 export async function uploadProofFile(
   questId: string,
   file: File,
-  onProgress?: (pct: number) => void,
+  onProgress?: (pct: number) => void
 ): Promise<UploadProofResponse> {
   const token = (await import('./client')).tokenManager.getAccessToken();
   if (!token) {
@@ -256,7 +267,9 @@ export async function uploadProofFile(
       }
     });
 
-    xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+    xhr.addEventListener('error', () =>
+      reject(new Error('Network error during upload'))
+    );
     xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
     xhr.open('POST', `${baseURL}/api/v1/submissions/upload`);

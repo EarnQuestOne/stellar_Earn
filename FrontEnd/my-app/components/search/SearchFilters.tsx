@@ -15,7 +15,9 @@ const filterOptions = [
 ] as const;
 
 export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
-  const handleFilterChange = (type: 'quest' | 'user' | 'submission' | 'all') => {
+  const handleFilterChange = (
+    type: 'quest' | 'user' | 'submission' | 'all'
+  ) => {
     onChange({ ...filters, type });
   };
 

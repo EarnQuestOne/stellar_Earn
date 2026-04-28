@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import type { TourTooltipPlacement } from "@/lib/utils/onboarding";
+import { useEffect, useMemo, useState } from 'react';
+import type { TourTooltipPlacement } from '@/lib/utils/onboarding';
 
 interface TourTooltipProps {
   targetSelector: string;
@@ -24,7 +24,7 @@ export function TourTooltip({
   targetSelector,
   title,
   description,
-  placement = "bottom",
+  placement = 'bottom',
 }: TourTooltipProps) {
   const [position, setPosition] = useState<TooltipPosition | null>(null);
 
@@ -48,40 +48,43 @@ export function TourTooltip({
       let top = rect.bottom + OFFSET;
       let left = rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2;
 
-      if (placement === "top") {
+      if (placement === 'top') {
         top = rect.top - OFFSET;
-      } else if (placement === "left") {
+      } else if (placement === 'left') {
         top = rect.top + rect.height / 2;
         left = rect.left - TOOLTIP_WIDTH - OFFSET;
-      } else if (placement === "right") {
+      } else if (placement === 'right') {
         top = rect.top + rect.height / 2;
         left = rect.right + OFFSET;
       }
 
-      left = Math.max(16, Math.min(left, window.innerWidth - TOOLTIP_WIDTH - 16));
+      left = Math.max(
+        16,
+        Math.min(left, window.innerWidth - TOOLTIP_WIDTH - 16)
+      );
       top = Math.max(16, Math.min(top, window.innerHeight - 120));
 
       setPosition({ top, left, spotlight });
     };
 
     calculatePosition();
-    window.addEventListener("resize", calculatePosition);
-    window.addEventListener("scroll", calculatePosition, true);
+    window.addEventListener('resize', calculatePosition);
+    window.addEventListener('scroll', calculatePosition, true);
 
     return () => {
-      window.removeEventListener("resize", calculatePosition);
-      window.removeEventListener("scroll", calculatePosition, true);
+      window.removeEventListener('resize', calculatePosition);
+      window.removeEventListener('scroll', calculatePosition, true);
     };
   }, [placement, targetSelector]);
 
   const transform = useMemo(() => {
-    if (placement === "top") {
-      return "translateY(-100%)";
+    if (placement === 'top') {
+      return 'translateY(-100%)';
     }
-    if (placement === "left" || placement === "right") {
-      return "translateY(-50%)";
+    if (placement === 'left' || placement === 'right') {
+      return 'translateY(-50%)';
     }
-    return "translateY(0)";
+    return 'translateY(0)';
   }, [placement]);
 
   if (!position) {

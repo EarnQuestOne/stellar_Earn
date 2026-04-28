@@ -46,7 +46,9 @@ describe('Environment Variable Validation', () => {
 
       expect(result.valid).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings.some(w => w.includes('NEXT_PUBLIC_STELLAR_NETWORK'))).toBe(true);
+      expect(
+        result.warnings.some((w) => w.includes('NEXT_PUBLIC_STELLAR_NETWORK'))
+      ).toBe(true);
     });
 
     it('should provide helpful error details', () => {
@@ -109,7 +111,7 @@ describe('Environment Variable Validation', () => {
       // Note: NODE_ENV is read-only in tests, so we test the current value
       const isDev = env.isDevelopment;
       const isProd = env.isProduction;
-      
+
       // In test environment, both should be false
       expect(typeof isDev).toBe('boolean');
       expect(typeof isProd).toBe('boolean');
@@ -119,7 +121,7 @@ describe('Environment Variable Validation', () => {
       // Note: NODE_ENV is read-only in tests, so we test the current value
       const isDev = env.isDevelopment;
       const isProd = env.isProduction;
-      
+
       // In test environment, both should be false
       expect(typeof isDev).toBe('boolean');
       expect(typeof isProd).toBe('boolean');

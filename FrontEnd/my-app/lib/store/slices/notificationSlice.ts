@@ -1,5 +1,8 @@
-import { StateCreator } from "zustand";
-import type { Notification, NotificationSettings } from "@/lib/utils/notifications";
+import { StateCreator } from 'zustand';
+import type {
+  Notification,
+  NotificationSettings,
+} from '@/lib/utils/notifications';
 
 export interface NotificationSlice {
   // state
@@ -26,7 +29,9 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   soundEnabled: true,
 };
 
-export const createNotificationSlice: StateCreator<NotificationSlice> = (set) => ({
+export const createNotificationSlice: StateCreator<NotificationSlice> = (
+  set
+) => ({
   notifications: [],
   notificationSettings: DEFAULT_SETTINGS,
   unreadCount: 0,
@@ -72,8 +77,7 @@ export const createNotificationSlice: StateCreator<NotificationSlice> = (set) =>
       };
     }),
 
-  clearAllNotifications: () =>
-    set({ notifications: [], unreadCount: 0 }),
+  clearAllNotifications: () => set({ notifications: [], unreadCount: 0 }),
 
   updateNotificationSettings: (settings) =>
     set((s) => ({

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import Link from "next/link";
-import HeroSection from "@/components/homepage/HeroSection";
-import { HowItWorks } from "@/components/homepage/HowItWorks";
-import FeaturedQuests from "@/components/homepage/FeaturedQuests";
-import { FAQAccordion } from "@/components/homepage/FAQAccordion";
-import { ComponentErrorBoundary } from "@/components/error/ErrorBoundary";
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import HeroSection from '@/components/homepage/HeroSection';
+import { HowItWorks } from '@/components/homepage/HowItWorks';
+import FeaturedQuests from '@/components/homepage/FeaturedQuests';
+import { FAQAccordion } from '@/components/homepage/FAQAccordion';
+import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 
 export default function Home() {
   return (
@@ -36,7 +36,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
           >
-            Ready to Start{" "}
+            Ready to Start{' '}
             <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
               Earning?
             </span>

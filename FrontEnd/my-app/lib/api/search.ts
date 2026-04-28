@@ -22,7 +22,7 @@ export type SearchFilters = Pick<SearchParams, 'type' | 'limit'>;
 export async function searchGlobal(
   query: string,
   filters?: SearchFilters,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<SearchResponse> {
   const params: Record<string, string | number | undefined> = { q: query };
   if (filters?.type && filters.type !== 'all') params.type = filters.type;
@@ -32,7 +32,7 @@ export async function searchGlobal(
     get<SearchResponse>('/search', {
       params,
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -57,7 +57,7 @@ export function saveRecentSearch(query: string): void {
   if (typeof window === 'undefined') return;
   try {
     const current: string[] = JSON.parse(
-      localStorage.getItem(RECENT_SEARCHES_KEY) || '[]',
+      localStorage.getItem(RECENT_SEARCHES_KEY) || '[]'
     );
     const filtered = current.filter((q) => q !== query);
     const updated = [query, ...filtered].slice(0, MAX_RECENT);

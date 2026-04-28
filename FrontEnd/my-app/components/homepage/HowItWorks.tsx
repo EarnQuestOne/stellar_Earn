@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { StepTimeline } from "./StepTimeline";
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { StepTimeline } from './StepTimeline';
 
 export function HowItWorks() {
   return (
-    <section className="bg-[#071020] px-4 py-20 sm:py-28" aria-labelledby="how-it-works-heading">
+    <section
+      className="bg-[#071020] px-4 py-20 sm:py-28"
+      aria-labelledby="how-it-works-heading"
+    >
       <div className="mx-auto max-w-7xl">
         {/* Heading */}
         <div className="mb-16 text-center">
@@ -18,7 +21,7 @@ export function HowItWorks() {
             transition={{ duration: 0.55 }}
             className="text-4xl font-bold tracking-tight text-white sm:text-5xl"
           >
-            How It{" "}
+            How It{' '}
             <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
               Works
             </span>
