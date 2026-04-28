@@ -15,6 +15,7 @@ import { A11yAnnouncerProvider } from '@/components/a11y/A11yAnnouncer';
 import PerformanceMonitor from '@/components/ui/PerformanceMonitor';
 import { AppErrorBoundary } from '@/components/error/ErrorBoundary';
 import { EnvValidator } from '@/components/providers/EnvValidator';
+import { SWRegister } from '@/components/SWRegister';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -51,26 +52,10 @@ export default function RootLayout({
     })();
   `;
 
-  const swRegistrationScript = `
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(
-          function(registration) {
-            console.log('Service Worker registration successful with scope: ', registration.scope);
-          },
-          function(err) {
-            console.log('Service Worker registration failed: ', err);
-          }
-        );
-      });
-    }
-  `;
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <script dangerouslySetInnerHTML={{ __html: swRegistrationScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -90,6 +75,7 @@ export default function RootLayout({
                     <ToastProvider>
                       <AppErrorBoundary>
                         <SkipToContent />
+                        <SWRegister />
                         {children}
                         <PerformanceMonitor />
                         <ConsentBanner />
