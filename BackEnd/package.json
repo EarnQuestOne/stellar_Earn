@@ -67,6 +67,7 @@
     "@sendgrid/mail": "^8.1.4",
     "@sentry/nestjs": "^8.53.0",
     "@sentry/node": "^8.53.0",
+    "@stellar/stellar-sdk": "^15.0.1",
     "@types/crypto-js": "^4.2.2",
     "@types/passport-github2": "^1.2.9",
     "@types/passport-google-oauth20": "^2.0.17",
