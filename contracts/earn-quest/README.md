@@ -32,6 +32,10 @@ cargo test
 
 # Run with output
 cargo test -- --nocapture
+
+# Using Make
+make test
+make test-verbose
 ```
 
 Targeted slices for the recent contract work:
@@ -46,6 +50,20 @@ cargo test test_events
 # Dispute record workflow and emitted events
 cargo test test_dispute
 ```
+
+### Snapshot Management
+```bash
+# Update test snapshots (174 files)
+make snapshots
+
+# Verify snapshots
+make snapshots-verify
+
+# Show statistics
+make snapshots-stats
+```
+
+See [SNAPSHOT_MANAGEMENT.md](./SNAPSHOT_MANAGEMENT.md) for complete documentation.
 
 ## Project Structure
 
