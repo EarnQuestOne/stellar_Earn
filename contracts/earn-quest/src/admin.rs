@@ -3,7 +3,6 @@ use crate::storage;
 use crate::types::Role;
 use soroban_sdk::{Address, Env};
 
-/// Add a new admin (only callable by existing admin)
 /// Adds a new administrator to the contract.
 ///
 /// Only a SuperAdmin can add new administrators.
@@ -29,7 +28,6 @@ pub fn add_admin(env: &Env, caller: &Address, new_admin: &Address) -> Result<(),
     Ok(())
 }
 
-/// Remove an admin (only callable by existing admin)
 /// Removes an administrator from the contract.
 ///
 /// Only a SuperAdmin can remove administrators.
@@ -55,7 +53,6 @@ pub fn remove_admin(env: &Env, caller: &Address, admin_to_remove: &Address) -> R
     Ok(())
 }
 
-/// Check if an address is an admin
 /// Checks if an address is an administrator.
 ///
 /// # Arguments
@@ -70,7 +67,6 @@ pub fn is_admin(env: &Env, address: &Address) -> bool {
     storage::is_admin(env, address)
 }
 
-/// Require that caller is an admin (helper for protected functions)
 /// Requires that the caller has administrative privileges.
 ///
 /// This is a helper function used to protect sensitive contract methods.

@@ -22,15 +22,12 @@ mod test_token;
 
 use crate::errors::Error;
 
-use crate::types::{
-    AggregatedPrice, Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, Dispute, EscrowInfo, OracleConfig, PlatformStats,
-    PriceData, PriceFeedRequest, Quest, QuestMetadata, QuestStatus, Role, Submission, UserBadges, UserCore, UserStats, Commitment
-
 pub use crate::types::{
     AggregatedPrice, Badge, BatchApprovalInput, BatchQuestInput, CreatorStats, Dispute, DisputeStatus, EscrowInfo, OracleConfig, PlatformStats,
     PriceData, PriceFeedRequest, Quest, QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore, UserStats, Commitment
-
 };
+
+
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, U256, Vec};
 
 #[contract]
@@ -82,16 +79,46 @@ impl EarnQuestContract {
     }
 
     /// Returns the current version of the contract.
+    ///
+    /// # Returns
+    ///
+    /// The contract version as a `u32`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let version = client.get_version();
+    /// ```
     pub fn get_version(env: Env) -> u32 {
         storage::get_version(&env)
     }
 
     /// Returns the address of the contract administrator.
+    ///
+    /// # Returns
+    ///
+    /// The `Address` of the current contract administrator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let admin = client.get_admin();
+    /// ```
     pub fn get_admin(env: Env) -> Address {
         storage::get_admin(&env)
     }
 
     /// Returns the global configuration as a vector of key-value pairs.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<(String, String)>` containing configuration keys and values.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let config = client.get_config();
+    /// ```
     pub fn get_config(env: Env) -> Vec<(String, String)> {
         storage::get_config(&env)
     }
@@ -147,11 +174,42 @@ impl EarnQuestContract {
     }
 
     /// Checks if an address has a specific role.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `address` - The address to check.
+    /// * `role` - The role to verify.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the address has the role, `false` otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let has_role = client.has_role(&user, &Role::Admin);
+    /// ```
     pub fn has_role(env: Env, address: Address, role: Role) -> bool {
         storage::has_role(&env, &address, &role)
     }
 
     /// Checks if an address is an administrator.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `address` - The address to check.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the address is an admin or super admin, `false` otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let is_admin = client.is_admin(&user);
+    /// ```
     pub fn is_admin(env: Env, address: Address) -> bool {
         admin::is_admin(&env, &address)
     }
@@ -441,11 +499,41 @@ impl EarnQuestContract {
     }
 
     /// Returns the core statistics for a user (XP, level, quests completed).
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `user` - The address of the user.
+    ///
+    /// # Returns
+    ///
+    /// A `UserCore` struct containing the user's statistics.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let stats = client.get_user_stats(&user);
+    /// ```
     pub fn get_user_stats(env: Env, user: Address) -> UserCore {
         reputation::get_user_stats(&env, &user)
     }
 
     /// Returns the collection of badges earned by a user.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `user` - The address of the user.
+    ///
+    /// # Returns
+    ///
+    /// A `UserBadges` struct containing the user's badges.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let badges = client.get_user_badges(&user);
+    /// ```
     pub fn get_user_badges(env: Env, user: Address) -> UserBadges {
         storage::get_user_badges(&env, &user)
     }
@@ -543,21 +631,70 @@ impl EarnQuestContract {
     }
 
     /// Returns the details of a specific dispute.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    /// * `initiator` - The address of the dispute initiator.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<Dispute, Error>` containing the dispute details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let dispute = client.get_dispute(&quest_id, &user)?;
+    /// ```
     pub fn get_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<Dispute, Error> {
         dispute::get_dispute(&env, quest_id, initiator)
     }
 
     /// Pauses all contract activities (Pauser only).
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `caller` - The address of the account performing the action.
+    ///
+    /// # Returns
+    ///
+    /// `Result<(), Error>` indicating success or failure.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// client.emergency_pause(&pauser)?;
+    /// ```
     pub fn emergency_pause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_pause(&env, &caller)
     }
 
     /// Approves unpausing the contract (Admin only).
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `caller` - The address of the account performing the action.
+    ///
+    /// # Returns
+    ///
+    /// `Result<(), Error>` indicating success or failure.
     pub fn emergency_approve_unpause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_approve_unpause(&env, &caller)
     }
 
     /// Unpauses the contract after sufficient approvals (Admin only).
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `caller` - The address of the account performing the action.
+    ///
+    /// # Returns
+    ///
+    /// `Result<(), Error>` indicating success or failure.
     pub fn emergency_unpause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_unpause(&env, &caller)
     }
@@ -673,6 +810,10 @@ impl EarnQuestContract {
     /// * `quest_id` - The symbol of the quest.
     /// * `updater` - The address of the user updating (must be creator).
     /// * `metadata` - The new metadata content.
+    ///
+    /// # Returns
+    ///
+    /// `Result<(), Error>` indicating success or failure.
     pub fn update_quest_metadata(
         env: Env,
         quest_id: Symbol,
@@ -685,11 +826,35 @@ impl EarnQuestContract {
     }
 
     /// Returns the metadata for a specific quest.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<QuestMetadata, Error>` containing the quest metadata.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata = client.get_quest_metadata(&quest_id)?;
+    /// ```
     pub fn get_quest_metadata(env: Env, quest_id: Symbol) -> Result<QuestMetadata, Error> {
         storage::get_quest_metadata(&env, &quest_id)
     }
 
     /// Checks if a quest has associated metadata.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    ///
+    /// # Returns
+    ///
+    /// `true` if metadata exists, `false` otherwise.
     pub fn has_quest_metadata(env: Env, quest_id: Symbol) -> bool {
         storage::has_quest_metadata(&env, &quest_id)
     }
@@ -705,11 +870,30 @@ impl EarnQuestContract {
     }
 
     /// Returns the details of a quest by its symbol ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<Quest, Error>` containing the quest details.
     pub fn get_quest(env: Env, quest_id: Symbol) -> Result<Quest, Error> {
         storage::get_quest(&env, &quest_id)
     }
 
     /// Returns the submission details for a specific user and quest.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    /// * `submitter` - The address of the user.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<Submission, Error>` containing the submission details.
     pub fn get_submission(env: Env, quest_id: Symbol, submitter: Address) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
     }
@@ -763,6 +947,16 @@ impl EarnQuestContract {
     }
 
     /// Returns a list of currently active quests.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `offset` - Pagination offset.
+    /// * `limit` - Pagination limit.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<Quest>` of active quests.
     pub fn get_active_quests(env: Env, offset: u32, limit: u32) -> Vec<Quest> {
         quest::get_active_quests(&env, offset, limit)
     }

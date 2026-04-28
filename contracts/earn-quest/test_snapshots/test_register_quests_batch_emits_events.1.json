@@ -66,146 +66,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "category"
-                                    },
-                                    "val": {
-                                      "string": "test"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "description"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Inline"
-                                        },
-                                        {
-                                          "string": "Description"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "requirements"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "tags"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "title"
-                                    },
-                                    "val": {
-                                      "string": "Test Quest"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "u64": 10000
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 10000
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "E1"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 50
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "E1"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 50
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -214,146 +113,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "category"
-                                    },
-                                    "val": {
-                                      "string": "test"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "description"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Inline"
-                                        },
-                                        {
-                                          "string": "Description"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "requirements"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "tags"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "title"
-                                    },
-                                    "val": {
-                                      "string": "Test Quest"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "u64": 10000
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 10000
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "E2"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 50
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "E2"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 50
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -1178,146 +976,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "category"
-                                    },
-                                    "val": {
-                                      "string": "test"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "description"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Inline"
-                                        },
-                                        {
-                                          "string": "Description"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "requirements"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "tags"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "title"
-                                    },
-                                    "val": {
-                                      "string": "Test Quest"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "u64": 10000
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 10000
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "E1"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 50
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "E1"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 50
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -1326,146 +1023,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "category"
-                                    },
-                                    "val": {
-                                      "string": "test"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "description"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Inline"
-                                        },
-                                        {
-                                          "string": "Description"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "requirements"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "tags"
-                                    },
-                                    "val": {
-                                      "vec": []
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "title"
-                                    },
-                                    "val": {
-                                      "string": "Test Quest"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "u64": 10000
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 10000
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "E2"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 50
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "E2"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 50
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]

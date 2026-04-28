@@ -6,12 +6,22 @@ use crate::validation;
 use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 /// Commit to a submission by providing a hash of the proof and a secret salt.
+///
 /// This prevents front-running by hiding the actual proof until the reveal phase.
 ///
-/// Validates:
-/// - Quest exists and is Active
-/// - Quest has not expired
-/// - User does not already have a submission or commitment
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `commitment_hash` - The hash of the proof and salt.
+///
+/// # Returns
+///
+/// * `Ok(())` if the commitment is successfully stored.
+/// * `Err(Error::QuestNotActive)` if the quest is not active.
+/// * `Err(Error::QuestExpired)` if the deadline has passed.
+/// * `Err(Error::AlreadyClaimed)` if the user already has a submission.
 pub fn commit_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -54,11 +64,21 @@ pub fn commit_submission(
 }
 
 /// Reveal the proof and salt to complete the submission process.
+///
 /// The contract verifies that hash(proof_hash + salt + submitter) matches the commitment.
 ///
-/// Validates:
-/// - Commitment exists for the user
-/// - Provided proof and salt match the stored commitment
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The actual proof hash.
+/// * `salt` - The salt used in the commitment.
+///
+/// # Returns
+///
+/// * `Ok(())` if the reveal is successful and the submission is created.
+/// * `Err(Error::InvalidCommitment)` if the provided data does not match the commitment.
 pub fn reveal_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -102,12 +122,19 @@ pub fn reveal_submission(
     Ok(())
 }
 
-/// Submit proof for a quest with full input validation.
+/// Submits a proof for a quest without the commit-reveal flow.
 ///
-/// Validates:
-/// - Quest exists
-/// - Quest is currently Active
-/// - Quest has not expired (deadline not passed)
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The hash of the proof being submitted.
+///
+/// # Returns
+///
+/// * `Ok(())` if the submission is successful.
+/// * `Err(Error)` if the quest is not active or has expired.
 pub fn submit_proof(
     env: &Env,
     quest_id: &Symbol,
@@ -139,12 +166,20 @@ pub fn submit_proof(
     Ok(())
 }
 
-/// Approve a submission with status transition validation.
+/// Approve a submission (Verifier only).
 ///
-/// Validates:
-/// - Quest exists and caller is the verifier
-/// - Submission exists
-/// - Submission status transition (Pending -> Approved) is valid
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user whose submission is being approved.
+/// * `verifier` - The address of the verifier.
+///
+/// # Returns
+///
+/// * `Ok(())` if the approval is successful.
+/// * `Err(Error::Unauthorized)` if the caller is not the quest's verifier.
+/// * `Err(Error)` if the submission is not found or status transition is invalid.
 pub fn approve_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -180,8 +215,6 @@ pub fn approve_submission(
     Ok(())
 }
 
-/// Core claim validation that operates on already-fetched data.
-/// This avoids repeated storage reads when the data is already available.
 /// Core claim validation that operates on already-fetched data.
 ///
 /// This function performs the necessary checks to ensure a reward claim is valid.
@@ -278,17 +311,13 @@ pub fn approve_submissions_batch(
 
     // Pre-validate all addresses to fail fast
     for i in 0u32..len {
-
-        let s = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
-        for j in 0..s.submissions.len() {
-
         let s = submissions.get(i).unwrap();
         for j in 0u32..s.submissions.len() {
-
             let submitter = s.submissions.get(j).unwrap();
             validation::validate_addresses_distinct(verifier, &submitter)?;
         }
     }
+
 
     // Cache quest and escrow data to avoid redundant reads
     let mut cached_quest_id: Option<Symbol> = None;

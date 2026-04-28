@@ -7,11 +7,6 @@ use soroban_sdk::{Address, Env, Symbol};
 
 use super::types::{Dispute, DisputeStatus};
 
-/// Open a new dispute for a rejected submission.
-///
-/// Only the submitter (initiator) can open a dispute.
-/// The submission must exist and be in `Rejected` status.
-/// Only one open dispute per (quest_id, initiator) is allowed.
 /// Opens a new dispute for a rejected submission.
 ///
 /// Only the submitter (initiator) can open a dispute.
@@ -69,12 +64,11 @@ pub fn open_dispute(
     Ok(dispute)
 }
 
-/// Resolve an open dispute. Only the assigned arbitrator can call this.
-9
 /// Resolves an open dispute.
 ///
 /// Only the assigned arbitrator can resolve the dispute.
 /// The dispute must be in `Pending` or `UnderReview` status.
+/// If the dispute is in `Appealed` status, only an admin can resolve it.
 ///
 /// # Arguments
 ///
@@ -88,9 +82,6 @@ pub fn open_dispute(
 /// * `Ok(())` if the dispute is successfully resolved.
 /// * `Err(Error::DisputeNotAuthorized)` if the caller is not the assigned arbitrator.
 /// * `Err(Error::DisputeNotPending)` if the dispute is not in a resolvable state.
-
-/// If the dispute is in `Appealed` status, only an admin can resolve it.
-
 pub fn resolve_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -158,7 +149,6 @@ pub fn appeal_dispute(
     Ok(())
 }
 
-/// Withdraw a dispute (only by initiator, only while Pending).
 /// Withdraws an open dispute.
 ///
 /// Only the initiator can withdraw their own dispute, and only if it's still `Pending`.
@@ -199,7 +189,6 @@ pub fn withdraw_dispute(
     Ok(())
 }
 
-/// Get dispute details for a quest and initiator.
 /// Retrieves the details of a specific dispute.
 ///
 /// # Arguments
@@ -220,7 +209,6 @@ pub fn get_dispute(
     storage::get_dispute(env, &quest_id, &initiator)
 }
 
-/// Check if a dispute exists and is in a pending/review state.
 /// Checks if a dispute exists and is in an active (Pending or UnderReview) state.
 ///
 /// # Arguments

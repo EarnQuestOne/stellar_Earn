@@ -9,8 +9,6 @@ const LEVEL_3_XP: u64 = 600;
 const LEVEL_4_XP: u64 = 1000;
 const LEVEL_5_XP: u64 = 1500;
 
-/// Award XP to a user upon quest completion.
-/// Only reads/writes UserCore (hot path) — badge Vec not touched.
 /// Awards experience points (XP) to a user and handles leveling up.
 ///
 /// This function increments the user's total XP and the number of quests completed.
@@ -47,7 +45,6 @@ pub fn award_xp(env: &Env, user: &Address, xp_amount: u64) -> Result<UserCore, E
     Ok(stats)
 }
 
-/// Calculate user level based on total XP
 /// Calculates the user level based on their current experience points (XP).
 ///
 /// # Level Thresholds:
@@ -78,11 +75,20 @@ pub fn calculate_level(xp: u64) -> u32 {
     }
 }
 
-/// Grant a badge to a user (admin-authorized).
-/// Only reads/writes UserBadges (cold path) — XP counters not touched.
-/// Grants a badge to a user.
+    // Map badge to XP reward
+    fn badge_xp(badge: &Badge) -> u64 {
+        match badge {
+            Badge::Rookie => 10,
+            Badge::Explorer => 20,
+            Badge::Veteran => 30,
+            Badge::Master => 50,
+            Badge::Legend => 100,
+        }
+    }
+
+/// Grants a badge to a user (BadgeAdmin or Admin only).
 ///
-/// Only accounts with administrative or `BadgeAdmin` roles can grant badges.
+/// If the user already has the badge, the function returns success without awarding extra XP.
 ///
 /// # Arguments
 ///
@@ -93,26 +99,27 @@ pub fn calculate_level(xp: u64) -> u32 {
 ///
 /// # Returns
 ///
-/// * `Ok(())` if the badge is successfully granted or if the user already has it.
+/// * `Ok(())` if the badge is successfully granted.
 /// * `Err(Error::Unauthorized)` if the caller lacks permission.
 pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
-    caller.require_auth();
-    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
-        return Err(Error::Unauthorized);
+        caller.require_auth();
+        if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
+            return Err(Error::Unauthorized);
+        }
+
+        let mut user_badges = storage::get_user_badges(env, user);
+
+        if !user_badges.badges.contains(&badge) {
+            user_badges.badges.push_back(badge.clone());
+            storage::set_user_badges(env, user, &user_badges);
+            events::badge_granted(env, user.clone(), badge.clone());
+            // Award XP based on badge
+            let _ = award_xp(env, user, badge_xp(&badge));
+        }
+
+        Ok(())
     }
 
-    let mut user_badges = storage::get_user_badges(env, user);
-
-    if !user_badges.badges.contains(&badge) {
-        user_badges.badges.push_back(badge.clone());
-        storage::set_user_badges(env, user, &user_badges);
-        events::badge_granted(env, user.clone(), badge);
-    }
-
-    Ok(())
-}
-
-/// Get user reputation stats (UserCore only — no badge Vec).
 /// Retrieves the core reputation statistics for a user.
 ///
 /// If no stats exist for the user, returns default values (0 XP, Level 1, 0 Quests).
@@ -124,7 +131,7 @@ pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) ->
 ///
 /// # Returns
 ///
-/// A `UserCore` struct containing the user's XP, level, and completed quest count.
+/// A `UserCore` struct containing the user's statistics.
 pub fn get_user_stats(env: &Env, user: &Address) -> UserCore {
     storage::get_user_stats_or_default(env, user)
 }
