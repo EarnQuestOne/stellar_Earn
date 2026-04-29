@@ -41,94 +41,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_0"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_0"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -137,94 +88,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_1"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_1"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -233,94 +135,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_2"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_2"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -381,314 +234,6 @@
                         },
                         "val": {
                           "bool": true
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeType"
-                            },
-                            {
-                              "symbol": "explorer"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "description"
-                              },
-                              "val": {
-                                "string": "Reached level 2."
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "explorer"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "is_active"
-                              },
-                              "val": {
-                                "bool": true
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "name"
-                              },
-                              "val": {
-                                "string": "Explorer"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp_threshold"
-                              },
-                              "val": {
-                                "u64": 300
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeType"
-                            },
-                            {
-                              "symbol": "legend"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "description"
-                              },
-                              "val": {
-                                "string": "Reached level 5."
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "legend"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "is_active"
-                              },
-                              "val": {
-                                "bool": true
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "name"
-                              },
-                              "val": {
-                                "string": "Legend"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp_threshold"
-                              },
-                              "val": {
-                                "u64": 1500
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeType"
-                            },
-                            {
-                              "symbol": "master"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "description"
-                              },
-                              "val": {
-                                "string": "Reached level 4."
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "master"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "is_active"
-                              },
-                              "val": {
-                                "bool": true
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "name"
-                              },
-                              "val": {
-                                "string": "Master"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp_threshold"
-                              },
-                              "val": {
-                                "u64": 1000
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeType"
-                            },
-                            {
-                              "symbol": "rookie"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "description"
-                              },
-                              "val": {
-                                "string": "First quest completed."
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "rookie"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "is_active"
-                              },
-                              "val": {
-                                "bool": true
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "name"
-                              },
-                              "val": {
-                                "string": "Rookie"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp_threshold"
-                              },
-                              "val": {
-                                "u64": 0
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeType"
-                            },
-                            {
-                              "symbol": "veteran"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "description"
-                              },
-                              "val": {
-                                "string": "Reached level 3."
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "id"
-                              },
-                              "val": {
-                                "symbol": "veteran"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "is_active"
-                              },
-                              "val": {
-                                "bool": true
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "name"
-                              },
-                              "val": {
-                                "string": "Veteran"
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp_threshold"
-                              },
-                              "val": {
-                                "u64": 600
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "BadgeTypeIds"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": [
-                            {
-                              "symbol": "rookie"
-                            },
-                            {
-                              "symbol": "explorer"
-                            },
-                            {
-                              "symbol": "veteran"
-                            },
-                            {
-                              "symbol": "master"
-                            },
-                            {
-                              "symbol": "legend"
-                            }
-                          ]
                         }
                       },
                       {
@@ -1282,94 +827,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_0"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_0"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -1378,94 +874,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_1"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_1"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]
@@ -1474,94 +921,45 @@
                       "map": [
                         {
                           "key": {
-                            "symbol": "metadata"
+                            "symbol": "deadline"
                           },
                           "val": {
-                            "vec": []
+                            "u64": 86400
                           }
                         },
                         {
                           "key": {
-                            "symbol": "quests"
+                            "symbol": "id"
                           },
                           "val": {
-                            "vec": [
-                              {
-                                "map": [
-                                  {
-                                    "key": {
-                                      "symbol": "creator"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "deadline"
-                                    },
-                                    "val": {
-                                      "u64": 86400
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "id"
-                                    },
-                                    "val": {
-                                      "symbol": "quest_2"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_amount"
-                                    },
-                                    "val": {
-                                      "i128": {
-                                        "hi": 0,
-                                        "lo": 1000
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "reward_asset"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "status"
-                                    },
-                                    "val": {
-                                      "vec": [
-                                        {
-                                          "symbol": "Active"
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "total_claims"
-                                    },
-                                    "val": {
-                                      "u32": 0
-                                    }
-                                  },
-                                  {
-                                    "key": {
-                                      "symbol": "verifier"
-                                    },
-                                    "val": {
-                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                                    }
-                                  }
-                                ]
-                              }
-                            ]
+                            "symbol": "quest_2"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1000
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "reward_asset"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "verifier"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                           }
                         }
                       ]

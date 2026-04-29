@@ -7,11 +7,24 @@ use soroban_sdk::{Address, Env, Symbol};
 
 use super::types::{Dispute, DisputeStatus};
 
-/// Open a new dispute for a rejected submission.
+/// Opens a new dispute for a rejected submission.
 ///
 /// Only the submitter (initiator) can open a dispute.
 /// The submission must exist and be in `Rejected` status.
 /// Only one open dispute per (quest_id, initiator) is allowed.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest in dispute.
+/// * `initiator` - The address of the user initiating the dispute.
+/// * `arbitrator` - The address of the designated arbitrator.
+///
+/// # Returns
+///
+/// * `Ok(Dispute)` containing the created dispute record.
+/// * `Err(Error::DisputeAlreadyExists)` if a pending dispute already exists.
+/// * `Err(Error)` if authorization or validation fails.
 pub fn open_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -51,8 +64,24 @@ pub fn open_dispute(
     Ok(dispute)
 }
 
-/// Resolve an open dispute. Only the assigned arbitrator can call this.
+/// Resolves an open dispute.
+///
+/// Only the assigned arbitrator can resolve the dispute.
+/// The dispute must be in `Pending` or `UnderReview` status.
 /// If the dispute is in `Appealed` status, only an admin can resolve it.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `initiator` - The address of the dispute initiator.
+/// * `arbitrator` - The address of the arbitrator resolving the dispute.
+///
+/// # Returns
+///
+/// * `Ok(())` if the dispute is successfully resolved.
+/// * `Err(Error::DisputeNotAuthorized)` if the caller is not the assigned arbitrator.
+/// * `Err(Error::DisputeNotPending)` if the dispute is not in a resolvable state.
 pub fn resolve_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -120,7 +149,20 @@ pub fn appeal_dispute(
     Ok(())
 }
 
-/// Withdraw a dispute (only by initiator, only while Pending).
+/// Withdraws an open dispute.
+///
+/// Only the initiator can withdraw their own dispute, and only if it's still `Pending`.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `initiator` - The address of the user who filed the dispute.
+///
+/// # Returns
+///
+/// * `Ok(())` if the dispute is successfully withdrawn.
+/// * `Err(Error::DisputeNotPending)` if the dispute is already under review or resolved.
 pub fn withdraw_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -147,7 +189,18 @@ pub fn withdraw_dispute(
     Ok(())
 }
 
-/// Get dispute details for a quest and initiator.
+/// Retrieves the details of a specific dispute.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `initiator` - The address of the dispute initiator.
+///
+/// # Returns
+///
+/// * `Ok(Dispute)` if found.
+/// * `Err(Error::DisputeNotFound)` if no dispute exists for the given ID and initiator.
 pub fn get_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -156,7 +209,17 @@ pub fn get_dispute(
     storage::get_dispute(env, &quest_id, &initiator)
 }
 
-/// Check if a dispute exists and is in a pending/review state.
+/// Checks if a dispute exists and is in an active (Pending or UnderReview) state.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `initiator` - The address of the initiator.
+///
+/// # Returns
+///
+/// `true` if an active dispute exists, `false` otherwise.
 pub fn has_active_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> bool {
     matches!(
         storage::get_dispute(env, quest_id, initiator).ok(),

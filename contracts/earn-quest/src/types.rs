@@ -5,26 +5,41 @@ use soroban_sdk::{contracttype, symbol_short, Address, BytesN, Env, String, Symb
 // ─────────────────────────────────────────────────────────────────────────────
 // Quest is already lean (8 fields, no Vec).  No split needed.
 
+/// Represents a quest on the StellarEarn platform.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Quest {
+    /// Unique identifier for the quest.
     pub id: Symbol,
+    /// Address of the quest creator.
     pub creator: Address,
+    /// Address of the token used for rewards.
     pub reward_asset: Address,
+    /// Amount of tokens rewarded per successful submission.
     pub reward_amount: i128,
+    /// Address authorized to approve or reject submissions.
     pub verifier: Address,
+    /// Unix timestamp when the quest expires.
     pub deadline: u64,
+    /// Current status of the quest.
     pub status: QuestStatus,
+    /// Total number of successful claims.
     pub total_claims: u32,
 }
 
+/// Possible states of a quest.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QuestStatus {
+    /// Quest is open for submissions.
     Active,
+    /// Quest is temporarily paused by an admin or creator.
     Paused,
+    /// Quest has reached its claim limit or been manually closed.
     Completed,
+    /// Quest deadline has passed.
     Expired,
+    /// Quest was cancelled by the creator.
     Cancelled,
 }
 
@@ -33,22 +48,33 @@ pub enum QuestStatus {
 // ─────────────────────────────────────────────────────────────────────────────
 // Submission is lean (5 fields, fixed-size BytesN<32>).  No split needed.
 
+/// Represents a user's submission for a quest.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Submission {
+    /// ID of the quest this submission is for.
     pub quest_id: Symbol,
+    /// Address of the user who submitted.
     pub submitter: Address,
+    /// Hash of the proof (e.g., IPFS CID or custom proof).
     pub proof_hash: BytesN<32>,
+    /// Current status of the submission.
     pub status: SubmissionStatus,
+    /// Unix timestamp when the submission was created.
     pub timestamp: u64,
 }
 
+/// Possible states of a quest submission.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SubmissionStatus {
+    /// Awaiting review by the verifier.
     Pending,
+    /// Approved by the verifier, reward can be claimed.
     Approved,
+    /// Rejected by the verifier.
     Rejected,
+    /// Reward has been successfully claimed.
     Paid,
 }
 
@@ -72,42 +98,59 @@ pub enum SubmissionStatus {
 //   signatures (`get_user_stats`) are unchanged.  The `badges` field is now
 //   fetched separately via `get_user_badges()`.
 
+/// Possible states of a dispute.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DisputeStatus {
+    /// Dispute has been opened and is awaiting review.
     Pending,
+    /// Arbitrator is currently reviewing the evidence.
     UnderReview,
+    /// Dispute has been resolved by the arbitrator.
     Resolved,
+    /// Dispute was withdrawn by the initiator.
     Withdrawn,
     Appealed,
 }
 
+/// Represents a dispute over a rejected submission.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Dispute {
+    /// ID of the quest in dispute.
     pub quest_id: Symbol,
+    /// Address of the user who initiated the dispute.
     pub initiator: Address,
+    /// Address of the designated arbitrator.
     pub arbitrator: Address,
+    /// Current status of the dispute.
     pub status: DisputeStatus,
+    /// Unix timestamp when the dispute was filed.
     pub filed_at: u64,
 }
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UserCore {
-    pub xp: u64,
-    /// Current user level (1–5)
-    pub level: u32,
-    /// Number of quests successfully completed
-    pub quests_completed: u32,
-}
-
+/// A commitment for a submission to prevent front-running.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Commitment {
+    /// Hash of the submission proof + salt.
     pub hash: BytesN<32>,
+    /// Unix timestamp of the commitment.
     pub timestamp: u64,
 }
+
+/// Core user statistics (Hot path).
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserCore {
+    /// Total experience points earned.
+    pub xp: u64,
+    /// Current user level.
+    pub level: u32,
+    /// Total number of quests successfully completed.
+    pub quests_completed: u32,
+}
+
 
 /// Separate storage entry for a user's badge collection.
 /// Loaded only when badges are displayed or granted.
@@ -117,91 +160,29 @@ pub struct UserBadges {
     pub badges: Vec<Badge>,
 }
 
+/// Achievement badges that can be granted to users.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Badge {
+    /// Initial badge for new users.
+    Rookie,
+    /// For users who have explored multiple quests.
+    Explorer,
+    /// For experienced quest completers.
+    Veteran,
+    /// For top-tier contributors.
+    Master,
+    /// The highest achievement level.
+    Legend,
+}
+
 /// Backward-compatible alias: existing code that references `UserStats` still
 /// compiles.  The `badges` field has moved to `UserBadges`.
 pub type UserStats = UserCore;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Badge — configurable registry
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// Badges are no longer a fixed enum.  A `Badge` is now a typed wrapper around
-// a `Symbol` id that must exist in the on-chain `BadgeType` registry before it
-// can be granted.  Admins (with the `BadgeAdmin` role) register, update, and
-// remove `BadgeType` entries at runtime.
-//
-// The five legacy badges (Rookie, Explorer, Veteran, Master, Legend) are
-// auto-seeded during `initialize` so existing flows continue to work.
-
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Badge {
-    pub id: Symbol,
-}
-
-impl Badge {
-    pub fn new(id: Symbol) -> Self {
-        Self { id }
-    }
-
-    pub fn rookie(_env: &Env) -> Self {
-        Self { id: symbol_short!("rookie") }
-    }
-    pub fn explorer(env: &Env) -> Self {
-        Self { id: Symbol::new(env, "explorer") }
-    }
-    pub fn veteran(_env: &Env) -> Self {
-        Self { id: symbol_short!("veteran") }
-    }
-    pub fn master(_env: &Env) -> Self {
-        Self { id: symbol_short!("master") }
-    }
-    pub fn legend(_env: &Env) -> Self {
-        Self { id: symbol_short!("legend") }
-    }
-}
-
-/// Admin-configured badge definition stored in the on-chain registry.
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BadgeType {
-    /// Stable identifier — also the storage key suffix.
-    pub id: Symbol,
-    /// Human-readable name (shown in clients).
-    pub name: String,
-    /// Optional description / criteria.
-    pub description: String,
-    /// Optional XP threshold (0 = no XP requirement; admin-only manual grant).
-    pub xp_threshold: u64,
-    /// Whether the badge can currently be granted.  Disable instead of delete
-    /// to preserve historical grants.
-    pub is_active: bool,
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // EscrowInfo  →  EscrowBalances  +  EscrowMeta
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// BEFORE (9 fields, always loaded):
-//   EscrowInfo {
-//     quest_id, depositor, token,
-//     total_deposited, total_paid_out, total_refunded,
-//     is_active, created_at, deposit_count
-//   }
-//
-// AFTER:
-//   EscrowBalances { total_deposited, total_paid_out, total_refunded,
-//                    is_active, deposit_count }   ← hot path (every payout/deposit)
-//   EscrowMeta     { depositor, token, created_at }  ← cold path (refund, display)
-//
-// Gas savings:
-//   - validate_sufficient() / record_payout() only load EscrowBalances (5 fields)
-//     instead of 9 fields including two Address values (~32 bytes each)
-//   - refund_remaining() loads EscrowMeta only when actually refunding
-//
-// Backward compat:
-//   `EscrowInfo` is kept as a **view struct** (not stored) assembled on demand
-//   by `get_escrow_info()` for the public query API.
 
 /// Hot-path escrow data: loaded on every deposit, payout, and balance check.
 #[contracttype]
@@ -232,7 +213,6 @@ pub struct EscrowMeta {
 }
 
 /// Full escrow view — assembled from EscrowBalances + EscrowMeta.
-/// NOT stored directly; returned by `get_escrow_info()` for the public API.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EscrowInfo {
@@ -257,21 +237,8 @@ pub struct EscrowInfo {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QuestMetadata  →  QuestMetadataCore  +  QuestMetadataExtended
+// QuestMetadata
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// BEFORE (5 fields, Vec<String> always loaded):
-//   QuestMetadata { title, description, requirements: Vec<String>,
-//                   category, tags: Vec<String> }
-//
-// AFTER:
-//   QuestMetadataCore     { title, description, category }  ← hot path (display)
-//   QuestMetadataExtended { requirements, tags }            ← cold path (validation)
-//
-// Gas savings:
-//   - Quest listing / title display only loads 3 scalar fields
-//   - Requirements/tags (up to 20 + 15 strings × up to 200 bytes each) are
-//     loaded only when a submitter reads the full quest detail
 
 /// Hot-path metadata: title, description, category — shown in quest listings.
 #[contracttype]
@@ -291,8 +258,6 @@ pub struct QuestMetadataExtended {
 }
 
 /// Full metadata view — assembled from Core + Extended.
-/// Returned by `get_quest_metadata()` for the public API.
-/// Also accepted by `register_quest_with_metadata()` for convenience.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QuestMetadata {
@@ -303,148 +268,187 @@ pub struct QuestMetadata {
     pub tags: Vec<String>,
 }
 
+/// Options for providing a quest description.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MetadataDescription {
+    /// Inline text description.
     Inline(String),
+    /// Hash of an external description (e.g., IPFS CID).
     Hash(BytesN<32>),
 }
 
+/// Administrative roles within the contract.
 #[contracttype]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Role {
+    /// Full administrative control, including upgrades.
     SuperAdmin = 0,
+    /// General administrative tasks (e.g., pausing quests).
     Admin = 1,
+    /// Authorized to pause/unpause the entire contract.
     Pauser = 2,
+    /// Manages oracle configurations.
     OracleAdmin = 3,
+    /// Manages platform and creator statistics.
     StatsAdmin = 4,
+    /// Authorized to grant badges to users.
     BadgeAdmin = 5,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PlatformStats  →  individual counters
+// Statistics
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// BEFORE (5 fields, entire struct rewritten for every single counter increment):
-//   PlatformStats { total_quests_created, total_submissions,
-//                   total_rewards_distributed, total_active_users,
-//                   total_rewards_claimed }
-//
-// AFTER:
-//   Each counter stored under its own DataKey so only the touched counter
-//   is read + written per transaction.
-//
-// Gas savings:
-//   - register_quest() increments only `total_quests_created` (1 read + 1 write)
-//     instead of reading/writing all 5 counters (5× the I/O)
-//   - submit_proof() increments only `total_submissions`
-//   - claim_reward() increments only `total_rewards_claimed`
-//
-// Backward compat:
-//   `PlatformStats` struct is kept for the `get_platform_stats()` query API.
-//   It is assembled from individual counters on read.
 
+/// Platform-wide statistics.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PlatformStats {
+    /// Total number of quests ever created.
     pub total_quests_created: u64,
+    /// Total number of submissions received across all quests.
     pub total_submissions: u64,
+    /// Total rewards distributed (in asset units).
     pub total_rewards_distributed: u128,
+    /// Total number of unique users who interacted with the contract.
     pub total_active_users: u64,
+    /// Total number of rewards claimed.
     pub total_rewards_claimed: u64,
 }
 
-/// Creator statistics for tracking quest performance
+/// Statistics for a specific quest creator.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CreatorStats {
+    /// Number of quests created by this user.
     pub quests_created: u32,
+    /// Total amount of rewards posted in escrows.
     pub total_rewards_posted: i128,
+    /// Total submissions received for their quests.
     pub total_submissions_received: u32,
+    /// Total number of claims paid out.
     pub total_claims_paid: u32,
+    /// Creator's reputation score.
     pub reputation_score: u32,
 }
 
-/// Batch input for quest registration
+// ─────────────────────────────────────────────────────────────────────────────
+// Batch Inputs
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Batch input for quest registration.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BatchQuestInput {
-    pub quests: Vec<Quest>,
-    pub metadata: Vec<QuestMetadata>,
+    pub id: Symbol,
+    pub reward_asset: Address,
+    pub reward_amount: i128,
+    pub verifier: Address,
+    pub deadline: u64,
 }
 
-/// Batch input for submission approval
+/// Batch input for approving multiple submissions.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BatchApprovalInput {
+    /// ID of the quest the submissions belong to.
     pub quest_id: Symbol,
-    pub submissions: Vec<Address>, // submitter addresses to approve
+    /// List of submitter addresses to approve.
+    pub submissions: Vec<Address>,
 }
 
-//================================================================================
-// Oracle Types and Interface
-//================================================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// Oracle Types
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Price data from an oracle
+/// Price data returned by an oracle.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PriceData {
+    /// Base asset of the price pair.
     pub base_asset: Address,
+    /// Quote asset of the price pair.
     pub quote_asset: Address,
+    /// Price value scaled by decimals.
     pub price: U256,
+    /// Number of decimal places in the price.
     pub decimals: u32,
+    /// Unix timestamp of the price data.
     pub timestamp: u64,
-    pub confidence: u32, // 0-100 percentage confidence score
+    /// Confidence score (0-100 percentage).
+    pub confidence: u32,
 }
 
-/// Oracle provider types
+/// Types of oracle providers supported.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OracleType {
+    /// Standard Stellar asset price.
     StellarAsset,
+    /// External Stellar oracle contract.
     StellarOracle,
+    /// Custom price feed implementation.
     Custom,
 }
 
-/// Oracle configuration
+/// Configuration for a price oracle.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OracleConfig {
+    /// Address of the oracle contract.
     pub oracle_address: Address,
+    /// Type of oracle provider.
     pub oracle_type: OracleType,
+    /// Maximum age of price data allowed (seconds).
     pub max_age_seconds: u64,
+    /// Minimum confidence score required.
     pub min_confidence: u32,
+    /// Whether this oracle is currently enabled.
     pub is_active: bool,
 }
 
-/// Price feed request
+/// Request parameters for fetching a price feed.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PriceFeedRequest {
+    /// Base asset for the price pair.
     pub base_asset: Address,
+    /// Quote asset for the price pair.
     pub quote_asset: Address,
+    /// Maximum allowed age of the price data.
     pub max_age_seconds: u64,
 }
 
-/// Oracle response wrapper
+/// Response from a specific oracle.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OracleResponse {
+    /// The price data provided.
     pub price_data: PriceData,
+    /// Address of the responding oracle.
     pub oracle_address: Address,
+    /// Unix timestamp when the response was received.
     pub response_timestamp: u64,
 }
 
-/// Oracle aggregation result for multiple sources
+/// Aggregated price result from multiple oracle sources.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AggregatedPrice {
+    /// Base asset of the price pair.
     pub base_asset: Address,
+    /// Quote asset of the price pair.
     pub quote_asset: Address,
+    /// Weighted average price from all sources.
     pub weighted_price: U256,
+    /// Number of decimal places in the weighted price.
     pub decimals: u32,
+    /// Number of sources that successfully provided data.
     pub sources_used: u32,
+    /// Total number of sources consulted.
     pub total_sources: u32,
+    /// Overall confidence score of the aggregated price.
     pub confidence_score: u32,
+    /// Unix timestamp of the aggregated data.
     pub timestamp: u64,
 }

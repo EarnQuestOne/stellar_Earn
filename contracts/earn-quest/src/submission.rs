@@ -6,12 +6,22 @@ use crate::validation;
 use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 /// Commit to a submission by providing a hash of the proof and a secret salt.
+///
 /// This prevents front-running by hiding the actual proof until the reveal phase.
 ///
-/// Validates:
-/// - Quest exists and is Active
-/// - Quest has not expired
-/// - User does not already have a submission or commitment
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `commitment_hash` - The hash of the proof and salt.
+///
+/// # Returns
+///
+/// * `Ok(())` if the commitment is successfully stored.
+/// * `Err(Error::QuestNotActive)` if the quest is not active.
+/// * `Err(Error::QuestExpired)` if the deadline has passed.
+/// * `Err(Error::AlreadyClaimed)` if the user already has a submission.
 pub fn commit_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -54,11 +64,21 @@ pub fn commit_submission(
 }
 
 /// Reveal the proof and salt to complete the submission process.
+///
 /// The contract verifies that hash(proof_hash + salt + submitter) matches the commitment.
 ///
-/// Validates:
-/// - Commitment exists for the user
-/// - Provided proof and salt match the stored commitment
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The actual proof hash.
+/// * `salt` - The salt used in the commitment.
+///
+/// # Returns
+///
+/// * `Ok(())` if the reveal is successful and the submission is created.
+/// * `Err(Error::InvalidCommitment)` if the provided data does not match the commitment.
 pub fn reveal_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -102,12 +122,19 @@ pub fn reveal_submission(
     Ok(())
 }
 
-/// Submit proof for a quest with full input validation.
+/// Submits a proof for a quest without the commit-reveal flow.
 ///
-/// Validates:
-/// - Quest exists
-/// - Quest is currently Active
-/// - Quest has not expired (deadline not passed)
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The hash of the proof being submitted.
+///
+/// # Returns
+///
+/// * `Ok(())` if the submission is successful.
+/// * `Err(Error)` if the quest is not active or has expired.
 pub fn submit_proof(
     env: &Env,
     quest_id: &Symbol,
@@ -139,12 +166,20 @@ pub fn submit_proof(
     Ok(())
 }
 
-/// Approve a submission with status transition validation.
+/// Approve a submission (Verifier only).
 ///
-/// Validates:
-/// - Quest exists and caller is the verifier
-/// - Submission exists
-/// - Submission status transition (Pending -> Approved) is valid
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user whose submission is being approved.
+/// * `verifier` - The address of the verifier.
+///
+/// # Returns
+///
+/// * `Ok(())` if the approval is successful.
+/// * `Err(Error::Unauthorized)` if the caller is not the quest's verifier.
+/// * `Err(Error)` if the submission is not found or status transition is invalid.
 pub fn approve_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -181,7 +216,21 @@ pub fn approve_submission(
 }
 
 /// Core claim validation that operates on already-fetched data.
-/// This avoids repeated storage reads when the data is already available.
+///
+/// This function performs the necessary checks to ensure a reward claim is valid.
+/// It is designed to be gas-efficient by taking already-loaded data as arguments.
+///
+/// # Arguments
+///
+/// * `quest` - The quest data.
+/// * `submission` - The submission data.
+///
+/// # Returns
+///
+/// * `Ok(())` if the claim is valid.
+/// * `Err(Error::AlreadyClaimed)` if the submission has already been paid.
+/// * `Err(Error::QuestClaimsLimitReached)` if the quest's maximum claims have been reached.
+/// * `Err(Error)` if the status transition is invalid.
 pub fn validate_claim_data(
     quest: &crate::types::Quest,
     submission: &crate::types::Submission,
@@ -209,6 +258,20 @@ pub fn validate_claim_data(
 /// - Submission is not already paid (AlreadyClaimed)
 /// - Submission status transition (Approved -> Paid) is valid
 /// - Quest claims have not exceeded the limit
+/// Validates a reward claim for a specific quest and submitter.
+///
+/// This function loads the necessary data from storage and then calls `validate_claim_data`.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user who submitted.
+///
+/// # Returns
+///
+/// * `Ok(())` if the claim is valid.
+/// * `Err(Error)` if the quest or submission is not found, or if validation fails.
 pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<(), Error> {
     let quest = storage::get_quest(env, quest_id)?;
     let submission = storage::get_submission(env, quest_id, submitter)?;
@@ -254,6 +317,7 @@ pub fn approve_submissions_batch(
             validation::validate_addresses_distinct(verifier, &submitter)?;
         }
     }
+
 
     // Cache quest and escrow data to avoid redundant reads
     let mut cached_quest_id: Option<Symbol> = None;

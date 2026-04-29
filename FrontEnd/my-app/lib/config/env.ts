@@ -50,6 +50,12 @@ const OPTIONAL_ENV_VARS = {
     example: 'G-XXXXXXXXXX',
     default: '',
   },
+  // Sentry
+  NEXT_PUBLIC_SENTRY_DSN: {
+    description: 'Sentry DSN for error tracking',
+    example: 'https://examplePublicKey@o0.ingest.sentry.io/0',
+    default: '',
+  },
 
   // E2E Testing
   E2E_BASE_URL: {
@@ -230,6 +236,9 @@ export const env = {
   // Analytics
   analyticsTestMode: () => getEnv('NEXT_PUBLIC_ANALYTICS_TEST_MODE') === 'true',
   analyticsId: () => getEnv('NEXT_PUBLIC_ANALYTICS_ID'),
+
+  // Sentry
+  sentryDsn: () => getEnv('NEXT_PUBLIC_SENTRY_DSN'),
 
   // Testing
   e2eBaseUrl: () => getEnv('E2E_BASE_URL'),
