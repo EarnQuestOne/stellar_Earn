@@ -106,7 +106,7 @@ fn test_full_quest_lifecycle_events() {
     assert_eq!(t_verifier, verifier);
 
     // --- STEP 4: CLAIM REWARD ---
-    client.claim_reward(&quest_id, &user);
+    client.claim_reward(&quest_id, &user, &reward_amount);
 
     let events = env.events().all();
 

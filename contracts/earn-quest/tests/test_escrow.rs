@@ -102,7 +102,7 @@ fn submit_proof(t: &TestEnv, quest_id: &Symbol, user: &Address) {
 fn complete_quest(t: &TestEnv, quest_id: &Symbol, user: &Address) {
     submit_proof(t, quest_id, user);
     t.contract.approve_submission(quest_id, user, &t.verifier);
-    t.contract.claim_reward(quest_id, user);
+    t.contract.claim_reward(quest_id, user, &1000_i128);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -413,7 +413,7 @@ fn test_topup_unblocks_approval_after_depletion() {
 
     // Now approval should succeed
     t.contract.approve_submission(&qid, &t.user_b, &t.verifier);
-    t.contract.claim_reward(&qid, &t.user_b);
+    t.contract.claim_reward(&qid, &t.user_b, &1000_i128);
     assert_eq!(t.token.balance(&t.user_b), 1_000);
     assert_eq!(t.contract.get_escrow_balance(&qid), 1_000);
 }

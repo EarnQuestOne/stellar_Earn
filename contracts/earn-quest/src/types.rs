@@ -60,7 +60,7 @@ pub struct Submission {
     pub proof_hash: BytesN<32>,
     /// Current status of the submission.
     pub status: SubmissionStatus,
-    /// Unix timestamp when the submission was created.
+    pub claimed_amount: i128,
     pub timestamp: u64,
 }
 
@@ -72,7 +72,7 @@ pub enum SubmissionStatus {
     Pending,
     /// Approved by the verifier, reward can be claimed.
     Approved,
-    /// Rejected by the verifier.
+    PartiallyPaid,
     Rejected,
     /// Reward has been successfully claimed.
     Paid,

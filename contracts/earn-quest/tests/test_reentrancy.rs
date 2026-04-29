@@ -123,7 +123,7 @@ impl EvilToken {
             .unwrap();
 
         let client = EarnQuestContractClient::new(&env, &target);
-        client.claim_reward(&quest_id, &submitter);
+        client.claim_reward(&quest_id, &submitter, &100);
     }
 }
 
@@ -183,7 +183,7 @@ fn malicious_token_cannot_double_claim_via_reentrancy() {
     // re-enters claim_reward. The reentrancy guard rejects the nested call;
     // that error bubbles up through try_transfer; the outer claim_reward
     // returns Err and the transaction reverts.
-    let result = contract.try_claim_reward(&quest_id, &submitter);
+    let result = contract.try_claim_reward(&quest_id, &submitter, &100);
     assert!(
         result.is_err(),
         "reentrant claim_reward must not succeed",

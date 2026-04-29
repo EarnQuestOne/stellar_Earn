@@ -53,10 +53,50 @@ fn test_payout_success() {
     let pre_balance = token_client.balance(&submitter);
     assert_eq!(pre_balance, 0);
 
-    client.claim_reward(&quest_id, &submitter);
+    client.claim_reward(&quest_id, &submitter, &reward_amount);
 
     let post_balance = token_client.balance(&submitter);
     assert_eq!(post_balance, 100);
+}
+
+#[test]
+fn test_partial_claim_support() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let token_contract_obj = env.register_stellar_asset_contract_v2(admin.clone());
+    let token_contract = token_contract_obj.address();
+    let token_admin_client = StellarAssetClient::new(&env, &token_contract);
+    let token_client = TokenClient::new(&env, &token_contract);
+
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let submitter = Address::generate(&env);
+    let quest_id = symbol_short!("Q4");
+
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &100,
+        &verifier,
+        &10000,
+    );
+
+    let proof = BytesN::from_array(&env, &[1u8; 32]);
+    client.submit_proof(&quest_id, &submitter, &proof);
+    client.approve_submission(&quest_id, &submitter, &verifier);
+
+    let first_claim = 40i128;
+    client.claim_reward(&quest_id, &submitter, &first_claim);
+    assert_eq!(token_client.balance(&submitter), first_claim);
+
+    client.claim_reward(&quest_id, &submitter, &(100 - first_claim));
+    assert_eq!(token_client.balance(&submitter), 100);
 }
 
 #[test]
@@ -91,7 +131,7 @@ fn test_insufficient_balance() {
     client.approve_submission(&quest_id, &submitter, &verifier);
 
     // Claim should fail with InsufficientBalance
-    let res = client.try_claim_reward(&quest_id, &submitter);
+    let res = client.try_claim_reward(&quest_id, &submitter, &100);
     assert!(
         res.is_err(),
         "Expected claim to fail due to insufficient balance"
@@ -131,9 +171,9 @@ fn test_double_claim_prevention() {
     client.approve_submission(&quest_id, &submitter, &verifier);
 
     // First claim
-    client.claim_reward(&quest_id, &submitter);
+    client.claim_reward(&quest_id, &submitter, &100);
 
     // Second claim should fail with AlreadyClaimed
-    let res = client.try_claim_reward(&quest_id, &submitter);
+    let res = client.try_claim_reward(&quest_id, &submitter, &100);
     assert!(res.is_err(), "Expected second claim to fail");
 }

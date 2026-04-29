@@ -107,6 +107,7 @@ pub fn reveal_submission(
         submitter: submitter.clone(),
         proof_hash: proof_hash.clone(),
         status: SubmissionStatus::Pending,
+        claimed_amount: 0,
         timestamp: env.ledger().timestamp(),
     };
 
@@ -155,6 +156,7 @@ pub fn submit_proof(
         submitter: submitter.clone(),
         proof_hash: proof_hash.clone(),
         status: SubmissionStatus::Pending,
+        claimed_amount: 0,
         timestamp: env.ledger().timestamp(),
     };
 
@@ -215,6 +217,22 @@ pub fn approve_submission(
     Ok(())
 }
 
+/// Validates a claim amount against the remaining reward for a submission.
+pub fn validate_claim_amount(
+    quest: &crate::types::Quest,
+    submission: &crate::types::Submission,
+    amount: i128,
+) -> Result<i128, Error> {
+    validation::validate_reward_amount(amount)?;
+
+    let remaining = quest.reward_amount - submission.claimed_amount;
+    if amount > remaining {
+        return Err(Error::InvalidClaimAmount);
+    }
+
+    Ok(remaining)
+}
+
 /// Core claim validation that operates on already-fetched data.
 ///
 /// This function performs the necessary checks to ensure a reward claim is valid.
@@ -235,12 +253,12 @@ pub fn validate_claim_data(
     quest: &crate::types::Quest,
     submission: &crate::types::Submission,
 ) -> Result<(), Error> {
-    // Check if already claimed
+    // Check if already fully claimed
     if submission.status == SubmissionStatus::Paid {
         return Err(Error::AlreadyClaimed);
     }
 
-    // Validate status transition: Approved -> Paid
+    // Validate status transition: Approved/PartiallyPaid -> Paid or PartiallyPaid
     validation::validate_submission_status_transition(
         &submission.status,
         &SubmissionStatus::Paid,
