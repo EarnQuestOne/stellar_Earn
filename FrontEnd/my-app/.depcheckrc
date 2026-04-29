@@ -1,0 +1,14 @@
+{
+  "ignore-bin-package": false,
+  "skip-missing": false,
+  "ignore-patterns": [
+    "dist",
+    ".next",
+    "coverage"
+  ],
+  "ignore-matches": [
+    "@types/*",
+    "postcss",
+    "autoprefixer"
+  ]
+}

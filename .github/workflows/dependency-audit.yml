@@ -122,17 +122,19 @@ jobs:
           FrontEnd/my-app/package-lock.json
           BackEnd/package-lock.json
           
-    - name: Audit FrontEnd dependencies
+    - name: Audit and Check Bloat - FrontEnd
       run: |
         cd FrontEnd/my-app
         npm ci
         npm audit --audit-level=moderate
+        npx depcheck --json > ../../frontend-depcheck-report.json || echo "Unused dependencies found"
         
-    - name: Audit Backend dependencies
+    - name: Audit and Check Bloat - Backend
       run: |
         cd BackEnd
         npm ci
         npm audit --audit-level=moderate
+        npx depcheck --json > ../frontend-depcheck-backend-report.json || echo "Unused dependencies found"
         
     - name: Generate frontend audit report
       run: |
@@ -150,6 +152,14 @@ jobs:
         cd BackEnd && npm audit --json >> ../../frontend-audit-report.md 2>&1 || echo "Backend audit completed" >> ../../frontend-audit-report.md
         echo "\`\`\`" >> frontend-audit-report.md
         
+    - name: Append Depcheck Results to Report
+      run: |
+        echo "" >> frontend-audit-report.md
+        echo "### Unused Dependency Analysis (Bloat Check):" >> frontend-audit-report.md
+        echo "\`\`\`" >> frontend-audit-report.md
+        cat frontend-depcheck-report.json >> frontend-audit-report.md
+        echo "\`\`\`" >> frontend-audit-report.md
+
     - name: Upload frontend audit report
       uses: actions/upload-artifact@v4
       if: always()
