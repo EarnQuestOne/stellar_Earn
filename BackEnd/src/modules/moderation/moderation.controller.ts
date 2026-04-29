@@ -26,6 +26,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
+import {
+  ModerationScanResponseDto,
+  ModerationDashboardResponseDto,
+  ModerationStatsResponseDto,
+  ModerationActionResponseDto,
+  CreateAppealResponseDto,
+  AppealsListResponseDto,
+  ResolveAppealResponseDto,
+} from './dto/moderation-response.dto';
 
 @ApiTags('moderation')
 @Controller('moderation')
@@ -35,8 +44,14 @@ export class ModerationController {
   @Post('scan')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Run automated text scan (classification + keywords)' })
-  @ApiResponse({ status: 200, description: 'Scan result' })
+  @ApiOperation({
+    summary: 'Run automated text scan (classification + keywords)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scan result',
+    type: ModerationScanResponseDto,
+  })
   async scan(@Body() dto: ScanTextDto) {
     const result = await this.moderationService.scanText(dto.text);
     return { success: true, data: result };
@@ -47,6 +62,11 @@ export class ModerationController {
   @Roles(Role.ADMIN, Role.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List items awaiting manual review (dashboard)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending items retrieved',
+    type: ModerationDashboardResponseDto,
+  })
   async dashboardPending(@Query() query: ModerationDashboardQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -61,6 +81,11 @@ export class ModerationController {
   @Roles(Role.ADMIN, Role.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Moderation dashboard counters' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard stats retrieved',
+    type: ModerationStatsResponseDto,
+  })
   async dashboardStats() {
     return {
       success: true,
@@ -73,6 +98,11 @@ export class ModerationController {
   @Roles(Role.ADMIN, Role.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Apply moderation action to a queued item' })
+  @ApiResponse({
+    status: 200,
+    description: 'Action applied',
+    type: ModerationActionResponseDto,
+  })
   async applyAction(
     @Param('id') id: string,
     @Body() dto: ApplyModerationActionDto,
@@ -91,6 +121,11 @@ export class ModerationController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit an appeal for a moderation decision' })
+  @ApiResponse({
+    status: 200,
+    description: 'Appeal submitted',
+    type: CreateAppealResponseDto,
+  })
   async createAppeal(
     @Body() dto: CreateAppealDto,
     @Request() req: { user: { id: string } },
@@ -108,6 +143,11 @@ export class ModerationController {
   @Roles(Role.ADMIN, Role.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List pending appeals (moderator queue)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending appeals retrieved',
+    type: AppealsListResponseDto,
+  })
   async appealsPending(@Query() query: ModerationDashboardQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -122,6 +162,11 @@ export class ModerationController {
   @Roles(Role.ADMIN, Role.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resolve an appeal' })
+  @ApiResponse({
+    status: 200,
+    description: 'Appeal resolved',
+    type: ResolveAppealResponseDto,
+  })
   async resolveAppeal(
     @Param('id') id: string,
     @Body() dto: ResolveAppealDto,
