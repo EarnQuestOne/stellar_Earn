@@ -44,15 +44,18 @@ export class PaginatedQuestsResponseDto {
   @ApiProperty({ type: [QuestResponseDto] })
   data: QuestResponseDto[];
 
-  @ApiProperty()
-  total: number;
+  @ApiProperty({ required: false })
+  total?: number;
 
-  @ApiProperty()
-  page: number;
+  @ApiProperty({ required: false })
+  page?: number;
 
   @ApiProperty()
   limit: number;
 
-  @ApiProperty()
-  totalPages: number;
+  @ApiProperty({ required: false })
+  totalPages?: number;
+
+  @ApiProperty({ required: false })
+  nextCursor?: string;
 }

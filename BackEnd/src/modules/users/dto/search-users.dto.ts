@@ -1,35 +1,50 @@
-import { IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { CursorPaginationDto } from '../../../common/dto/pagination.dto';
 
-export class SearchUsersDto {
-  @ApiPropertyOptional({ description: 'Search query string (username or address)', example: 'alice' })
+export enum UserSortBy {
+  XP = 'xp',
+  LEVEL = 'level',
+  CREATED_AT = 'createdAt',
+  USERNAME = 'username',
+}
+
+export enum SortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
+/**
+ * Query DTO for searching/listing users.
+ * Extends CursorPaginationDto — `cursor` and `limit` are inherited.
+ *
+ * NOTE: The old `page` field has been removed. Callers must migrate to
+ * cursor-based pagination using the `cursor` + `limit` fields.
+ */
+export class SearchUsersDto extends CursorPaginationDto {
+  @ApiPropertyOptional({
+    description: 'Search term matched against username or Stellar address (case-insensitive)',
+    example: 'alice',
+  })
   @IsOptional()
   @IsString()
   query?: string;
 
-  @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
+  @ApiPropertyOptional({
+    description: 'Sort users by this field',
+    enum: UserSortBy,
+    default: UserSortBy.CREATED_AT,
+  })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  page?: number = 1;
+  @IsEnum(UserSortBy)
+  sortBy?: UserSortBy = UserSortBy.CREATED_AT;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, default: 20, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    description: 'Sort direction',
+    enum: SortOrder,
+    default: SortOrder.DESC,
+  })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  @Type(() => Number)
-  limit?: number = 20;
-
-  @ApiPropertyOptional({ description: 'Sort field', example: 'xp', default: 'xp' })
-  @IsOptional()
-  @IsString()
-  sortBy?: string = 'xp';
-
-  @ApiPropertyOptional({ description: 'Sort order', example: 'DESC', default: 'DESC', enum: ['ASC', 'DESC'] })
-  @IsOptional()
-  @IsString()
-  order?: 'ASC' | 'DESC' = 'DESC';
+  @IsEnum(SortOrder)
+  order?: SortOrder = SortOrder.DESC;
 }

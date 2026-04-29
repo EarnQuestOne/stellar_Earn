@@ -1,0 +1,36 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn
+├── BackEnd
+|  ├── CACHING_STRATEGY.md
+|  ├── eslint.config.mjs
+|  ├── nest-cli.json
+|  ├── package-lock.json
+|  ├── package.json
+|  ├── ReadMe Backend.md
+|  ├── scriptd
+|  ├── seed.ts
+|  ├── src
+|  ├── test
+|  ├── tsconfig.build.json
+|  └── tsconfig.json
+├── commit-message.md
+├── Contract
+|  ├── Cargo.toml
+|  ├── deny.toml
+|  ├── earn-quest
+|  ├── README.md
+|  ├── rust-toolchain.toml
+|  └── stellar_earn
+├── contracts
+|  └── earn-quest
+├── CONTRIBUTING.md
+├── FrontEnd
+|  ├── my-app
+|  ├── output.txt
+|  ├── package-lock.json
+|  └── ReadMe Frontend.md
+├── output.txt
+├── PR-description.md
+└── README.md
+
+directory: 11 file: 21
+

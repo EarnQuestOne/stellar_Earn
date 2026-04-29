@@ -1,0 +1,45 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\BackEnd
+├── CACHING_STRATEGY.md
+├── eslint.config.mjs
+├── nest-cli.json
+├── package-lock.json
+├── package.json
+├── ReadMe Backend.md
+├── scriptd
+|  ├── db-backup.ts
+|  └── db-rollback.ts
+├── seed.ts
+├── src
+|  ├── app.controller.spec.ts
+|  ├── app.controller.ts
+|  ├── app.module.ts
+|  ├── app.service.ts
+|  ├── common
+|  ├── config
+|  ├── database
+|  ├── events
+|  ├── main.ts
+|  └── modules
+├── test
+|  ├── analytics
+|  ├── app.e2e-spec.ts
+|  ├── auth
+|  ├── cache
+|  ├── common
+|  ├── events
+|  ├── health
+|  ├── jest-e2e.json
+|  ├── jobs
+|  ├── notification
+|  ├── payouts
+|  ├── quests
+|  ├── security
+|  ├── setup-e2e-env.ts
+|  ├── stellar
+|  ├── submissions
+|  └── webhooks
+├── tsconfig.build.json
+└── tsconfig.json
+
+directory: 22 file: 19
+
