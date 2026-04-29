@@ -6,9 +6,9 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
  */
 export const getCorsConfig = (): CorsOptions => {
   // Get allowed origins from environment variable
-  const allowedOrigins = process.env.CORS_ORIGINS 
-    ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000', 'http://localhost:3001'];
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : [];
 
   return {
     // Specify allowed origins

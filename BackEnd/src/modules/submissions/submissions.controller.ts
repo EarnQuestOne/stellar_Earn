@@ -21,6 +21,12 @@ import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { VerifierGuard } from '../auth/guards/verifier.guard';
+import {
+  ApproveSubmissionResponseDto,
+  RejectSubmissionResponseDto,
+  GetSubmissionResponseDto,
+  QuestSubmissionsResponseDto,
+} from './dto/submission-response.dto';
 
 @ApiTags('Submissions')
 @Controller('quests/:questId/submissions')
@@ -42,26 +48,13 @@ export class SubmissionsController {
   @ApiResponse({
     status: 200,
     description: 'Submission approved successfully',
-    schema: {
-      example: {
-        success: true,
-        message: 'Submission approved successfully',
-        data: {
-          submission: {
-            id: 'subm_123',
-            status: 'APPROVED',
-            approvedAt: '2026-01-24T08:00:00.000Z',
-            approvedBy: 'verifier_1',
-            quest: { id: 'quest_123', title: 'Complete KYC', rewardAmount: 10.5 },
-            user: { id: 'user_123', stellarAddress: 'G...'
-            },
-          },
-        },
-      },
-    },
+    type: ApproveSubmissionResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Verifier role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Verifier role required',
+  })
   async approveSubmission(
     @Param('questId') questId: string,
     @Param('id') submissionId: string,
@@ -111,26 +104,13 @@ export class SubmissionsController {
   @ApiResponse({
     status: 200,
     description: 'Submission rejected',
-    schema: {
-      example: {
-        success: true,
-        message: 'Submission rejected',
-        data: {
-          submission: {
-            id: 'subm_123',
-            status: 'REJECTED',
-            rejectedAt: '2026-01-24T09:00:00.000Z',
-            rejectedBy: 'verifier_1',
-            rejectionReason: 'Insufficient proof of identity',
-            quest: { id: 'quest_123', title: 'Complete KYC' },
-            user: { id: 'user_123' },
-          },
-        },
-      },
-    },
+    type: RejectSubmissionResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Verifier role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Verifier role required',
+  })
   async rejectSubmission(
     @Param('questId') questId: string,
     @Param('id') submissionId: string,
@@ -174,7 +154,11 @@ export class SubmissionsController {
   @ApiOperation({ summary: 'Get submission details' })
   @ApiParam({ name: 'questId', description: 'Quest UUID' })
   @ApiParam({ name: 'id', description: 'Submission UUID' })
-  @ApiResponse({ status: 200, description: 'Submission details retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Submission details retrieved',
+    type: GetSubmissionResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Submission not found' })
   async getSubmission(
     @Param('questId') questId: string,
@@ -195,7 +179,11 @@ export class SubmissionsController {
   @Get()
   @ApiOperation({ summary: 'Get all submissions for a quest' })
   @ApiParam({ name: 'questId', description: 'Quest UUID' })
-  @ApiResponse({ status: 200, description: 'Submissions retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Submissions retrieved',
+    type: QuestSubmissionsResponseDto,
+  })
   async getQuestSubmissions(@Param('questId') questId: string) {
     const submissions = await this.submissionsService.findByQuest(questId);
 

@@ -4,8 +4,9 @@ use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol};
 
 extern crate earn_quest;
-use earn_quest::types::Badge;
+use earn_quest::types::{Badge, BadgeType};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
+use soroban_sdk::String as SString;
 
 fn setup_contract_and_token(
     env: &Env,
@@ -219,11 +220,11 @@ fn test_grant_badge_by_admin() {
     let user = Address::generate(&env);
 
     client.initialize(&admin);
-    client.grant_badge(&admin, &user, &Badge::Rookie);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
-    assert_eq!(badges.badges.get(0).unwrap(), Badge::Rookie);
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::rookie(&env));
 }
 
 #[test]
@@ -237,15 +238,15 @@ fn test_grant_multiple_badges() {
     let user = Address::generate(&env);
 
     client.initialize(&admin);
-    client.grant_badge(&admin, &user, &Badge::Rookie);
-    client.grant_badge(&admin, &user, &Badge::Explorer);
-    client.grant_badge(&admin, &user, &Badge::Veteran);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user, &Badge::explorer(&env));
+    client.grant_badge(&admin, &user, &Badge::veteran(&env));
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 3);
-    assert!(badges.badges.contains(&Badge::Rookie));
-    assert!(badges.badges.contains(&Badge::Explorer));
-    assert!(badges.badges.contains(&Badge::Veteran));
+    assert!(badges.badges.contains(&Badge::rookie(&env)));
+    assert!(badges.badges.contains(&Badge::explorer(&env)));
+    assert!(badges.badges.contains(&Badge::veteran(&env)));
 }
 
 #[test]
@@ -259,12 +260,12 @@ fn test_duplicate_badge_not_added() {
     let user = Address::generate(&env);
 
     client.initialize(&admin);
-    client.grant_badge(&admin, &user, &Badge::Master);
-    client.grant_badge(&admin, &user, &Badge::Master);
+    client.grant_badge(&admin, &user, &Badge::master(&env));
+    client.grant_badge(&admin, &user, &Badge::master(&env));
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
-    assert_eq!(badges.badges.get(0).unwrap(), Badge::Master);
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::master(&env));
 }
 
 #[test]
@@ -455,4 +456,161 @@ fn test_max_level_cap() {
     let stats = client.get_user_stats(&submitter);
     assert_eq!(stats.level, 5);
     assert_eq!(stats.xp, 2000);
+}
+
+//================================================================================
+// Configurable Badge Type Registry Tests (#46)
+//================================================================================
+
+#[test]
+fn test_default_badge_types_seeded_on_initialize() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    let types = client.list_badge_types();
+    assert_eq!(types.len(), 5, "5 legacy badges should be seeded");
+
+    let rookie_id = Badge::rookie(&env).id;
+    let bt = client.get_badge_type(&rookie_id);
+    assert_eq!(bt.id, rookie_id);
+    assert!(bt.is_active);
+    assert_eq!(bt.xp_threshold, 0);
+}
+
+#[test]
+fn test_register_custom_badge_type_and_grant() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+    client.initialize(&admin);
+
+    let custom_id = Symbol::new(&env, "trailblzr");
+    let bt = BadgeType {
+        id: custom_id.clone(),
+        name: SString::from_str(&env, "Trailblazer"),
+        description: SString::from_str(&env, "First-mover badge."),
+        xp_threshold: 50,
+        is_active: true,
+    };
+    client.register_badge_type(&admin, &bt);
+
+    let types = client.list_badge_types();
+    assert_eq!(types.len(), 6);
+
+    let badge = Badge { id: custom_id.clone() };
+    client.grant_badge(&admin, &user, &badge);
+
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 1);
+    assert_eq!(badges.badges.get(0).unwrap().id, custom_id);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #43)")]
+fn test_grant_unknown_badge_id_rejected() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+    client.initialize(&admin);
+
+    let unknown = Badge { id: Symbol::new(&env, "ghost") };
+    client.grant_badge(&admin, &user, &unknown);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #44)")]
+fn test_register_duplicate_badge_type_rejected() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    // Re-register a seeded id should fail with BadgeTypeAlreadyExists.
+    let bt = BadgeType {
+        id: Badge::rookie(&env).id,
+        name: SString::from_str(&env, "Rookie"),
+        description: SString::from_str(&env, "dup"),
+        xp_threshold: 0,
+        is_active: true,
+    };
+    client.register_badge_type(&admin, &bt);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #45)")]
+fn test_grant_inactive_badge_rejected() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+    client.initialize(&admin);
+
+    // Disable the rookie badge via update.
+    let id = Badge::rookie(&env).id;
+    let bt = BadgeType {
+        id: id.clone(),
+        name: SString::from_str(&env, "Rookie"),
+        description: SString::from_str(&env, "off"),
+        xp_threshold: 0,
+        is_active: false,
+    };
+    client.update_badge_type(&admin, &bt);
+
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+}
+
+#[test]
+fn test_remove_badge_type() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    let id = Badge::legend(&env).id;
+    client.remove_badge_type(&admin, &id);
+
+    let types = client.list_badge_types();
+    assert_eq!(types.len(), 4);
+
+    // Subsequent grant of removed badge fails.
+    let user = Address::generate(&env);
+    let res = client.try_grant_badge(&admin, &user, &Badge::legend(&env));
+    assert!(res.is_err());
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #10)")]
+fn test_non_admin_cannot_register_badge_type() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    let outsider = Address::generate(&env);
+    client.initialize(&admin);
+
+    let bt = BadgeType {
+        id: Symbol::new(&env, "rogue"),
+        name: SString::from_str(&env, "Rogue"),
+        description: SString::from_str(&env, "x"),
+        xp_threshold: 0,
+        is_active: true,
+    };
+    client.register_badge_type(&outsider, &bt);
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { LevelBadge } from '@/components/reputation/LevelBadge';
+import { FocusTrap } from '@/components/a11y/FocusTrap';
 
 /**
  * Props for the level-up celebration modal.
@@ -129,63 +130,65 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
         aria-modal="true"
         aria-labelledby="level-up-title"
       >
-        <div
-          ref={modalRef}
-          className="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance"
-          tabIndex={-1}
-        >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-            aria-label="Close modal"
+        <FocusTrap active={isOpen}>
+          <div
+            ref={modalRef}
+            className="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance"
+            tabIndex={-1}
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+              aria-label="Close modal"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-
-          {/* Content */}
-          <div className="px-8 py-12 text-center">
-            {/* Level Up Text */}
-            <div className="mb-6 animate-bounce">
-              <h2
-                id="level-up-title"
-                className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2"
-                style={{ color: '#089ec3' }}
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Level Up!
-              </h2>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
 
-            {/* Level Badge */}
-            <div className="flex justify-center mb-6">
-              <LevelBadge level={newLevel} size="lg" showGlow={true} />
-            </div>
+            {/* Content */}
+            <div className="px-8 py-12 text-center">
+              {/* Level Up Text */}
+              <div className="mb-6 animate-bounce">
+                <h2
+                  id="level-up-title"
+                  className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2"
+                  style={{ color: '#089ec3' }}
+                >
+                  Level Up!
+                </h2>
+              </div>
 
-            {/* Level Number */}
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-              You've reached Level {newLevel}!
-            </p>
+              {/* Level Badge */}
+              <div className="flex justify-center mb-6">
+                <LevelBadge level={newLevel} size="lg" showGlow={true} />
+              </div>
 
-            {/* Benefits */}
-            <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Keep completing quests to unlock more rewards and achievements.
+              {/* Level Number */}
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+                You've reached Level {newLevel}!
               </p>
+
+              {/* Benefits */}
+              <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Keep completing quests to unlock more rewards and achievements.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </FocusTrap>
       </div>
     </>
   );

@@ -39,36 +39,18 @@ fn setup_contract_and_token(
 fn make_quest_input(
     _env: &Env,
     id: &Symbol,
-    creator: &Address,
+    _creator: &Address,
     reward_asset: &Address,
     reward_amount: i128,
     verifier: &Address,
     deadline: u64,
 ) -> BatchQuestInput {
-    let mut quests_vec = Vec::new(_env);
-    quests_vec.push_back(Quest {
+    BatchQuestInput {
         id: id.clone(),
-        creator: creator.clone(),
         reward_asset: reward_asset.clone(),
         reward_amount,
         verifier: verifier.clone(),
         deadline,
-        status: QuestStatus::Active,
-        total_claims: 0,
-    });
-    
-    let mut metadata_vec = Vec::new(_env);
-    metadata_vec.push_back(QuestMetadata {
-        title: String::from_str(_env, "Test Quest"),
-        description: MetadataDescription::Inline(String::from_str(_env, "Description")),
-        requirements: Vec::new(_env),
-        category: String::from_str(_env, "test"),
-        tags: Vec::new(_env),
-    });
-    
-    BatchQuestInput {
-        quests: quests_vec,
-        metadata: metadata_vec,
     }
 }
 

@@ -18,6 +18,7 @@ import { ValidationExceptionFilter } from './common/filters/validation-exception
 import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
 import { AppExceptionFilter } from './common/filters/app-exception.filter';
 import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
+import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
 import {
   getApplicationSecurityConfig,
@@ -115,6 +116,7 @@ async function bootstrap() {
       new SecurityExceptionFilter(),
       new ValidationExceptionFilter(),
       new AppExceptionFilter(),
+      new ErrorLoggerFilter(logger),
     );
 
     logger.log('Security middleware and pipes configured', 'Bootstrap');

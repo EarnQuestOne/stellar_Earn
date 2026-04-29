@@ -182,11 +182,11 @@ fn test_grant_badge_only_updates_user_badges() {
     let user = Address::generate(&env);
 
     // Grant a badge — UserCore should remain at defaults
-    client.grant_badge(&admin, &user, &Badge::Rookie);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
-    assert!(badges.badges.contains(&Badge::Rookie));
+    assert!(badges.badges.contains(&Badge::rookie(&env)));
 
     // UserCore XP should be 0 (untouched)
     let stats = client.get_user_stats(&user);
@@ -203,9 +203,9 @@ fn test_multiple_badges_stored_in_user_badges() {
 
     let user = Address::generate(&env);
 
-    client.grant_badge(&admin, &user, &Badge::Rookie);
-    client.grant_badge(&admin, &user, &Badge::Explorer);
-    client.grant_badge(&admin, &user, &Badge::Veteran);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user, &Badge::explorer(&env));
+    client.grant_badge(&admin, &user, &Badge::veteran(&env));
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 3);
@@ -220,8 +220,8 @@ fn test_duplicate_badge_not_added_to_user_badges() {
 
     let user = Address::generate(&env);
 
-    client.grant_badge(&admin, &user, &Badge::Master);
-    client.grant_badge(&admin, &user, &Badge::Master); // duplicate
+    client.grant_badge(&admin, &user, &Badge::master(&env));
+    client.grant_badge(&admin, &user, &Badge::master(&env)); // duplicate
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1, "duplicate badge must not be added");
@@ -401,7 +401,7 @@ fn test_full_lifecycle_with_split_structs() {
     client.claim_reward(&quest_id, &submitter, &100);
 
     // Grant badge (writes UserBadges only)
-    client.grant_badge(&admin, &submitter, &Badge::Rookie);
+    client.grant_badge(&admin, &submitter, &Badge::rookie(&env));
 
     // Verify UserCore has XP
     let stats = client.get_user_stats(&submitter);

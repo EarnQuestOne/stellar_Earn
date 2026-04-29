@@ -35,7 +35,7 @@ fn test_commit_reveal_success() {
     let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
     // 2. Commit
-    client.commit_submission(&quest_id, &submitter, &commitment_hash);
+    client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
 
     // 3. Reveal
     client.reveal_submission(&quest_id, &submitter, &proof_hash, &salt);
@@ -75,7 +75,7 @@ fn test_reveal_with_invalid_salt_fails() {
     data.append(&submitter.clone().to_xdr(&env));
     let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
-    client.commit_submission(&quest_id, &submitter, &commitment_hash);
+    client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
 
     // Reveal with wrong salt should fail
     let res = client.try_reveal_submission(&quest_id, &submitter, &proof_hash, &wrong_salt);
@@ -109,7 +109,7 @@ fn test_front_running_prevention() {
     data.append(&submitter.clone().to_xdr(&env));
     let commitment_hash: BytesN<32> = env.crypto().sha256(&data).into();
 
-    client.commit_submission(&quest_id, &submitter, &commitment_hash);
+    client.commit_submission(&quest_id, &submitter, &commitment_hash.into());
 
     // Attacker tries to reveal the same proof_hash and salt for themselves
     // but they haven't committed anything.

@@ -1,7 +1,11 @@
-const nextConfig = {
+import { withSentryConfig } from '@sentry/nextjs';
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  turbopack: {},
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -31,4 +35,11 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Suppresses source map upload logs during build
+  silent: true,
+  // Disable source map upload when DSN is not set (no auth token needed)
+  sourcemaps: {
+    disable: !process.env.NEXT_PUBLIC_SENTRY_DSN,
+  },
+});

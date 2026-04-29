@@ -1,6 +1,6 @@
 #![allow(unused)]
 use crate::types::Badge;
-use soroban_sdk::{symbol_short, Address, BytesN, Env, Symbol};
+use soroban_sdk::{symbol_short, Address, BytesN, Env, String, Symbol};
 
 // Event Topics (Names)
 const TOPIC_QUEST_REGISTERED: Symbol = symbol_short!("quest_reg");
@@ -10,6 +10,9 @@ const TOPIC_REWARD_CLAIMED: Symbol = symbol_short!("claimed");
 const TOPIC_XP_AWARDED: Symbol = symbol_short!("xp_award");
 const TOPIC_LEVEL_UP: Symbol = symbol_short!("level_up");
 const TOPIC_BADGE_GRANTED: Symbol = symbol_short!("badge_grt");
+const TOPIC_BADGE_TYPE_REGISTERED: Symbol = symbol_short!("btype_reg");
+const TOPIC_BADGE_TYPE_UPDATED: Symbol = symbol_short!("btype_upd");
+const TOPIC_BADGE_TYPE_REMOVED: Symbol = symbol_short!("btype_rm");
 const TOPIC_EMERGENCY_PAUSED: Symbol = symbol_short!("epause");
 const TOPIC_EMERGENCY_UNPAUSED: Symbol = symbol_short!("eunpause");
 const TOPIC_EMERGENCY_WITHDRAW: Symbol = symbol_short!("ewdraw");
@@ -216,9 +219,30 @@ pub fn level_up(env: &Env, user: Address, new_level: u32) {
 /// * Track badge distribution
 /// * Filter users by badge type
 pub fn badge_granted(env: &Env, user: Address, badge: Badge) {
-    // Topics: [EventName, User, Badge] - indexed for filtering
-    let topics = (TOPIC_BADGE_GRANTED, user.clone(), badge.clone());
+    // Topics: [EventName, User, BadgeId] - indexed for filtering
+    let topics = (TOPIC_BADGE_GRANTED, user.clone(), badge.id.clone());
     // Data: empty (badge already in topics)
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin registers a new badge type in the registry.
+pub fn badge_type_registered(env: &Env, badge_id: Symbol, name: String) {
+    let topics = (TOPIC_BADGE_TYPE_REGISTERED, badge_id);
+    let data = (name,);
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin updates an existing badge type definition.
+pub fn badge_type_updated(env: &Env, badge_id: Symbol) {
+    let topics = (TOPIC_BADGE_TYPE_UPDATED, badge_id);
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin removes a badge type from the registry.
+pub fn badge_type_removed(env: &Env, badge_id: Symbol) {
+    let topics = (TOPIC_BADGE_TYPE_REMOVED, badge_id);
     let data = ();
     env.events().publish(topics, data);
 }
@@ -342,32 +366,35 @@ pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrato
     env.events().publish(topics, data);
 }
 
-/// Emit when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
+/// Emitted when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
 pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
     let topics = (TOPIC_DISPUTE_RESOLVED, quest_id, initiator.clone(), arbitrator.clone());
     let data = ();
     env.events().publish(topics, data);
 }
 
-/// Emit when a dispute is withdrawn by the initiator (indexed: quest_id, initiator).
+/// Emitted when a dispute is withdrawn by the initiator (indexed: quest_id, initiator).
 pub fn dispute_withdrawn(env: &Env, quest_id: Symbol, initiator: Address) {
     let topics = (TOPIC_DISPUTE_WITHDRAWN, quest_id, initiator.clone());
     let data = ();
     env.events().publish(topics, data);
 }
 
+/// Emitted when a dispute is appealed (indexed: quest_id, initiator, arbitrator).
 pub fn dispute_appealed(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
     let topics = (TOPIC_DISPUTE_APPEALED, quest_id, initiator, arbitrator);
     let data = ();
     env.events().publish(topics, data);
 }
 
+/// Emitted when a commitment is submitted (indexed: quest_id, submitter).
 pub fn commitment_submitted(env: &Env, quest_id: Symbol, submitter: Address, hash: BytesN<32>) {
     let topics = (TOPIC_COMMITMENT_SUBMITTED, quest_id, submitter);
     let data = (hash,);
     env.events().publish(topics, data);
 }
 
+/// Emitted when a submission is revealed (indexed: quest_id, submitter).
 pub fn submission_revealed(env: &Env, quest_id: Symbol, submitter: Address, proof_hash: BytesN<32>) {
     let topics = (TOPIC_SUBMISSION_REVEALED, quest_id, submitter);
     let data = (proof_hash,);

@@ -1,9 +1,10 @@
 use crate::errors::Error;
 use crate::types::{
-    CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest,
-    QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission,
+    CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest, 
+    QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission, 
     SubmissionStatus, UserBadges, UserCore, Commitment
 };
+
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 
@@ -85,6 +86,10 @@ pub enum DataKey {
     TokenSymbol,
     /// Token decimals
     TokenDecimals,
+    /// Badge type definition keyed by badge id
+    BadgeType(Symbol),
+    /// Index of all registered badge type ids
+    BadgeTypeIds,
 }
 
 //================================================================================
@@ -1199,4 +1204,74 @@ pub fn delete_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) {
     env.storage()
         .instance()
         .remove(&DataKey::Dispute(quest_id.clone(), initiator.clone()));
+}
+
+//================================================================================
+// Badge Type Registry Storage
+//================================================================================
+
+pub fn has_badge_type(env: &Env, id: &Symbol) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::BadgeType(id.clone()))
+}
+
+pub fn get_badge_type(env: &Env, id: &Symbol) -> Result<BadgeType, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::BadgeType(id.clone()))
+        .ok_or(Error::BadgeTypeNotFound)
+}
+
+pub fn set_badge_type(env: &Env, badge_type: &BadgeType) {
+    env.storage()
+        .instance()
+        .set(&DataKey::BadgeType(badge_type.id.clone()), badge_type);
+}
+
+pub fn remove_badge_type(env: &Env, id: &Symbol) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::BadgeType(id.clone()));
+}
+
+pub fn get_badge_type_ids(env: &Env) -> Vec<Symbol> {
+    env.storage()
+        .instance()
+        .get(&DataKey::BadgeTypeIds)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn add_badge_type_id(env: &Env, id: &Symbol) {
+    let mut ids = get_badge_type_ids(env);
+    if !ids.contains(id) {
+        ids.push_back(id.clone());
+        env.storage().instance().set(&DataKey::BadgeTypeIds, &ids);
+    }
+}
+
+pub fn remove_badge_type_id(env: &Env, id: &Symbol) {
+    let mut ids = get_badge_type_ids(env);
+    let mut i = 0u32;
+    while i < ids.len() {
+        if ids.get(i).unwrap() == *id {
+            ids.remove(i);
+            env.storage().instance().set(&DataKey::BadgeTypeIds, &ids);
+            return;
+        }
+        i += 1;
+    }
+}
+
+pub fn list_badge_types(env: &Env) -> Vec<BadgeType> {
+    let ids = get_badge_type_ids(env);
+    let mut out = Vec::new(env);
+    let mut i = 0u32;
+    while i < ids.len() {
+        if let Ok(bt) = get_badge_type(env, &ids.get(i).unwrap()) {
+            out.push_back(bt);
+        }
+        i += 1;
+    }
+    out
 }

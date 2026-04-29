@@ -298,9 +298,14 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "vec": [
+                  "map": [
                     {
-                      "symbol": "Rookie"
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "symbol": "rookie"
+                      }
                     }
                   ]
                 }
@@ -423,6 +428,314 @@
                         },
                         "val": {
                           "bool": true
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "explorer"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "Reached level 2."
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "explorer"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Explorer"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_threshold"
+                              },
+                              "val": {
+                                "u64": 300
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "legend"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "Reached level 5."
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "legend"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Legend"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_threshold"
+                              },
+                              "val": {
+                                "u64": 1500
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "master"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "Reached level 4."
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "master"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Master"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_threshold"
+                              },
+                              "val": {
+                                "u64": 1000
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "rookie"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "First quest completed."
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "rookie"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Rookie"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_threshold"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "veteran"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "Reached level 3."
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "veteran"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Veteran"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_threshold"
+                              },
+                              "val": {
+                                "u64": 600
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeTypeIds"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "symbol": "rookie"
+                            },
+                            {
+                              "symbol": "explorer"
+                            },
+                            {
+                              "symbol": "veteran"
+                            },
+                            {
+                              "symbol": "master"
+                            },
+                            {
+                              "symbol": "legend"
+                            }
+                          ]
                         }
                       },
                       {
@@ -927,9 +1240,14 @@
                               "val": {
                                 "vec": [
                                   {
-                                    "vec": [
+                                    "map": [
                                       {
-                                        "symbol": "Rookie"
+                                        "key": {
+                                          "symbol": "id"
+                                        },
+                                        "val": {
+                                          "symbol": "rookie"
+                                        }
                                       }
                                     ]
                                   }
@@ -965,7 +1283,7 @@
                                 "symbol": "quests_completed"
                               },
                               "val": {
-                                "u32": 1
+                                "u32": 2
                               }
                             },
                             {
@@ -973,7 +1291,7 @@
                                 "symbol": "xp"
                               },
                               "val": {
-                                "u64": 100
+                                "u64": 110
                               }
                             }
                           ]
@@ -2084,6 +2402,9 @@
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+              },
+              {
+                "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
               }
             ],
             "data": {
@@ -2359,15 +2680,12 @@
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
               }
             ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
-                }
-              ]
-            }
+            "data": "void"
           }
         }
       },
@@ -2443,6 +2761,9 @@
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+              },
+              {
+                "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
               }
             ],
             "data": {
@@ -2727,9 +3048,14 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "vec": [
+                  "map": [
                     {
-                      "symbol": "Rookie"
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "symbol": "rookie"
+                      }
                     }
                   ]
                 }
@@ -2755,14 +3081,43 @@
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
               },
               {
-                "vec": [
-                  {
-                    "symbol": "Rookie"
-                  }
-                ]
+                "symbol": "rookie"
               }
             ],
             "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "xp_award"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u64": 10
+                },
+                {
+                  "u64": 110
+                },
+                {
+                  "u32": 1
+                }
+              ]
+            }
           }
         }
       },
@@ -2845,7 +3200,7 @@
                     "symbol": "quests_completed"
                   },
                   "val": {
-                    "u32": 1
+                    "u32": 2
                   }
                 },
                 {
@@ -2853,7 +3208,7 @@
                     "symbol": "xp"
                   },
                   "val": {
-                    "u64": 100
+                    "u64": 110
                   }
                 }
               ]
@@ -2913,9 +3268,14 @@
                   "val": {
                     "vec": [
                       {
-                        "vec": [
+                        "map": [
                           {
-                            "symbol": "Rookie"
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "symbol": "rookie"
+                            }
                           }
                         ]
                       }

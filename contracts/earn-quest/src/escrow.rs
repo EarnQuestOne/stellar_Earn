@@ -32,6 +32,26 @@ fn require_active_escrow(balances: &EscrowBalances) -> Result<(), Error> {
 // DEPOSIT: Creator locks tokens for a quest
 // ═══════════════════════════════════════════════════════════════
 
+/// Deposits tokens into a quest's escrow account.
+///
+/// This function locks the specified amount of tokens from the creator's wallet
+/// into the contract. These tokens will be used to pay out rewards for the quest.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `depositor` - The address of the account making the deposit (must be the quest creator).
+/// * `token_address` - The address of the token asset being deposited.
+/// * `amount` - The amount of tokens to deposit.
+///
+/// # Returns
+///
+/// * `Ok(())` if the deposit is successful.
+/// * `Err(Error::Unauthorized)` if the depositor is not the quest creator.
+/// * `Err(Error::QuestNotActive)` if the quest is already in a terminal state.
+/// * `Err(Error::TokenMismatch)` if the token address doesn't match the quest's reward asset.
+/// * `Err(Error::TransferFailed)` if the token transfer from the depositor fails.
 pub fn deposit(
     env: &Env,
     quest_id: &Symbol,
@@ -128,6 +148,24 @@ pub fn validate_sufficient(env: &Env, quest_id: &Symbol, amount: i128) -> Result
 // RECORD PAYOUT: Update hot-path balances after a reward transfer
 // ═══════════════════════════════════════════════════════════════
 
+/// Records a payout from a quest's escrow.
+///
+/// This function updates the escrow balances to reflect a reward payout.
+/// It must be called after a successful token transfer to a submitter.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `recipient` - The address of the reward recipient.
+/// * `token_address` - The address of the reward asset token.
+/// * `amount` - The amount paid out.
+///
+/// # Returns
+///
+/// * `Ok(())` if the payout is successfully recorded.
+/// * `Err(Error::EscrowNotFound)` if no escrow exists for the quest.
+/// * `Err(Error::InsufficientEscrow)` if the escrow doesn't have enough funds.
 pub fn record_payout(
     env: &Env,
     quest_id: &Symbol,
@@ -206,6 +244,21 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
 // CANCEL / EXPIRE / WITHDRAW
 // ═══════════════════════════════════════════════════════════════
 
+/// Cancels a quest and refunds any remaining escrow balance to the creator.
+///
+/// A quest can only be cancelled if it's currently active or paused.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest to cancel.
+/// * `caller` - The address of the account performing the action (must be the creator).
+///
+/// # Returns
+///
+/// * `Ok(i128)` containing the amount of tokens refunded.
+/// * `Err(Error::Unauthorized)` if the caller is not the creator.
+/// * `Err(Error::QuestNotActive)` if the quest is already in a terminal state.
 pub fn cancel_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i128, Error> {
     let quest = storage::get_quest(env, quest_id)?;
 
@@ -233,6 +286,21 @@ pub fn cancel_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i1
     Ok(refunded)
 }
 
+/// Expires a quest and refunds any remaining escrow balance to the creator.
+///
+/// This can only be called after the quest's deadline has passed.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest to expire.
+/// * `caller` - The address of the account performing the action (must be the creator).
+///
+/// # Returns
+///
+/// * `Ok(i128)` containing the amount of tokens refunded.
+/// * `Err(Error::Unauthorized)` if the caller is not the creator.
+/// * `Err(Error::QuestNotActive)` if the quest has not yet reached its deadline.
 pub fn expire_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i128, Error> {
     let quest = storage::get_quest(env, quest_id)?;
 
@@ -263,6 +331,20 @@ pub fn expire_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i1
     Ok(refunded)
 }
 
+/// Withdraws any remaining unclaimed funds from a terminal (Completed/Expired/Cancelled) quest.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `caller` - The address of the account performing the action (must be the creator).
+///
+/// # Returns
+///
+/// * `Ok(i128)` containing the amount of tokens withdrawn.
+/// * `Err(Error::Unauthorized)` if the caller is not the creator.
+/// * `Err(Error::QuestNotTerminal)` if the quest is still active.
+/// * `Err(Error::NoFundsToWithdraw)` if there are no remaining funds.
 pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i128, Error> {
     let quest = storage::get_quest(env, quest_id)?;
 

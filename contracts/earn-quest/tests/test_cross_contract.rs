@@ -475,8 +475,8 @@ fn test_aggregator_combines_user_xp() {
     client2.initialize(&admin);
 
     // Grant badges to user in both contracts (awards XP)
-    client1.grant_badge(&admin, &user, &Badge::Rookie);
-    client2.grant_badge(&admin, &user, &Badge::Explorer);
+    client1.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client2.grant_badge(&admin, &user, &Badge::explorer(&env));
 
     // Use aggregator to get total XP
     let aggregator_addr = setup_aggregator_contract(&env);
@@ -647,13 +647,13 @@ fn test_cross_contract_badge_management() {
     client.initialize(&admin);
 
     // Grant badge through interface
-    let result = client.try_grant_badge(&admin, &user, &Badge::Rookie);
+    let result = client.try_grant_badge(&admin, &user, &Badge::rookie(&env));
     assert!(result.is_ok());
 
     // Query badges through interface
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
-    assert_eq!(badges.badges.get(0).unwrap(), Badge::Rookie);
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::rookie(&env));
 }
 
 //================================================================================
@@ -824,9 +824,9 @@ fn test_batch_cross_contract_operations() {
     let user2 = Address::generate(&env);
     let user3 = Address::generate(&env);
 
-    client.grant_badge(&admin, &user1, &Badge::Rookie);
-    client.grant_badge(&admin, &user2, &Badge::Explorer);
-    client.grant_badge(&admin, &user3, &Badge::Veteran);
+    client.grant_badge(&admin, &user1, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user2, &Badge::explorer(&env));
+    client.grant_badge(&admin, &user3, &Badge::veteran(&env));
 
     // Verify all operations succeeded
     assert_eq!(client.get_user_badges(&user1).badges.len(), 1);
