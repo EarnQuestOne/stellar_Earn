@@ -1,0 +1,118 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\FrontEnd\my-app\components
+├── a11y
+|  ├── A11yAnnouncer.tsx
+|  ├── FocusTrap.tsx
+|  ├── index.ts
+|  ├── KeyboardShortcuts.tsx
+|  ├── ScreenReaderOnly.tsx
+|  └── SkipToContent.tsx
+├── admin
+|  ├── AdminLayout.tsx
+|  ├── AdminStats.tsx
+|  ├── Analytics.tsx
+|  ├── CreateQuestForm.tsx
+|  ├── index.ts
+|  ├── Notifications.tsx
+|  ├── QuestEditor.tsx
+|  └── QuestManager.tsx
+├── analytics
+|  └── ConsentBanner.tsx
+├── dashboard
+|  ├── ActiveQuests.tsx
+|  ├── BadgeDisplay.tsx
+|  ├── DashboardLayout.tsx
+|  ├── EarningsChart.tsx
+|  ├── index.ts
+|  ├── RecentSubmissions.tsx
+|  └── StatsCards.tsx
+├── error
+|  ├── ErrorBoundary.tsx
+|  └── ErrorMessage.tsx
+├── layout
+|  ├── AppLayout.tsx
+|  ├── Breadcrumbs.tsx
+|  ├── Header.tsx
+|  ├── MobileMenu.tsx
+|  ├── Sidebar.tsx
+|  └── UserMenu.tsx
+├── notifications
+|  ├── NotificationBell.tsx
+|  ├── NotificationCenter.tsx
+|  ├── NotificationItem.tsx
+|  ├── Toast.tsx
+|  └── useToast.ts
+├── onboarding
+|  ├── OnboardingStep.tsx
+|  ├── OnboardingWizard.tsx
+|  ├── TourTooltip.tsx
+|  └── WelcomeModal.tsx
+├── profile
+|  ├── AchievementsList.tsx
+|  ├── ActivityFeed.tsx
+|  ├── EditProfileModal.tsx
+|  ├── ProfileHeader.tsx
+|  ├── ProfileStats.tsx
+|  └── UserProfile.tsx
+├── quest
+|  ├── DeadlineTimer.tsx
+|  ├── EmptyQuestState.tsx
+|  ├── FilterPanel.tsx
+|  ├── ProofPreview.tsx
+|  ├── QuestCard.tsx
+|  ├── QuestCardSkeleton.tsx
+|  ├── QuestDetail.tsx
+|  ├── QuestHeader.tsx
+|  ├── QuestList.tsx
+|  ├── RequirementsList.tsx
+|  ├── RewardDisplay.tsx
+|  └── SubmissionForm.tsx
+├── reputation
+|  ├── BadgeGallery.tsx
+|  ├── LevelBadge.tsx
+|  ├── ReputationCard.tsx
+|  └── XPProgressBar.tsx
+├── rewards
+|  ├── ClaimButton.tsx
+|  ├── ClaimRewards.tsx
+|  ├── PendingRewards.tsx
+|  ├── RewardHistory.tsx
+|  └── TransactionModal.tsx
+├── search
+|  ├── GlobalSearch.tsx
+|  ├── SearchFilters.tsx
+|  ├── SearchResults.tsx
+|  └── SearchSuggestions.tsx
+├── submission
+|  ├── StatusBadge.tsx
+|  ├── StatusFilter.tsx
+|  ├── StatusTimeline.tsx
+|  ├── SubmissionCard.tsx
+|  ├── SubmissionDetail.tsx
+|  ├── SubmissionSearch.tsx
+|  ├── SubmissionsList.tsx
+|  ├── SubmissionsTable.tsx
+|  └── SubmissionSummaryCards.tsx
+├── ui
+|  ├── button.tsx
+|  ├── FileUpload.tsx
+|  ├── LazyLoad.tsx
+|  ├── LevelUpModal.tsx
+|  ├── LoadingOverlay.tsx
+|  ├── LoadingSpinner.tsx
+|  ├── Modal.tsx
+|  ├── OptimizedImage.tsx
+|  ├── Pagination.tsx
+|  ├── PerformanceMonitor.tsx
+|  ├── ProgressBar.tsx
+|  ├── SearchBar.tsx
+|  ├── Skeleton.tsx
+|  └── ThemeToggle.tsx
+└── wallet
+   ├── ConnectButton.tsx
+   ├── INTEGRATION_EXAMPLE.tsx
+   ├── README.md
+   ├── userIcon.tsx
+   └── WalletModal.tsx
+
+directory: 16 file: 98
+

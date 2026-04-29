@@ -265,34 +265,43 @@ export class UsersService {
     return stats;
   }
 
-  async getUserQuests(address: string, page = 1, limit = 20) {
-    const user = await this.findByAddress(address);
+async getUserQuests(address: string, cursor?: string, limit = 20) {
+  const user = await this.findByAddress(address);
 
-    const [submissions, total] = await this.submissionsRepository.findAndCount({
-      where: { user: { id: user.id } },
-      relations: ['quest'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+  const qb = this.submissionsRepository
+    .createQueryBuilder('submission')
+    .leftJoinAndSelect('submission.quest', 'quest')
+    .where('submission.userId = :userId', { userId: user.id })
+    .orderBy('submission.createdAt', 'DESC');
 
-    return {
-      data: submissions.map((submission) => ({
-        id: submission.id,
-        quest: submission.quest,
-        status: submission.status,
-        submittedAt: submission.createdAt,
-        approvedAt: submission.approvedAt,
-        proof: submission.proof,
-      })),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+  if (cursor) {
+    qb.andWhere('submission.createdAt < :cursor', { cursor });
   }
+
+  qb.take(limit + 1);
+
+  const submissions = await qb.getMany();
+
+  let nextCursor: string | null = null;
+
+  if (submissions.length > limit) {
+    const nextItem = submissions.pop();
+    nextCursor = nextItem?.createdAt.toISOString();
+  }
+
+  return {
+    data: submissions.map((submission) => ({
+      id: submission.id,
+      quest: submission.quest,
+      status: submission.status,
+      submittedAt: submission.createdAt,
+      approvedAt: submission.approvedAt,
+      proof: submission.proof,
+    })),
+    nextCursor,
+    limit,
+  };
+}
 
   async updateProfile(
     address: string,
@@ -371,31 +380,84 @@ export class UsersService {
   async searchUsers(searchDto: SearchUsersDto) {
     const {
       query,
-      page = 1,
       limit = 20,
+      cursor,
       sortBy = 'createdAt',
       order = 'DESC',
     } = searchDto;
-    const skip = (page - 1) * limit;
+
 
     const where: FindOptionsWhere<User> = {};
 
     if (query) {
       where.username = Like(`%${query}%`);
     }
+    
+    const qb = this.usersRepository.createQueryBuilder('user');
 
-    const [users, total] = await this.usersRepository.findAndCount({
-      where,
-      order: { [sortBy]: order },
-      skip,
+if (query) {
+  qb.where('user.username ILIKE :query', { query: `%${query}%` });
+}
+
+// Force stable sort (important for cursor pagination)
+qb.orderBy('user.xp', 'DESC')
+.thenOrderBy('user.id', 'DESC')
+
+// Cursor condition
+if (cursor) {
+  qb.andWhere(
+    order === 'DESC'
+      ? `user.${sortBy} < :cursor`
+      : `user.${sortBy} > :cursor`,
+    { cursor },
+  );
+}
+
+// Fetch one extra
+qb.take(limit + 1);
+
+const users = await qb.getMany();
+
+let nextCursor: string | null = null;
+
+if (users.length > limit) {
+  const nextItem = users.pop();
+ const value = nextItem?.[sortBy];
+
+nextCursor =
+  value instanceof Date
+    ? value.toISOString()
+    : value?.toString();
+}
+
+return {
+  data: users,
+  nextCursor,
+  limit,
+};
+
+  }
+
+  async getLeaderboard(page = 1, limit = 50) {
+    const cacheKey = `leaderboard_page_${page}_limit_${limit}`;
+    const cached = await this.cacheManager.get<LeaderboardEntry[]>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const [users] = await this.usersRepository.findAndCount({
+      order: { xp: 'DESC' },
+      skip: (page - 1) * limit,
       take: limit,
-select: [
+      select: [
         'id',
+        'username',
         'avatarUrl',
         'stellarAddress',
         'xp',
         'level',
-        'createdQuests',
+        'completedQuests',
         'totalEarned',
       ],
     });

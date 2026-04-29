@@ -37,7 +37,9 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -45,10 +47,13 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.15",
     "eslint-config-prettier": "10.1.8",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
     "jsdom": "^26.1.0",
     "msw": "~2.13.6",
     "prettier": "3.8.3",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.6",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }
