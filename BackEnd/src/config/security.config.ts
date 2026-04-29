@@ -82,7 +82,10 @@ export const getApplicationSecurityConfig = (
   configService: ConfigService,
 ): ApplicationSecurityConfig => {
   const environment = configService.get<string>('NODE_ENV', 'development');
-  const jsonBodyLimit = configService.get<string>('SECURITY_JSON_BODY_LIMIT', '1mb');
+  const jsonBodyLimit = configService.get<string>(
+    'SECURITY_JSON_BODY_LIMIT',
+    '1mb',
+  );
   const urlencodedBodyLimit = configService.get<string>(
     'SECURITY_URLENCODED_BODY_LIMIT',
     '256kb',
@@ -101,12 +104,18 @@ export const getApplicationSecurityConfig = (
         configService.get<string>('JWT_SECRET') ||
         'local-dev-request-signature-secret',
     },
-    allowedOrigins: toList(configService.get<string>('CORS_ORIGIN')).map((origin) =>
-      origin.replace(/\/$/, ''),
+    allowedOrigins: toList(configService.get<string>('CORS_ORIGINS')).map(
+      (origin) => origin.replace(/\/$/, ''),
     ),
     headers: {
-      csrfCookieName: configService.get<string>('CSRF_COOKIE_NAME', '__Host-csrf-token'),
-      csrfHeaderName: configService.get<string>('CSRF_HEADER_NAME', 'x-csrf-token'),
+      csrfCookieName: configService.get<string>(
+        'CSRF_COOKIE_NAME',
+        '__Host-csrf-token',
+      ),
+      csrfHeaderName: configService.get<string>(
+        'CSRF_HEADER_NAME',
+        'x-csrf-token',
+      ),
       signatureHeaderName: configService.get<string>(
         'REQUEST_SIGNATURE_HEADER',
         'x-request-signature',
@@ -119,7 +128,10 @@ export const getApplicationSecurityConfig = (
         'REQUEST_SIGNATURE_NONCE_HEADER',
         'x-signature-nonce',
       ),
-      auditHeaderName: configService.get<string>('SECURITY_AUDIT_HEADER', 'x-security-audit-id'),
+      auditHeaderName: configService.get<string>(
+        'SECURITY_AUDIT_HEADER',
+        'x-security-audit-id',
+      ),
     },
     limits: {
       jsonBodyLimit,
@@ -130,7 +142,10 @@ export const getApplicationSecurityConfig = (
       ),
       maxHeaderCount: configService.get<number>('SECURITY_MAX_HEADERS', 80),
       maxUrlLength: configService.get<number>('SECURITY_MAX_URL_LENGTH', 2048),
-      maxParameterDepth: configService.get<number>('SECURITY_MAX_PARAM_DEPTH', 8),
+      maxParameterDepth: configService.get<number>(
+        'SECURITY_MAX_PARAM_DEPTH',
+        8,
+      ),
     },
     detection: {
       blockSuspiciousRequests: configService.get<boolean>(
@@ -154,7 +169,10 @@ export const getApplicationSecurityConfig = (
         'REQUEST_SIGNATURE_TOLERANCE_MS',
         5 * 60 * 1000,
       ),
-      maxAuditBodyLength: configService.get<number>('SECURITY_AUDIT_BODY_MAX_LENGTH', 1024),
+      maxAuditBodyLength: configService.get<number>(
+        'SECURITY_AUDIT_BODY_MAX_LENGTH',
+        1024,
+      ),
     },
     reputation: {
       blockedIps: toList(configService.get<string>('SECURITY_BLOCKED_IPS')),
@@ -171,16 +189,22 @@ export const getApplicationSecurityConfig = (
 /**
  * Security configuration for Helmet middleware.
  */
-export const getSecurityConfig = (configService: ConfigService): HelmetOptions => {
+export const getSecurityConfig = (
+  configService: ConfigService,
+): HelmetOptions => {
   const appSecurity = getApplicationSecurityConfig(configService);
-  
+
   const cspDirectives: Record<string, any> = {
     defaultSrc: ["'self'"],
     styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     scriptSrc: ["'self'"],
     imgSrc: ["'self'", 'data:', 'https:'],
     fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-    connectSrc: ["'self'", 'https://api.stellar.org', ...appSecurity.allowedOrigins],
+    connectSrc: [
+      "'self'",
+      'https://api.stellar.org',
+      ...appSecurity.allowedOrigins,
+    ],
     objectSrc: ["'none'"],
     mediaSrc: ["'none'"],
     frameSrc: ["'none'"],
