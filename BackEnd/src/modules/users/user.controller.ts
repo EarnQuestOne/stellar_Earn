@@ -32,6 +32,15 @@ import { User } from './entities/user.entity';
 import { Role } from '../../common/enums/role.enum';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { DataExportService } from './data-export.service';
+import {
+  UserResponseDto,
+  LeaderboardResponseDto,
+  UserStatsResponseDto,
+  UserQuestHistoryResponseDto,
+  UserProfileUpdateResponseDto,
+  DataExportResponseDto,
+  AdminListResponseDto,
+} from './dto/user-response.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -52,7 +61,11 @@ export class UsersController {
     enum: ['xp', 'level', 'createdAt'],
   })
   @ApiQuery({ name: 'order', required: false, enum: ['ASC', 'DESC'] })
-  @ApiResponse({ status: 200, description: 'Users found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Users found',
+    type: [UserResponseDto],
+  })
   async searchUsers(@Query() searchDto: SearchUsersDto) {
     return this.usersService.searchUsers(searchDto);
   }
@@ -61,7 +74,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user leaderboard' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Leaderboard retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Leaderboard retrieved',
+    type: LeaderboardResponseDto,
+  })
   async getLeaderboard(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
@@ -72,7 +89,11 @@ export class UsersController {
   @Get(':address')
   @ApiOperation({ summary: 'Get user by Stellar address' })
   @ApiParam({ name: 'address', description: 'Stellar address (starts with G)' })
-  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiResponse({
+    status: 200,
+    description: 'User found',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserByAddress(@Param('address') address: string) {
     return this.usersService.findByAddress(address);
@@ -81,7 +102,11 @@ export class UsersController {
   @Get(':address/stats')
   @ApiOperation({ summary: 'Get user statistics' })
   @ApiParam({ name: 'address', description: 'Stellar address' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved',
+    type: UserStatsResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserStats(@Param('address') address: string) {
     return this.usersService.getUserStats(address);
@@ -92,7 +117,11 @@ export class UsersController {
   @ApiParam({ name: 'address', description: 'Stellar address' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Quest history retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Quest history retrieved',
+    type: UserQuestHistoryResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserQuests(
     @Param('address') address: string,
@@ -106,7 +135,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile updated',
+    type: UserProfileUpdateResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateProfile(
@@ -122,7 +155,11 @@ export class UsersController {
   @Get('username/:username')
   @ApiOperation({ summary: 'Get user by username' })
   @ApiParam({ name: 'username', description: 'Username' })
-  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiResponse({
+    status: 200,
+    description: 'User found',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserByUsername(@Param('username') username: string) {
     return this.usersService.findByUsername(username);
@@ -133,7 +170,11 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all admin users (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Admins retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Admins retrieved',
+    type: AdminListResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getAdmins() {
@@ -160,7 +201,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Request data export (async)' })
-  @ApiResponse({ status: 202, description: 'Export queued' })
+  @ApiResponse({
+    status: 202,
+    description: 'Export queued',
+    type: DataExportResponseDto,
+  })
   async requestExport(
     @CurrentUser() user: User,
     @Body('format') format: string = 'json',
@@ -170,7 +215,11 @@ export class UsersController {
       throw new BadRequestException('Invalid user');
     }
 
-    const record = await this.dataExportService.requestExport(user.id, exportType, format);
+    const record = await this.dataExportService.requestExport(
+      user.id,
+      exportType,
+      format,
+    );
 
     return {
       id: record.id,

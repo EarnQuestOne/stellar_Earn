@@ -22,6 +22,10 @@ import {
   WebhookEvent,
   WebhookResponse,
 } from './webhooks.service';
+import {
+  WebhookResponseDto,
+  WebhookHealthResponseDto,
+} from './dto/webhook-response.dto';
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
@@ -39,9 +43,16 @@ export class WebhooksController {
   @ApiOperation({ summary: 'Receive GitHub webhook events' })
   @ApiConsumes('application/json')
   @ApiBody({ schema: { type: 'object' } })
-  @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook processed successfully',
+    type: WebhookResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Invalid webhook payload' })
-  @ApiResponse({ status: 401, description: 'Unauthorized or invalid signature' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized or invalid signature',
+  })
   async handleGithubWebhook(
     @Body() payload: any,
     @Headers('x-github-event') eventType: string,
@@ -98,8 +109,15 @@ export class WebhooksController {
   @ApiOperation({ summary: 'API verification webhook endpoint' })
   @ApiConsumes('application/json')
   @ApiBody({ schema: { type: 'object' } })
-  @ApiResponse({ status: 200, description: 'Verification processed' })
-  @ApiResponse({ status: 400, description: 'Invalid webhook headers or payload' })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification processed',
+    type: WebhookResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid webhook headers or payload',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleApiVerificationWebhook(
     @Body() payload: any,
@@ -163,7 +181,11 @@ export class WebhooksController {
   @ApiOperation({ summary: 'Generic webhook receiver for external services' })
   @ApiConsumes('application/json')
   @ApiBody({ schema: { type: 'object' } })
-  @ApiResponse({ status: 200, description: 'Webhook processed' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook processed',
+    type: WebhookResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleGenericWebhook(
     @Body() payload: any,
@@ -204,7 +226,11 @@ export class WebhooksController {
   @Post('health')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Webhook-specific health check' })
-  @ApiResponse({ status: 200, description: 'Service healthy' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service healthy',
+    type: WebhookHealthResponseDto,
+  })
   async healthCheck(): Promise<{ status: string; timestamp: Date }> {
     return {
       status: 'ok',
