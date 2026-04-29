@@ -11,6 +11,7 @@ The dependency audit system provides automated security vulnerability scanning a
 - **Multi-language Support**: Rust (cargo) and Node.js (npm) dependency auditing
 - **Automated CI/CD Integration**: Security audits run on every push and pull request
 - **Weekly Scheduled Audits**: Regular monitoring for new vulnerabilities
+- **Bloat Reduction**: `depcheck` integration to identify and remove unused dependencies
 - **Comprehensive Reporting**: Detailed audit reports and artifact uploads
 - **Local Development Tools**: Easy-to-use scripts for manual audits
 - **License Compliance**: Automated license checking for Rust dependencies
@@ -107,6 +108,10 @@ cargo update
 cd FrontEnd/my-app
 npm audit
 npm audit fix
+
+# Check for unused dependencies
+npm install -g depcheck
+depcheck
 
 # Backend
 cd BackEnd
