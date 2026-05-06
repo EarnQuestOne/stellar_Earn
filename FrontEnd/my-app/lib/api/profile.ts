@@ -1,15 +1,13 @@
 // API utilities for user profile data
 
-import type { 
-  ProfileData, 
-  UserProfile, 
-  ProfileStats, 
-  Achievement, 
-  Activity, 
-  EditProfileData 
+import type {
+  ProfileData,
+  UserProfile,
+  ProfileStats,
+  Achievement,
+  Activity,
+  EditProfileData,
 } from '../types/profile';
-
-const API_BASE_URL = typeof window !== 'undefined' && (window as any).ENV?.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Mock data for development - will be replaced with actual API calls
 const mockProfile: UserProfile = {
@@ -20,7 +18,7 @@ const mockProfile: UserProfile = {
   bio: 'Blockchain developer and open-source enthusiast. Love building on Stellar!',
   level: 12,
   xp: 2450,
-  totalEarnings: 1250.50,
+  totalEarnings: 1250.5,
   questsCompleted: 28,
   currentStreak: 7,
   joinDate: '2025-06-15',
@@ -34,7 +32,7 @@ const mockProfile: UserProfile = {
 const mockStats: ProfileStats = {
   xp: 2450,
   level: 12,
-  totalEarnings: 1250.50,
+  totalEarnings: 1250.5,
   questsCompleted: 28,
   currentStreak: 7,
   followersCount: 142,
@@ -119,20 +117,23 @@ const mockActivities: Activity[] = [
 ];
 
 // Utility function for delay simulation
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Get user profile by Stellar address
+/**
+ * Fetches the profile data for a given Stellar address.
+ * Currently returns mock data and simulates network latency.
+ */
 export async function fetchUserProfile(address: string): Promise<ProfileData> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}`);
   // return response.json();
-  
+
   // Simulate API delay
   await delay(800);
-  
+
   // For demo purposes, we'll make the profile "own" if it matches a specific address
   const isOwnProfile = address === 'GABC123...';
-  
+
   return {
     profile: {
       ...mockProfile,
@@ -146,8 +147,14 @@ export async function fetchUserProfile(address: string): Promise<ProfileData> {
   };
 }
 
-// Update user profile
-export async function updateProfile(address: string, data: EditProfileData): Promise<UserProfile> {
+/**
+ * Updates a user's profile metadata.
+ * This is a placeholder implementation that simulates a successful API update.
+ */
+export async function updateProfile(
+  address: string,
+  data: EditProfileData
+): Promise<UserProfile> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}`, {
   //   method: 'PUT',
@@ -155,9 +162,9 @@ export async function updateProfile(address: string, data: EditProfileData): Pro
   //   body: JSON.stringify(data),
   // });
   // return response.json();
-  
+
   await delay(500);
-  
+
   return {
     ...mockProfile,
     username: data.username,
@@ -167,48 +174,64 @@ export async function updateProfile(address: string, data: EditProfileData): Pro
   };
 }
 
-// Follow a user
+/**
+ * Sends a follow request for the specified user address.
+ * This mock implementation resolves after a short delay.
+ */
 export async function followUser(address: string): Promise<void> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}/follow`, {
   //   method: 'POST',
   // });
   // if (!response.ok) throw new Error('Failed to follow user');
-  
+
   await delay(300);
   // Simulate following
   return Promise.resolve();
 }
 
-// Unfollow a user
+/**
+ * Sends an unfollow request for the specified user address.
+ * This mock implementation resolves after a short delay.
+ */
 export async function unfollowUser(address: string): Promise<void> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}/unfollow`, {
   //   method: 'POST',
   // });
   // if (!response.ok) throw new Error('Failed to unfollow user');
-  
+
   await delay(300);
   // Simulate unfollowing
   return Promise.resolve();
 }
 
-// Get user achievements
-export async function fetchUserAchievements(address: string): Promise<Achievement[]> {
+/**
+ * Retrieves the user's achievements for the profile page.
+ * Currently returns static mock achievements.
+ */
+export async function fetchUserAchievements(
+  address: string
+): Promise<Achievement[]> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}/achievements`);
   // return response.json();
-  
+
   await delay(400);
   return mockAchievements;
 }
 
-// Get user activity feed
-export async function fetchUserActivities(address: string): Promise<Activity[]> {
+/**
+ * Retrieves recent activity for the user's profile feed.
+ * This mock implementation simulates fetching activity records.
+ */
+export async function fetchUserActivities(
+  address: string
+): Promise<Activity[]> {
   // TODO: Replace with actual API call
   // const response = await fetch(`${API_BASE_URL}/profiles/${address}/activities`);
   // return response.json();
-  
+
   await delay(600);
   return mockActivities;
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Hook for accessing authentication state and methods.
@@ -14,7 +14,7 @@ export const useAuthHook = () => {
     error,
     login,
     logout,
-    refreshProfile
+    refreshProfile,
   } = useAuth();
 
   return {

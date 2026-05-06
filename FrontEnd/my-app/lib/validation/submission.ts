@@ -51,7 +51,9 @@ const ALLOWED_FILE_EXTENSIONS = [
 // URL pattern for link validation
 const URL_PATTERN = /^https?:\/\/.+\..+/i;
 
-export function validateSubmissionForm(data: Partial<SubmissionFormData>): ValidationResult {
+export function validateSubmissionForm(
+  data: Partial<SubmissionFormData>
+): ValidationResult {
   const errors: ValidationError[] = [];
 
   // Quest ID validation
@@ -71,9 +73,15 @@ export function validateSubmissionForm(data: Partial<SubmissionFormData>): Valid
     if (!data.link || data.link.trim().length === 0) {
       errors.push({ field: 'link', message: 'Link is required' });
     } else if (!URL_PATTERN.test(data.link.trim())) {
-      errors.push({ field: 'link', message: 'Please enter a valid URL (starting with http:// or https://)' });
+      errors.push({
+        field: 'link',
+        message: 'Please enter a valid URL (starting with http:// or https://)',
+      });
     } else if (data.link.length > 2000) {
-      errors.push({ field: 'link', message: 'Link is too long (max 2000 characters)' });
+      errors.push({
+        field: 'link',
+        message: 'Link is too long (max 2000 characters)',
+      });
     }
   }
 
@@ -81,9 +89,15 @@ export function validateSubmissionForm(data: Partial<SubmissionFormData>): Valid
     if (!data.text || data.text.trim().length === 0) {
       errors.push({ field: 'text', message: 'Proof text is required' });
     } else if (data.text.trim().length < 10) {
-      errors.push({ field: 'text', message: 'Proof text must be at least 10 characters' });
+      errors.push({
+        field: 'text',
+        message: 'Proof text must be at least 10 characters',
+      });
     } else if (data.text.length > 5000) {
-      errors.push({ field: 'text', message: 'Proof text is too long (max 5000 characters)' });
+      errors.push({
+        field: 'text',
+        message: 'Proof text is too long (max 5000 characters)',
+      });
     }
   }
 
@@ -98,7 +112,10 @@ export function validateSubmissionForm(data: Partial<SubmissionFormData>): Valid
 
   // Additional notes validation (optional field)
   if (data.additionalNotes && data.additionalNotes.length > 1000) {
-    errors.push({ field: 'additionalNotes', message: 'Additional notes are too long (max 1000 characters)' });
+    errors.push({
+      field: 'additionalNotes',
+      message: 'Additional notes are too long (max 1000 characters)',
+    });
   }
 
   return {
@@ -121,7 +138,8 @@ export function validateFile(file: File): ValidationError[] {
 
   // File type validation
   const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-  const isValidType = ALLOWED_FILE_TYPES.includes(file.type) ||
+  const isValidType =
+    ALLOWED_FILE_TYPES.includes(file.type) ||
     ALLOWED_FILE_EXTENSIONS.includes(fileExtension);
 
   if (!isValidType) {
@@ -146,12 +164,17 @@ export function validateLink(url: string): ValidationError[] {
   return errors;
 }
 
-export function getFieldError(errors: ValidationError[], field: string): string | undefined {
-  const error = errors.find(e => e.field === field);
+export function getFieldError(
+  errors: ValidationError[],
+  field: string
+): string | undefined {
+  const error = errors.find((e) => e.field === field);
   return error?.message;
 }
 
-export function sanitizeSubmissionData(data: SubmissionFormData): SubmissionFormData {
+export function sanitizeSubmissionData(
+  data: SubmissionFormData
+): SubmissionFormData {
   return {
     ...data,
     link: data.link?.trim(),

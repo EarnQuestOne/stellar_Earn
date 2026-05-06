@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import type { QuestWizardData } from "@/lib/schemas/quest.schema";
+import type { QuestWizardData } from '@/lib/schemas/quest.schema';
 
 interface VerificationSettingsStepProps {
   data: QuestWizardData;
   errors: Record<string, string>;
   verifierAddress?: string | null;
   onConnectWallet: () => void;
-  onChange: (next: QuestWizardData["verification"]) => void;
+  onChange: (next: QuestWizardData['verification']) => void;
 }
 
 const VerificationSettingsStep = ({
@@ -17,20 +17,20 @@ const VerificationSettingsStep = ({
   onConnectWallet,
   onChange,
 }: VerificationSettingsStepProps) => {
-  const hasInstructionsError = Boolean(errors["verification.instructions"]);
-  const hasAutoCriteriaError = Boolean(errors["verification.autoCriteria"]);
-  const hasVerifierError = Boolean(errors["verification.verifierAddress"]);
+  const hasInstructionsError = Boolean(errors['verification.instructions']);
+  const hasAutoCriteriaError = Boolean(errors['verification.autoCriteria']);
+  const hasVerifierError = Boolean(errors['verification.verifierAddress']);
 
   return (
     <section className="space-y-5" data-testid="step-verification">
       <div className="grid gap-3 sm:grid-cols-2">
         <button
           type="button"
-          onClick={() => onChange({ ...data.verification, mode: "manual" })}
+          onClick={() => onChange({ ...data.verification, mode: 'manual' })}
           className={`rounded-2xl border p-4 text-left transition ${
-            data.verification.mode === "manual"
-              ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30"
-              : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
+            data.verification.mode === 'manual'
+              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30'
+              : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900'
           }`}
         >
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -43,11 +43,11 @@ const VerificationSettingsStep = ({
 
         <button
           type="button"
-          onClick={() => onChange({ ...data.verification, mode: "auto" })}
+          onClick={() => onChange({ ...data.verification, mode: 'auto' })}
           className={`rounded-2xl border p-4 text-left transition ${
-            data.verification.mode === "auto"
-              ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30"
-              : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
+            data.verification.mode === 'auto'
+              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30'
+              : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900'
           }`}
         >
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -72,18 +72,18 @@ const VerificationSettingsStep = ({
           placeholder="Explain how submissions are reviewed and what evidence is required."
           className={`w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm focus:outline-none dark:bg-zinc-800 ${
             hasInstructionsError
-              ? "border-red-400 focus:border-red-500 dark:border-red-800"
-              : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+              ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+              : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
           }`}
         />
-        {errors["verification.instructions"] && (
+        {errors['verification.instructions'] && (
           <p className="mt-1 text-xs text-red-600">
-            {errors["verification.instructions"]}
+            {errors['verification.instructions']}
           </p>
         )}
       </label>
 
-      {data.verification.mode === "auto" && (
+      {data.verification.mode === 'auto' && (
         <label>
           <span className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Automation Criteria
@@ -100,13 +100,13 @@ const VerificationSettingsStep = ({
             placeholder="Example: submission must include GitHub PR URL and all required labels"
             className={`w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm focus:outline-none dark:bg-zinc-800 ${
               hasAutoCriteriaError
-                ? "border-red-400 focus:border-red-500 dark:border-red-800"
-                : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+                ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+                : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
             }`}
           />
-          {errors["verification.autoCriteria"] && (
+          {errors['verification.autoCriteria'] && (
             <p className="mt-1 text-xs text-red-600">
-              {errors["verification.autoCriteria"]}
+              {errors['verification.autoCriteria']}
             </p>
           )}
         </label>
@@ -115,8 +115,8 @@ const VerificationSettingsStep = ({
       <div
         className={`rounded-2xl border p-4 ${
           hasVerifierError
-            ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30"
-            : "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
+            ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+            : 'border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900'
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -126,7 +126,7 @@ const VerificationSettingsStep = ({
             </p>
             <p className="mt-1 break-all text-xs text-zinc-500 dark:text-zinc-400">
               {verifierAddress ||
-                "No verifier address detected yet. Connect a wallet or sign in to publish."}
+                'No verifier address detected yet. Connect a wallet or sign in to publish.'}
             </p>
           </div>
           {!verifierAddress && (
@@ -139,9 +139,9 @@ const VerificationSettingsStep = ({
             </button>
           )}
         </div>
-        {errors["verification.verifierAddress"] && (
+        {errors['verification.verifierAddress'] && (
           <p className="mt-2 text-xs text-red-600">
-            {errors["verification.verifierAddress"]}
+            {errors['verification.verifierAddress']}
           </p>
         )}
       </div>

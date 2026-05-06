@@ -19,6 +19,11 @@ import {
   PayoutResponseDto,
   PayoutStatsDto,
 } from './dto/payout-query.dto';
+import {
+  encodeCursor,
+  decodeCursor,
+  PaginatedResponseDto,
+} from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class PayoutsService {
@@ -29,11 +34,10 @@ export class PayoutsService {
     private readonly payoutRepository: Repository<Payout>,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
-  /**
-   * Create a new payout record
-   */
+  // ─── Create ────────────────────────────────────────────────────────────────
+
   async createPayout(createPayoutDto: CreatePayoutDto): Promise<Payout> {
     const payout = this.payoutRepository.create({
       stellarAddress: createPayoutDto.stellarAddress,
@@ -48,9 +52,8 @@ export class PayoutsService {
     return this.payoutRepository.save(payout);
   }
 
-  /**
-   * Claim a pending payout - initiates processing
-   */
+  // ─── Claim ─────────────────────────────────────────────────────────────────
+
   async claimPayout(
     claimPayoutDto: ClaimPayoutDto,
     userAddress: string,
@@ -72,17 +75,14 @@ export class PayoutsService {
       );
     }
 
-    // Validate the stellar address matches
     if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
       throw new BadRequestException('Stellar address mismatch');
     }
 
-    // Mark as claimed and start processing
     payout.claimedAt = new Date();
     payout.status = PayoutStatus.PROCESSING;
     await this.payoutRepository.save(payout);
 
-    // Process the payout asynchronously
     this.processPayout(payout.id).catch((error) => {
       this.logger.error(`Failed to process payout ${payout.id}`, error);
     });
@@ -90,9 +90,8 @@ export class PayoutsService {
     return this.mapToResponse(payout);
   }
 
-  /**
-   * Process a single payout - send XLM via Stellar network
-   */
+  // ─── Process ───────────────────────────────────────────────────────────────
+
   async processPayout(payoutId: string): Promise<void> {
     const payout = await this.payoutRepository.findOne({
       where: { id: payoutId },
@@ -110,10 +109,8 @@ export class PayoutsService {
     }
 
     try {
-      // Execute Stellar transaction
       const result = await this.executeStellarPayment(payout);
 
-      // Update payout with transaction details
       payout.status = PayoutStatus.COMPLETED;
       payout.transactionHash = result.transactionHash;
       payout.stellarLedger = result.ledger;
@@ -123,7 +120,6 @@ export class PayoutsService {
       await this.payoutRepository.save(payout);
       this.logger.log(`Payout ${payoutId} completed successfully`);
 
-      // Emit payout processed event
       this.eventEmitter.emit(
         'payout.processed',
         new PayoutProcessedEvent(
@@ -142,10 +138,8 @@ export class PayoutsService {
     }
   }
 
-  /**
-   * Execute Stellar payment
-   * This is a placeholder that should be replaced with actual Stellar SDK integration
-   */
+  // ─── Stellar ───────────────────────────────────────────────────────────────
+
   private async executeStellarPayment(
     payout: Payout,
   ): Promise<{ transactionHash: string; ledger: number }> {
@@ -154,12 +148,11 @@ export class PayoutsService {
       'testnet',
     );
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+
     if (nodeEnv === 'development' || nodeEnv === 'test') {
       await new Promise((resolve) =>
         setTimeout(resolve, nodeEnv === 'test' ? 10 : 1000),
       );
-
-      // Mock successful response
       return {
         transactionHash: `mock_tx_${Date.now()}_${payout.id.substring(0, 8)}`,
         ledger: Math.floor(Math.random() * 1000000) + 50000000,
@@ -181,9 +174,8 @@ export class PayoutsService {
     throw new Error('Stellar payment not implemented for production');
   }
 
-  /**
-   * Handle payout failure with retry logic
-   */
+  // ─── Failure / retry ───────────────────────────────────────────────────────
+
   private async handlePayoutFailure(
     payout: Payout,
     error: Error,
@@ -195,11 +187,9 @@ export class PayoutsService {
     payout.failureReason = errorMessage;
 
     if (payout.canRetry()) {
-      // Schedule retry with exponential backoff
-      const delayMinutes = Math.pow(2, payout.retryCount) * 5; // 10min, 20min, 40min
+      const delayMinutes = Math.pow(2, payout.retryCount) * 5;
       payout.nextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
       payout.status = PayoutStatus.RETRY_SCHEDULED;
-
       this.logger.log(
         `Payout ${payout.id} scheduled for retry at ${payout.nextRetryAt}`,
       );
@@ -213,23 +203,17 @@ export class PayoutsService {
     await this.payoutRepository.save(payout);
   }
 
-  /**
-   * Cron job to process scheduled retries
-   */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async processScheduledRetries(): Promise<void> {
-    const now = new Date();
     const payoutsToRetry = await this.payoutRepository.find({
       where: {
         status: PayoutStatus.RETRY_SCHEDULED,
-        nextRetryAt: LessThanOrEqual(now),
+        nextRetryAt: LessThanOrEqual(new Date()),
       },
-      take: 10, // Process in batches
+      take: 10,
     });
 
-    if (payoutsToRetry.length === 0) {
-      return;
-    }
+    if (payoutsToRetry.length === 0) return;
 
     this.logger.log(`Processing ${payoutsToRetry.length} scheduled retries`);
 
@@ -243,63 +227,93 @@ export class PayoutsService {
     }
   }
 
-  /**
-   * Get payout by ID
-   */
+  // ─── Get by ID ─────────────────────────────────────────────────────────────
+
   async getPayoutById(
     payoutId: string,
     userAddress?: string,
   ): Promise<PayoutResponseDto> {
     const whereClause: Record<string, unknown> = { id: payoutId };
-    if (userAddress) {
-      whereClause.stellarAddress = userAddress;
-    }
+    if (userAddress) whereClause.stellarAddress = userAddress;
 
     const payout = await this.payoutRepository.findOne({
       where: whereClause,
     });
 
-    if (!payout) {
-      throw new NotFoundException('Payout not found');
-    }
+    if (!payout) throw new NotFoundException('Payout not found');
 
     return this.mapToResponse(payout);
   }
 
+  // ─── List (cursor-paginated) ───────────────────────────────────────────────
+
   /**
-   * Get payout history with pagination
+   * Returns cursor-paginated payout history.
+   *
+   * Replaces the old offset-based implementation that used:
+   *   skip: (page - 1) * limit, take: limit
+   *
+   * Cursor encodes { id, createdAt } so the page boundary is stable even
+   * when new payouts are inserted between requests.
    */
   async getPayoutHistory(
     query: PayoutQueryDto,
     userAddress?: string,
   ): Promise<PayoutHistoryResponseDto> {
-    const { status, type, page = 1, limit = 20 } = query;
+    const limit = query.limit ?? 20;
     const address = query.stellarAddress || userAddress;
 
-    const whereClause: Record<string, unknown> = {};
-    if (address) whereClause.stellarAddress = address;
-    if (status) whereClause.status = status;
-    if (type) whereClause.type = type;
+    const qb = this.payoutRepository.createQueryBuilder('payout');
 
-    const [payouts, total] = await this.payoutRepository.findAndCount({
-      where: whereClause,
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    // ── Base filters ──────────────────────────────────────────────────────────
+    if (address) {
+      qb.andWhere('payout.stellarAddress = :address', { address });
+    }
+    if (query.status) {
+      qb.andWhere('payout.status = :status', { status: query.status });
+    }
+    if (query.type) {
+      qb.andWhere('payout.type = :type', { type: query.type });
+    }
 
-    return {
-      payouts: payouts.map((p) => this.mapToResponse(p)),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    // ── Cursor filter ─────────────────────────────────────────────────────────
+    if (query.cursor) {
+      const decoded = decodeCursor(query.cursor);
+      if (decoded?.createdAt && decoded?.id) {
+        // Compound condition: same-millisecond rows are broken by id
+        qb.andWhere(
+          '(payout.createdAt < :cv OR (payout.createdAt = :cv AND payout.id < :idv))',
+          { cv: decoded.createdAt, idv: decoded.id },
+        );
+      }
+    }
+
+    // ── Order + fetch limit+1 to detect next page ─────────────────────────────
+    qb.orderBy('payout.createdAt', 'DESC')
+      .addOrderBy('payout.id', 'DESC')
+      .take(limit + 1);
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+
+    const last = data[data.length - 1];
+    const nextCursor =
+      hasMore && last
+        ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+        : null;
+
+    const result = new PaginatedResponseDto<PayoutResponseDto>(
+      data.map((p) => this.mapToResponse(p)),
+      nextCursor,
+    );
+
+    // Cast is safe — PayoutHistoryResponseDto extends PaginatedResponseDto<PayoutResponseDto>
+    return result as PayoutHistoryResponseDto;
   }
 
-  /**
-   * Get payout statistics
-   */
+  // ─── Stats ─────────────────────────────────────────────────────────────────
+
   async getPayoutStats(stellarAddress?: string): Promise<PayoutStatsDto> {
     const baseQuery = this.payoutRepository.createQueryBuilder('payout');
 
@@ -337,23 +351,19 @@ export class PayoutsService {
     };
   }
 
-  /**
-   * Manually retry a failed payout (admin only)
-   */
+  // ─── Admin retry ───────────────────────────────────────────────────────────
+
   async retryPayout(payoutId: string): Promise<PayoutResponseDto> {
     const payout = await this.payoutRepository.findOne({
       where: { id: payoutId },
     });
 
-    if (!payout) {
-      throw new NotFoundException('Payout not found');
-    }
+    if (!payout) throw new NotFoundException('Payout not found');
 
     if (payout.status !== PayoutStatus.FAILED) {
       throw new BadRequestException('Only failed payouts can be retried');
     }
 
-    // Reset retry count for manual retry
     payout.retryCount = 0;
     payout.maxRetries = 3;
     payout.status = PayoutStatus.PROCESSING;
@@ -367,9 +377,8 @@ export class PayoutsService {
     return this.mapToResponse(payout);
   }
 
-  /**
-   * Map Payout entity to response DTO
-   */
+  // ─── Mapper ────────────────────────────────────────────────────────────────
+
   private mapToResponse(payout: Payout): PayoutResponseDto {
     return {
       id: payout.id,

@@ -27,17 +27,19 @@ export function useReputation(userId?: string): UseReputationReturn {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // TODO: Replace with actual API call
       // const response = await fetch(`/api/reputation/${userId}`);
       // if (!response.ok) throw new Error('Failed to fetch reputation');
       // const data = await response.json();
       // setReputation(data);
-      
+
       // For now, return null - will be populated by mock data or API
       setReputation(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch reputation'));
+      setError(
+        err instanceof Error ? err : new Error('Failed to fetch reputation')
+      );
       setReputation(null);
     } finally {
       setIsLoading(false);

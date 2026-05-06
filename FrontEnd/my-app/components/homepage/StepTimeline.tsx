@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardList,
   Upload,
@@ -9,48 +9,48 @@ import {
   Zap,
   ChevronDown,
   Clock,
-} from "lucide-react";
+} from 'lucide-react';
 
 const steps = [
   {
     number: 1,
     icon: ClipboardList,
-    title: "Quest Created",
+    title: 'Quest Created',
     summary:
-      "Browse through quests organized by category, difficulty, and reward value to find the right fit.",
+      'Browse through quests organized by category, difficulty, and reward value to find the right fit.',
     details:
-      "Quest creators publish tasks with clear objectives, acceptance criteria, and XLM rewards. Filter by skill set, time commitment, or reward size to find quests that match your expertise.",
-    estimatedTime: "5 min",
+      'Quest creators publish tasks with clear objectives, acceptance criteria, and XLM rewards. Filter by skill set, time commitment, or reward size to find quests that match your expertise.',
+    estimatedTime: '5 min',
   },
   {
     number: 2,
     icon: Upload,
-    title: "Submit Proof",
+    title: 'Submit Proof',
     summary:
-      "Complete the quest objective and submit your proof of work for review.",
+      'Complete the quest objective and submit your proof of work for review.',
     details:
-      "Upload screenshots, links, code, or any required deliverables through the submission form. Ensure your proof clearly demonstrates completion of all stated objectives before submitting.",
-    estimatedTime: "Varies",
+      'Upload screenshots, links, code, or any required deliverables through the submission form. Ensure your proof clearly demonstrates completion of all stated objectives before submitting.',
+    estimatedTime: 'Varies',
   },
   {
     number: 3,
     icon: ShieldCheck,
-    title: "Verification",
+    title: 'Verification',
     summary:
-      "Your submission is reviewed by assigned verifiers on the platform.",
+      'Your submission is reviewed by assigned verifiers on the platform.',
     details:
-      "Dedicated verifiers evaluate your submission against the quest criteria. The process is transparent and on-chain, ensuring fair and tamper-proof assessment of your work.",
-    estimatedTime: "24–48 hrs",
+      'Dedicated verifiers evaluate your submission against the quest criteria. The process is transparent and on-chain, ensuring fair and tamper-proof assessment of your work.',
+    estimatedTime: '24–48 hrs',
   },
   {
     number: 4,
     icon: Zap,
-    title: "Instant Payout",
+    title: 'Instant Payout',
     summary:
-      "Once verified, rewards are automatically distributed to your Stellar wallet.",
+      'Once verified, rewards are automatically distributed to your Stellar wallet.',
     details:
-      "Smart contracts on the Stellar network execute the payout instantly upon verification approval. No intermediaries, no delays — your XLM earnings land directly in your connected wallet.",
-    estimatedTime: "Instant",
+      'Smart contracts on the Stellar network execute the payout instantly upon verification approval. No intermediaries, no delays — your XLM earnings land directly in your connected wallet.',
+    estimatedTime: 'Instant',
   },
 ];
 
@@ -59,7 +59,7 @@ const cardVariants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.15, ease: "easeOut" as any },
+    transition: { duration: 0.5, delay: i * 0.15, ease: 'easeOut' as any },
   }),
 };
 
@@ -89,7 +89,7 @@ export function StepTimeline() {
               variants={cardVariants}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
+              viewport={{ once: true, margin: '-60px' }}
               className="relative flex flex-col"
             >
               {/* Step number badge — sits above the card on the connecting line */}
@@ -123,7 +123,7 @@ export function StepTimeline() {
                   aria-expanded={isOpen}
                   className="mt-3 flex items-center gap-1 text-xs font-medium text-slate-400 transition-colors hover:text-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                 >
-                  {isOpen ? "Less detail" : "More detail"}
+                  {isOpen ? 'Less detail' : 'More detail'}
                   <motion.span
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.25 }}
@@ -138,9 +138,9 @@ export function StepTimeline() {
                     <motion.p
                       key="details"
                       initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
+                      animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden text-xs leading-relaxed text-slate-400 pt-3"
                     >
                       {step.details}

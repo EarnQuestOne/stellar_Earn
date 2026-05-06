@@ -51,6 +51,12 @@ pub fn initialize(env: &Env, admin: Address) -> Result<(), Error> {
     // Set initial data version
     storage::set_data_version(env, CONTRACT_VERSION);
 
+    // Emit initialization event
+    env.events().publish(
+        (soroban_sdk::Symbol::new(env, "init"), admin.clone()),
+        CONTRACT_VERSION,
+    );
+
     Ok(())
 }
 
@@ -91,11 +97,21 @@ pub fn update_config(env: &Env, admin: Address, new_admin: Option<Address>) -> R
 
     // Update admin if provided
     if let Some(new_admin_addr) = new_admin {
-        config.admin = new_admin_addr;
+        let old_admin = config.admin.clone();
+        config.admin = new_admin_addr.clone();
+        
+        // Store updated configuration
+        storage::set_config(env, &config);
+        
+        // Emit admin update event
+        env.events().publish(
+            (soroban_sdk::Symbol::new(env, "admin_upd"), old_admin),
+            new_admin_addr,
+        );
+    } else {
+        // Store updated configuration
+        storage::set_config(env, &config);
     }
-
-    // Store updated configuration
-    storage::set_config(env, &config);
 
     Ok(())
 }

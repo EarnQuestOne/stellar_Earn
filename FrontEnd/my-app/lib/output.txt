@@ -1,0 +1,65 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\Frontend\my-app\lib
+├── analytics
+|  ├── events.ts
+|  └── provider.ts
+├── api
+|  ├── admin.ts
+|  ├── profile.ts
+|  ├── quests.ts
+|  ├── search.ts
+|  ├── submissions.ts
+|  └── user.ts
+├── config
+|  └── navigation.ts
+├── hooks
+|  ├── useAdmin.ts
+|  ├── useAnalytics.ts
+|  ├── useClaim.ts
+|  ├── useErrorHandler.ts
+|  ├── useIntersectionObserver.ts
+|  ├── useKeyboardShortcuts.ts
+|  ├── useLoading.ts
+|  ├── useNotifications.ts
+|  ├── useOnboarding.ts
+|  ├── useProfile.ts
+|  ├── useQuests.ts
+|  ├── useReputation.ts
+|  ├── useSearch.ts
+|  ├── useSubmission.ts
+|  ├── useSubmissions.ts
+|  ├── useTheme.ts
+|  └── useUserStats.ts
+├── mock
+|  ├── quests.ts
+|  ├── reputation.ts
+|  └── submissions.ts
+├── stellar
+|  └── claim.ts
+├── store
+|  ├── index.ts
+|  ├── middlewear
+|  └── slices
+├── types
+|  ├── admin.ts
+|  ├── dashboard.ts
+|  ├── profile.ts
+|  ├── quest.ts
+|  ├── reputation.ts
+|  └── submission.ts
+├── utils
+|  ├── a11y.ts
+|  ├── cache.ts
+|  ├── cn.ts
+|  ├── debounce.ts
+|  ├── error-handler.ts
+|  ├── notifications.ts
+|  ├── onboarding.ts
+|  ├── performance.ts
+|  ├── reputation.ts
+|  └── tracking.ts
+└── validation
+   ├── quest.ts
+   └── submission.ts
+
+directory: 12 file: 49
+

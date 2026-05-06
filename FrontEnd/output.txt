@@ -1,0 +1,25 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\Frontend
+├── my-app
+|  ├── app
+|  ├── components
+|  ├── context
+|  ├── ERROR_HANDLING_IMPLEMENTATION.md
+|  ├── eslint.config.mjs
+|  ├── lib
+|  ├── next.config.ts
+|  ├── node_modules
+|  ├── package-lock.json
+|  ├── package.json
+|  ├── postcss.config.mjs
+|  ├── public
+|  ├── README.md
+|  ├── styles
+|  ├── tailwind.config.js
+|  ├── tsconfig.json
+|  ├── USER_PROFILE_IMPLEMENTATION.md
+|  └── WALLET_SYSTEM_GUIDE.md
+├── package-lock.json
+└── ReadMe Frontend.md
+
+directory: 8 file: 13
+

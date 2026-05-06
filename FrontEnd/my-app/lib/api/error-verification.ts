@@ -6,7 +6,11 @@
 import { transformAxiosError } from './client';
 
 // Mock the dependencies for verification
-const mockCreateAppError = (message: string, code: string, statusCode: number) => ({
+const mockCreateAppError = (
+  message: string,
+  code: string,
+  statusCode: number
+) => ({
   message,
   code,
   statusCode,
@@ -53,8 +57,12 @@ export function verifyErrorHandling() {
   console.log('🎉 Error handling verification complete!');
   console.log('\n📋 Summary of improvements:');
   console.log('   ✅ Removed type assertions from interceptors');
-  console.log('   ✅ Added proper type guards (isAxiosError, hasApiErrorResponse)');
-  console.log('   ✅ Made transformAxiosError accept unknown instead of typed AxiosError');
+  console.log(
+    '   ✅ Added proper type guards (isAxiosError, hasApiErrorResponse)'
+  );
+  console.log(
+    '   ✅ Made transformAxiosError accept unknown instead of typed AxiosError'
+  );
   console.log('   ✅ Enhanced isRetryableError with proper type checking');
   console.log('   ✅ All error paths are now type-safe');
 }

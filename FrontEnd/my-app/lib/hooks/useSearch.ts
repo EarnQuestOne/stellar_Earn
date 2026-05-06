@@ -22,7 +22,7 @@ interface UseSearchReturn {
 export function useSearch(
   initialQuery = '',
   filters?: SearchFilters,
-  debounceDelay = 300,
+  debounceDelay = 300
 ): UseSearchReturn {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -70,20 +70,20 @@ export function useSearch(
         setIsLoading(false);
       }
     },
-    [filters],
+    [filters]
   );
 
   const debouncedSearch = useRef(
     debounce((searchQuery: string) => {
       performSearch(searchQuery);
-    }, debounceDelay),
+    }, debounceDelay)
   ).current;
 
   const search = useCallback(
     (searchQuery: string) => {
       debouncedSearch(searchQuery);
     },
-    [debouncedSearch],
+    [debouncedSearch]
   );
 
   const clearRecent = useCallback(() => {

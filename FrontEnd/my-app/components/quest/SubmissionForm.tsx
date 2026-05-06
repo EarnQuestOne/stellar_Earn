@@ -10,7 +10,11 @@ interface SubmissionFormProps {
   questTitle: string;
   isExpired?: boolean;
   isFull?: boolean;
-  onSubmit?: (data: { questId: string; proof: File | null; notes: string }) => void;
+  onSubmit?: (data: {
+    questId: string;
+    proof: File | null;
+    notes: string;
+  }) => void;
   onClose?: () => void;
   onSuccess?: () => void;
 }
@@ -78,14 +82,20 @@ export function SubmissionForm({
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <h3 className="mb-2 text-xl font-semibold text-green-900 dark:text-green-100">
           Interest Registered!
         </h3>
         <p className="text-sm text-green-700 dark:text-green-300">
-          You&apos;ve marked your interest in this quest. Submission functionality coming soon!
+          You&apos;ve marked your interest in this quest. Submission
+          functionality coming soon!
         </p>
       </div>
     );
@@ -98,14 +108,16 @@ export function SubmissionForm({
           Ready to Start?
         </h3>
         <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-          Click the button below to indicate your interest in this quest. You&apos;ll be able to submit
-          your work once you&apos;ve completed the requirements.
+          Click the button below to indicate your interest in this quest.
+          You&apos;ll be able to submit your work once you&apos;ve completed the
+          requirements.
         </p>
 
         {isExpired && (
           <div className="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/10">
             <p className="text-sm text-red-700 dark:text-red-300">
-              This quest has expired and is no longer accepting new participants.
+              This quest has expired and is no longer accepting new
+              participants.
             </p>
           </div>
         )}
@@ -123,7 +135,13 @@ export function SubmissionForm({
           onClick={handleStartQuest}
           disabled={!canStart}
           className="w-full rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
-          aria-label={isExpired ? 'Quest expired, cannot start' : isFull ? 'Quest full, cannot start' : `Start quest: ${questTitle}`}
+          aria-label={
+            isExpired
+              ? 'Quest expired, cannot start'
+              : isFull
+                ? 'Quest full, cannot start'
+                : `Start quest: ${questTitle}`
+          }
         >
           {isExpired ? 'Quest Expired' : isFull ? 'Quest Full' : 'Start Quest'}
         </button>
@@ -173,7 +191,11 @@ export function SubmissionForm({
           <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Proof of Work <span className="text-red-500">*</span>
           </label>
-          <FileUpload onFileSelect={setProof} selectedFile={proof} disabled={isSubmitting} />
+          <FileUpload
+            onFileSelect={setProof}
+            selectedFile={proof}
+            disabled={isSubmitting}
+          />
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
             Upload screenshots, documents, or other proof of your completed work
           </p>
@@ -220,11 +242,21 @@ export function SubmissionForm({
             type="submit"
             disabled={!proof || isSubmitting}
             className="flex-1 rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
-            aria-label={!proof ? 'Please upload proof before submitting' : isSubmitting ? 'Submitting work' : `Submit work for quest: ${questTitle}`}
+            aria-label={
+              !proof
+                ? 'Please upload proof before submitting'
+                : isSubmitting
+                  ? 'Submitting work'
+                  : `Submit work for quest: ${questTitle}`
+            }
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" variant="white" label="Submitting work" />
+                <LoadingSpinner
+                  size="sm"
+                  variant="white"
+                  label="Submitting work"
+                />
                 Submitting...
               </span>
             ) : (

@@ -21,7 +21,11 @@ export function QuestDetail({ quest }: QuestDetailProps) {
     quest.currentParticipants >= quest.maxParticipants;
   const hasDeadline = quest.deadline && !isExpired && !isCompleted;
 
-  const handleSubmission = (data: { questId: string; proof: File | null; notes: string }) => {
+  const handleSubmission = (data: {
+    questId: string;
+    proof: File | null;
+    notes: string;
+  }) => {
     console.log('Quest submission (mock):', data);
   };
 
@@ -42,7 +46,10 @@ export function QuestDetail({ quest }: QuestDetailProps) {
         {/* Left Column - Quest Details and Submission */}
         <div className="space-y-6 lg:col-span-2">
           {/* Requirements */}
-          <RequirementsList requirements={quest.requirements} description={quest.description} />
+          <RequirementsList
+            requirements={quest.requirements}
+            description={quest.description}
+          />
 
           {/* Submission Form */}
           <SubmissionForm
@@ -64,7 +71,9 @@ export function QuestDetail({ quest }: QuestDetailProps) {
           />
 
           {/* Deadline Timer */}
-          {hasDeadline && <DeadlineTimer deadline={quest.deadline!} isExpired={isExpired} />}
+          {hasDeadline && (
+            <DeadlineTimer deadline={quest.deadline!} isExpired={isExpired} />
+          )}
 
           {/* Quest Metadata */}
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
@@ -73,37 +82,49 @@ export function QuestDetail({ quest }: QuestDetailProps) {
             </h3>
             <dl className="space-y-3" aria-label="Quest information details">
               <div>
-                <dt className="text-xs text-zinc-500 dark:text-zinc-400">Created</dt>
+                <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Created
+                </dt>
                 <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                  {quest.createdAt ? new Date(quest.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  }) : 'N/A'}
+                  {quest.createdAt
+                    ? new Date(quest.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : 'N/A'}
                 </dd>
               </div>
               {quest.deadline && (
                 <div>
-                  <dt className="text-xs text-zinc-500 dark:text-zinc-400">Deadline</dt>
+                  <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Deadline
+                  </dt>
                   <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                    {quest.deadline ? new Date(quest.deadline).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }) : 'No deadline'}
+                    {quest.deadline
+                      ? new Date(quest.deadline).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'No deadline'}
                   </dd>
                 </div>
               )}
               <div>
-                <dt className="text-xs text-zinc-500 dark:text-zinc-400">Last Updated</dt>
+                <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Last Updated
+                </dt>
                 <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                  {quest.updatedAt ? new Date(quest.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  }) : 'N/A'}
+                  {quest.updatedAt
+                    ? new Date(quest.updatedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : 'N/A'}
                 </dd>
               </div>
             </dl>

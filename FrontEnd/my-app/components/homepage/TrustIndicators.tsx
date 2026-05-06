@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
 const INDICATORS = [
-  { icon: "⚡", label: "5-Second Settlement" },
-  { icon: "✅", label: "On-Chain Verification" },
-  { icon: "🏆", label: "Earn XP & Badges" },
+  { icon: '⚡', label: '5-Second Settlement' },
+  { icon: '✅', label: 'On-Chain Verification' },
+  { icon: '🏆', label: 'Earn XP & Badges' },
 ];
 
 export default function TrustIndicators() {

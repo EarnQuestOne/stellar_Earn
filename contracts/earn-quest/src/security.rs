@@ -1,13 +1,20 @@
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
+use crate::types::Role;
 use soroban_sdk::{token, Address, Env};
 
-/// Is contract paused?
+/// Returns true if the contract is currently paused.
 pub fn is_paused(env: &Env) -> bool {
     storage::is_paused(env)
 }
 
+/// Enforces that the contract is not paused.
+///
+/// # Returns
+///
+/// * `Ok(())` if not paused.
+/// * `Err(Error::Paused)` if the contract is paused.
 pub fn require_not_paused(env: &Env) -> Result<(), Error> {
     if is_paused(env) {
         return Err(Error::Paused);
@@ -41,11 +48,21 @@ pub fn nonreentrant_exit(env: &Env) {
     storage::clear_reentrancy_lock(env);
 }
 
-/// Pause the contract immediately (admin only)
+/// Pauses all contract activities immediately (Pauser or Admin only).
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `caller` - The address of the account performing the action.
+///
+/// # Returns
+///
+/// * `Ok(())` if successful.
+/// * `Err(Error::Unauthorized)` if the caller lacks the required role.
 pub fn emergency_pause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -54,11 +71,23 @@ pub fn emergency_pause(env: &Env, caller: &Address) -> Result<(), Error> {
     Ok(())
 }
 
-/// Approve an unpause. When approvals meet threshold a timelock is scheduled.
+/// Approves unpausing the contract.
+///
+/// When the number of approvals reaches the threshold, a timelock for unpausing is scheduled.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `caller` - The address of the admin/pauser approving the action.
+///
+/// # Returns
+///
+/// * `Ok(())` if approval is recorded.
+/// * `Err(Error::AlreadyApproved)` if the caller has already approved.
 pub fn emergency_approve_unpause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -82,11 +111,22 @@ pub fn emergency_approve_unpause(env: &Env, caller: &Address) -> Result<(), Erro
     Ok(())
 }
 
-/// Execute unpause once timelock has expired and approvals met.
+/// Executes the unpause after the timelock has expired.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `caller` - The address of the account executing the unpause.
+///
+/// # Returns
+///
+/// * `Ok(())` if the contract is successfully unpaused.
+/// * `Err(Error::TimelockNotExpired)` if the scheduled time has not yet been reached.
+/// * `Err(Error::InsufficientApprovals)` if no unpause is scheduled.
 pub fn emergency_unpause(env: &Env, caller: &Address) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -107,7 +147,22 @@ pub fn emergency_unpause(env: &Env, caller: &Address) -> Result<(), Error> {
     Ok(())
 }
 
-/// Emergency withdrawal when paused (admin only)
+/// Performs an emergency withdrawal of tokens from the contract (SuperAdmin or Admin only).
+///
+/// This can only be called when the contract is paused.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `caller` - The address of the admin performing the withdrawal.
+/// * `asset` - The address of the token asset to withdraw.
+/// * `to` - The recipient address.
+/// * `amount` - The amount to withdraw.
+///
+/// # Returns
+///
+/// * `Ok(())` if the withdrawal is successful.
+/// * `Err(Error::Paused)` if the contract is NOT paused.
 pub fn emergency_withdraw(
     env: &Env,
     caller: &Address,
@@ -117,7 +172,7 @@ pub fn emergency_withdraw(
 ) -> Result<(), Error> {
     caller.require_auth();
 
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
 
@@ -151,7 +206,7 @@ pub fn emergency_withdraw(
 /// Admins can configure the required approvals threshold
 pub fn set_unpause_threshold(env: &Env, caller: &Address, threshold: u32) -> Result<(), Error> {
     caller.require_auth();
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
     storage::set_unpause_threshold(env, threshold);
@@ -161,7 +216,7 @@ pub fn set_unpause_threshold(env: &Env, caller: &Address, threshold: u32) -> Res
 /// Admins can configure timelock seconds for unpause scheduling
 pub fn set_unpause_timelock(env: &Env, caller: &Address, seconds: u64) -> Result<(), Error> {
     caller.require_auth();
-    if !storage::is_admin(env, caller) {
+    if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::Pauser)) {
         return Err(Error::Unauthorized);
     }
     storage::set_unpause_timelock_seconds(env, seconds);

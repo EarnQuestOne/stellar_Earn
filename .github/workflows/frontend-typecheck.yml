@@ -1,0 +1,31 @@
+name: Frontend Type Check
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'FrontEnd/**'
+      - '.github/workflows/frontend-typecheck.yml'
+
+jobs:
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FrontEnd/my-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: FrontEnd/my-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit

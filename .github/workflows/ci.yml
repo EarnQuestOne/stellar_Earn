@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: Contract
+        working-directory: contracts/earn-quest
         shell: bash
 
     steps:
@@ -33,29 +33,29 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Contract/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('contracts/earn-quest/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache target directory
         uses: actions/cache@v4
         with:
-          path: Contract/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Contract/Cargo.lock') }}
+          path: contracts/earn-quest/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('contracts/earn-quest/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-target-
 
       - name: Build workspace
-        run: cargo build --workspace --release
+        run: cargo build --release
 
       - name: Run tests
-        run: cargo test --workspace
+        run: cargo test
 
       - name: Format check
         run: cargo fmt --all -- --check
 
       - name: Clippy lint
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Build WASM
-        run: cargo build --workspace --release --target wasm32-unknown-unknown
+        run: cargo build --release --target wasm32-unknown-unknown

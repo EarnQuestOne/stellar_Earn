@@ -5,6 +5,7 @@ This wallet connection system provides seamless integration with Stellar wallets
 ## Files Created
 
 ### 1. **WalletContext.tsx** (`/context/WalletContext.tsx`)
+
 - React Context for managing wallet state and operations
 - Provides `useWallet()` hook for components to access wallet functionality
 - Handles wallet initialization, connection, disconnection
@@ -12,12 +13,14 @@ This wallet connection system provides seamless integration with Stellar wallets
 - Manages error states and connection loading states
 
 ### 2. **WalletModal.tsx** (`/components/wallet/WalletModal.tsx`)
+
 - Modal component for selecting and connecting wallets
 - Displays all supported wallets with radio button selection
 - Shows connection status and error messages
 - Animated with Framer Motion
 
 ### 3. **ConnectButton.tsx** (`/components/wallet/ConnectButton.tsx`)
+
 - Button component that displays wallet status
 - Shows "Connect Wallet" when disconnected
 - Shows formatted wallet address with dropdown menu when connected
@@ -25,12 +28,15 @@ This wallet connection system provides seamless integration with Stellar wallets
 - Responsive and animated
 
 ### 4. **userIcon.tsx** (`/components/wallet/userIcon.tsx`)
+
 - SVG icon component used in the connect button
 
 ## Setup Instructions
 
 ### 1. Install Dependencies
+
 All required dependencies have been added to `package.json`:
+
 - `@creit.tech/stellar-wallets-kit` - Stellar wallet SDK
 - `framer-motion` - Animation library
 - `lucide-react` - Icon library
@@ -39,6 +45,7 @@ All required dependencies have been added to `package.json`:
 - `tailwind-merge` - Merge Tailwind classes
 
 Run the installation (already done):
+
 ```bash
 npm install
 ```
@@ -48,10 +55,10 @@ npm install
 Update your `app/layout.tsx` to wrap your app with the wallet provider:
 
 ```tsx
-"use client";
-import { WalletProvider } from "@/context/WalletContext";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { WalletModal } from "@/components/wallet/WalletModal";
+'use client';
+import { WalletProvider } from '@/context/WalletContext';
+import { ConnectButton } from '@/components/wallet/ConnectButton';
+import { WalletModal } from '@/components/wallet/WalletModal';
 
 export default function RootLayout({
   children,
@@ -64,10 +71,8 @@ export default function RootLayout({
         <WalletProvider>
           {/* Your navbar or header */}
           <header className="flex justify-between items-center p-4">
-            <div className="flex-1">
-              {/* Navigation items */}
-            </div>
-            
+            <div className="flex-1">{/* Navigation items */}</div>
+
             {/* Connect Wallet Button */}
             <ConnectButton />
           </header>
@@ -87,8 +92,8 @@ export default function RootLayout({
 ### 3. Use the Wallet in Your Components
 
 ```tsx
-"use client";
-import { useWallet } from "@/context/WalletContext";
+'use client';
+import { useWallet } from '@/context/WalletContext';
 
 export function MyComponent() {
   const { address, isConnected, connect, disconnect } = useWallet();
@@ -96,7 +101,9 @@ export function MyComponent() {
   return (
     <div>
       {isConnected && address && (
-        <p>Connected: {address.slice(0, 4)}...{address.slice(-4)}</p>
+        <p>
+          Connected: {address.slice(0, 4)}...{address.slice(-4)}
+        </p>
       )}
     </div>
   );
@@ -119,44 +126,51 @@ export function MyComponent() {
 
 ```typescript
 interface WalletContextType {
-  connect: (moduleId: string) => Promise<void>;      // Connect to a wallet
-  disconnect: () => Promise<void>;                    // Disconnect from wallet
-  address: string | null;                             // Current wallet address
-  isConnected: boolean;                               // Connection status
-  isConnecting: boolean;                              // Loading state during connection
-  selectedWalletId: string | null;                    // Currently selected wallet ID
-  openModal: () => void;                              // Open wallet selection modal
-  closeModal: () => void;                             // Close wallet selection modal
-  isModalOpen: boolean;                               // Modal visibility state
-  supportedWallets: Array<{                           // Available wallets
+  connect: (moduleId: string) => Promise<void>; // Connect to a wallet
+  disconnect: () => Promise<void>; // Disconnect from wallet
+  address: string | null; // Current wallet address
+  isConnected: boolean; // Connection status
+  isConnecting: boolean; // Loading state during connection
+  selectedWalletId: string | null; // Currently selected wallet ID
+  openModal: () => void; // Open wallet selection modal
+  closeModal: () => void; // Close wallet selection modal
+  isModalOpen: boolean; // Modal visibility state
+  supportedWallets: Array<{
+    // Available wallets
     id: string;
     name: string;
     icon: string;
   }>;
-  error: string | null;                               // Error message, if any
+  error: string | null; // Error message, if any
 }
 ```
 
 ## Customization
 
 ### Change Network
+
 Edit `WalletContext.tsx` to change from TESTNET to MAINNET:
+
 ```tsx
 network: walletKitModule.WalletNetwork.MAINNET,
 ```
 
 ### Change Storage Keys
+
 Update localStorage key names:
+
 ```tsx
-localStorage.setItem("your_app_wallet_address", walletAddress);
-localStorage.setItem("your_app_wallet_id", moduleId);
+localStorage.setItem('your_app_wallet_address', walletAddress);
+localStorage.setItem('your_app_wallet_id', moduleId);
 ```
 
 ### Add/Remove Wallets
+
 Modify the `supportedWallets` array in `WalletContext.tsx`:
+
 ```tsx
 const supportedWallets = [
-  { id: "freighter", name: "Freighter", icon: "/icons/freighter.png" },
+  { id: 'freighter', name: 'Freighter', icon: '/icons/freighter.png' },
   // Add or remove wallets here
 ];
 ```
@@ -164,6 +178,7 @@ const supportedWallets = [
 ## Wallet Icons
 
 Place wallet icons in `/public/icons/`:
+
 - `freighter.png`
 - `albedo.png`
 - `xbull.png`

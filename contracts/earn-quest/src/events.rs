@@ -1,6 +1,6 @@
 #![allow(unused)]
 use crate::types::Badge;
-use soroban_sdk::{symbol_short, Address, BytesN, Env, Symbol};
+use soroban_sdk::{symbol_short, Address, BytesN, Env, String, Symbol};
 
 // Event Topics (Names)
 const TOPIC_QUEST_REGISTERED: Symbol = symbol_short!("quest_reg");
@@ -10,6 +10,9 @@ const TOPIC_REWARD_CLAIMED: Symbol = symbol_short!("claimed");
 const TOPIC_XP_AWARDED: Symbol = symbol_short!("xp_award");
 const TOPIC_LEVEL_UP: Symbol = symbol_short!("level_up");
 const TOPIC_BADGE_GRANTED: Symbol = symbol_short!("badge_grt");
+const TOPIC_BADGE_TYPE_REGISTERED: Symbol = symbol_short!("btype_reg");
+const TOPIC_BADGE_TYPE_UPDATED: Symbol = symbol_short!("btype_upd");
+const TOPIC_BADGE_TYPE_REMOVED: Symbol = symbol_short!("btype_rm");
 const TOPIC_EMERGENCY_PAUSED: Symbol = symbol_short!("epause");
 const TOPIC_EMERGENCY_UNPAUSED: Symbol = symbol_short!("eunpause");
 const TOPIC_EMERGENCY_WITHDRAW: Symbol = symbol_short!("ewdraw");
@@ -18,9 +21,15 @@ const TOPIC_TIMELOCK_SCHEDULED: Symbol = symbol_short!("tl_sched");
 const TOPIC_QUEST_PAUSED: Symbol = symbol_short!("q_pause");
 const TOPIC_QUEST_RESUMED: Symbol = symbol_short!("q_resume");
 const TOPIC_QUEST_CANCELLED: Symbol = symbol_short!("q_cancel");
+const TOPIC_DISPUTE_OPENED: Symbol = symbol_short!("disp_open");
+const TOPIC_DISPUTE_RESOLVED: Symbol = symbol_short!("disp_res");
+const TOPIC_DISPUTE_WITHDRAWN: Symbol = symbol_short!("disp_wd");
+const TOPIC_DISPUTE_APPEALED: Symbol = symbol_short!("disp_appl");
 const TOPIC_ESCROW_DEPOSITED: Symbol = symbol_short!("esc_dep");
 const TOPIC_ESCROW_PAYOUT: Symbol = symbol_short!("esc_pay");
 const TOPIC_ESCROW_REFUNDED: Symbol = symbol_short!("esc_ref");
+const TOPIC_COMMITMENT_SUBMITTED: Symbol = symbol_short!("com_sub");
+const TOPIC_SUBMISSION_REVEALED: Symbol = symbol_short!("sub_rev");
 
 // ═══════════════════════════════════════════════════════════════
 // Enhanced Event Emission with Indexing for Subgraph/Indexer Integration
@@ -146,10 +155,15 @@ pub fn proof_submitted(env: &Env, quest_id: Symbol, submitter: Address, proof_ha
 /// * Track all approvals for a user
 /// * Monitor verifier activity
 pub fn submission_approved(env: &Env, quest_id: Symbol, submitter: Address, verifier: Address) {
-    // Topics: [EventName, QuestID, Submitter] - indexed for lookups
-    let topics = (TOPIC_SUBMISSION_APPROVED, quest_id, submitter.clone());
-    // Data: verifier info
-    let data = (verifier,);
+    // Topics: [EventName, QuestID, Submitter, Verifier] - indexed for lookups
+    let topics = (
+        TOPIC_SUBMISSION_APPROVED,
+        quest_id,
+        submitter.clone(),
+        verifier.clone(),
+    );
+    // Data: empty because all filterable identity fields are indexed
+    let data = ();
     env.events().publish(topics, data);
 }
 
@@ -205,9 +219,30 @@ pub fn level_up(env: &Env, user: Address, new_level: u32) {
 /// * Track badge distribution
 /// * Filter users by badge type
 pub fn badge_granted(env: &Env, user: Address, badge: Badge) {
-    // Topics: [EventName, User, Badge] - indexed for filtering
-    let topics = (TOPIC_BADGE_GRANTED, user.clone(), badge.clone());
+    // Topics: [EventName, User, BadgeId] - indexed for filtering
+    let topics = (TOPIC_BADGE_GRANTED, user.clone(), badge.id.clone());
     // Data: empty (badge already in topics)
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin registers a new badge type in the registry.
+pub fn badge_type_registered(env: &Env, badge_id: Symbol, name: String) {
+    let topics = (TOPIC_BADGE_TYPE_REGISTERED, badge_id);
+    let data = (name,);
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin updates an existing badge type definition.
+pub fn badge_type_updated(env: &Env, badge_id: Symbol) {
+    let topics = (TOPIC_BADGE_TYPE_UPDATED, badge_id);
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when an admin removes a badge type from the registry.
+pub fn badge_type_removed(env: &Env, badge_id: Symbol) {
+    let topics = (TOPIC_BADGE_TYPE_REMOVED, badge_id);
     let data = ();
     env.events().publish(topics, data);
 }
@@ -221,11 +256,17 @@ pub fn escrow_deposited(
     env: &Env,
     quest_id: Symbol,
     depositor: Address,
+    token: Address,
     amount: i128,
     total_balance: i128,
 ) {
-    // Topics: [EventName, QuestID, Depositor] - indexed
-    let topics = (TOPIC_ESCROW_DEPOSITED, quest_id, depositor.clone());
+    // Topics: [EventName, QuestID, Depositor, Token] - indexed
+    let topics = (
+        TOPIC_ESCROW_DEPOSITED,
+        quest_id,
+        depositor.clone(),
+        token.clone(),
+    );
     // Data: amounts
     let data = (amount, total_balance);
     env.events().publish(topics, data);
@@ -240,11 +281,12 @@ pub fn escrow_payout(
     env: &Env,
     quest_id: Symbol,
     recipient: Address,
+    token: Address,
     amount: i128,
     remaining: i128,
 ) {
-    // Topics: [EventName, QuestID, Recipient] - indexed
-    let topics = (TOPIC_ESCROW_PAYOUT, quest_id, recipient.clone());
+    // Topics: [EventName, QuestID, Recipient, Token] - indexed
+    let topics = (TOPIC_ESCROW_PAYOUT, quest_id, recipient.clone(), token.clone());
     // Data: amounts
     let data = (amount, remaining);
     env.events().publish(topics, data);
@@ -259,10 +301,11 @@ pub fn escrow_refunded(
     env: &Env,
     quest_id: Symbol,
     recipient: Address,
+    token: Address,
     amount: i128,
 ) {
-    // Topics: [EventName, QuestID, Recipient] - indexed
-    let topics = (TOPIC_ESCROW_REFUNDED, quest_id, recipient.clone());
+    // Topics: [EventName, QuestID, Recipient, Token] - indexed
+    let topics = (TOPIC_ESCROW_REFUNDED, quest_id, recipient.clone(), token.clone());
     // Data: amount
     let data = (amount,);
     env.events().publish(topics, data);
@@ -309,5 +352,51 @@ pub fn quest_resumed(env: &Env, quest_id: Symbol, by: Address) {
     let topics = (TOPIC_QUEST_RESUMED, quest_id, by.clone());
     // Data: admin info
     let data = (by,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when a dispute is opened (indexed: quest_id, initiator, arbitrator).
+///
+/// # Indexing Benefits
+/// * Track disputes per quest
+/// * Monitor initiator and arbitrator activity
+pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_OPENED, quest_id, initiator.clone(), arbitrator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
+pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_RESOLVED, quest_id, initiator.clone(), arbitrator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a dispute is withdrawn by the initiator (indexed: quest_id, initiator).
+pub fn dispute_withdrawn(env: &Env, quest_id: Symbol, initiator: Address) {
+    let topics = (TOPIC_DISPUTE_WITHDRAWN, quest_id, initiator.clone());
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a dispute is appealed (indexed: quest_id, initiator, arbitrator).
+pub fn dispute_appealed(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+    let topics = (TOPIC_DISPUTE_APPEALED, quest_id, initiator, arbitrator);
+    let data = ();
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a commitment is submitted (indexed: quest_id, submitter).
+pub fn commitment_submitted(env: &Env, quest_id: Symbol, submitter: Address, hash: BytesN<32>) {
+    let topics = (TOPIC_COMMITMENT_SUBMITTED, quest_id, submitter);
+    let data = (hash,);
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a submission is revealed (indexed: quest_id, submitter).
+pub fn submission_revealed(env: &Env, quest_id: Symbol, submitter: Address, proof_hash: BytesN<32>) {
+    let topics = (TOPIC_SUBMISSION_REVEALED, quest_id, submitter);
+    let data = (proof_hash,);
     env.events().publish(topics, data);
 }

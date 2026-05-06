@@ -8,14 +8,15 @@ import type {
 } from '../types/admin';
 
 // Simulated delay for mock API calls
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mock data for development
 const mockQuests: Quest[] = [
   {
     id: '1',
     title: 'Build Smart Contract Integration',
-    description: 'Implement a Soroban smart contract integration for the reward distribution system. This includes setting up the contract calls, handling transactions, and error management.',
+    description:
+      'Implement a Soroban smart contract integration for the reward distribution system. This includes setting up the contract calls, handling transactions, and error management.',
     shortDescription: 'Integrate Soroban smart contracts for rewards',
     category: 'Blockchain',
     difficulty: 'advanced',
@@ -25,7 +26,11 @@ const mockQuests: Quest[] = [
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     maxParticipants: 5,
     currentParticipants: 3,
-    requirements: ['Rust experience', 'Soroban SDK knowledge', 'Previous blockchain development'],
+    requirements: [
+      'Rust experience',
+      'Soroban SDK knowledge',
+      'Previous blockchain development',
+    ],
     tags: ['soroban', 'rust', 'smart-contract'],
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
@@ -34,7 +39,8 @@ const mockQuests: Quest[] = [
   {
     id: '2',
     title: 'Create Documentation for API Endpoints',
-    description: 'Write comprehensive documentation for all REST API endpoints including authentication, quest management, and user profiles.',
+    description:
+      'Write comprehensive documentation for all REST API endpoints including authentication, quest management, and user profiles.',
     shortDescription: 'Document all API endpoints with examples',
     category: 'Documentation',
     difficulty: 'beginner',
@@ -53,7 +59,8 @@ const mockQuests: Quest[] = [
   {
     id: '3',
     title: 'Design User Profile Page',
-    description: 'Create UI/UX designs for the user profile page including badges display, stats visualization, and activity history.',
+    description:
+      'Create UI/UX designs for the user profile page including badges display, stats visualization, and activity history.',
     shortDescription: 'Design user profile UI/UX',
     category: 'Design',
     difficulty: 'intermediate',
@@ -72,7 +79,8 @@ const mockQuests: Quest[] = [
   {
     id: '4',
     title: 'Implement Unit Tests for Auth Module',
-    description: 'Write comprehensive unit tests for the authentication module covering login, logout, token refresh, and permission validation.',
+    description:
+      'Write comprehensive unit tests for the authentication module covering login, logout, token refresh, and permission validation.',
     shortDescription: 'Add unit tests for authentication',
     category: 'Testing',
     difficulty: 'intermediate',
@@ -91,7 +99,8 @@ const mockQuests: Quest[] = [
   {
     id: '5',
     title: 'Build Community Discord Bot',
-    description: 'Create a Discord bot that posts new quest announcements, tracks user XP, and provides quest status updates.',
+    description:
+      'Create a Discord bot that posts new quest announcements, tracks user XP, and provides quest status updates.',
     shortDescription: 'Discord bot for community engagement',
     category: 'Community',
     difficulty: 'intermediate',
@@ -125,7 +134,13 @@ const mockAdminUser: AdminUser = {
   stellarAddress: 'GBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
   username: 'admin',
   role: 'super_admin',
-  permissions: ['create_quest', 'edit_quest', 'delete_quest', 'manage_users', 'view_stats'],
+  permissions: [
+    'create_quest',
+    'edit_quest',
+    'delete_quest',
+    'manage_users',
+    'view_stats',
+  ],
 };
 
 // API Functions
@@ -152,7 +167,7 @@ export async function fetchQuests(): Promise<Quest[]> {
 
 export async function fetchQuestById(id: string): Promise<Quest | null> {
   await delay(300);
-  return mockQuests.find(q => q.id === id) || null;
+  return mockQuests.find((q) => q.id === id) || null;
 }
 
 export async function createQuest(data: QuestFormData): Promise<Quest> {
@@ -170,9 +185,12 @@ export async function createQuest(data: QuestFormData): Promise<Quest> {
   return newQuest;
 }
 
-export async function updateQuest(id: string, data: Partial<QuestFormData>): Promise<Quest> {
+export async function updateQuest(
+  id: string,
+  data: Partial<QuestFormData>
+): Promise<Quest> {
   await delay(500);
-  const index = mockQuests.findIndex(q => q.id === id);
+  const index = mockQuests.findIndex((q) => q.id === id);
   if (index === -1) {
     throw new Error('Quest not found');
   }
@@ -184,9 +202,12 @@ export async function updateQuest(id: string, data: Partial<QuestFormData>): Pro
   return mockQuests[index];
 }
 
-export async function updateQuestStatus(id: string, status: QuestStatus): Promise<Quest> {
+export async function updateQuestStatus(
+  id: string,
+  status: QuestStatus
+): Promise<Quest> {
   await delay(400);
-  const index = mockQuests.findIndex(q => q.id === id);
+  const index = mockQuests.findIndex((q) => q.id === id);
   if (index === -1) {
     throw new Error('Quest not found');
   }
@@ -200,20 +221,22 @@ export async function updateQuestStatus(id: string, status: QuestStatus): Promis
 
 export async function deleteQuest(id: string): Promise<void> {
   await delay(400);
-  const index = mockQuests.findIndex(q => q.id === id);
+  const index = mockQuests.findIndex((q) => q.id === id);
   if (index === -1) {
     throw new Error('Quest not found');
   }
   mockQuests.splice(index, 1);
 }
 
-export async function executeBulkOperation(operation: BulkOperation): Promise<{ success: number; failed: number }> {
+export async function executeBulkOperation(
+  operation: BulkOperation
+): Promise<{ success: number; failed: number }> {
   await delay(800);
   let success = 0;
   let failed = 0;
 
   for (const questId of operation.questIds) {
-    const index = mockQuests.findIndex(q => q.id === questId);
+    const index = mockQuests.findIndex((q) => q.id === questId);
     if (index === -1) {
       failed++;
       continue;
@@ -236,7 +259,8 @@ export async function executeBulkOperation(operation: BulkOperation): Promise<{ 
         mockQuests.splice(index, 1);
         break;
     }
-    mockQuests[index] && (mockQuests[index].updatedAt = new Date().toISOString());
+    mockQuests[index] &&
+      (mockQuests[index].updatedAt = new Date().toISOString());
     success++;
   }
 

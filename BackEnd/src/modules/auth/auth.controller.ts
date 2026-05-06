@@ -10,8 +10,9 @@ import {
   HttpException,
   UnauthorizedException,
   Res,
-  Req,
+  Param,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Response, Request } from 'express';
 import {
   ApiTags,
@@ -32,6 +33,8 @@ import {
   RefreshTokenDto,
   UserResponseDto,
 } from './dto/auth.dto';
+import { TwoFactorLoginDto } from './dto/two-factor.dto';
+import { TwoFactorService } from './services/two-factor.service';
 
 const ACCESS_TOKEN_COOKIE = 'auth_token';
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
@@ -52,7 +55,10 @@ function parseCookies(cookieHeader: string | undefined): Record<string, string> 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly twoFactorService: TwoFactorService,
+  ) {}
 
   @Post('challenge')
   @HttpCode(HttpStatus.OK)
@@ -73,7 +79,12 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @RateLimit({ name: 'auth', limit: 5 })
-  @ApiOperation({ summary: 'Login with Stellar wallet signature' })
+  @ApiOperation({
+    summary: 'Login with Stellar wallet signature',
+    description:
+      'Authenticates using a Stellar wallet signature. ' +
+      'If 2FA is enabled for the account, a valid `totpCode` must also be provided.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Login successful',
@@ -81,7 +92,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid signature or expired challenge',
+    description: 'Invalid signature, expired challenge, or invalid 2FA code',
   })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async login(
@@ -132,14 +143,8 @@ export class AuthController {
     @Res() response: Response,
   ): Promise<void> {
     const cookies = parseCookies(request.headers.cookie);
-    const refreshToken = cookies[REFRESH_TOKEN_COOKIE]
-      || request.headers?.['x-refresh-token'];
 
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
-    }
-
-    const result = await this.authService.refreshTokens(refreshToken);
+    const result = await this.authService.refreshTokens(cookies.refresh_token);
 
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN;
@@ -166,6 +171,25 @@ export class AuthController {
       user: result.user,
       expiresIn: result.expiresIn,
     });
+  }
+
+  @Post('unlock/:userId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unlock a locked account (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Account unlocked successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  async unlockAccount(
+    @Param('userId') userId: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<{ message: string }> {
+    await this.authService.unlockAccount(userId, user);
+    return { message: 'Account unlocked successfully' };
   }
 
   @Get('google')

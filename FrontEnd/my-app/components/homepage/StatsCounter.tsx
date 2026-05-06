@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface Stat {
   label: string;
@@ -11,9 +11,21 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { label: "XLM Distributed", target: 2.5, prefix: "", suffix: "M+", decimals: 1 },
-  { label: "Quests Completed", target: 10, prefix: "", suffix: "K+", decimals: 0 },
-  { label: "Active Quests", target: 5, prefix: "", suffix: "K+", decimals: 0 },
+  {
+    label: 'XLM Distributed',
+    target: 2.5,
+    prefix: '',
+    suffix: 'M+',
+    decimals: 1,
+  },
+  {
+    label: 'Quests Completed',
+    target: 10,
+    prefix: '',
+    suffix: 'K+',
+    decimals: 0,
+  },
+  { label: 'Active Quests', target: 5, prefix: '', suffix: 'K+', decimals: 0 },
 ];
 
 function useCountUp(target: number, decimals = 0, active: boolean) {
@@ -51,7 +63,7 @@ function StatItem({ stat, active }: { stat: Stat; active: boolean }) {
     <div className="flex flex-col items-center gap-1">
       <span
         className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
-        aria-label={`${stat.prefix ?? ""}${display}${stat.suffix ?? ""}`}
+        aria-label={`${stat.prefix ?? ''}${display}${stat.suffix ?? ''}`}
       >
         {stat.prefix}
         {display}

@@ -1,16 +1,18 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   defaultOnboardingState,
   getOnboardingState,
   onboardingSteps,
   setOnboardingState,
   type OnboardingState,
-} from "@/lib/utils/onboarding";
+} from '@/lib/utils/onboarding';
 
 export function useOnboarding() {
-  const [state, setState] = useState<OnboardingState>(() => getOnboardingState());
+  const [state, setState] = useState<OnboardingState>(() =>
+    getOnboardingState()
+  );
   const [isReady] = useState(true);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function useOnboarding() {
 
   const currentStep = useMemo(
     () => onboardingSteps[state.currentStepIndex] ?? null,
-    [state.currentStepIndex],
+    [state.currentStepIndex]
   );
 
   const progress = useMemo(() => {
@@ -31,7 +33,9 @@ export function useOnboarding() {
       return 0;
     }
 
-    return Math.round((state.completedStepIds.length / onboardingSteps.length) * 100);
+    return Math.round(
+      (state.completedStepIds.length / onboardingSteps.length) * 100
+    );
   }, [state.completedStepIds.length]);
 
   const start = useCallback(() => {
@@ -73,9 +77,10 @@ export function useOnboarding() {
   const nextStep = useCallback(() => {
     setState((prev) => {
       const step = onboardingSteps[prev.currentStepIndex];
-      const completedStepIds = step && !prev.completedStepIds.includes(step.id)
-        ? [...prev.completedStepIds, step.id]
-        : prev.completedStepIds;
+      const completedStepIds =
+        step && !prev.completedStepIds.includes(step.id)
+          ? [...prev.completedStepIds, step.id]
+          : prev.completedStepIds;
 
       const nextIndex = prev.currentStepIndex + 1;
       const isLast = nextIndex >= onboardingSteps.length;

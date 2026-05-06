@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Coins } from "lucide-react";
+import { Coins } from 'lucide-react';
 import {
   REWARD_ASSETS,
   type RewardAssetType,
-} from "@/lib/schemas/quest.schema";
+} from '@/lib/schemas/quest.schema';
 
 interface RewardConfiguratorProps {
   assetType: RewardAssetType;
@@ -49,8 +49,8 @@ const RewardConfigurator = ({
                 }
                 className={`rounded-2xl border p-4 text-left transition ${
                   active
-                    ? "border-cyan-500 bg-cyan-50 shadow-sm dark:bg-cyan-950/40"
-                    : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                    ? 'border-cyan-500 bg-cyan-50 shadow-sm dark:bg-cyan-950/40'
+                    : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600'
                 }`}
               >
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -92,8 +92,8 @@ const RewardConfigurator = ({
               }
               className={`w-full rounded-xl border bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-900 focus:outline-none dark:bg-zinc-800 dark:text-zinc-50 ${
                 hasAmountError
-                  ? "border-red-400 focus:border-red-500 dark:border-red-800"
-                  : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+                  ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+                  : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
               }`}
             />
           </div>
@@ -117,8 +117,8 @@ const RewardConfigurator = ({
             }
             className={`w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm text-zinc-900 focus:outline-none dark:bg-zinc-800 dark:text-zinc-50 ${
               hasXpError
-                ? "border-red-400 focus:border-red-500 dark:border-red-800"
-                : "border-zinc-300 focus:border-cyan-500 dark:border-zinc-700"
+                ? 'border-red-400 focus:border-red-500 dark:border-red-800'
+                : 'border-zinc-300 focus:border-cyan-500 dark:border-zinc-700'
             }`}
           />
         </label>

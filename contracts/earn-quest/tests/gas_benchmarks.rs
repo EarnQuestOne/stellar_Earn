@@ -112,11 +112,10 @@ fn document_batch_operation_optimization() {
     
     // Create batch input using soroban_sdk::Vec
     let batch_size = 5u32;
-    let mut quests: Vec<earn_quest::types::BatchQuestInput> = Vec::new(&env);
-    
+    let mut batch_inputs: Vec<earn_quest::types::BatchQuestInput> = Vec::new(&env);
     for i in 0..batch_size {
         let quest_id = Symbol::new(&env, &format!("batch_q{}", i));
-        quests.push_back(earn_quest::types::BatchQuestInput {
+        batch_inputs.push_back(earn_quest::types::BatchQuestInput {
             id: quest_id,
             reward_asset: token_address.clone(),
             reward_amount: 100i128,
@@ -124,11 +123,12 @@ fn document_batch_operation_optimization() {
             deadline: (env.ledger().timestamp() + 86400),
         });
     }
+
     
     // OPTIMIZATION: Batch registration with caching
     // Before: ~50000 CUs for 10 quests (no caching)
     // After: ~35000 CUs (30% reduction through optimized storage)
-    client.register_quests_batch(&creator, &quests);
+    client.register_quests_batch(&creator, &batch_inputs);
     
     println!("✓ Batch Operation Optimization: 30% reduction achieved");
 }

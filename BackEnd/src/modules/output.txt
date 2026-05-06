@@ -1,0 +1,80 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\BackEnd\src\modules
+├── analytics
+|  ├── analytics.controller.ts
+|  ├── analytics.module.ts
+|  ├── dto
+|  ├── entities
+|  ├── services
+|  └── utils
+├── auth
+|  ├── auth.controller.ts
+|  ├── auth.module.ts
+|  ├── auth.service.ts
+|  ├── decorators
+|  ├── dto
+|  ├── entities
+|  ├── enums
+|  ├── guards
+|  ├── strategies
+|  └── utils
+├── cache
+|  ├── cache.controller.ts
+|  ├── cache.module.ts
+|  └── cache.service.ts
+├── health
+|  ├── health.controller.ts
+|  ├── health.module.ts
+|  └── indicators
+├── jobs
+|  ├── jobs.board.ts
+|  ├── jobs.constants.ts
+|  ├── jobs.controller.ts
+|  ├── jobs.module.ts
+|  └── jobs.service.ts
+├── notifications
+|  ├── dto
+|  ├── entities
+|  ├── notifications.controller.spec.ts
+|  ├── notifications.controller.ts
+|  ├── notifications.module.ts
+|  ├── notifications.service.spec.ts
+|  ├── notifications.service.ts
+|  └── template
+├── payouts
+|  ├── dto
+|  ├── entities
+|  ├── payouts.controller.ts
+|  ├── payouts.module.ts
+|  └── payouts.service.ts
+├── quests
+|  ├── dto
+|  ├── entities
+|  ├── enums
+|  ├── quests.controller.ts
+|  ├── quests.module.ts
+|  └── quests.service.ts
+├── stellar
+|  ├── stellar.module.ts
+|  ├── stellar.service.ts
+|  └── utils
+├── submissions
+|  ├── dto
+|  ├── entities
+|  ├── submissions.controller.ts
+|  ├── submissions.module.ts
+|  └── submissions.service.ts
+├── users
+|  ├── dto
+|  ├── entities
+|  ├── user.controller.ts
+|  └── user.service.ts
+└── webhooks
+   ├── handlers
+   ├── README.md
+   ├── utils
+   ├── webhooks.controller.ts
+   ├── webhooks.module.ts
+   └── webhooks.service.ts
+
+directory: 39 file: 37
+

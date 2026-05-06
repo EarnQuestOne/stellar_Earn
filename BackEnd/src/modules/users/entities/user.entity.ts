@@ -119,6 +119,12 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   lastSyncedAt: Date;
 
+  @Column({ type: 'int', default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lockedUntil: Date;
+
   @OneToMany('Submission', 'user')
   submissions: any[];
 

@@ -15,7 +15,10 @@ export function XPProgressBar({
 }: XPProgressBarProps) {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
-  const percentage = Math.min(100, Math.max(0, (currentXP / xpForNextLevel) * 100));
+  const percentage = Math.min(
+    100,
+    Math.max(0, (currentXP / xpForNextLevel) * 100)
+  );
 
   useEffect(() => {
     // Animate progress bar fill

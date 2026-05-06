@@ -13,7 +13,7 @@ export class UserListener {
     @OnEvent('user.created', { async: true })
     @Retry(3, 2000)
     async handleUserCreatedEvent(event: UserCreatedEvent) {
-        this.logger.log(`Handling user.created for user: ${event.username} (${event.userId})`);
+        this.logger.log(`Handling user.created for user ID: ${event.userId}`);
 
         try {
             // Simulate async processing

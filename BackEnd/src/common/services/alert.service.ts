@@ -30,6 +30,7 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
   /** Rolling counters reset every evaluation window (60 s) */
   private windowRequests = 0;
   private windowErrors = 0;
+  private windowJobFailures = 0;
 
   /** Exponential moving average for p95 latency estimation */
   private emaLatencyMs = 0;
@@ -80,6 +81,11 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
     this.metrics.incrementCounter('http_requests_total');
     if (isError) this.metrics.incrementCounter('http_errors_total');
     this.metrics.observeHistogram('http_request_duration_ms', durationMs);
+  }
+
+  recordJobFailure(): void {
+    this.windowJobFailures++;
+    this.metrics.incrementCounter('job_failures_total');
   }
 
   /** Evaluate all rules immediately (also called on a 60-second cadence). */
@@ -221,6 +227,7 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
       // Reset rolling window counters
       this.windowRequests = 0;
       this.windowErrors = 0;
+      this.windowJobFailures = 0;
     }, 60_000);
 
     this.checkInterval.unref();

@@ -15,7 +15,9 @@ export const mockSubmissions: SubmissionResponse[] = [
     questId: 'quest-001',
     userId: 'user-001',
     status: 'Approved',
-    proof: { hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd' },
+    proof: {
+      hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd',
+    },
     createdAt: '2024-01-15T14:32:00Z',
     updatedAt: '2024-01-15T14:32:00Z',
     quest: {
@@ -60,7 +62,9 @@ export const mockSubmissions: SubmissionResponse[] = [
     questId: 'quest-004',
     userId: 'user-001',
     status: 'Approved',
-    proof: { hash: '0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12' },
+    proof: {
+      hash: '0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12',
+    },
     createdAt: '2024-01-12T11:20:00Z',
     updatedAt: '2024-01-12T11:20:00Z',
     quest: {

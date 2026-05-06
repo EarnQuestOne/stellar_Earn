@@ -1,0 +1,33 @@
+[package]
+name = "earn-quest-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.3", features = ["derive"] }
+soroban-sdk = "21.7.4"
+
+[dependencies.earn-quest]
+path = ".."
+
+[[bin]]
+name = "quest_creation_fuzzer"
+path = "fuzz_targets/quest_creation_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "submission_fuzzer"
+path = "fuzz_targets/submission_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "validation_fuzzer"
+path = "fuzz_targets/validation_fuzzer.rs"
+test = false
+doc = false

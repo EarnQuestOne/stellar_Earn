@@ -240,11 +240,11 @@ fn test_badge_storage() {
     client.initialize(&admin);
 
     // Grant badge (stores user stats with badge)
-    client.grant_badge(&admin, &user, &Badge::Rookie);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
 
     // Verify badge was stored
-    let stats = client.get_user_stats(&user);
-    assert_eq!(stats.badges.len(), 1);
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 1);
 }
 
 #[test]
@@ -261,13 +261,13 @@ fn test_multiple_badges_storage() {
     client.initialize(&admin);
 
     // Grant multiple badges
-    client.grant_badge(&admin, &user, &Badge::Rookie);
-    client.grant_badge(&admin, &user, &Badge::Explorer);
-    client.grant_badge(&admin, &user, &Badge::Veteran);
+    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user, &Badge::explorer(&env));
+    client.grant_badge(&admin, &user, &Badge::veteran(&env));
 
     // Verify all badges were stored
-    let stats = client.get_user_stats(&user);
-    assert_eq!(stats.badges.len(), 3);
+    let badges = client.get_user_badges(&user);
+    assert_eq!(badges.badges.len(), 3);
 }
 
 #[test]

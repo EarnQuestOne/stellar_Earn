@@ -175,7 +175,6 @@ pub fn emit_unpause_event(env: &Env) {
 }
 
 /// Emit emergency withdrawal event
-#[allow(dead_code)]
 pub fn emit_emergency_withdrawal(env: &Env, user: Address, amount: i128, quest_id: Symbol) {
     #[soroban_sdk::contracttype]
     #[derive(Clone)]

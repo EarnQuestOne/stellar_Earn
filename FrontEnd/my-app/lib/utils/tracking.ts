@@ -5,6 +5,7 @@
  */
 
 import type { AnalyticsEventPayload } from '@/lib/analytics/events';
+import { env } from '@/lib/config/env';
 
 const CONSENT_KEY = 'stellar_earn_analytics_consent';
 const CONSENT_VERSION = '1';
@@ -17,7 +18,10 @@ export function getConsent(): ConsentStatus {
   try {
     const raw = localStorage.getItem(CONSENT_KEY);
     if (!raw) return 'pending';
-    const { status, version } = JSON.parse(raw) as { status: ConsentStatus; version: string };
+    const { status, version } = JSON.parse(raw) as {
+      status: ConsentStatus;
+      version: string;
+    };
     if (version !== CONSENT_VERSION) return 'pending';
     return status;
   } catch {
@@ -29,15 +33,27 @@ export function getConsent(): ConsentStatus {
 export function setConsent(status: 'granted' | 'denied'): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status, version: CONSENT_VERSION }));
+    localStorage.setItem(
+      CONSENT_KEY,
+      JSON.stringify({ status, version: CONSENT_VERSION })
+    );
   } catch {
     // ignore
   }
 }
 
 /** Sanitize payload: strip known PII keys. Never send these without explicit consent. */
-const PII_KEYS = new Set(['email', 'userId', 'address', 'wallet', 'name', 'ip']);
-export function sanitizePayload(payload?: AnalyticsEventPayload): AnalyticsEventPayload | undefined {
+const PII_KEYS = new Set([
+  'email',
+  'userId',
+  'address',
+  'wallet',
+  'name',
+  'ip',
+]);
+export function sanitizePayload(
+  payload?: AnalyticsEventPayload
+): AnalyticsEventPayload | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const out: AnalyticsEventPayload = {};
   for (const [k, v] of Object.entries(payload)) {
@@ -51,7 +67,7 @@ export function sanitizePayload(payload?: AnalyticsEventPayload): AnalyticsEvent
 /** Check if we're in analytics test mode (no real tracking). */
 export function isAnalyticsTestMode(): boolean {
   if (typeof window === 'undefined') return true;
-  return process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE === 'true';
+  return env.analyticsTestMode();
 }
 
 /** In-memory aggregate for admin dashboard (no PII). */

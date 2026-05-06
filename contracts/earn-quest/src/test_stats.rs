@@ -96,7 +96,7 @@ fn full_lifecycle(
     let proof: BytesN<32> = BytesN::from_array(env, &[2u8; 32]);
     client.submit_proof(&quest_id, submitter, &proof);
     client.approve_submission(&quest_id, submitter, &verifier);
-    client.claim_reward(&quest_id, submitter);
+    client.claim_reward(&quest_id, submitter, &reward_amount);
     quest_id
 }
 

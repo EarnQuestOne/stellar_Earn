@@ -30,8 +30,12 @@ function ChartSkeleton() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-48 text-center">
-      <div className="text-4xl mb-3" aria-hidden="true">📈</div>
-      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">No earnings data</h4>
+      <div className="text-4xl mb-3" aria-hidden="true">
+        📈
+      </div>
+      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">
+        No earnings data
+      </h4>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
         Complete quests to start tracking your earnings
       </p>
@@ -66,11 +70,20 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
           </p>
         </div>
         {!isLoading && earnings.length > 0 && (
-          <div className="text-right" aria-label={`Total earnings: ${totalEarnings.toFixed(0)} XLM, average ${avgEarnings.toFixed(0)} XLM per day`}>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50" aria-hidden="true">
+          <div
+            className="text-right"
+            aria-label={`Total earnings: ${totalEarnings.toFixed(0)} XLM, average ${avgEarnings.toFixed(0)} XLM per day`}
+          >
+            <p
+              className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+              aria-hidden="true"
+            >
               {totalEarnings.toFixed(0)} XLM
             </p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400" aria-hidden="true">
+            <p
+              className="text-sm text-zinc-500 dark:text-zinc-400"
+              aria-hidden="true"
+            >
               ~{avgEarnings.toFixed(0)} XLM/day avg
             </p>
           </div>
@@ -84,7 +97,10 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
       ) : (
         <div className="space-y-4">
           {/* Accessible data table (visually hidden, for screen readers) */}
-          <table className="sr-only" aria-label="Earnings data for the last 7 days">
+          <table
+            className="sr-only"
+            aria-label="Earnings data for the last 7 days"
+          >
             <caption>Daily earnings in XLM over the last 7 days</caption>
             <thead>
               <tr>
@@ -135,7 +151,10 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
           </div>
 
           {/* X-axis labels */}
-          <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400" aria-hidden="true">
+          <div
+            className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400"
+            aria-hidden="true"
+          >
             {earnings.map((data) => (
               <span key={data.date} className="flex-1 text-center">
                 {formatDate(data.date)}
@@ -146,21 +165,32 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
           {/* Summary stats */}
           <dl className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <div className="text-center">
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Highest</dt>
+              <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                Highest
+              </dt>
               <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 {Math.max(...earnings.map((e) => e.amount))} XLM
               </dd>
             </div>
             <div className="text-center">
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Lowest</dt>
+              <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                Lowest
+              </dt>
               <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 {Math.min(...earnings.map((e) => e.amount))} XLM
               </dd>
             </div>
             <div className="text-center">
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Change</dt>
+              <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                Change
+              </dt>
               <dd className="text-sm font-medium text-green-600 dark:text-green-400">
-                +{((earnings[earnings.length - 1]?.amount || 0) - (earnings[0]?.amount || 0)).toFixed(0)} XLM
+                +
+                {(
+                  (earnings[earnings.length - 1]?.amount || 0) -
+                  (earnings[0]?.amount || 0)
+                ).toFixed(0)}{' '}
+                XLM
               </dd>
             </div>
           </dl>

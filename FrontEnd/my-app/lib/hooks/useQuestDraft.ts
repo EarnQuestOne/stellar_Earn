@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   QuestWizardData,
   QuestWizardStepIndex,
-} from "@/lib/schemas/quest.schema";
-import { defaultQuestWizardData } from "@/lib/schemas/quest.schema";
+} from '@/lib/schemas/quest.schema';
+import { defaultQuestWizardData } from '@/lib/schemas/quest.schema';
 
-const STORAGE_KEY = "stellar_earn_quest_wizard_draft_v1";
+const STORAGE_KEY = 'stellar_earn_quest_wizard_draft_v1';
 
 interface StoredDraft {
   data: QuestWizardData;
@@ -23,7 +23,7 @@ interface UseQuestDraftOptions {
 export function useQuestDraft(
   data: QuestWizardData,
   step: QuestWizardStepIndex,
-  options: UseQuestDraftOptions = {},
+  options: UseQuestDraftOptions = {}
 ) {
   const { autosave = true, autosaveDelayMs = 2000 } = options;
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function useQuestDraft(
   const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -52,7 +52,7 @@ export function useQuestDraft(
 
   const saveDraft = useCallback(
     (nextData: QuestWizardData, nextStep: QuestWizardStepIndex) => {
-      if (typeof window === "undefined") {
+      if (typeof window === 'undefined') {
         return;
       }
 
@@ -66,11 +66,11 @@ export function useQuestDraft(
       setLastSavedAt(payload.updatedAt);
       setHasDraft(true);
     },
-    [],
+    []
   );
 
   const loadDraft = useCallback((): StoredDraft | null => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return null;
     }
 
@@ -81,7 +81,7 @@ export function useQuestDraft(
 
     try {
       const parsed = JSON.parse(raw) as StoredDraft;
-      if (!parsed?.data || typeof parsed?.step !== "number") {
+      if (!parsed?.data || typeof parsed?.step !== 'number') {
         return null;
       }
 
@@ -95,7 +95,7 @@ export function useQuestDraft(
   }, []);
 
   const clearDraft = useCallback(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -105,7 +105,7 @@ export function useQuestDraft(
   }, []);
 
   useEffect(() => {
-    if (!autosave || typeof window === "undefined") {
+    if (!autosave || typeof window === 'undefined') {
       return;
     }
 

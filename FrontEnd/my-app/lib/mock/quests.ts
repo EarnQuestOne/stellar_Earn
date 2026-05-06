@@ -5,7 +5,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-1',
     contractQuestId: '1',
     title: 'Smart Contract Security Review',
-    description: 'Review and audit a smart contract for security vulnerabilities. Identify potential exploits and suggest improvements.',
+    description:
+      'Review and audit a smart contract for security vulnerabilities. Identify potential exploits and suggest improvements.',
     category: 'Security',
     difficulty: 'advanced',
     rewardAmount: '500',
@@ -36,7 +37,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-2',
     contractQuestId: '2',
     title: 'Documentation Update',
-    description: 'Update the API documentation with the latest endpoints and examples. Ensure all endpoints are properly documented.',
+    description:
+      'Update the API documentation with the latest endpoints and examples. Ensure all endpoints are properly documented.',
     category: 'Docs',
     difficulty: 'beginner',
     rewardAmount: '100',
@@ -64,7 +66,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-3',
     contractQuestId: '3',
     title: 'UI Component Library',
-    description: 'Build a reusable component library for the frontend. Include buttons, inputs, modals, and form components.',
+    description:
+      'Build a reusable component library for the frontend. Include buttons, inputs, modals, and form components.',
     category: 'Frontend',
     difficulty: 'intermediate',
     rewardAmount: '250',
@@ -93,7 +96,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-4',
     contractQuestId: '4',
     title: 'API Endpoint Testing',
-    description: 'Write comprehensive tests for all API endpoints. Include unit tests, integration tests, and edge cases.',
+    description:
+      'Write comprehensive tests for all API endpoints. Include unit tests, integration tests, and edge cases.',
     category: 'Testing',
     difficulty: 'intermediate',
     rewardAmount: '200',
@@ -121,7 +125,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-5',
     contractQuestId: '5',
     title: 'Community Tutorial Creation',
-    description: 'Create a step-by-step tutorial for new users. Include screenshots, code examples, and best practices.',
+    description:
+      'Create a step-by-step tutorial for new users. Include screenshots, code examples, and best practices.',
     category: 'Community',
     difficulty: 'beginner',
     rewardAmount: '150',
@@ -141,7 +146,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-6',
     contractQuestId: '6',
     title: 'Backend Performance Optimization',
-    description: 'Optimize database queries and API response times. Identify bottlenecks and implement caching strategies.',
+    description:
+      'Optimize database queries and API response times. Identify bottlenecks and implement caching strategies.',
     category: 'Backend',
     difficulty: 'advanced',
     rewardAmount: '400',
@@ -170,7 +176,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-7',
     contractQuestId: '7',
     title: 'Security Vulnerability Assessment',
-    description: 'Perform a comprehensive security assessment of the application. Check for common vulnerabilities and OWASP Top 10 issues.',
+    description:
+      'Perform a comprehensive security assessment of the application. Check for common vulnerabilities and OWASP Top 10 issues.',
     category: 'Security',
     difficulty: 'advanced',
     rewardAmount: '450',
@@ -189,7 +196,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-8',
     contractQuestId: '8',
     title: 'Frontend Accessibility Audit',
-    description: 'Audit the frontend for accessibility compliance. Ensure WCAG 2.1 AA standards are met and fix any issues.',
+    description:
+      'Audit the frontend for accessibility compliance. Ensure WCAG 2.1 AA standards are met and fix any issues.',
     category: 'Frontend',
     difficulty: 'intermediate',
     rewardAmount: '180',
@@ -209,7 +217,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-9',
     contractQuestId: '9',
     title: 'Database Schema Documentation',
-    description: 'Document the complete database schema with relationships, indexes, and constraints. Include ER diagrams.',
+    description:
+      'Document the complete database schema with relationships, indexes, and constraints. Include ER diagrams.',
     category: 'Docs',
     difficulty: 'beginner',
     rewardAmount: '120',
@@ -228,7 +237,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-10',
     contractQuestId: '10',
     title: 'Backend API Integration',
-    description: 'Integrate third-party API services. Handle authentication, rate limiting, and error responses properly.',
+    description:
+      'Integrate third-party API services. Handle authentication, rate limiting, and error responses properly.',
     category: 'Backend',
     difficulty: 'intermediate',
     rewardAmount: '220',
@@ -248,7 +258,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-11',
     contractQuestId: '11',
     title: 'E2E Testing Suite',
-    description: 'Create end-to-end tests using Playwright or Cypress. Cover critical user flows and edge cases.',
+    description:
+      'Create end-to-end tests using Playwright or Cypress. Cover critical user flows and edge cases.',
     category: 'Testing',
     difficulty: 'advanced',
     rewardAmount: '350',
@@ -267,7 +278,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-12',
     contractQuestId: '12',
     title: 'Community Forum Setup',
-    description: 'Set up and configure a community forum. Customize themes, set up categories, and create initial content.',
+    description:
+      'Set up and configure a community forum. Customize themes, set up categories, and create initial content.',
     category: 'Community',
     difficulty: 'intermediate',
     rewardAmount: '200',
@@ -287,7 +299,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-13',
     contractQuestId: '13',
     title: 'Penetration Testing',
-    description: 'Conduct penetration testing on the application. Identify security weaknesses and provide remediation steps.',
+    description:
+      'Conduct penetration testing on the application. Identify security weaknesses and provide remediation steps.',
     category: 'Security',
     difficulty: 'advanced',
     rewardAmount: '500',
@@ -306,7 +319,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-14',
     contractQuestId: '14',
     title: 'React Component Migration',
-    description: 'Migrate legacy components to React. Ensure feature parity and improve performance.',
+    description:
+      'Migrate legacy components to React. Ensure feature parity and improve performance.',
     category: 'Frontend',
     difficulty: 'intermediate',
     rewardAmount: '240',
@@ -325,7 +339,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-15',
     contractQuestId: '15',
     title: 'User Guide Writing',
-    description: 'Write a comprehensive user guide for the platform. Include getting started, features, and troubleshooting.',
+    description:
+      'Write a comprehensive user guide for the platform. Include getting started, features, and troubleshooting.',
     category: 'Docs',
     difficulty: 'beginner',
     rewardAmount: '110',
@@ -344,7 +359,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-16',
     contractQuestId: '16',
     title: 'Load Testing Implementation',
-    description: 'Set up load testing infrastructure. Create test scenarios and analyze performance under load.',
+    description:
+      'Set up load testing infrastructure. Create test scenarios and analyze performance under load.',
     category: 'Testing',
     difficulty: 'advanced',
     rewardAmount: '380',
@@ -363,7 +379,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-17',
     contractQuestId: '17',
     title: 'Backend Monitoring Setup',
-    description: 'Set up application monitoring and logging. Configure alerts and dashboards for key metrics.',
+    description:
+      'Set up application monitoring and logging. Configure alerts and dashboards for key metrics.',
     category: 'Backend',
     difficulty: 'intermediate',
     rewardAmount: '210',
@@ -383,7 +400,8 @@ export const mockQuests: QuestResponse[] = [
     id: 'quest-18',
     contractQuestId: '18',
     title: 'Community Event Organization',
-    description: 'Organize and host a community event. Coordinate speakers, schedule, and manage registrations.',
+    description:
+      'Organize and host a community event. Coordinate speakers, schedule, and manage registrations.',
     category: 'Community',
     difficulty: 'intermediate',
     rewardAmount: '190',

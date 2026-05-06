@@ -2,9 +2,9 @@
 
 // app/layout.tsx - Add WalletProvider and integrate components
 
-import { WalletProvider } from "@/context/WalletContext";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { WalletModal } from "@/components/wallet/WalletModal";
+import { WalletProvider } from '@/context/WalletContext';
+import { ConnectButton } from '@/components/wallet/ConnectButton';
+import { WalletModal } from '@/components/wallet/WalletModal';
 
 export default function RootLayout({
   children,
@@ -18,10 +18,8 @@ export default function RootLayout({
           {/* Your navbar or header */}
           <header className="flex justify-between items-center p-4">
             {/* Your logo and navigation */}
-            <div className="flex-1">
-              {/* Navigation items */}
-            </div>
-            
+            <div className="flex-1">{/* Navigation items */}</div>
+
             {/* Connect Wallet Button */}
             <ConnectButton />
           </header>

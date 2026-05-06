@@ -34,9 +34,7 @@ export function isFocusable(element: HTMLElement): boolean {
 /**
  * Get all focusable elements within a container
  */
-export function getFocusableElements(
-  container: HTMLElement
-): HTMLElement[] {
+export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const selector = [
     'a[href]',
     'button:not([disabled])',
@@ -46,9 +44,7 @@ export function getFocusableElements(
     '[tabindex]:not([tabindex="-1"])',
   ].join(', ');
 
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(selector)
-  ).filter(
+  return Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
     (el) =>
       !el.hasAttribute('disabled') &&
       el.getAttribute('aria-hidden') !== 'true' &&
@@ -98,7 +94,9 @@ export function checkColorContrast(
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
 
-  const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const hexToRgb = (
+    hex: string
+  ): { r: number; g: number; b: number } | null => {
     // Remove # if present
     hex = hex.replace('#', '');
 

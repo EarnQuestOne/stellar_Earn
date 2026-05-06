@@ -118,14 +118,6 @@
               "map": [
                 {
                   "key": {
-                    "symbol": "badges"
-                  },
-                  "val": {
-                    "vec": []
-                  }
-                },
-                {
-                  "key": {
                     "symbol": "level"
                   },
                   "val": {
@@ -198,14 +190,6 @@
             ],
             "data": {
               "map": [
-                {
-                  "key": {
-                    "symbol": "badges"
-                  },
-                  "val": {
-                    "vec": []
-                  }
-                },
                 {
                   "key": {
                     "symbol": "level"

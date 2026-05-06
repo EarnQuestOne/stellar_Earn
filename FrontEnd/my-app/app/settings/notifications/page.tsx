@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useNotifications } from "@/lib/hooks/useNotifications";
-import { useToast } from "@/components/notifications/Toast";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useTheme } from "@/lib/hooks/useTheme";
+import React from 'react';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+import { useToast } from '@/components/notifications/Toast';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 export default function NotificationSettingsPage() {
   const { settings, updateSettings, addNotification } = useNotifications();
@@ -15,18 +15,18 @@ export default function NotificationSettingsPage() {
   const handleToggle = (key: keyof typeof settings) => {
     const newValue = !settings[key];
     updateSettings({ [key]: newValue });
-    showToast(`Notification ${newValue ? "enabled" : "disabled"}`, "info");
+    showToast(`Notification ${newValue ? 'enabled' : 'disabled'}`, 'info');
   };
 
   const triggerTestNotification = () => {
     addNotification({
-      type: "success",
-      title: "Test Notification",
+      type: 'success',
+      title: 'Test Notification',
       message:
-        "This is a test notification to verify the system is working correctly.",
-      link: "/quests",
+        'This is a test notification to verify the system is working correctly.',
+      link: '/quests',
     });
-    showToast("Test notification sent!", "success");
+    showToast('Test notification sent!', 'success');
   };
 
   return (
@@ -63,11 +63,11 @@ export default function NotificationSettingsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggle("questUpdates")}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.questUpdates ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"}`}
+                  onClick={() => handleToggle('questUpdates')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.questUpdates ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.questUpdates ? "translate-x-6" : "translate-x-1"}`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.questUpdates ? 'translate-x-6' : 'translate-x-1'}`}
                   />
                 </button>
               </div>
@@ -82,11 +82,11 @@ export default function NotificationSettingsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggle("submissionStatus")}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.submissionStatus ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"}`}
+                  onClick={() => handleToggle('submissionStatus')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.submissionStatus ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.submissionStatus ? "translate-x-6" : "translate-x-1"}`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.submissionStatus ? 'translate-x-6' : 'translate-x-1'}`}
                   />
                 </button>
               </div>
@@ -101,11 +101,11 @@ export default function NotificationSettingsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggle("rewardClaims")}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.rewardClaims ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"}`}
+                  onClick={() => handleToggle('rewardClaims')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.rewardClaims ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.rewardClaims ? "translate-x-6" : "translate-x-1"}`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.rewardClaims ? 'translate-x-6' : 'translate-x-1'}`}
                   />
                 </button>
               </div>
@@ -133,11 +133,11 @@ export default function NotificationSettingsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggle("soundEnabled")}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.soundEnabled ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"}`}
+                  onClick={() => handleToggle('soundEnabled')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.soundEnabled ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.soundEnabled ? "translate-x-6" : "translate-x-1"}`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.soundEnabled ? 'translate-x-6' : 'translate-x-1'}`}
                   />
                 </button>
               </div>
@@ -161,7 +161,7 @@ export default function NotificationSettingsPage() {
                     Theme
                   </p>
                   <p className="text-sm text-zinc-500">
-                    Currently using {isDark ? "Dark" : "Light"} mode
+                    Currently using {isDark ? 'Dark' : 'Light'} mode
                   </p>
                 </div>
                 <ThemeToggle showLabel />

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import type { QuestWizardData } from "@/lib/schemas/quest.schema";
+import type { QuestWizardData } from '@/lib/schemas/quest.schema';
 import {
   extractPlainTextFromHtml,
   formatWizardDateTime,
-} from "@/lib/schemas/quest.schema";
-import { sanitizeRichHtml } from "@/lib/utils/sanitize";
+} from '@/lib/schemas/quest.schema';
+import { sanitizeRichHtml } from '@/lib/utils/sanitize';
 
 interface QuestPreviewProps {
   data: QuestWizardData;
@@ -14,10 +14,10 @@ interface QuestPreviewProps {
 
 const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
   const hasDescription = Boolean(
-    extractPlainTextFromHtml(data.basics.description),
+    extractPlainTextFromHtml(data.basics.description)
   );
   const milestones = data.timeline.milestones.filter(
-    (item) => item.title.trim() || item.dueDate.trim(),
+    (item) => item.title.trim() || item.dueDate.trim()
   );
 
   return (
@@ -28,16 +28,16 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
             {data.basics.category}
           </span>
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-            {data.verification.mode === "auto"
-              ? "Auto Verification"
-              : "Manual Review"}
+            {data.verification.mode === 'auto'
+              ? 'Auto Verification'
+              : 'Manual Review'}
           </span>
         </div>
         <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          {data.basics.title || "Untitled Quest"}
+          {data.basics.title || 'Untitled Quest'}
         </h3>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-          {data.basics.shortDescription || "No short description provided."}
+          {data.basics.shortDescription || 'No short description provided.'}
         </p>
       </header>
 
@@ -46,14 +46,14 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
           <h4 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             Description
           </h4>
-{hasDescription ? (
-              <div
-                className="prose prose-sm mt-2 max-w-none text-zinc-700 dark:prose-invert dark:text-zinc-200"
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeRichHtml(data.basics.description),
-                }}
-              />
-            ) : (
+          {hasDescription ? (
+            <div
+              className="prose prose-sm mt-2 max-w-none text-zinc-700 dark:prose-invert dark:text-zinc-200"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeRichHtml(data.basics.description),
+              }}
+            />
+          ) : (
             <div className="prose prose-sm mt-2 max-w-none text-zinc-700 dark:prose-invert dark:text-zinc-200">
               No full description provided yet.
             </div>
@@ -64,7 +64,7 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
           <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/70">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Reward</p>
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              {Number(data.reward.amount || 0).toLocaleString()}{" "}
+              {Number(data.reward.amount || 0).toLocaleString()}{' '}
               {data.reward.assetType}
             </p>
           </div>
@@ -82,9 +82,9 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
               {data.timeline.deadline
                 ? formatWizardDateTime(
                     data.timeline.deadline,
-                    data.timeline.timezone,
+                    data.timeline.timezone
                   )
-                : "Not set"}
+                : 'Not set'}
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {data.timeline.timezone}
@@ -128,7 +128,7 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
                   </li>
                 ))}
               {data.requirements.deliverables.filter((item) =>
-                item.title.trim(),
+                item.title.trim()
               ).length === 0 && <li>No deliverables listed.</li>}
             </ul>
           </div>
@@ -145,11 +145,13 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
                   key={item.id}
                   className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-700"
                 >
-                  <p className="font-medium">{item.title || "Untitled milestone"}</p>
+                  <p className="font-medium">
+                    {item.title || 'Untitled milestone'}
+                  </p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {item.dueDate
                       ? `${formatWizardDateTime(item.dueDate, data.timeline.timezone)} (${data.timeline.timezone})`
-                      : "Due date not set"}
+                      : 'Due date not set'}
                   </p>
                 </li>
               ))}
@@ -164,26 +166,28 @@ const QuestPreview = ({ data, verifierAddress }: QuestPreviewProps) => {
             <div className="mt-2 space-y-3 text-sm text-zinc-700 dark:text-zinc-200">
               <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                 <p className="font-medium">
-                  {data.verification.mode === "auto"
-                    ? "Auto Verification"
-                    : "Manual Review"}
+                  {data.verification.mode === 'auto'
+                    ? 'Auto Verification'
+                    : 'Manual Review'}
                 </p>
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  {data.verification.instructions || "No instructions provided."}
+                  {data.verification.instructions ||
+                    'No instructions provided.'}
                 </p>
               </div>
-              {data.verification.mode === "auto" && (
+              {data.verification.mode === 'auto' && (
                 <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                   <p className="font-medium">Automation Criteria</p>
                   <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {data.verification.autoCriteria || "No criteria provided."}
+                    {data.verification.autoCriteria || 'No criteria provided.'}
                   </p>
                 </div>
               )}
               <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                 <p className="font-medium">Verifier Address</p>
                 <p className="mt-1 break-all text-xs text-zinc-500 dark:text-zinc-400">
-                  {verifierAddress || "Connect a wallet or sign in to assign a verifier address."}
+                  {verifierAddress ||
+                    'Connect a wallet or sign in to assign a verifier address.'}
                 </p>
               </div>
             </div>

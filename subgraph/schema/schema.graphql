@@ -1,0 +1,448 @@
+# =============================================================================
+# EarnQuest Subgraph — GraphQL Schema
+# =============================================================================
+# Maps all 21 events from the Soroban earn-quest contract (events.rs)
+# =============================================================================
+
+# ── Enums ──────────────────────────────────────────────────────────────────────
+
+enum QuestStatus {
+  Active
+  Paused
+  Completed
+  Expired
+  Cancelled
+}
+
+enum SubmissionStatus {
+  Pending
+  Approved
+  Rejected
+  Paid
+}
+
+enum DisputeStatus {
+  Pending
+  UnderReview
+  Resolved
+  Withdrawn
+  Appealed
+}
+
+enum Badge {
+  Rookie
+  Explorer
+  Veteran
+  Master
+  Legend
+}
+
+enum Role {
+  SuperAdmin
+  Admin
+  Pauser
+  OracleAdmin
+  StatsAdmin
+  BadgeAdmin
+}
+
+# ── Entities ───────────────────────────────────────────────────────────────────
+
+"""A quest registered on the platform."""
+type Quest @entity {
+  id: ID!                           # quest_id (Symbol as string)
+  creator: String!                  # creator address
+  rewardAsset: String!              # reward token address
+  rewardAmount: BigInt!             # reward amount (i128)
+  verifier: String!                 # verifier address
+  deadline: BigInt!                 # deadline timestamp (u64)
+  status: QuestStatus!              # current quest status
+  totalClaims: Int!                 # number of claims
+  metadata: QuestMetadata @derivedFrom(field: "questId")
+  submissions: [Submission!] @derivedFrom(field: "questId")
+  escrow: Escrow @derivedFrom(field: "questId")
+  disputes: [Dispute!] @derivedFrom(field: "questId")
+  createdAt: BigInt!                # ledger timestamp
+  createdInLedger: Int!             # ledger sequence
+}
+
+"""Quest metadata (title, description, category, tags)."""
+type QuestMetadata @entity {
+  id: ID!                           # quest_id
+  questId: Quest!
+  title: String
+  description: String
+  category: String
+  tags: [String!]!
+  requirements: [String!]!
+}
+
+"""A submission for a quest."""
+type Submission @entity {
+  id: ID!                           # composite: "questId:submitter"
+  questId: Quest!
+  submitter: String!
+  proofHash: String!                # hex-encoded BytesN<32>
+  status: SubmissionStatus!
+  timestamp: BigInt!
+  commitmentHash: String            # commitment hash if commit-reveal
+  revealed: Boolean!                # whether the reveal step happened
+}
+
+"""Escrow record for a quest."""
+type Escrow @entity {
+  id: ID!                           # quest_id
+  questId: Quest!
+  depositor: String!
+  token: String!
+  totalDeposited: BigInt!
+  totalPaidOut: BigInt!
+  totalRefunded: BigInt!
+  isActive: Boolean!
+  depositCount: Int!
+  createdAt: BigInt!
+}
+
+"""A dispute for a quest submission."""
+type Dispute @entity {
+  id: ID!                           # composite: "questId:initiator"
+  questId: Quest!
+  initiator: String!
+  arbitrator: String!
+  status: DisputeStatus!
+  filedAt: BigInt!
+}
+
+"""User statistics tracked off-chain."""
+type UserStats @entity {
+  id: ID!                           # user address
+  xp: BigInt!
+  level: Int!
+  questsCompleted: Int!
+  badges: [Badge!]!
+  totalSubmissions: Int!
+  totalPayouts: Int!
+  totalPayoutAmount: BigInt!
+}
+
+# ── Event Entities (immutable records) ────────────────────────────────────────
+
+type QuestRegistered @entity(immutable: true) {
+  id: ID!                           # txHash:logIndex
+  questId: String!
+  creator: String!
+  rewardAsset: String!
+  rewardAmount: BigInt!
+  verifier: String!
+  deadline: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type ProofSubmitted @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  submitter: String!
+  proofHash: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type SubmissionApproved @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  submitter: String!
+  verifier: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type RewardClaimed @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  submitter: String!
+  rewardAsset: String!
+  rewardAmount: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type XpAwarded @entity(immutable: true) {
+  id: ID!
+  user: String!
+  xpAmount: BigInt!
+  totalXp: BigInt!
+  level: Int!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type LevelUp @entity(immutable: true) {
+  id: ID!
+  user: String!
+  newLevel: Int!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type BadgeGranted @entity(immutable: true) {
+  id: ID!
+  user: String!
+  badge: Badge!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EmergencyPaused @entity(immutable: true) {
+  id: ID!
+  by: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EmergencyUnpaused @entity(immutable: true) {
+  id: ID!
+  by: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EmergencyWithdrawn @entity(immutable: true) {
+  id: ID!
+  by: String!
+  asset: String!
+  to: String!
+  amount: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type UnpauseApproved @entity(immutable: true) {
+  id: ID!
+  admin: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type TimelockScheduled @entity(immutable: true) {
+  id: ID!
+  scheduledTime: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type QuestPaused @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  by: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type QuestResumed @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  by: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type QuestCancelled @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  creator: String!
+  refunded: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type DisputeOpened @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  initiator: String!
+  arbitrator: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type DisputeResolved @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  initiator: String!
+  arbitrator: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type DisputeWithdrawn @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  initiator: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EscrowDeposited @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  depositor: String!
+  token: String!
+  amount: BigInt!
+  totalBalance: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EscrowPayout @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  recipient: String!
+  token: String!
+  amount: BigInt!
+  remaining: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type EscrowRefunded @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  recipient: String!
+  token: String!
+  amount: BigInt!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type CommitmentSubmitted @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  submitter: String!
+  hash: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+type SubmissionRevealed @entity(immutable: true) {
+  id: ID!
+  questId: String!
+  submitter: String!
+  proofHash: String!
+  timestamp: BigInt!
+  ledger: Int!
+}
+
+# ── Query Inputs ───────────────────────────────────────────────────────────────
+
+input QuestFilter {
+  creator: String
+  status: QuestStatus
+  rewardAsset: String
+}
+
+input SubmissionFilter {
+  questId: String
+  submitter: String
+  status: SubmissionStatus
+}
+
+input EventFilter {
+  eventType: String
+  fromTimestamp: BigInt
+  toTimestamp: BigInt
+}
+
+# ── Aggregation / Stats ────────────────────────────────────────────────────────
+
+type PlatformAggregates {
+  totalQuests: Int!
+  totalSubmissions: Int!
+  totalRewardsClaimed: Int!
+  totalRewardsDistributed: BigInt!
+  totalActiveUsers: Int!
+}
+
+type UserAggregates {
+  totalSubmissions: Int!
+  totalApprovals: Int!
+  totalClaims: Int!
+  totalEarned: BigInt!
+  xp: BigInt!
+  level: Int!
+}
+
+# ── Queries ────────────────────────────────────────────────────────────────────
+
+type Query {
+  # Quest queries
+  quest(id: ID!): Quest
+  quests(
+    filter: QuestFilter
+    first: Int = 10
+    offset: Int = 0
+    orderBy: String = "createdAt"
+    orderDirection: String = "desc"
+  ): [Quest!]!
+  questsByCreator(creator: String!, first: Int, offset: Int): [Quest!]!
+  questsByStatus(status: QuestStatus!, first: Int, offset: Int): [Quest!]!
+  questsByRewardAsset(rewardAsset: String!, first: Int, offset: Int): [Quest!]!
+
+  # Submission queries
+  submission(id: ID!): Submission
+  submissions(
+    filter: SubmissionFilter
+    first: Int = 10
+    offset: Int = 0
+  ): [Submission!]!
+  submissionsByQuest(questId: String!, first: Int, offset: Int): [Submission!]!
+  submissionsByUser(submitter: String!, first: Int, offset: Int): [Submission!]!
+
+  # User queries
+  userStats(id: ID!): UserStats
+  userActivity(address: String!): UserAggregates!
+
+  # Escrow queries
+  escrow(id: ID!): Escrow
+  escrowByQuest(questId: String!): Escrow
+
+  # Dispute queries
+  disputesByQuest(questId: String!, first: Int, offset: Int): [Dispute!]!
+
+  # Event queries
+  events(
+    filter: EventFilter
+    first: Int = 10
+    offset: Int = 0
+  ): [EventResult!]!
+
+  # Platform stats
+  platformStats: PlatformAggregates!
+
+  # Search
+  searchQuests(query: String!, first: Int, offset: Int): [Quest!]!
+}
+
+union EventResult =
+    QuestRegistered
+  | ProofSubmitted
+  | SubmissionApproved
+  | RewardClaimed
+  | XpAwarded
+  | LevelUp
+  | BadgeGranted
+  | EmergencyPaused
+  | EmergencyUnpaused
+  | EmergencyWithdrawn
+  | UnpauseApproved
+  | TimelockScheduled
+  | QuestPaused
+  | QuestResumed
+  | QuestCancelled
+  | DisputeOpened
+  | DisputeResolved
+  | DisputeWithdrawn
+  | EscrowDeposited
+  | EscrowPayout
+  | EscrowRefunded
+  | CommitmentSubmitted
+  | SubmissionRevealed

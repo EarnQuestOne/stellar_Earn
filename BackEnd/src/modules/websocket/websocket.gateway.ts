@@ -20,7 +20,7 @@ import { ChatMessageDto, FetchHistoryDto } from './dto/ws-message.dto';
   cors: {
     origin: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-      : ['http://localhost:3000', 'http://localhost:3001'],
+      : [],
     credentials: true,
   },
   namespace: '/',

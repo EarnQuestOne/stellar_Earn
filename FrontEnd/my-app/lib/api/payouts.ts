@@ -41,7 +41,7 @@ import type {
  */
 export async function claimPayout(
   submissionId: string,
-  stellarAddress: string,
+  stellarAddress: string
 ): Promise<PayoutResponse> {
   const payload: ClaimPayoutRequest = { submissionId, stellarAddress };
   return post<PayoutResponse>('/payouts/claim', payload);
@@ -56,7 +56,7 @@ export async function claimPayout(
  */
 export async function getPayoutHistory(
   query?: PayoutQueryParams,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutHistoryResponse> {
   const params: Record<string, string | number | undefined> = {};
   if (query?.status) params.status = query.status;
@@ -68,7 +68,7 @@ export async function getPayoutHistory(
     get<PayoutHistoryResponse>('/payouts/history', {
       params,
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -77,12 +77,12 @@ export async function getPayoutHistory(
 // ---------------------------------------------------------------------------
 
 export async function getPayoutStats(
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutStatsResponse> {
   return withRetry(() =>
     get<PayoutStatsResponse>('/payouts/stats', {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -92,12 +92,12 @@ export async function getPayoutStats(
 
 export async function getPayoutById(
   id: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutResponse> {
   return withRetry(() =>
     get<PayoutResponse>(`/payouts/${id}`, {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -107,7 +107,7 @@ export async function getPayoutById(
 
 export async function adminGetAllPayouts(
   query?: PayoutQueryParams,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutHistoryResponse> {
   const params: Record<string, string | number | undefined> = {};
   if (query?.stellarAddress) params.stellarAddress = query.stellarAddress;
@@ -120,17 +120,17 @@ export async function adminGetAllPayouts(
     get<PayoutHistoryResponse>('/payouts/admin/all', {
       params,
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
 export async function adminGetPayoutStats(
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutStatsResponse> {
   return withRetry(() =>
     get<PayoutStatsResponse>('/payouts/admin/stats', {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -140,11 +140,11 @@ export async function adminRetryPayout(id: string): Promise<PayoutResponse> {
 
 export async function adminGetPayoutById(
   id: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PayoutResponse> {
   return withRetry(() =>
     get<PayoutResponse>(`/payouts/admin/${id}`, {
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }

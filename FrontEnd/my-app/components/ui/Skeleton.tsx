@@ -1,10 +1,16 @@
-"use client";
+'use client';
 
+/**
+ * Shared props for skeleton placeholder components.
+ */
 interface SkeletonBaseProps {
   className?: string;
 }
 
-export function SkeletonText({ className = "h-4 w-full" }: SkeletonBaseProps) {
+/**
+ * A skeleton text block used during loading states.
+ */
+export function SkeletonText({ className = 'h-4 w-full' }: SkeletonBaseProps) {
   return (
     <div
       className={`animate-shimmer rounded bg-zinc-200 dark:bg-zinc-800 ${className}`}
@@ -13,8 +19,11 @@ export function SkeletonText({ className = "h-4 w-full" }: SkeletonBaseProps) {
   );
 }
 
+/**
+ * A card-style skeleton used while content is loading.
+ */
 export function SkeletonCard({
-  className = "",
+  className = '',
   rows = 3,
 }: SkeletonBaseProps & { rows?: number }) {
   return (
@@ -30,7 +39,7 @@ export function SkeletonCard({
         {Array.from({ length: rows }).map((_, index) => (
           <SkeletonText
             key={index}
-            className={index === rows - 1 ? "h-4 w-2/3" : "h-4 w-full"}
+            className={index === rows - 1 ? 'h-4 w-2/3' : 'h-4 w-full'}
           />
         ))}
       </div>
@@ -38,8 +47,11 @@ export function SkeletonCard({
   );
 }
 
+/**
+ * A list-style skeleton placeholder for loading collections.
+ */
 export function SkeletonList({
-  className = "",
+  className = '',
   items = 3,
 }: SkeletonBaseProps & { items?: number }) {
   return (

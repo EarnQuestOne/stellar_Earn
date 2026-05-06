@@ -10,9 +10,11 @@ import { Repository } from 'typeorm';
 import { Submission } from './entities/submission.entity';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
+import { QuerySubmissionsDto } from './dto/query-submissions.dto';
 // import { StellarService } from '../stellar/stellar.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Quest } from '../quests/entities/quest.entity';
+
 import { User } from '../users/entities/user.entity';
 
 interface QuestVerifier {
@@ -297,13 +299,55 @@ export class SubmissionsService {
     return submission;
   }
 
-  async findByQuest(questId: string): Promise<Submission[]> {
-    // Join quest and user up front so the controller (which serialises both
-    // relations) doesn't trigger lazy lookups per row.
-    return this.submissionsRepository.find({
-      where: { questId },
-      relations: ['quest', 'user'],
-      order: { createdAt: 'DESC' },
-    });
+ async findByQuest(
+  questId: string,
+  queryDto: QuerySubmissionsDto,
+) {
+  const { cursor, limit = 20 } = queryDto;
+
+  const qb = this.submissionsRepository
+    .createQueryBuilder('submission')
+    .where('submission.questId = :questId', { questId })
+    .orderBy('submission.createdAt', 'DESC');
+
+  if (cursor) {
+    qb.andWhere('submission.createdAt < :cursor', { cursor });
+  }
+
+  qb.take(limit + 1);
+
+  const submissions = await qb.getMany();
+
+  let nextCursor: string | null = null;
+
+  if (submissions.length > limit) {
+    const nextItem = submissions.pop();
+    nextCursor = nextItem?.createdAt.toISOString() || null;
+  }
+
+  return {
+    data: submissions,
+    nextCursor,
+    limit,
+  };
+}
+
+  // Helper methods to load related entities
+  private async getQuestById(questId: string): Promise<Quest> {
+    const questRepo = this.submissionsRepository.manager.getRepository(Quest);
+    const quest = await questRepo.findOne({ where: { id: questId } });
+    if (!quest) {
+      throw new NotFoundException(`Quest with ID ${questId} not found`);
+    }
+    return quest;
+  }
+
+  private async getUserById(userId: string): Promise<User> {
+    const userRepo = this.submissionsRepository.manager.getRepository(User);
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    return user;
   }
 }

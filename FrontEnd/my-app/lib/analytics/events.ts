@@ -20,7 +20,8 @@ export const ANALYTICS_EVENTS = {
   ADMIN_VIEW_ANALYTICS: 'admin_view_analytics',
 } as const;
 
-export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
+export type AnalyticsEventName =
+  (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
 
 export interface AnalyticsEventPayload {
   [key: string]: string | number | boolean | undefined | null;

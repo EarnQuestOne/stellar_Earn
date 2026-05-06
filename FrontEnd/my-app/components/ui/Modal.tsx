@@ -3,6 +3,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { FocusTrap } from '@/components/a11y/FocusTrap';
 
+/**
+ * Props for the modal overlay component.
+ */
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +24,9 @@ const sizeClasses = {
   xl: 'max-w-xl',
 };
 
+/**
+ * Renders an accessible modal dialog with optional backdrop and escape handling.
+ */
 export function Modal({
   isOpen,
   onClose,
@@ -45,7 +51,8 @@ export function Modal({
 
   useEffect(() => {
     if (isOpen) {
-      previousActiveElement.current = document.activeElement as HTMLElement | null;
+      previousActiveElement.current =
+        document.activeElement as HTMLElement | null;
       modalRef.current?.focus();
       document.body.style.overflow = 'hidden';
     } else {
@@ -133,12 +140,18 @@ export function Modal({
   );
 }
 
+/**
+ * Props for the submission success confirmation modal.
+ */
 interface SubmissionSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   questTitle: string;
 }
 
+/**
+ * Shows a confirmation modal after a successful quest submission.
+ */
 export function SubmissionSuccessModal({
   isOpen,
   onClose,
@@ -166,8 +179,8 @@ export function SubmissionSuccessModal({
           Submission Successful!
         </h3>
         <p className="mb-6 text-zinc-600 dark:text-zinc-400">
-          Your proof for <span className="font-medium">{questTitle}</span> has been submitted
-          and is now under review.
+          Your proof for <span className="font-medium">{questTitle}</span> has
+          been submitted and is now under review.
         </p>
         <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-500">
           You will be notified once your submission has been reviewed.
@@ -183,4 +196,3 @@ export function SubmissionSuccessModal({
     </Modal>
   );
 }
-

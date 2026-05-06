@@ -59,6 +59,13 @@ pub fn initialize_pause_state(
     };
 
     storage::set_pause_state(env, &pause_state);
+    
+    // Emit pause initialization event
+    env.events().publish(
+        (Symbol::new(env, "pause_init"), timelock_delay),
+        (required_signatures, grace_period),
+    );
+    
     Ok(())
 }
 
@@ -180,11 +187,18 @@ pub fn cancel_pause_request(env: &Env, admin: Address) -> Result<(), Error> {
         pause_state.pause_signers = Vec::new(env);
         pause_state.pause_timestamp = 0;
         pause_state.pause_reason = None;
+        
+        storage::set_pause_state(env, &pause_state);
+        
+        // Emit pause cancellation event
+        env.events().publish(
+            (Symbol::new(env, "pause_cancel"), admin),
+            env.ledger().timestamp(),
+        );
     } else {
         return Err(Error::InvalidPauseState);
     }
 
-    storage::set_pause_state(env, &pause_state);
     Ok(())
 }
 
@@ -300,6 +314,13 @@ pub fn update_pause_config(
     }
 
     storage::set_pause_state(env, &pause_state);
+    
+    // Emit pause config update event
+    env.events().publish(
+        (Symbol::new(env, "pause_cfg"), admin),
+        (pause_state.timelock_delay, pause_state.required_signatures, pause_state.grace_period),
+    );
+    
     Ok(())
 }
 

@@ -21,13 +21,13 @@ import {
   type AppError,
 } from '@/lib/utils/error-handler';
 import type { ApiErrorResponse, AuthTokens } from '@/lib/types/api.types';
+import { env } from '@/lib/config/env';
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const BASE_URL = env.apiBaseUrl();
 const API_VERSION = 'v1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
@@ -78,17 +78,21 @@ function isAxiosError(error: unknown): error is AxiosError {
   return error !== null && typeof error === 'object' && 'isAxiosError' in error;
 }
 
-function hasApiErrorResponse(error: AxiosError): error is AxiosError<ApiErrorResponse> {
-  return error.response?.data !== undefined && 
-         typeof error.response.data === 'object' &&
-         ('statusCode' in error.response.data || 'message' in error.response.data);
+function hasApiErrorResponse(
+  error: AxiosError
+): error is AxiosError<ApiErrorResponse> {
+  return (
+    error.response?.data !== undefined &&
+    typeof error.response.data === 'object' &&
+    ('statusCode' in error.response.data || 'message' in error.response.data)
+  );
 }
 
 function transformAxiosError(error: unknown): AppError {
   if (!isAxiosError(error)) {
     // Non-Axios error
     let errorMessage = 'An unexpected error occurred';
-    
+
     if (error && typeof error === 'object') {
       if ('message' in error) {
         errorMessage = String((error as { message: unknown }).message);
@@ -96,12 +100,8 @@ function transformAxiosError(error: unknown): AppError {
     } else if (typeof error === 'string') {
       errorMessage = error;
     }
-    
-    return createAppError(
-      errorMessage,
-      ERROR_CODES.SERVER_ERROR,
-      0,
-    );
+
+    return createAppError(errorMessage, ERROR_CODES.SERVER_ERROR, 0);
   }
 
   const status = error.response?.status;
@@ -118,7 +118,7 @@ function transformAxiosError(error: unknown): AppError {
       error.code === 'ECONNABORTED'
         ? ERROR_CODES.TIMEOUT_ERROR
         : ERROR_CODES.NETWORK_ERROR,
-      0,
+      0
     );
   }
 
@@ -135,14 +135,14 @@ function transformAxiosError(error: unknown): AppError {
       return createAppError(
         'Too many requests. Please slow down.',
         ERROR_CODES.SERVER_ERROR,
-        429,
+        429
       );
     default:
       if (status >= 500) {
         return createAppError(
           message || 'Something went wrong on our end.',
           ERROR_CODES.SERVER_ERROR,
-          status,
+          status
         );
       }
       return createAppError(message, ERROR_CODES.SERVER_ERROR, status);
@@ -168,7 +168,7 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     return config;
   },
-  (error: unknown) => Promise.reject(transformAxiosError(error)),
+  (error: unknown) => Promise.reject(transformAxiosError(error))
 );
 
 // ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ apiClient.interceptors.response.use(
           {
             timeout: DEFAULT_TIMEOUT_MS,
             withCredentials: true,
-          },
+          }
         );
         processQueue(null, 'refreshed');
         return apiClient(originalRequest);
@@ -218,7 +218,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(transformAxiosError(error));
-  },
+  }
 );
 
 // ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ function isRetryableError(error: unknown): boolean {
 export async function withRetry<T>(
   fn: () => Promise<T>,
   retries: number = MAX_RETRIES,
-  delayMs: number = INITIAL_RETRY_DELAY_MS,
+  delayMs: number = INITIAL_RETRY_DELAY_MS
 ): Promise<T> {
   let attempt = 0;
   let lastError: unknown;
@@ -292,10 +292,7 @@ type RequestConfig = {
   params?: Record<string, unknown>;
 };
 
-export async function get<T>(
-  url: string,
-  config?: RequestConfig,
-): Promise<T> {
+export async function get<T>(url: string, config?: RequestConfig): Promise<T> {
   const { data } = await apiClient.get<T>(url, {
     params: config?.params,
     signal: config?.signal,
@@ -307,7 +304,7 @@ export async function get<T>(
 export async function post<T>(
   url: string,
   body?: unknown,
-  config?: RequestConfig,
+  config?: RequestConfig
 ): Promise<T> {
   const { data } = await apiClient.post<T>(url, body, {
     signal: config?.signal,
@@ -319,7 +316,7 @@ export async function post<T>(
 export async function patch<T>(
   url: string,
   body?: unknown,
-  config?: RequestConfig,
+  config?: RequestConfig
 ): Promise<T> {
   const { data } = await apiClient.patch<T>(url, body, {
     signal: config?.signal,
@@ -330,7 +327,7 @@ export async function patch<T>(
 
 export async function del<T = void>(
   url: string,
-  config?: RequestConfig,
+  config?: RequestConfig
 ): Promise<T> {
   const { data } = await apiClient.delete<T>(url, {
     signal: config?.signal,

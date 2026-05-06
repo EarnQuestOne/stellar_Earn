@@ -105,9 +105,9 @@ export function StatusFilter({
                     borderColor: '#089ec3',
                     backgroundColor: '#089ec3',
                   }
-                : {
+                : ({
                     '--tw-ring-color': '#089ec3',
-                  } as React.CSSProperties
+                  } as React.CSSProperties)
             }
           >
             <span className={isSelected ? 'text-white' : option.color}>

@@ -11,10 +11,10 @@ import { QuestFilterTabs } from './QuestFilterTabs';
 import { QuestCarousel } from './QuestCarousel';
 
 const TAB_PARAMS: Record<FilterTab, QuestQueryParams> = {
-  'Trending':    { sortBy: 'xpReward',     order: 'DESC', limit: 10 },
+  Trending: { sortBy: 'xpReward', order: 'DESC', limit: 10 },
   'High Reward': { sortBy: 'rewardAmount', order: 'DESC', limit: 10 },
-  'New':         { sortBy: 'createdAt',    order: 'DESC', limit: 10 },
-  'Ending Soon': { sortBy: 'deadline',     order: 'ASC',  limit: 10 },
+  New: { sortBy: 'createdAt', order: 'DESC', limit: 10 },
+  'Ending Soon': { sortBy: 'deadline', order: 'ASC', limit: 10 },
 };
 
 export default function FeaturedQuests() {
@@ -42,11 +42,16 @@ export default function FeaturedQuests() {
       })
       .finally(() => setLoading(false));
 
-    return () => { cancelRef.current.cancel(); };
+    return () => {
+      cancelRef.current.cancel();
+    };
   }, [activeFilter]);
 
   return (
-    <section className="featured-quests" aria-labelledby="featured-quests-heading">
+    <section
+      className="featured-quests"
+      aria-labelledby="featured-quests-heading"
+    >
       <div className="featured-quests__header">
         <div>
           <p className="featured-quests__eyebrow">Featured Opportunities</p>
@@ -57,7 +62,9 @@ export default function FeaturedQuests() {
             Hand-picked high-value tasks with on-chain rewards.
           </p>
         </div>
-        <a href="/quests" className="featured-quests__view-all">View all quests →</a>
+        <a href="/quests" className="featured-quests__view-all">
+          View all quests →
+        </a>
       </div>
 
       <QuestFilterTabs active={activeFilter} onChange={setActiveFilter} />
@@ -71,7 +78,9 @@ export default function FeaturedQuests() {
       )}
 
       {error && !loading && (
-        <p className="featured-quests__error">Could not load quests — {error}</p>
+        <p className="featured-quests__error">
+          Could not load quests — {error}
+        </p>
       )}
 
       {!loading && !error && <QuestCarousel quests={quests} />}

@@ -1,0 +1,34 @@
+C:\Users\USER\OneDrive\Desktop\Open Source Projects\stellar_Earn\Frontend\my-app\app
+├── 500
+|  └── page.tsx
+├── admin
+|  ├── page.tsx
+|  └── quests
+├── dashboard
+|  └── page.tsx
+├── error.tsx
+├── favicon.ico
+├── globals.css
+├── layout.tsx
+├── not-found.tsx
+├── page.tsx
+├── profile
+|  └── [address]
+├── providers
+|  ├── AnalyticsProvider.tsx
+|  └── ThemeProvider.tsx
+├── quests
+|  ├── page.tsx
+|  └── [id]
+├── rewards
+|  └── page.tsx
+├── settings
+|  ├── notifications
+|  └── page.tsx
+├── submissions
+|  └── page.tsx
+└── test-error
+   └── page.tsx
+
+directory: 14 file: 16
+

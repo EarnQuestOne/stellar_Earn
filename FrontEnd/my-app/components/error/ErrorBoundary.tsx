@@ -18,7 +18,10 @@ interface ErrorBoundaryState {
   errorInfo: React.ErrorInfo | null;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -40,10 +43,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error
     logError(error, 'React Error Boundary');
-    
+
     // Call the onError callback if provided
     this.props.onError?.(error, errorInfo);
-    
+
     // Update state with error info
     this.setState({
       error,
@@ -66,7 +69,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
       // Use custom fallback component if provided
       if (FallbackComponent) {
-        return <FallbackComponent error={error!} resetError={this.resetError} />;
+        return (
+          <FallbackComponent error={error!} resetError={this.resetError} />
+        );
       }
 
       // Default fallback UI
@@ -82,10 +87,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               variant="error"
               className="mb-6"
             />
-            
+
             {showDetails && process.env.NODE_ENV === 'development' && (
               <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
-                <h4 className="text-zinc-200 font-medium mb-2">Error Details:</h4>
+                <h4 className="text-zinc-200 font-medium mb-2">
+                  Error Details:
+                </h4>
                 <pre className="text-xs text-zinc-400 overflow-auto max-h-60">
                   {JSON.stringify(
                     {
@@ -99,7 +106,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 </pre>
               </div>
             )}
-            
+
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <button
                 onClick={this.resetError}
@@ -107,14 +114,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               >
                 Try Again
               </button>
-              
+
               <button
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium"
               >
                 Reload Page
               </button>
-              
+
               <button
                 onClick={() => window.history.back()}
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors font-medium"
@@ -161,10 +168,10 @@ export function AppErrorBoundary({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ComponentErrorBoundary({ 
-  children, 
-  componentName 
-}: { 
+export function ComponentErrorBoundary({
+  children,
+  componentName,
+}: {
   children: React.ReactNode;
   componentName: string;
 }) {
@@ -180,10 +187,10 @@ export function ComponentErrorBoundary({
 }
 
 // Error boundary that catches and displays errors in a specific area
-export function LocalErrorBoundary({ 
+export function LocalErrorBoundary({
   children,
   fallback,
-  className = ''
+  className = '',
 }: {
   children: React.ReactNode;
   fallback?: React.ComponentType<{ error: Error; resetError: () => void }>;
@@ -191,9 +198,7 @@ export function LocalErrorBoundary({
 }) {
   return (
     <div className={className}>
-      <ErrorBoundary fallback={fallback}>
-        {children}
-      </ErrorBoundary>
+      <ErrorBoundary fallback={fallback}>{children}</ErrorBoundary>
     </div>
   );
 }

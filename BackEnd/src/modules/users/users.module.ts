@@ -10,13 +10,11 @@ import { CacheModule } from '../cache/cache.module';
 import { UserExperienceListener } from './events/user-experience.listener';
 import { DataExport } from './entities/data-export.entity';
 import { DataExportService } from './data-export.service';
-import { JobsModule } from '../jobs/jobs.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Quest, Submission, Payout, DataExport]),
     CacheModule,
-    JobsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, UserExperienceListener, DataExportService],

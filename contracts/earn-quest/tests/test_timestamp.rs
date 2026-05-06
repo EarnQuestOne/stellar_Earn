@@ -370,19 +370,20 @@ fn test_batch_registration_deadline_too_soon_rejected() {
     let verifier = Address::generate(&env);
     let token = Address::generate(&env);
 
-    use earn_quest::types::BatchQuestInput;
+    use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
     use soroban_sdk::Vec;
 
-    let mut quests = Vec::new(&env);
-    quests.push_back(BatchQuestInput {
+    let mut batch_inputs = Vec::new(&env);
+    batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ1"),
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION - 1, // too soon
+        deadline: now + MIN_DEADLINE_DURATION - 1,
     });
 
-    let result = client.try_register_quests_batch(&creator, &quests);
+
+    let result = client.try_register_quests_batch(&creator, &batch_inputs);
     assert!(result.is_err(), "batch with too-soon deadline must be rejected");
 }
 
@@ -400,11 +401,11 @@ fn test_batch_registration_valid_deadline_accepted() {
     let verifier = Address::generate(&env);
     let token = Address::generate(&env);
 
-    use earn_quest::types::BatchQuestInput;
+    use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
     use soroban_sdk::Vec;
 
-    let mut quests = Vec::new(&env);
-    quests.push_back(BatchQuestInput {
+    let mut batch_inputs = Vec::new(&env);
+    batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ2"),
         reward_asset: token.clone(),
         reward_amount: 100,
@@ -412,6 +413,7 @@ fn test_batch_registration_valid_deadline_accepted() {
         deadline: now + MIN_DEADLINE_DURATION + 1_000,
     });
 
-    let result = client.try_register_quests_batch(&creator, &quests);
+
+    let result = client.try_register_quests_batch(&creator, &batch_inputs);
     assert!(result.is_ok(), "batch with valid deadline must be accepted");
 }

@@ -57,10 +57,15 @@ export class ErrorLoggerFilter implements ExceptionFilter {
 
     const errorDetails = this.categorizeError(exception);
     const errorContext = this.buildErrorContext(request, exception, errorDetails);
+    const stack = exception instanceof Error ? exception.stack : undefined;
 
     this.logError(exception, errorContext, errorDetails);
 
-    const responseBody = this.buildErrorResponse(errorDetails, request.correlationId);
+    const responseBody = this.buildErrorResponse(
+      errorDetails,
+      request.correlationId,
+      stack,
+    );
     
     response.status(errorDetails.statusCode).json(responseBody);
   }
@@ -250,7 +255,11 @@ export class ErrorLoggerFilter implements ExceptionFilter {
   private buildErrorResponse(
     errorDetails: ErrorDetails,
     correlationId?: string,
+    stack?: string,
   ): Record<string, unknown> {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     const response: Record<string, unknown> = {
       statusCode: errorDetails.statusCode,
       error: this.getErrorTitle(errorDetails.statusCode),
@@ -261,15 +270,24 @@ export class ErrorLoggerFilter implements ExceptionFilter {
     };
 
     if (correlationId) {
-      response.correlationId = correlationId;
+      response.requestId = correlationId; // Use requestId for correlation
     }
 
-    if (process.env.NODE_ENV === 'development' && !errorDetails.isOperational) {
+    // SECURITY: Never expose stack traces, paths, or internal errors in production
+    if (isDevelopment && !errorDetails.isOperational && stack) {
+      response.stack = stack;
+      response.debug = {
+        category: errorDetails.category,
+        errorName: errorDetails.errorName,
+      };
+    } else if (!isProduction && !errorDetails.isOperational) {
+      // Non-production, non-operational: include minimal debug info
       response.debug = {
         category: errorDetails.category,
         errorName: errorDetails.errorName,
       };
     }
+    // Production + non-operational: NO debug info whatsoever
 
     return response;
   }

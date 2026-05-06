@@ -34,7 +34,7 @@ interface UseKeyboardShortcutsOptions {
 
 /**
  * Hook for managing keyboard shortcuts
- * 
+ *
  * @example
  * ```tsx
  * useKeyboardShortcuts([
@@ -57,22 +57,27 @@ export function useKeyboardShortcuts(
 ) {
   const { enabled = true, target } = options;
 
-  const parseKey = useCallback((key: string): {
-    key: string;
-    ctrl: boolean;
-    shift: boolean;
-    alt: boolean;
-    meta: boolean;
-  } => {
-    const parts = key.toLowerCase().split('+');
-    return {
-      key: parts[parts.length - 1].trim(),
-      ctrl: parts.includes('ctrl') || parts.includes('control'),
-      shift: parts.includes('shift'),
-      alt: parts.includes('alt'),
-      meta: parts.includes('meta') || parts.includes('cmd'),
-    };
-  }, []);
+  const parseKey = useCallback(
+    (
+      key: string
+    ): {
+      key: string;
+      ctrl: boolean;
+      shift: boolean;
+      alt: boolean;
+      meta: boolean;
+    } => {
+      const parts = key.toLowerCase().split('+');
+      return {
+        key: parts[parts.length - 1].trim(),
+        ctrl: parts.includes('ctrl') || parts.includes('control'),
+        shift: parts.includes('shift'),
+        alt: parts.includes('alt'),
+        meta: parts.includes('meta') || parts.includes('cmd'),
+      };
+    },
+    []
+  );
 
   const matches = useCallback(
     (e: KeyboardEvent, shortcut: KeyboardShortcut): boolean => {

@@ -1,10 +1,10 @@
-import { StateCreator } from "zustand";
+import { StateCreator } from 'zustand';
 import type {
   UserProfile,
   ProfileStats,
   Achievement,
   Activity,
-} from "@/lib/types/profile";
+} from '@/lib/types/profile';
 
 interface UserData {
   profile: UserProfile;

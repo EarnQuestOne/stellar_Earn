@@ -32,7 +32,44 @@ cargo test
 
 # Run with output
 cargo test -- --nocapture
+
+# Using Make
+make test
+make test-verbose
+
+# Run cross-contract tests
+cargo test --test test_cross_contract
 ```
+
+Targeted slices for the recent contract work:
+
+```bash
+# Escrow lifecycle and refunds
+cargo test test_escrow
+
+# Event topic/data layout for indexers
+cargo test test_events
+
+# Dispute record workflow and emitted events
+cargo test test_dispute
+
+# Cross-contract interface tests
+cargo test test_cross_contract
+```
+
+### Snapshot Management
+```bash
+# Update test snapshots (174 files)
+make snapshots
+
+# Verify snapshots
+make snapshots-verify
+
+# Show statistics
+make snapshots-stats
+```
+
+See [SNAPSHOT_MANAGEMENT.md](./SNAPSHOT_MANAGEMENT.md) for complete documentation.
 
 ## Project Structure
 
@@ -63,15 +100,16 @@ pub fn claim_reward(
     env: Env,
     quest_id: Symbol,
     submitter: Address,
+    amount: i128,
 ) -> Result<(), Error>
 ```
 
 **Flow:**
 1. User authentication
-2. Validate submission is approved
-3. Check not already claimed
-4. Transfer reward tokens
-5. Update submission status to Paid
+2. Validate submission is approved or partially paid
+3. Validate requested amount against remaining reward balance
+4. Transfer the requested amount from escrow
+5. Update submission status to `PartiallyPaid` or `Paid`
 6. Emit claim event
 
 ### ✅ Comprehensive Error Handling
@@ -105,6 +143,48 @@ test test_double_claim_prevention ... ok
 test result: ok. 3 passed; 0 failed
 ```
 
+## Escrow Tracking
+
+Escrow tracking now uses a split-storage model so the hot path stays small and the accounting rules are easier to reason about:
+
+- `EscrowBalances` stores `total_deposited`, `total_paid_out`, `total_refunded`, `is_active`, and `deposit_count`
+- `EscrowMeta` stores the colder fields: `depositor`, `token`, and `created_at`
+- The available balance is always computed with the same formula: `total_deposited - total_paid_out - total_refunded`
+
+This keeps deposit, payout validation, payout recording, and refund logic on a single accounting model while `get_escrow_info()` still exposes the assembled public view.
+
+## Indexer-Ready Events
+
+The contract now keeps the most useful filter fields in event topics so indexers can query by actor, quest, and token without decoding event payloads first.
+
+- `quest_reg`: quest id, creator, reward asset are indexed
+- `sub_appr`: quest id, submitter, verifier are indexed
+- `claimed`: quest id, submitter, reward asset are indexed
+- `esc_dep`, `esc_pay`, `esc_ref`: quest id, user, token are indexed
+- `disp_open`, `disp_res`, `disp_wd`: quest id and dispute participants are indexed
+
+Amounts and other display-oriented values remain in event data so topic space is reserved for query keys.
+
+## Dispute Resolution
+
+Dispute handling is intentionally hybrid:
+
+- the contract records dispute state and emits auditable events
+- evidence review and adjudication remain off-chain
+- arbitrators resolve or close disputes by writing the result back on-chain
+
+The full operator flow is documented in [docs/DISPUTE_RESOLUTION.md](docs/DISPUTE_RESOLUTION.md).
+
+## Appeal Process
+
+To ensure fairness, the contract supports an escalation path for resolved disputes:
+
+- **Escalation**: Initiators can appeal a resolved dispute if they disagree with the outcome.
+- **Senior Review**: Appeals are escalated to a senior reviewer or admin for a final verdict.
+- **On-Chain Tracking**: The appeal status and final resolution are recorded on the ledger.
+
+Detailed documentation is available in [docs/APPEAL_PROCESS.md](docs/APPEAL_PROCESS.md).
+
 ## Build Output
 
 **WASM Binary**: `target/wasm32-unknown-unknown/release/earn_quest.wasm` (21KB)
@@ -119,6 +199,7 @@ Optimized for deployment to Stellar network.
 | Asset validation | ✅ |
 | Balance checking | ✅ |
 | Claim reward function | ✅ |
+| Partial claims supported | ✅ |
 | Duplicate prevention | ✅ |
 | Event emission | ✅ |
 | Comprehensive tests | ✅ |
@@ -143,7 +224,7 @@ client.submit_proof(&quest_id, &user, &proof_hash);
 client.approve_submission(&quest_id, &user, &verifier);
 
 // 4. User claims reward
-client.claim_reward(&quest_id, &user);
+client.claim_reward(&quest_id, &user, &100);
 // ✅ Tokens transferred to user's account
 ```
 

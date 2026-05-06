@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import type { DeliverableItem } from "@/lib/schemas/quest.schema";
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import type { DeliverableItem } from '@/lib/schemas/quest.schema';
 
 interface RequirementsBuilderProps {
   items: DeliverableItem[];
@@ -11,8 +11,8 @@ interface RequirementsBuilderProps {
 function createDeliverable(index: number): DeliverableItem {
   return {
     id: `deliverable-${Date.now()}-${index}`,
-    title: "",
-    details: "",
+    title: '',
+    details: '',
     required: true,
   };
 }
@@ -21,7 +21,7 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
   const handleFieldChange = (
     id: string,
     field: keyof DeliverableItem,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     onChange(
       items.map((item) =>
@@ -30,8 +30,8 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
               ...item,
               [field]: value,
             }
-          : item,
-      ),
+          : item
+      )
     );
   };
 
@@ -48,17 +48,17 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
 
   const handleDragStart = (
     event: React.DragEvent<HTMLDivElement>,
-    id: string,
+    id: string
   ) => {
-    event.dataTransfer.setData("text/plain", id);
+    event.dataTransfer.setData('text/plain', id);
   };
 
   const handleDrop = (
     event: React.DragEvent<HTMLDivElement>,
-    destinationId: string,
+    destinationId: string
   ) => {
     event.preventDefault();
-    const sourceId = event.dataTransfer.getData("text/plain");
+    const sourceId = event.dataTransfer.getData('text/plain');
 
     if (!sourceId || sourceId === destinationId) {
       return;
@@ -66,7 +66,7 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
 
     const sourceIndex = items.findIndex((item) => item.id === sourceId);
     const destinationIndex = items.findIndex(
-      (item) => item.id === destinationId,
+      (item) => item.id === destinationId
     );
     if (sourceIndex < 0 || destinationIndex < 0) {
       return;
@@ -112,7 +112,7 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
             <input
               value={item.title}
               onChange={(event) =>
-                handleFieldChange(item.id, "title", event.target.value)
+                handleFieldChange(item.id, 'title', event.target.value)
               }
               placeholder="What should the contributor submit?"
               className="md:col-span-2 rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 focus:border-cyan-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
@@ -120,7 +120,7 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
             <input
               value={item.details}
               onChange={(event) =>
-                handleFieldChange(item.id, "details", event.target.value)
+                handleFieldChange(item.id, 'details', event.target.value)
               }
               placeholder="Success criteria"
               className="md:col-span-2 rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 focus:border-cyan-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
@@ -130,7 +130,7 @@ const RequirementsBuilder = ({ items, onChange }: RequirementsBuilderProps) => {
                 type="checkbox"
                 checked={item.required}
                 onChange={(event) =>
-                  handleFieldChange(item.id, "required", event.target.checked)
+                  handleFieldChange(item.id, 'required', event.target.checked)
                 }
                 className="h-4 w-4 rounded border-zinc-400 text-cyan-600 focus:ring-cyan-500"
               />

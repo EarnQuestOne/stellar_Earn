@@ -1,6 +1,6 @@
-import { StateCreator } from "zustand";
-import type { Quest } from "@/lib/types/quest";
-import type { QuestQueryParams } from "@/lib/types/api.types";
+import { StateCreator } from 'zustand';
+import type { Quest } from '@/lib/types/quest';
+import type { QuestQueryParams } from '@/lib/types/api.types';
 
 export interface QuestPagination {
   page: number;

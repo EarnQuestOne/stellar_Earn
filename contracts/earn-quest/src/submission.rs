@@ -1,16 +1,141 @@
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
-use crate::types::{BatchApprovalInput, Submission, SubmissionStatus};
+use crate::types::{BatchApprovalInput, Commitment, EscrowInfo, Submission, SubmissionStatus};
 use crate::validation;
-use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
-/// Submit proof for a quest with full input validation.
+/// Commit to a submission by providing a hash of the proof and a secret salt.
 ///
-/// Validates:
-/// - Quest exists
-/// - Quest is currently Active
-/// - Quest has not expired (deadline not passed)
+/// This prevents front-running by hiding the actual proof until the reveal phase.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `commitment_hash` - The hash of the proof and salt.
+///
+/// # Returns
+///
+/// * `Ok(())` if the commitment is successfully stored.
+/// * `Err(Error::QuestNotActive)` if the quest is not active.
+/// * `Err(Error::QuestExpired)` if the deadline has passed.
+/// * `Err(Error::AlreadyClaimed)` if the user already has a submission.
+pub fn commit_submission(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+    commitment_hash: &BytesN<32>,
+) -> Result<(), Error> {
+    // Verify quest exists and get its data
+    let quest = storage::get_quest(env, quest_id)?;
+    // Validate quest is active
+    validation::validate_quest_is_active(&quest.status)?;
+    // Validate quest has not expired
+    validation::validate_quest_not_expired(env, quest.deadline)?;
+
+    // Check for existing submission to prevent double submission
+    if storage::has_submission(env, quest_id, submitter) {
+        return Err(Error::AlreadyClaimed);
+    }
+
+    // Check for existing commitment
+    if storage::has_commitment(env, quest_id, submitter) {
+        return Err(Error::AlreadyApproved);
+    }
+
+    let commitment = Commitment {
+        hash: commitment_hash.clone(),
+        timestamp: env.ledger().timestamp(),
+    };
+
+    storage::set_commitment(env, quest_id, submitter, &commitment);
+
+    // EMIT EVENT: CommitmentSubmitted
+    events::commitment_submitted(
+        env,
+        quest_id.clone(),
+        submitter.clone(),
+        commitment_hash.clone(),
+    );
+
+    Ok(())
+}
+
+/// Reveal the proof and salt to complete the submission process.
+///
+/// The contract verifies that hash(proof_hash + salt + submitter) matches the commitment.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The actual proof hash.
+/// * `salt` - The salt used in the commitment.
+///
+/// # Returns
+///
+/// * `Ok(())` if the reveal is successful and the submission is created.
+/// * `Err(Error::InvalidCommitment)` if the provided data does not match the commitment.
+pub fn reveal_submission(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+    proof_hash: &BytesN<32>,
+    salt: &BytesN<32>,
+) -> Result<(), Error> {
+    // 1. Retrieve the stored commitment
+    let commitment = storage::get_commitment(env, quest_id, submitter)?;
+
+    // 2. Verify the commitment: hash(proof_hash + salt + submitter_xdr)
+    let mut data = Bytes::new(env);
+    data.append(&proof_hash.clone().into());
+    data.append(&salt.clone().into());
+    data.append(&submitter.to_xdr(env));
+
+    let calculated_hash = env.crypto().sha256(&data);
+
+    if BytesN::from(calculated_hash) != commitment.hash {
+        return Err(Error::InvalidCommitment);
+    }
+
+    // 3. Create the actual submission
+    let submission = Submission {
+        quest_id: quest_id.clone(),
+        submitter: submitter.clone(),
+        proof_hash: proof_hash.clone(),
+        status: SubmissionStatus::Pending,
+        claimed_amount: 0,
+        timestamp: env.ledger().timestamp(),
+    };
+
+    storage::set_submission(env, quest_id, submitter, &submission);
+
+    // 4. Cleanup the commitment to free up storage
+    storage::delete_commitment(env, quest_id, submitter);
+
+    // 5. EMIT EVENTS
+    events::submission_revealed(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
+    events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
+
+    Ok(())
+}
+
+/// Submits a proof for a quest without the commit-reveal flow.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user submitting.
+/// * `proof_hash` - The hash of the proof being submitted.
+///
+/// # Returns
+///
+/// * `Ok(())` if the submission is successful.
+/// * `Err(Error)` if the quest is not active or has expired.
 pub fn submit_proof(
     env: &Env,
     quest_id: &Symbol,
@@ -31,6 +156,7 @@ pub fn submit_proof(
         submitter: submitter.clone(),
         proof_hash: proof_hash.clone(),
         status: SubmissionStatus::Pending,
+        claimed_amount: 0,
         timestamp: env.ledger().timestamp(),
     };
 
@@ -42,12 +168,20 @@ pub fn submit_proof(
     Ok(())
 }
 
-/// Approve a submission with status transition validation.
+/// Approve a submission (Verifier only).
 ///
-/// Validates:
-/// - Quest exists and caller is the verifier
-/// - Submission exists
-/// - Submission status transition (Pending -> Approved) is valid
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user whose submission is being approved.
+/// * `verifier` - The address of the verifier.
+///
+/// # Returns
+///
+/// * `Ok(())` if the approval is successful.
+/// * `Err(Error::Unauthorized)` if the caller is not the quest's verifier.
+/// * `Err(Error)` if the submission is not found or status transition is invalid.
 pub fn approve_submission(
     env: &Env,
     quest_id: &Symbol,
@@ -60,32 +194,78 @@ pub fn approve_submission(
         return Err(Error::Unauthorized);
     }
 
-    let submission = storage::get_submission(env, quest_id, submitter)?;
+    let mut submission = storage::get_submission(env, quest_id, submitter)?;
 
     // Validate status transition: Pending -> Approved
     validation::validate_submission_status_transition(
         &submission.status,
         &SubmissionStatus::Approved,
     )?;
-    // Validate verifier address
-    validation::validate_addresses_distinct(verifier, &quest.verifier)?;
 
-    // ═══════════════════════════════════════════════════════
-    // ADD THIS BLOCK — escrow check before approval
-    // ═══════════════════════════════════════════════════════
-    //
-    // If this quest has escrow, verify there are enough
-    // funds to pay this person BEFORE we approve them.
-    // This prevents approving someone we can't pay.
+    // Escrow check before approval: ensure sufficient funds if escrow is used
     if storage::has_escrow(env, quest_id) {
         crate::escrow::validate_sufficient(env, quest_id, quest.reward_amount)?;
     }
-    // ═══════════════════════════════════════════════════════
 
-    storage::update_submission_status(env, quest_id, submitter, SubmissionStatus::Approved)?;
+    // Update submission status directly to avoid redundant read
+    submission.status = SubmissionStatus::Approved;
+    storage::set_submission(env, quest_id, submitter, &submission);
 
     // EMIT EVENT: SubmissionApproved
     events::submission_approved(env, quest_id.clone(), submitter.clone(), verifier.clone());
+
+    Ok(())
+}
+
+/// Validates a claim amount against the remaining reward for a submission.
+pub fn validate_claim_amount(
+    quest: &crate::types::Quest,
+    submission: &crate::types::Submission,
+    amount: i128,
+) -> Result<i128, Error> {
+    validation::validate_reward_amount(amount)?;
+
+    let remaining = quest.reward_amount - submission.claimed_amount;
+    if amount > remaining {
+        return Err(Error::InvalidClaimAmount);
+    }
+
+    Ok(remaining)
+}
+
+/// Core claim validation that operates on already-fetched data.
+///
+/// This function performs the necessary checks to ensure a reward claim is valid.
+/// It is designed to be gas-efficient by taking already-loaded data as arguments.
+///
+/// # Arguments
+///
+/// * `quest` - The quest data.
+/// * `submission` - The submission data.
+///
+/// # Returns
+///
+/// * `Ok(())` if the claim is valid.
+/// * `Err(Error::AlreadyClaimed)` if the submission has already been paid.
+/// * `Err(Error::QuestClaimsLimitReached)` if the quest's maximum claims have been reached.
+/// * `Err(Error)` if the status transition is invalid.
+pub fn validate_claim_data(
+    quest: &crate::types::Quest,
+    submission: &crate::types::Submission,
+) -> Result<(), Error> {
+    // Check if already fully claimed
+    if submission.status == SubmissionStatus::Paid {
+        return Err(Error::AlreadyClaimed);
+    }
+
+    // Validate status transition: Approved/PartiallyPaid -> Paid or PartiallyPaid
+    validation::validate_submission_status_transition(
+        &submission.status,
+        &SubmissionStatus::Paid,
+    )?;
+
+    // Validate quest claims limit
+    validation::validate_quest_claims_limit(quest.total_claims)?;
 
     Ok(())
 }
@@ -96,22 +276,24 @@ pub fn approve_submission(
 /// - Submission is not already paid (AlreadyClaimed)
 /// - Submission status transition (Approved -> Paid) is valid
 /// - Quest claims have not exceeded the limit
+/// Validates a reward claim for a specific quest and submitter.
+///
+/// This function loads the necessary data from storage and then calls `validate_claim_data`.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user who submitted.
+///
+/// # Returns
+///
+/// * `Ok(())` if the claim is valid.
+/// * `Err(Error)` if the quest or submission is not found, or if validation fails.
 pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<(), Error> {
     let quest = storage::get_quest(env, quest_id)?;
     let submission = storage::get_submission(env, quest_id, submitter)?;
-
-    // Check if already claimed
-    if submission.status == SubmissionStatus::Paid {
-        return Err(Error::AlreadyClaimed);
-    }
-
-    // Validate status transition: Approved -> Paid
-    validation::validate_submission_status_transition(&submission.status, &SubmissionStatus::Paid)?;
-
-    // Validate quest claims limit
-    validation::validate_quest_claims_limit(quest.total_claims)?;
-
-    Ok(())
+    validate_claim_data(&quest, &submission)
 }
 
 //================================================================================
@@ -134,7 +316,7 @@ pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 /// * `Err(Error)` on first failure (e.g. Unauthorized, SubmissionNotFound)
 ///
 /// # Gas Optimization
-/// * Caches quest data to avoid redundant reads when approving multiple submissions for same quest
+/// * Caches quest and escrow data to avoid redundant reads when approving multiple submissions for same quest
 /// * Uses lazy evaluation to defer expensive operations
 /// * Batches storage writes where possible
 pub fn approve_submissions_batch(
@@ -144,27 +326,39 @@ pub fn approve_submissions_batch(
 ) -> Result<(), Error> {
     let len = submissions.len();
     validation::validate_batch_approval_size(len)?;
-    
-    // Optimized: Pre-validate all addresses to fail fast
+
+    // Pre-validate all addresses to fail fast
     for i in 0u32..len {
         let s = submissions.get(i).unwrap();
-        validation::validate_addresses_distinct(verifier, &s.submitter)?;
+        for j in 0u32..s.submissions.len() {
+            let submitter = s.submissions.get(j).unwrap();
+            validation::validate_addresses_distinct(verifier, &submitter)?;
+        }
     }
 
-    // Optimized: Cache quest data to avoid redundant reads
+
+    // Cache quest and escrow data to avoid redundant reads
     let mut cached_quest_id: Option<Symbol> = None;
     let mut cached_quest_data: Option<crate::types::Quest> = None;
+    let mut cached_escrow: Option<crate::types::EscrowInfo> = None;
 
     for i in 0u32..len {
-        let s = submissions.get(i).unwrap();
-        
-        // Optimized: Reuse quest data if same quest as previous iteration
-        let quest = if cached_quest_id.as_ref() == Some(&s.quest_id) {
+        let batch = submissions.get(i).unwrap();
+        let quest_id = &batch.quest_id;
+
+        // Reuse quest data if same quest as previous iteration
+        let quest = if cached_quest_id.as_ref() == Some(quest_id) {
             cached_quest_data.as_ref().unwrap()
         } else {
-            let quest_data = storage::get_quest(env, &s.quest_id)?;
-            cached_quest_id = Some(s.quest_id.clone());
+            let quest_data = storage::get_quest(env, quest_id)?;
+            cached_quest_id = Some(quest_id.clone());
             cached_quest_data = Some(quest_data);
+            // Also cache escrow if it exists for this quest
+            if storage::has_escrow(env, quest_id) {
+                cached_escrow = Some(storage::get_escrow(env, quest_id)?);
+            } else {
+                cached_escrow = None;
+            }
             cached_quest_data.as_ref().unwrap()
         };
 
@@ -172,25 +366,36 @@ pub fn approve_submissions_batch(
             return Err(Error::Unauthorized);
         }
 
-        let submission = storage::get_submission(env, &s.quest_id, &s.submitter)?;
+        for j in 0u32..batch.submissions.len() {
+            let submitter = batch.submissions.get(j).unwrap();
 
-        // Validate status transition: Pending -> Approved
-        validation::validate_submission_status_transition(
-            &submission.status,
-            &SubmissionStatus::Approved,
-        )?;
+            // Single read of submission; will be updated directly
+            let mut submission = storage::get_submission(env, quest_id, &submitter)?;
 
-        // ═══════════════════════════════════════════════════════
-        // Escrow check — verify there are enough funds
-        // ═══════════════════════════════════════════════════════
-        if storage::has_escrow(env, &s.quest_id) {
-            crate::escrow::validate_sufficient(env, &s.quest_id, quest.reward_amount)?;
+            // Validate status transition: Pending -> Approved
+            validation::validate_submission_status_transition(
+                &submission.status,
+                &SubmissionStatus::Approved,
+            )?;
+
+            // Escrow check — verify there are enough funds using cached data
+            if let Some(ref escrow) = cached_escrow {
+                if !escrow.is_active {
+                    return Err(Error::EscrowInactive);
+                }
+                let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+                if available < quest.reward_amount {
+                    return Err(Error::InsufficientEscrow);
+                }
+            }
+
+            // Direct update to avoid redundant read
+            submission.status = SubmissionStatus::Approved;
+            storage::set_submission(env, quest_id, &submitter, &submission);
+
+            // Emit event
+            events::submission_approved(env, quest_id.clone(), submitter.clone(), verifier.clone());
         }
-
-        storage::update_submission_status(env, &s.quest_id, &s.submitter, SubmissionStatus::Approved)?;
-
-        // EMIT EVENT: SubmissionApproved
-        events::submission_approved(env, s.quest_id.clone(), s.submitter.clone(), verifier.clone());
     }
 
     Ok(())

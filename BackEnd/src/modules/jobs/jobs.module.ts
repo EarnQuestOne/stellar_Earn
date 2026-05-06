@@ -13,6 +13,7 @@ import { AnalyticsProcessor } from './processors/analytics.processor';
 import { QuestProcessor } from './processors/quest.processor';
 import { JobLog, JobLogRetry, JobDependency, JobSchedule } from './entities/job-log.entity';
 import { DataExport } from '../users/entities/data-export.entity';
+import { DataExportListener } from './listeners/data-export.listener';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DataExport } from '../users/entities/data-export.entity';
     WebhookProcessor,
     AnalyticsProcessor,
     QuestProcessor,
+    DataExportListener,
   ],
   controllers: [JobsController],
   exports: [

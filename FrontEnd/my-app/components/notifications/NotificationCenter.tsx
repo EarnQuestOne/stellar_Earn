@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React from "react";
-import NotificationItem from "./NotificationItem";
-import { Notification } from "../../lib/utils/notifications";
-import Link from "next/link";
+import React from 'react';
+import NotificationItem from './NotificationItem';
+import { Notification } from '../../lib/utils/notifications';
+import Link from 'next/link';
 
 interface NotificationCenterProps {
   notifications: Notification[];

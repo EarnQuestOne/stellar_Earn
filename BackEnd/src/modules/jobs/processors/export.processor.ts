@@ -5,6 +5,9 @@ import { Repository } from 'typeorm';
 import { DataExportPayload, ReportGeneratePayload, JobResult } from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 import { DataExport, DataExportStatus } from '../../users/entities/data-export.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DataExportCompletedEvent } from '../../../events/dto/data-export-completed.event';
+import { DataExportFailedEvent } from '../../../events/dto/data-export-failed.event';
 
 /**
  * Data Export Processor
@@ -18,6 +21,7 @@ export class DataExportProcessor {
     private readonly jobLogService: JobLogService,
     @InjectRepository(DataExport)
     private readonly dataExportRepo: Repository<DataExport>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -92,6 +96,18 @@ export class DataExportProcessor {
             recordCount: result.data.recordCount,
             exportedAt: result.data.exportedAt,
           } as any);
+
+          // Emit completion event
+          this.eventEmitter.emit(
+            'user.data-export.completed',
+            new DataExportCompletedEvent(
+              userId,
+              (job.data as any).exportId,
+              downloadUrl,
+              fileName,
+              result.data.recordCount,
+            ),
+          );
         } catch (err) {
           this.logger.error('Failed to update data export record', err?.stack || err);
         }
@@ -111,6 +127,16 @@ export class DataExportProcessor {
           await this.dataExportRepo.update((job.data as any).exportId, {
             status: DataExportStatus.FAILED,
           } as any);
+
+          // Emit failure event
+          this.eventEmitter.emit(
+            'user.data-export.failed',
+            new DataExportFailedEvent(
+              (job.data as any).userId || 'unknown',
+              (job.data as any).exportId,
+              error.message,
+            ),
+          );
         } catch (err) {
           this.logger.error('Failed to mark export record failed', err?.stack || err);
         }

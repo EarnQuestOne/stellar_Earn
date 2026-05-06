@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -13,17 +13,17 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/quests", label: "Quests", icon: "🎯" },
-  { href: "/submissions", label: "Submissions", icon: "📄" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/quests', label: 'Quests', icon: '🎯' },
+  { href: '/submissions', label: 'Submissions', icon: '📄' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const defaultUser = user || { username: "john.doe", level: 12 };
+  const defaultUser = user || { username: 'john.doe', level: 12 };
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950">
@@ -36,7 +36,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
 
       <aside
         className={`fixed top-0 left-0 z-50 h-full w-64 transform border-r border-zinc-200 bg-white transition-transform dark:border-zinc-800 dark:bg-zinc-900 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex h-16 items-center gap-2 border-b border-zinc-200 px-6 dark:border-zinc-800">
@@ -67,8 +67,8 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                     isActive
-                      ? "border-l-2 border-cyan-400 bg-cyan-500/10 text-cyan-400"
-                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                      ? 'border-l-2 border-cyan-400 bg-cyan-500/10 text-cyan-400'
+                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -88,7 +88,9 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
                   {defaultUser.username}
                 </p>
-                <p className="text-xs text-zinc-500">Level {defaultUser.level}</p>
+                <p className="text-xs text-zinc-500">
+                  Level {defaultUser.level}
+                </p>
               </div>
             </div>
             <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">

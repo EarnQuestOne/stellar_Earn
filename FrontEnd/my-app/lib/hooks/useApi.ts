@@ -8,13 +8,7 @@
  *  usePaginatedApi<T> – paginated list fetching with load-more support
  */
 
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createCancelToken } from '@/lib/api/client';
 import type { CancelToken } from '@/lib/api/client';
 import type { PaginationParams } from '@/lib/types/api.types';
@@ -42,7 +36,7 @@ export interface UseApiState<T> {
  */
 export function useApi<T>(
   fetcher: (cancelToken: CancelToken) => Promise<T>,
-  deps: unknown[] = [],
+  deps: unknown[] = []
 ): UseApiState<T> {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,7 +58,10 @@ export function useApi<T>(
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled && !(err instanceof DOMException && err.name === 'AbortError')) {
+        if (
+          !cancelled &&
+          !(err instanceof DOMException && err.name === 'AbortError')
+        ) {
           setError(err instanceof Error ? err : new Error(String(err)));
           setData(null);
         }
@@ -99,8 +96,10 @@ export interface UseMutationState<TResult> {
   reset: () => void;
 }
 
-export interface UseMutationReturn<TArgs extends unknown[], TResult>
-  extends UseMutationState<TResult> {
+export interface UseMutationReturn<
+  TArgs extends unknown[],
+  TResult,
+> extends UseMutationState<TResult> {
   mutate: (...args: TArgs) => Promise<TResult | null>;
 }
 
@@ -116,7 +115,7 @@ export function useMutation<TArgs extends unknown[], TResult>(
   options?: {
     onSuccess?: (data: TResult) => void;
     onError?: (err: Error) => void;
-  },
+  }
 ): UseMutationReturn<TArgs, TResult> {
   const [status, setStatus] = useState<MutationStatus>('idle');
   const [data, setData] = useState<TResult | null>(null);
@@ -142,7 +141,7 @@ export function useMutation<TArgs extends unknown[], TResult>(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fn],
+    [fn]
   );
 
   const reset = useCallback(() => {
@@ -203,8 +202,10 @@ interface PaginatedResult<T> {
  * );
  */
 export function usePaginatedApi<T>(
-  fetcher: (pagination: Required<Pick<PaginationParams, 'page' | 'limit'>>) => Promise<PaginatedResult<T>>,
-  options: { limit?: number; enabled?: boolean } = {},
+  fetcher: (
+    pagination: Required<Pick<PaginationParams, 'page' | 'limit'>>
+  ) => Promise<PaginatedResult<T>>,
+  options: { limit?: number; enabled?: boolean } = {}
 ): UsePaginatedApiState<T> {
   const { limit = 20, enabled = true } = options;
 
@@ -259,7 +260,7 @@ export function usePaginatedApi<T>(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetcher, limit],
+    [fetcher, limit]
   );
 
   // Initial load / refetch

@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
+/**
+ * Props for the search bar component.
+ */
 interface SearchBarProps {
   onSearch: (query: string) => void;
   placeholder?: string;
   defaultValue?: string;
 }
 
+/**
+ * A controlled search input for filtering quests or other content.
+ */
 export function SearchBar({
   onSearch,
   placeholder = 'Search quests...',

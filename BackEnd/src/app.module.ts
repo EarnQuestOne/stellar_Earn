@@ -21,6 +21,8 @@ import { EmailModule } from './modules/email/email.module';
 import { UsersModule } from './modules/users/users.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
+import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
 
 import { dataSourceOptions } from './database/data-source';
 import moderationConfig from './config/moderation.config';
@@ -28,6 +30,7 @@ import moderationConfig from './config/moderation.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { TracingMiddleware } from './common/tracing/tracing.middleware';
+import { QueryLoggerModule } from './common/query-logger/query-logger.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { HealthModule } from './modules/health/health.module';
 import { throttlerConfig } from './config/throttler.config';
@@ -44,6 +47,7 @@ import { CsrfGuard } from './common/guards/csrf.guard';
       enableInterceptor: true,
       enableErrorFilter: true,
     }),
+    QueryLoggerModule,
     EventsModule,
     WebhooksModule,
     CacheModule,
@@ -69,6 +73,8 @@ import { CsrfGuard } from './common/guards/csrf.guard';
     UsersModule,
     ModerationModule,
     WebsocketModule,
+    QueryMonitoringModule,
+    FeatureFlagsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,8 +1,11 @@
-"use client";
+'use client';
 
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
+/**
+ * Props for the loading overlay that blocks interaction when active.
+ */
 interface LoadingOverlayProps {
   isOpen: boolean;
   message?: string;
@@ -10,9 +13,12 @@ interface LoadingOverlayProps {
   blockInteraction?: boolean;
 }
 
+/**
+ * Displays a full-screen loading overlay with optional progress state.
+ */
 export function LoadingOverlay({
   isOpen,
-  message = "Loading...",
+  message = 'Loading...',
   progress,
   blockInteraction = true,
 }: LoadingOverlayProps) {
@@ -23,7 +29,7 @@ export function LoadingOverlay({
   return (
     <div
       className={`absolute inset-0 z-20 flex items-center justify-center bg-white/75 dark:bg-zinc-900/75 ${
-        blockInteraction ? "pointer-events-auto" : "pointer-events-none"
+        blockInteraction ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
       role="status"
       aria-live="polite"
@@ -34,7 +40,7 @@ export function LoadingOverlay({
           <LoadingSpinner size="md" />
         </div>
         <p className="text-sm text-zinc-700 dark:text-zinc-200">{message}</p>
-        {typeof progress === "number" ? (
+        {typeof progress === 'number' ? (
           <ProgressBar className="mt-3" value={progress} max={100} showValue />
         ) : (
           <ProgressBar className="mt-3" indeterminate />

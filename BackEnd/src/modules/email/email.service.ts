@@ -120,7 +120,7 @@ export class EmailService implements OnModuleInit {
         },
       }, { priority: jobPriority });
 
-      this.logger.log(`Email queued: ${result.messageId} to ${dto.to.map((r) => r.email).join(', ')}`);
+      this.logger.log(`Email queued: ${result.messageId} to ${dto.to.length} recipient(s)`);
     } catch (error) {
       this.logger.error(`Failed to queue email ${result.messageId}: ${error.message}`);
       this.updateDeliveryStatus(result.messageId, EmailStatus.FAILED, error.message);
@@ -146,7 +146,7 @@ export class EmailService implements OnModuleInit {
 
     if (!this.sgMail) {
       this.logger.warn(`Email not sent (SendGrid not configured): ${messageId}`);
-      this.logger.debug(`Would send to: ${dto.to.map((r) => r.email).join(', ')}, subject: "${subject}"`);
+      this.logger.debug(`Would send to ${dto.to.length} recipient(s), subject: "${subject}"`);
       this.updateDeliveryStatus(messageId, EmailStatus.DROPPED, 'SendGrid not configured');
       return;
     }
@@ -299,7 +299,7 @@ export class EmailService implements OnModuleInit {
     for (const event of events) {
       const { event: eventType, email, sg_message_id, reason, bounce_classification } = event;
 
-      this.logger.log(`Webhook event: ${eventType} for ${email} (${sg_message_id || 'unknown'})`);
+      this.logger.log(`Webhook event: ${eventType} for [EMAIL REDACTED] (${sg_message_id || 'unknown'})`);
 
       const status = this.mapWebhookEventToStatus(eventType);
       if (!status) {
@@ -348,17 +348,17 @@ export class EmailService implements OnModuleInit {
   }
 
   private handleBounce(email: string, reason: string, classification: string): void {
-    this.logger.warn(`Bounce detected for ${email}: ${classification} - ${reason}`);
+    this.logger.warn(`Bounce detected for [EMAIL REDACTED]: ${classification} - ${reason}`);
 
     const hardBounceTypes = ['hard', 'permanent', 'invalid'];
     if (hardBounceTypes.some((t) => classification.toLowerCase().includes(t))) {
       this.addToUnsubscribeList(email);
-      this.logger.warn(`Hard bounce: ${email} added to unsubscribe list`);
+      this.logger.warn(`Hard bounce: [EMAIL REDACTED] added to unsubscribe list`);
     }
   }
 
   private handleSpamReport(email: string): void {
-    this.logger.warn(`Spam report from ${email}, adding to unsubscribe list`);
+    this.logger.warn(`Spam report from [EMAIL REDACTED], adding to unsubscribe list`);
     this.addToUnsubscribeList(email);
   }
 

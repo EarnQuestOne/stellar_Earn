@@ -28,7 +28,11 @@ import type {
 } from '@/lib/types/api.types';
 
 // Re-export legacy types for backward compatibility with existing hooks
-export type { QuestFilters, PaginationParams, PaginatedResponse } from '@/lib/types/quest';
+export type {
+  QuestFilters,
+  PaginationParams,
+  PaginatedResponse,
+} from '@/lib/types/quest';
 
 // ---------------------------------------------------------------------------
 // List quests
@@ -40,7 +44,7 @@ export type { QuestFilters, PaginationParams, PaginatedResponse } from '@/lib/ty
  */
 export async function getQuests(
   filters?: QuestQueryParams,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<PaginatedQuestsResponse> {
   const params = buildQuestParams(filters);
 
@@ -48,7 +52,7 @@ export async function getQuests(
     get<PaginatedQuestsResponse>('/quests', {
       params,
       signal: cancelToken?.signal,
-    }),
+    })
   );
 }
 
@@ -62,7 +66,7 @@ export async function getQuests(
  */
 export async function getQuestById(
   id: string,
-  cancelToken?: CancelToken,
+  cancelToken?: CancelToken
 ): Promise<QuestResponse> {
   return cacheManager.get(
     `quest-${id}`,
@@ -70,9 +74,9 @@ export async function getQuestById(
       withRetry(() =>
         get<QuestResponse>(`/quests/${id}`, {
           signal: cancelToken?.signal,
-        }),
+        })
       ),
-    60_000,
+    60_000
   );
 }
 
@@ -81,7 +85,7 @@ export async function getQuestById(
 // ---------------------------------------------------------------------------
 
 export async function createQuest(
-  payload: CreateQuestRequest,
+  payload: CreateQuestRequest
 ): Promise<QuestResponse> {
   const result = await post<QuestResponse>('/quests', payload);
   // Invalidate list cache (no simple key, so just clear all quest entries)
@@ -95,7 +99,7 @@ export async function createQuest(
 
 export async function updateQuest(
   id: string,
-  payload: UpdateQuestRequest,
+  payload: UpdateQuestRequest
 ): Promise<QuestResponse> {
   const result = await patch<QuestResponse>(`/quests/${id}`, payload);
   cacheManager.invalidate(`quest-${id}`);
@@ -116,7 +120,7 @@ export async function deleteQuest(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 function buildQuestParams(
-  filters?: QuestQueryParams,
+  filters?: QuestQueryParams
 ): Record<string, string | number | undefined> {
   if (!filters) return {};
   return {

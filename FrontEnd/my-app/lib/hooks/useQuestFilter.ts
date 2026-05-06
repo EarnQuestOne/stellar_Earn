@@ -7,7 +7,7 @@ export function useQuestFilter(quests: Quest[]) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('Trending');
 
   return {
-    filtered: quests,  
+    filtered: quests,
     activeFilter,
     setActiveFilter,
   };

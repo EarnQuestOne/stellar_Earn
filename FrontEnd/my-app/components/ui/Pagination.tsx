@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * Props for the pagination control used across lists and discovery screens.
+ */
 interface PaginationProps {
   currentPage: number;
   totalPages?: number;
@@ -9,6 +12,9 @@ interface PaginationProps {
   isLoading?: boolean;
 }
 
+/**
+ * Displays either page navigation or a load-more button depending on pagination mode.
+ */
 export function Pagination({
   currentPage,
   totalPages,
@@ -37,7 +43,7 @@ export function Pagination({
     const pages = [];
     const maxVisiblePages = 7;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage < maxVisiblePages - 1) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -95,9 +101,7 @@ export function Pagination({
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
-              <span className="px-2 text-zinc-500 dark:text-zinc-400">
-                ...
-              </span>
+              <span className="px-2 text-zinc-500 dark:text-zinc-400">...</span>
             )}
             <button
               onClick={() => onPageChange(totalPages)}
