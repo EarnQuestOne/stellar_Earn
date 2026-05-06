@@ -86,10 +86,10 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
     const extra = options.extra || {};
 
     return {
-      max: extra.max || 10,
-      min: extra.min || 0,
-      connectionTimeoutMillis: extra.connectionTimeoutMillis || 10000,
-      idleTimeoutMillis: extra.idleTimeoutMillis || 30000,
+      max: extra.max ?? parseInt(process.env.DB_POOL_MAX ?? '10', 10),
+      min: extra.min ?? parseInt(process.env.DB_POOL_MIN ?? '2', 10),
+      connectionTimeoutMillis: extra.connectionTimeoutMillis ?? parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000', 10),
+      idleTimeoutMillis: extra.idleTimeoutMillis ?? parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
     };
   }
 

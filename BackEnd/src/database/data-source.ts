@@ -8,16 +8,22 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 class TypeORMQueryLogger implements Logger {
   private readonly logger = new AppLoggerService();
-  private readonly slowQueryThreshold = parseInt(process.env.SLOW_QUERY_THRESHOLD || '1000'); // ms
-  private readonly enableQueryLogging = process.env.NODE_ENV === 'development' || process.env.DB_QUERY_LOGGING === 'true';
+  private readonly slowQueryThreshold = parseInt(
+    process.env.SLOW_QUERY_THRESHOLD || '1000',
+    10
+  );
+
+  private readonly enableQueryLogging =
+    process.env.NODE_ENV === 'development' ||
+    process.env.DB_QUERY_LOGGING === 'true';
 
   logQuery(query: string, parameters?: any[]): void {
     if (!this.enableQueryLogging) return;
-    
+
     this.logger.debug('Database Query', 'Database', {
       query: query.trim(),
       parameters,
-      type: 'query'
+      type: 'query',
     });
   }
 
@@ -25,7 +31,7 @@ class TypeORMQueryLogger implements Logger {
     this.logger.error('Database Query Error', error, 'Database', {
       query: query.trim(),
       parameters,
-      type: 'query_error'
+      type: 'query_error',
     });
   }
 
@@ -35,7 +41,7 @@ class TypeORMQueryLogger implements Logger {
       parameters,
       executionTime: time,
       threshold: this.slowQueryThreshold,
-      type: 'slow_query'
+      type: 'slow_query',
     });
   }
 
@@ -65,13 +71,49 @@ class TypeORMQueryLogger implements Logger {
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: [path.join(__dirname, '..', '**', 'entities', '*.entity.{ts,js}')],
-  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
+
+  // Enable SSL only in production
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
+
+  entities: [
+    path.join(__dirname, '..', '**', 'entities', '*.entity.{ts,js}'),
+  ],
+
+  migrations: [
+    path.join(__dirname, 'migrations', '*.{ts,js}'),
+  ],
+
   migrationsTableName: 'typeorm_migrations',
   synchronize: false,
-  logging: process.env.NODE_ENV === 'development' || process.env.DB_QUERY_LOGGING === 'true',
+
+  logging:
+    process.env.NODE_ENV === 'development' ||
+    process.env.DB_QUERY_LOGGING === 'true',
+
   logger: new TypeORMQueryLogger(),
-  maxQueryExecutionTime: parseInt(process.env.SLOW_QUERY_THRESHOLD || '1000'),
+
+  maxQueryExecutionTime: parseInt(
+    process.env.SLOW_QUERY_THRESHOLD || '1000',
+    10
+  ),
+
+  extra: {
+    max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
+    min: parseInt(process.env.DB_POOL_MIN ?? '2', 10),
+
+    connectionTimeoutMillis: parseInt(
+      process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000',
+      10
+    ),
+
+    idleTimeoutMillis: parseInt(
+      process.env.DB_POOL_IDLE_TIMEOUT ?? '30000',
+      10
+    ),
+  },
 };
 
 const AppDataSource = new DataSource(dataSourceOptions);
