@@ -5,6 +5,7 @@ import { JobsController } from './jobs.controller';
 import { JobLogService } from './services/job-log.service';
 import { JobSchedulerService } from './services/job-scheduler.service';
 import { PayoutProcessor } from './processors/payout.processor';
+import { PayoutReconciliationProcessor } from './processors/payout-reconciliation.processor';
 import { EmailProcessor } from './processors/email.processor';
 import { DataExportProcessor } from './processors/export.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
@@ -14,16 +15,18 @@ import { QuestProcessor } from './processors/quest.processor';
 import { JobLog, JobLogRetry, JobDependency, JobSchedule } from './entities/job-log.entity';
 import { DataExport } from '../users/entities/data-export.entity';
 import { DataExportListener } from './listeners/data-export.listener';
+import { Payout } from '../payouts/entities/payout.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([JobLog, JobLogRetry, JobDependency, JobSchedule, DataExport]),
+    TypeOrmModule.forFeature([JobLog, JobLogRetry, JobDependency, JobSchedule, DataExport, Payout]),
   ],
   providers: [
     JobsService,
     JobLogService,
     JobSchedulerService,
     PayoutProcessor,
+    PayoutReconciliationProcessor,
     EmailProcessor,
     DataExportProcessor,
     CleanupProcessor,
@@ -38,6 +41,7 @@ import { DataExportListener } from './listeners/data-export.listener';
     JobLogService,
     JobSchedulerService,
     PayoutProcessor,
+    PayoutReconciliationProcessor,
     EmailProcessor,
     DataExportProcessor,
     CleanupProcessor,
