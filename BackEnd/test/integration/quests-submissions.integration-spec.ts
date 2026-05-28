@@ -7,7 +7,7 @@ import { SubmissionsModule } from '../../../src/modules/submissions/submissions.
 import { UsersModule } from '../../../src/modules/users/users.module';
 import { QuestsService } from '../../../src/modules/quests/quests.service';
 import { SubmissionsService } from '../../../src/modules/submissions/submissions.service';
-import { UsersService } from '../../../src/modules/users/user.service';
+import { UsersService } from '../../../src/modules/users/users.service';
 import { Quest } from '../../../src/modules/quests/entities/quest.entity';
 import { Submission } from '../../../src/modules/submissions/entities/submission.entity';
 import { User } from '../../../src/modules/users/entities/user.entity';

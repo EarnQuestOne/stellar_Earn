@@ -8,7 +8,7 @@ import { StellarModule } from '../../../src/modules/stellar/stellar.module';
 import { UsersModule } from '../../../src/modules/users/users.module';
 import { PayoutsService } from '../../../src/modules/payouts/payouts.service';
 import { StellarService } from '../../../src/modules/stellar/stellar.service';
-import { UsersService } from '../../../src/modules/users/user.service';
+import { UsersService } from '../../../src/modules/users/users.service';
 import { Payout } from '../../../src/modules/payouts/entities/payout.entity';
 import { User } from '../../../src/modules/users/entities/user.entity';
 

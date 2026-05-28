@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
-export class UserController {
+export class UsersController {
   @Get()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile returned' })

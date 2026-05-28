@@ -7,7 +7,7 @@ import { NotificationsModule } from '../../../src/modules/notifications/notifica
 import { UsersModule } from '../../../src/modules/users/users.module';
 import { EmailService } from '../../../src/modules/email/email.service';
 import { NotificationsService } from '../../../src/modules/notifications/notifications.service';
-import { UsersService } from '../../../src/modules/users/user.service';
+import { UsersService } from '../../../src/modules/users/users.service';
 import { User } from '../../../src/modules/users/entities/user.entity';
 import { Notification } from '../../../src/modules/notifications/entities/notification.entity';
 
