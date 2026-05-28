@@ -115,13 +115,21 @@ jobs:
     steps:
       - name: Check result status
         run: |
+          check_result="${{ needs.check-contracts.result }}"
           contracts_changed="${{ needs.check-contracts.outputs.contracts }}"
           build_result="${{ needs.build-and-test.result }}"
           orphaned_result="${{ needs.orphaned-scripts-check.result }}"
 
+          echo "Detect job status: $check_result"
           echo "Contracts changed: $contracts_changed"
           echo "Build result: $build_result"
           echo "Orphaned result: $orphaned_result"
+
+          # If the check-contracts job itself failed or was cancelled, we must fail.
+          if [ "$check_result" != "success" ]; then
+            echo "❌ Contract detection job failed or was cancelled!"
+            exit 1
+          fi
 
           if [ "$contracts_changed" = "true" ]; then
             if [ "$build_result" != "success" ] || [ "$orphaned_result" != "success" ]; then
