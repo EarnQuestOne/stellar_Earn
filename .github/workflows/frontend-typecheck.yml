@@ -22,10 +22,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: FrontEnd/my-app/package-lock.json
+          cache-dependency-path: FrontEnd/my-app/package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Validate path aliases
+        run: npm run validate:path-aliases
 
       - name: Type check
         run: npx tsc --noEmit

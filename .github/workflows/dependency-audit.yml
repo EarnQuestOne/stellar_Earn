@@ -134,20 +134,20 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: |
-          FrontEnd/my-app/package-lock.json
-          BackEnd/package-lock.json
+          FrontEnd/my-app/package.json
+          BackEnd/package.json
           
     - name: Audit and Check Bloat - FrontEnd
       run: |
         cd FrontEnd/my-app
-        npm ci
+        npm install
         npm audit --audit-level=moderate
         npx depcheck --json > ../../frontend-depcheck-report.json || echo "Unused dependencies found"
         
     - name: Audit and Check Bloat - Backend
       run: |
         cd BackEnd
-        npm ci
+        npm install
         npm audit --audit-level=moderate
         npx depcheck --json > ../frontend-depcheck-backend-report.json || echo "Unused dependencies found"
         
