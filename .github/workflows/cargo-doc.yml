@@ -1,0 +1,60 @@
+name: Cargo Doc CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "contracts/**"
+      - ".github/workflows/cargo-doc.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "contracts/**"
+      - ".github/workflows/cargo-doc.yml"
+  workflow_dispatch:
+
+jobs:
+  generate-doc:
+    name: Generate Cargo Docs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/earn-quest
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('contracts/earn-quest/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: contracts/earn-quest/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('contracts/earn-quest/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-
+
+      - name: Generate documentation
+        run: cargo doc --no-deps --document-private-items
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-doc
+          path: contracts/earn-quest/target/doc/
+          if-no-files-found: error
