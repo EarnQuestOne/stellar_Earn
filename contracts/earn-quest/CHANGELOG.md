@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- Added 	est_oracle_failure.rs: covers oracle failure paths (no oracles configured, unknown oracle address) to ensure errors surface correctly.
 - Added the [Changelog Discipline Policy](docs/CHANGELOG_DISCIPLINE.md) to define how contract-breaking changes, migrations, and version bumps must be documented.
 - Added CI validation for contract changelog updates and breaking-change metadata so contract interface changes cannot merge without matching release notes.
 - Initialized this changelog so future contract releases have a single source of truth.
@@ -20,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Initial stable release of the EarnQuest smart contract.
 
 ### Added
+- Added 	est_oracle_failure.rs: covers oracle failure paths (no oracles configured, unknown oracle address) to ensure errors surface correctly.
 - Core quest registration system supporting deadlines, rewards, and designated verifiers.
 - Escrow contract integration to secure token funds during quest execution.
 - User reputation module containing XP awarding, user levels, and badge grants.
