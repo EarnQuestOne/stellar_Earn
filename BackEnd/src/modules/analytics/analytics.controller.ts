@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Res,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import {
   ApiTags,
   ApiOperation,
@@ -27,6 +28,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PlatformAnalyticsService } from './services/platform-analytics.service';
+import { LazyInject } from '../../common/decorators/lazy-inject.decorator';
 import { QuestAnalyticsService } from './services/quest-analytics.service';
 import { UserAnalyticsService } from './services/user-analytics.service';
 import { StreamExportService } from './services/stream-export.service';
@@ -50,10 +52,16 @@ import { Submission } from './entities/submission.entity';
 @ApiBearerAuth()
 @RateLimit({ limit: 30, ttlSeconds: 60 })
 export class AnalyticsController {
+  // Lazy-load the aggregation service to optimize startup time
+  @LazyInject(AnalyticsAggregationService)
+  private readonly aggregationService: AnalyticsAggregationService;
+
   constructor(
     private readonly platformAnalyticsService: PlatformAnalyticsService,
     private readonly questAnalyticsService: QuestAnalyticsService,
     private readonly userAnalyticsService: UserAnalyticsService,
+    private readonly reportService: AnalyticsReportService,
+    private readonly moduleRef: ModuleRef,
     private readonly streamExportService: StreamExportService,
     @InjectRepository(Quest)
     private readonly questRepository: Repository<Quest>,

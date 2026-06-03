@@ -61,8 +61,8 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     });
   }
 
-  private formatValidationErrors(errors: ValidationError[]): any {
-    const formattedErrors = {};
+  private formatValidationErrors(errors: ValidationError[]): Record<string, string[]> {
+    const formattedErrors: Record<string, string[]> = {};
 
     const flattenErrors = (
       errs: ValidationError[],

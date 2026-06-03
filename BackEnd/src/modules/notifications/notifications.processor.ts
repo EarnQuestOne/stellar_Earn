@@ -75,7 +75,7 @@ export class NotificationsProcessor extends WorkerHost {
       // Update log with result
       log.status = result.success ? DeliveryStatus.SENT : DeliveryStatus.FAILED;
       log.providerResponse = result.providerResponse;
-      log.error = result.error;
+      log.error = result.error ?? '';
       log.retryCount = job.attemptsMade;
       
       await this.logRepository.save(log);

@@ -2,7 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
-export function setupSwagger(app: INestApplication, configService?: ConfigService) {
+export function setupSwagger(
+  app: INestApplication,
+  configService?: ConfigService,
+) {
   const title = configService?.get('APP_NAME') || 'StellarEarn API';
   const version = configService?.get('API_VERSION') || '1.0';
   const description =
@@ -11,7 +14,9 @@ export function setupSwagger(app: INestApplication, configService?: ConfigServic
 
   const builder = new DocumentBuilder()
     .setTitle(title)
-    .setDescription(`${description}\n\nSupported API versions: v1, v2. Use path versioning (/api/v1/*, /api/v2/*) and/or header versioning (X-API-Version: 1).`)
+    .setDescription(
+      `${description}\n\nSupported API versions: v1, v2. Use path versioning (/api/v1/*, /api/v2/*) and/or header versioning (X-API-Version: 1).`,
+    )
     .setVersion(version)
     .addServer('/api/v1', 'API v1')
     .addServer('/api/v2', 'API v2')

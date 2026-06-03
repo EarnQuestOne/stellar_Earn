@@ -12,7 +12,8 @@ export default registerAs('email', () => ({
   },
   replyTo: process.env.EMAIL_REPLY_TO || 'support@stellarearn.com',
   appUrl: process.env.APP_URL || 'http://localhost:3000',
-  unsubscribeUrl: process.env.UNSUBSCRIBE_URL || 'http://localhost:3000/unsubscribe',
+  unsubscribeUrl:
+    process.env.UNSUBSCRIBE_URL || 'http://localhost:3000/unsubscribe',
   queue: {
     maxRetries: parseInt(process.env.EMAIL_QUEUE_MAX_RETRIES || '5', 10),
     retryDelay: parseInt(process.env.EMAIL_QUEUE_RETRY_DELAY || '5000', 10),

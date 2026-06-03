@@ -1,5 +1,8 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerAsyncOptions, ThrottlerModuleOptions } from '@nestjs/throttler';
+import {
+  ThrottlerAsyncOptions,
+  ThrottlerModuleOptions,
+} from '@nestjs/throttler';
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value);

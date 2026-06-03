@@ -67,4 +67,3 @@ export default new DataSource({
     idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
   },
 });
-

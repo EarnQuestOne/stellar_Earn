@@ -2,7 +2,14 @@ import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
-export type LogLevel = 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
+export type LogLevel =
+  | 'error'
+  | 'warn'
+  | 'info'
+  | 'http'
+  | 'verbose'
+  | 'debug'
+  | 'silly';
 
 export interface LoggerConfig {
   level: LogLevel;
@@ -58,7 +65,9 @@ const consoleFormat = winston.format.combine(
   }),
 );
 
-export const createLoggerConfig = (config?: Partial<LoggerConfig>): winston.LoggerOptions => {
+export const createLoggerConfig = (
+  config?: Partial<LoggerConfig>,
+): winston.LoggerOptions => {
   const finalConfig = { ...getLoggerConfig(), ...config };
   const transports: winston.transport[] = [];
 

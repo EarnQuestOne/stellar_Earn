@@ -3,7 +3,10 @@ import { Request } from 'express';
 export interface ApiVersionConfig {
   defaultVersion: string;
   supportedVersions: string[];
-  deprecatedVersions: Record<string, { sunset?: string; sunsetLink?: string; reason?: string }>;
+  deprecatedVersions: Record<
+    string,
+    { sunset?: string; sunsetLink?: string; reason?: string }
+  >;
   headerName: string;
   headerFallbackNames: string[];
 }
@@ -34,8 +37,13 @@ const extractVersionFromUri = (url: string): string | undefined => {
   return match && match[1] ? match[1] : undefined;
 };
 
-const extractVersionFromHeaders = (headers: Record<string, unknown>): string | undefined => {
-  const headerKeys = [API_VERSION_CONFIG.headerName, ...API_VERSION_CONFIG.headerFallbackNames];
+const extractVersionFromHeaders = (
+  headers: Record<string, unknown>,
+): string | undefined => {
+  const headerKeys = [
+    API_VERSION_CONFIG.headerName,
+    ...API_VERSION_CONFIG.headerFallbackNames,
+  ];
 
   for (const key of headerKeys) {
     const value = headers[key] as string | undefined;
@@ -51,7 +59,9 @@ const extractVersionFromHeaders = (headers: Record<string, unknown>): string | u
 };
 
 export const extractApiVersion = (req: Request): string | undefined => {
-  const fromUri = extractVersionFromUri(req.url || req.originalUrl || req.path || '');
+  const fromUri = extractVersionFromUri(
+    req.url || req.originalUrl || req.path || '',
+  );
   if (fromUri) {
     return fromUri;
   }

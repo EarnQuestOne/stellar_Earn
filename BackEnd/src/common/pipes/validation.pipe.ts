@@ -32,8 +32,8 @@ export class CustomValidationPipe implements PipeTransform<any> {
     return !types.includes(metatype);
   }
 
-  private formatErrors(errors: any[]) {
-    const formattedErrors = {};
+  private formatErrors(errors: any[]): Record<string, any> {
+    const formattedErrors: Record<string, any> = {};
 
     errors.forEach((error) => {
       if (error.constraints) {
