@@ -18,7 +18,7 @@ on:
       - 'FrontEnd/my-app/**'
   # Scheduled availability check against a deployed environment
   schedule:
-    - cron: '*/15 * * * *'   # every 15 minutes
+    - cron: '0 0 * * *'   # only once per day
   # Allow manual trigger with a custom target URL
   workflow_dispatch:
     inputs:
