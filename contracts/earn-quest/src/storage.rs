@@ -12,6 +12,17 @@ use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
 ///
 /// This enum defines all possible keys used to store data in the contract's instance storage.
 /// Each variant represents a different type of data with its associated key structure.
+///
+/// # Naming convention
+///
+/// - PascalCase variant names with domain prefixes (`Quest*`, `Platform*`, `Unpause*`, …)
+/// - Composite tuple keys use natural identifier order, e.g. `(quest_id, submitter)`
+/// - Hot/cold splits use base + `Ext`/`Meta` suffixes (`QuestMetadata` + `QuestMetadataExt`)
+/// - New variants are appended at the end — never reorder or rename existing variants
+///
+/// # Full layout map
+///
+/// See [`STORAGE_LAYOUT.md`](../docs/STORAGE_LAYOUT.md) for every key, value type, TTL, and purpose.
 #[contracttype]
 pub enum DataKey {
     /// Stores individual Quest data, keyed by quest ID (Symbol)
@@ -1342,4 +1353,172 @@ pub fn remove_creator_whitelist(env: &Env, address: &Address) {
     env.storage()
         .instance()
         .remove(&DataKey::CreatorWhitelist(address.clone()));
+}
+
+#[cfg(test)]
+mod storage_key_tests {
+    use super::*;
+    use soroban_sdk::{symbol_short, testutils::Address as _, Env, Vec};
+
+    /// Must match the row count in `docs/STORAGE_LAYOUT.md`.
+    pub const DOCUMENTED_VARIANT_COUNT: u32 = 44;
+
+    /// One representative sample per `DataKey` variant for collision testing.
+    /// When adding a variant, append it here and update `STORAGE_LAYOUT.md`.
+    pub fn all_data_key_variants(env: &Env) -> Vec<DataKey> {
+        let addr = Address::generate(env);
+        let addr2 = Address::generate(env);
+        let sym = symbol_short!("TST");
+        let role = Role::SuperAdmin;
+        let round = 1u32;
+
+        let mut keys = Vec::new(env);
+        keys.push_back(DataKey::Quest(sym.clone()));
+        keys.push_back(DataKey::QuestMetadata(sym.clone()));
+        keys.push_back(DataKey::QuestMetadataExt(sym.clone()));
+        keys.push_back(DataKey::Submission(sym.clone(), addr.clone()));
+        keys.push_back(DataKey::UserStats(addr.clone()));
+        keys.push_back(DataKey::UserBadges(addr.clone()));
+        keys.push_back(DataKey::Admin(addr.clone()));
+        keys.push_back(DataKey::Role(role, addr.clone()));
+        keys.push_back(DataKey::ContractAdmin);
+        keys.push_back(DataKey::ContractVersion);
+        keys.push_back(DataKey::ContractConfig);
+        keys.push_back(DataKey::Initialized);
+        keys.push_back(DataKey::Paused);
+        keys.push_back(DataKey::UnpauseApproval(round, addr.clone()));
+        keys.push_back(DataKey::UnpauseThreshold);
+        keys.push_back(DataKey::UnpauseRound);
+        keys.push_back(DataKey::UnpauseApprovalCount);
+        keys.push_back(DataKey::UnpauseTimelockSeconds);
+        keys.push_back(DataKey::ScheduledUnpauseTime);
+        keys.push_back(DataKey::Escrow(sym.clone()));
+        keys.push_back(DataKey::EscrowMeta(sym.clone()));
+        keys.push_back(DataKey::QuestIds);
+        keys.push_back(DataKey::PlatformStats);
+        keys.push_back(DataKey::PlatformQuestsCreated);
+        keys.push_back(DataKey::PlatformSubmissions);
+        keys.push_back(DataKey::PlatformRewardsDistributed);
+        keys.push_back(DataKey::PlatformActiveUsers);
+        keys.push_back(DataKey::PlatformRewardsClaimed);
+        keys.push_back(DataKey::CreatorStats(addr.clone()));
+        keys.push_back(DataKey::OracleConfig(addr.clone()));
+        keys.push_back(DataKey::OracleAddresses);
+        keys.push_back(DataKey::ReentrancyGuard);
+        keys.push_back(DataKey::Dispute(sym.clone(), addr.clone()));
+        keys.push_back(DataKey::Commitment(sym.clone(), addr.clone()));
+        keys.push_back(DataKey::VerifierStake(sym.clone(), addr.clone()));
+        keys.push_back(DataKey::Balance(addr.clone()));
+        keys.push_back(DataKey::Allowance(addr.clone(), addr2.clone()));
+        keys.push_back(DataKey::TokenName);
+        keys.push_back(DataKey::TokenSymbol);
+        keys.push_back(DataKey::TokenDecimals);
+        keys.push_back(DataKey::BadgeType(sym.clone()));
+        keys.push_back(DataKey::BadgeTypeIds);
+        keys.push_back(DataKey::MinCreatorLevel);
+        keys.push_back(DataKey::CreatorWhitelist(addr.clone()));
+        keys
+    }
+
+    #[test]
+    fn test_all_data_key_variants_are_unique() {
+        use crate::EarnQuestContract;
+
+        let env = Env::default();
+        let contract_id = env.register_contract(None, EarnQuestContract);
+        let keys = all_data_key_variants(&env);
+        let count = keys.len();
+
+        env.as_contract(&contract_id, || {
+            for i in 0..count {
+                let key = keys.get(i).unwrap();
+                env.storage().instance().set(&key, &i);
+            }
+
+            for i in 0..count {
+                let key = keys.get(i).unwrap();
+                let stored: u32 = env
+                    .storage()
+                    .instance()
+                    .get(&key)
+                    .unwrap_or_else(|| panic!("missing storage entry for variant index {i}"));
+                assert_eq!(
+                    stored, i,
+                    "duplicate storage key collision at variant index {i}"
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn test_data_key_variant_count_matches_documentation() {
+        let env = Env::default();
+        let keys = all_data_key_variants(&env);
+        assert_eq!(
+            keys.len(),
+            DOCUMENTED_VARIANT_COUNT as u32,
+            "DataKey variant count changed — update all_data_key_variants(), \
+             DOCUMENTED_VARIANT_COUNT, and docs/STORAGE_LAYOUT.md"
+        );
+    }
+
+    #[test]
+    fn test_data_key_variant_names_are_unique() {
+        let names: [&str; DOCUMENTED_VARIANT_COUNT as usize] = [
+            "Quest",
+            "QuestMetadata",
+            "QuestMetadataExt",
+            "Submission",
+            "UserStats",
+            "UserBadges",
+            "Admin",
+            "Role",
+            "ContractAdmin",
+            "ContractVersion",
+            "ContractConfig",
+            "Initialized",
+            "Paused",
+            "UnpauseApproval",
+            "UnpauseThreshold",
+            "UnpauseRound",
+            "UnpauseApprovalCount",
+            "UnpauseTimelockSeconds",
+            "ScheduledUnpauseTime",
+            "Escrow",
+            "EscrowMeta",
+            "QuestIds",
+            "PlatformStats",
+            "PlatformQuestsCreated",
+            "PlatformSubmissions",
+            "PlatformRewardsDistributed",
+            "PlatformActiveUsers",
+            "PlatformRewardsClaimed",
+            "CreatorStats",
+            "OracleConfig",
+            "OracleAddresses",
+            "ReentrancyGuard",
+            "Dispute",
+            "Commitment",
+            "VerifierStake",
+            "Balance",
+            "Allowance",
+            "TokenName",
+            "TokenSymbol",
+            "TokenDecimals",
+            "BadgeType",
+            "BadgeTypeIds",
+            "MinCreatorLevel",
+            "CreatorWhitelist",
+        ];
+
+        for i in 0..names.len() {
+            for j in (i + 1)..names.len() {
+                assert_ne!(
+                    names[i], names[j],
+                    "duplicate DataKey variant name: {}",
+                    names[i]
+                );
+            }
+        }
+    }
 }
