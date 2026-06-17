@@ -3,11 +3,11 @@
 use soroban_sdk::testutils::Events as _;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{
-    symbol_short, testutils::Address as _, Address, BytesN, Env, IntoVal, Symbol, Vec, String, TryFromVal, FromVal,
+    symbol_short, testutils::Address as _, Address, BytesN, Env, IntoVal, Symbol, Vec,
 };
 
 extern crate earn_quest;
-use earn_quest::types::{BatchApprovalInput, BatchQuestInput, Quest, QuestMetadata, MetadataDescription, QuestStatus};
+use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 //================================================================================

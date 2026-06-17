@@ -29,9 +29,9 @@ fn register_and_approve_submission(
     token_contract: &Address,
     reward_amount: i128,
 ) -> (Symbol, Address) {
-    let creator = Address::generate(&env);
-    let verifier = Address::generate(&env);
-    let submitter = Address::generate(&env);
+    let creator = Address::generate(env);
+    let verifier = Address::generate(env);
+    let submitter = Address::generate(env);
     let quest_id = symbol_short!("QX");
 
     client.register_quest(

@@ -2,7 +2,10 @@ use crate::storage::DataKey;
 use soroban_sdk::{Address, Env, String};
 
 pub fn read_balance(e: &Env, addr: Address) -> i128 {
-    e.storage().instance().get(&DataKey::Balance(addr)).unwrap_or(0)
+    e.storage()
+        .instance()
+        .get(&DataKey::Balance(addr))
+        .unwrap_or(0)
 }
 
 pub fn write_balance(e: &Env, addr: Address, amount: i128) {
@@ -10,11 +13,16 @@ pub fn write_balance(e: &Env, addr: Address, amount: i128) {
 }
 
 pub fn read_allowance(e: &Env, from: Address, spender: Address) -> i128 {
-    e.storage().instance().get(&DataKey::Allowance(from, spender)).unwrap_or(0)
+    e.storage()
+        .instance()
+        .get(&DataKey::Allowance(from, spender))
+        .unwrap_or(0)
 }
 
 pub fn write_allowance(e: &Env, from: Address, spender: Address, amount: i128) {
-    e.storage().instance().set(&DataKey::Allowance(from, spender), &amount);
+    e.storage()
+        .instance()
+        .set(&DataKey::Allowance(from, spender), &amount);
 }
 
 pub fn allowance(e: Env, from: Address, spender: Address) -> i128 {
@@ -69,15 +77,24 @@ pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
 }
 
 pub fn decimals(e: Env) -> u32 {
-    e.storage().instance().get(&DataKey::TokenDecimals).unwrap_or(7)
+    e.storage()
+        .instance()
+        .get(&DataKey::TokenDecimals)
+        .unwrap_or(7)
 }
 
 pub fn name(e: Env) -> String {
-    e.storage().instance().get(&DataKey::TokenName).unwrap_or(String::from_str(&e, "EarnQuest Token"))
+    e.storage()
+        .instance()
+        .get(&DataKey::TokenName)
+        .unwrap_or(String::from_str(&e, "EarnQuest Token"))
 }
 
 pub fn symbol(e: Env) -> String {
-    e.storage().instance().get(&DataKey::TokenSymbol).unwrap_or(String::from_str(&e, "EQT"))
+    e.storage()
+        .instance()
+        .get(&DataKey::TokenSymbol)
+        .unwrap_or(String::from_str(&e, "EQT"))
 }
 
 fn do_transfer(e: &Env, from: Address, to: Address, amount: i128) {
@@ -98,5 +115,7 @@ pub fn mint(e: Env, to: Address, amount: i128) {
 pub fn set_metadata(e: &Env, name: String, symbol: String, decimals: u32) {
     e.storage().instance().set(&DataKey::TokenName, &name);
     e.storage().instance().set(&DataKey::TokenSymbol, &symbol);
-    e.storage().instance().set(&DataKey::TokenDecimals, &decimals);
+    e.storage()
+        .instance()
+        .set(&DataKey::TokenDecimals, &decimals);
 }

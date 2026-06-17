@@ -1,8 +1,8 @@
 #![cfg(test)]
 
+use crate::{EarnQuestContract, EarnQuestContractClient};
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{Address, Env, String};
-use crate::{EarnQuestContract, EarnQuestContractClient};
 
 fn setup(env: &Env) -> (EarnQuestContractClient<'_>, Address) {
     env.mock_all_auths();
@@ -84,7 +84,12 @@ fn test_set_metadata() {
     let env = Env::default();
     let (client, admin) = setup(&env);
 
-    client.set_token_metadata(&admin, &String::from_str(&env, "New Name"), &String::from_str(&env, "NEW"), &9);
+    client.set_token_metadata(
+        &admin,
+        &String::from_str(&env, "New Name"),
+        &String::from_str(&env, "NEW"),
+        &9,
+    );
 
     assert_eq!(client.name(), String::from_str(&env, "New Name"));
     assert_eq!(client.symbol(), String::from_str(&env, "NEW"));

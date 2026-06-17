@@ -8,8 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Fixed double `require_auth` on admin when resolving an appealed dispute, which caused `Error(Auth, ExistingValue)` at runtime.
+
 ### Added
-- Added 	est_double_claim.rs: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.
+- Documented the full contract storage layout in `docs/STORAGE_LAYOUT.md` with all 44 `DataKey` variants, value types, TTL/durability notes, and naming conventions for upgrade-safe schema evolution.
+- Added duplicate storage-key detection tests in `storage.rs` to guard against ledger key collisions when new keys are introduced.
+- Added `test_double_claim.rs`: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.
 - Added the [Changelog Discipline Policy](docs/CHANGELOG_DISCIPLINE.md) to define how contract-breaking changes, migrations, and version bumps must be documented.
 - Added CI validation for contract changelog updates and breaking-change metadata so contract interface changes cannot merge without matching release notes.
 - Initialized this changelog so future contract releases have a single source of truth.
@@ -23,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Initial stable release of the EarnQuest smart contract.
 
 ### Added
-- Added 	est_double_claim.rs: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.
+- Added `test_double_claim.rs`: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.
 - Core quest registration system supporting deadlines, rewards, and designated verifiers.
 - Escrow contract integration to secure token funds during quest execution.
 - User reputation module containing XP awarding, user levels, and badge grants.

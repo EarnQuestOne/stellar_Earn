@@ -126,12 +126,7 @@ pub fn require_role(env: &Env, caller: &Address, role: Role) -> Result<(), Error
 ///
 /// * `Ok(())` if the role is successfully granted.
 /// * `Err(Error::Unauthorized)` if the caller is not a SuperAdmin.
-pub fn grant_role(
-    env: &Env,
-    caller: &Address,
-    address: &Address,
-    role: Role,
-) -> Result<(), Error> {
+pub fn grant_role(env: &Env, caller: &Address, address: &Address, role: Role) -> Result<(), Error> {
     caller.require_auth();
     if !storage::is_super_admin(env, caller) {
         return Err(Error::Unauthorized);
@@ -233,7 +228,11 @@ pub fn add_creator_whitelist(env: &Env, caller: &Address, address: &Address) -> 
 ///
 /// * `Ok(())` if the address is successfully removed from the whitelist.
 /// * `Err(Error::Unauthorized)` if the caller is not a SuperAdmin.
-pub fn remove_creator_whitelist(env: &Env, caller: &Address, address: &Address) -> Result<(), Error> {
+pub fn remove_creator_whitelist(
+    env: &Env,
+    caller: &Address,
+    address: &Address,
+) -> Result<(), Error> {
     caller.require_auth();
     if !storage::is_super_admin(env, caller) {
         return Err(Error::Unauthorized);

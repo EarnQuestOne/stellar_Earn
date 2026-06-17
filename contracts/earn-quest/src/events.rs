@@ -34,7 +34,7 @@ const TOPIC_SUBMISSION_REVEALED: Symbol = symbol_short!("sub_rev");
 // ═══════════════════════════════════════════════════════════════
 // Enhanced Event Emission with Indexing for Subgraph/Indexer Integration
 // ═══════════════════════════════════════════════════════════════
-// 
+//
 // Event Schema:
 //   Topics: [EventName, IndexedField1, IndexedField2, ...]
 //   Data: { NonIndexedFields... }
@@ -63,7 +63,12 @@ pub fn quest_registered(
     deadline: u64,
 ) {
     // Topics: [EventName, QuestID, Creator, RewardAsset] - all indexed
-    let topics = (TOPIC_QUEST_REGISTERED, quest_id, creator.clone(), reward_asset.clone());
+    let topics = (
+        TOPIC_QUEST_REGISTERED,
+        quest_id,
+        creator.clone(),
+        reward_asset.clone(),
+    );
     // Data: non-indexed fields for display/validation
     let data = (reward_amount, verifier, deadline);
     env.events().publish(topics, data);
@@ -102,7 +107,12 @@ pub fn emergency_unpaused(env: &Env, by: Address) {
 /// * Monitor fund movements
 pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, amount: i128) {
     // Topics: [EventName, By, Asset, To] - all indexed for tracking
-    let topics = (TOPIC_EMERGENCY_WITHDRAW, by.clone(), asset.clone(), to.clone());
+    let topics = (
+        TOPIC_EMERGENCY_WITHDRAW,
+        by.clone(),
+        asset.clone(),
+        to.clone(),
+    );
     // Data: amount
     let data = (amount,);
     env.events().publish(topics, data);
@@ -181,7 +191,12 @@ pub fn reward_claimed(
     reward_amount: i128,
 ) {
     // Topics: [EventName, QuestID, Submitter, RewardAsset] - all indexed
-    let topics = (TOPIC_REWARD_CLAIMED, quest_id, submitter.clone(), reward_asset.clone());
+    let topics = (
+        TOPIC_REWARD_CLAIMED,
+        quest_id,
+        submitter.clone(),
+        reward_asset.clone(),
+    );
     // Data: amount for display
     let data = (reward_amount,);
     env.events().publish(topics, data);
@@ -293,7 +308,12 @@ pub fn escrow_payout(
     remaining: i128,
 ) {
     // Topics: [EventName, QuestID, Recipient, Token] - indexed
-    let topics = (TOPIC_ESCROW_PAYOUT, quest_id, recipient.clone(), token.clone());
+    let topics = (
+        TOPIC_ESCROW_PAYOUT,
+        quest_id,
+        recipient.clone(),
+        token.clone(),
+    );
     // Data: amounts
     let data = (amount, remaining);
     env.events().publish(topics, data);
@@ -312,7 +332,12 @@ pub fn escrow_refunded(
     amount: i128,
 ) {
     // Topics: [EventName, QuestID, Recipient, Token] - indexed
-    let topics = (TOPIC_ESCROW_REFUNDED, quest_id, recipient.clone(), token.clone());
+    let topics = (
+        TOPIC_ESCROW_REFUNDED,
+        quest_id,
+        recipient.clone(),
+        token.clone(),
+    );
     // Data: amount
     let data = (amount,);
     env.events().publish(topics, data);
@@ -323,12 +348,7 @@ pub fn escrow_refunded(
 /// # Indexing Benefits
 /// * Track cancelled quests
 /// * Monitor creator cancellations
-pub fn quest_cancelled(
-    env: &Env,
-    quest_id: Symbol,
-    creator: Address,
-    refunded: i128,
-) {
+pub fn quest_cancelled(env: &Env, quest_id: Symbol, creator: Address, refunded: i128) {
     // Topics: [EventName, QuestID, Creator] - indexed
     let topics = (TOPIC_QUEST_CANCELLED, quest_id, creator.clone());
     // Data: refunded amount
@@ -368,14 +388,24 @@ pub fn quest_resumed(env: &Env, quest_id: Symbol, by: Address) {
 /// * Track disputes per quest
 /// * Monitor initiator and arbitrator activity
 pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
-    let topics = (TOPIC_DISPUTE_OPENED, quest_id, initiator.clone(), arbitrator.clone());
+    let topics = (
+        TOPIC_DISPUTE_OPENED,
+        quest_id,
+        initiator.clone(),
+        arbitrator.clone(),
+    );
     let data = ();
     env.events().publish(topics, data);
 }
 
 /// Emitted when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
 pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
-    let topics = (TOPIC_DISPUTE_RESOLVED, quest_id, initiator.clone(), arbitrator.clone());
+    let topics = (
+        TOPIC_DISPUTE_RESOLVED,
+        quest_id,
+        initiator.clone(),
+        arbitrator.clone(),
+    );
     let data = ();
     env.events().publish(topics, data);
 }
@@ -402,7 +432,12 @@ pub fn commitment_submitted(env: &Env, quest_id: Symbol, submitter: Address, has
 }
 
 /// Emitted when a submission is revealed (indexed: quest_id, submitter).
-pub fn submission_revealed(env: &Env, quest_id: Symbol, submitter: Address, proof_hash: BytesN<32>) {
+pub fn submission_revealed(
+    env: &Env,
+    quest_id: Symbol,
+    submitter: Address,
+    proof_hash: BytesN<32>,
+) {
     let topics = (TOPIC_SUBMISSION_REVEALED, quest_id, submitter);
     let data = (proof_hash,);
     env.events().publish(topics, data);

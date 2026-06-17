@@ -1,12 +1,12 @@
 use crate::errors::Error;
 use crate::types::{
-    BadgeType, CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig, PlatformStats, Quest, 
-    QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus, Role, Submission, 
-    SubmissionStatus, UserBadges, UserCore, Commitment, VerifierStake
+    BadgeType, Commitment, CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig,
+    PlatformStats, Quest, QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus,
+    Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
 };
 
 use crate::validation;
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, String};
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
 /// Storage key definitions for the contract's persistent data.
 ///
@@ -578,7 +578,7 @@ pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserCore,
 /// * Initializing stats before first quest completion
 /// * Avoiding error handling for optional stats queries
 pub fn get_user_stats_or_default(env: &Env, user: &Address) -> UserCore {
-    get_user_stats(env, user).unwrap_or_else(|_| UserCore {
+    get_user_stats(env, user).unwrap_or(UserCore {
         xp: 0,
         level: 1,
         quests_completed: 0,
@@ -686,9 +686,10 @@ pub fn get_oracle_config(env: &Env, oracle_address: &Address) -> Result<OracleCo
 }
 
 pub fn set_oracle_config(env: &Env, config: &OracleConfig) {
-    env.storage()
-        .instance()
-        .set(&DataKey::OracleConfig(config.oracle_address.clone()), config);
+    env.storage().instance().set(
+        &DataKey::OracleConfig(config.oracle_address.clone()),
+        config,
+    );
 }
 
 pub fn get_oracle_addresses(env: &Env) -> Vec<Address> {
@@ -699,7 +700,9 @@ pub fn get_oracle_addresses(env: &Env) -> Vec<Address> {
 }
 
 pub fn set_oracle_addresses(env: &Env, addrs: &Vec<Address>) {
-    env.storage().instance().set(&DataKey::OracleAddresses, addrs);
+    env.storage()
+        .instance()
+        .set(&DataKey::OracleAddresses, addrs);
 }
 
 pub fn add_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
@@ -764,7 +767,11 @@ pub fn get_active_oracle_configs(env: &Env) -> Vec<OracleConfig> {
 }
 
 pub fn is_super_admin(env: &Env, address: &Address) -> bool {
-    if let Some(a) = env.storage().instance().get::<_, Address>(&DataKey::ContractAdmin) {
+    if let Some(a) = env
+        .storage()
+        .instance()
+        .get::<_, Address>(&DataKey::ContractAdmin)
+    {
         if a == *address {
             return true;
         }
@@ -1008,7 +1015,11 @@ pub fn has_commitment(env: &Env, quest_id: &Symbol, submitter: &Address) -> bool
         .has(&DataKey::Commitment(quest_id.clone(), submitter.clone()))
 }
 
-pub fn get_commitment(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<Commitment, Error> {
+pub fn get_commitment(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+) -> Result<Commitment, Error> {
     env.storage()
         .instance()
         .get(&DataKey::Commitment(quest_id.clone(), submitter.clone()))
@@ -1016,9 +1027,10 @@ pub fn get_commitment(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 }
 
 pub fn set_commitment(env: &Env, quest_id: &Symbol, submitter: &Address, commitment: &Commitment) {
-    env.storage()
-        .instance()
-        .set(&DataKey::Commitment(quest_id.clone(), submitter.clone()), commitment);
+    env.storage().instance().set(
+        &DataKey::Commitment(quest_id.clone(), submitter.clone()),
+        commitment,
+    );
 }
 
 pub fn delete_commitment(env: &Env, quest_id: &Symbol, submitter: &Address) {
@@ -1116,23 +1128,28 @@ pub fn add_quest_id(env: &Env, id: &Symbol) -> Result<(), Error> {
 pub fn get_platform_stats(env: &Env) -> PlatformStats {
     PlatformStats {
         total_quests_created: env
-            .storage().instance()
+            .storage()
+            .instance()
             .get(&DataKey::PlatformQuestsCreated)
             .unwrap_or(0u64),
         total_submissions: env
-            .storage().instance()
+            .storage()
+            .instance()
             .get(&DataKey::PlatformSubmissions)
             .unwrap_or(0u64),
         total_rewards_distributed: env
-            .storage().instance()
+            .storage()
+            .instance()
             .get(&DataKey::PlatformRewardsDistributed)
             .unwrap_or(0u128),
         total_active_users: env
-            .storage().instance()
+            .storage()
+            .instance()
             .get(&DataKey::PlatformActiveUsers)
             .unwrap_or(0u64),
         total_rewards_claimed: env
-            .storage().instance()
+            .storage()
+            .instance()
             .get(&DataKey::PlatformRewardsClaimed)
             .unwrap_or(0u64),
     }
@@ -1140,35 +1157,72 @@ pub fn get_platform_stats(env: &Env) -> PlatformStats {
 
 /// Write all counters at once (used by reset_platform_stats and migration).
 pub fn set_platform_stats(env: &Env, stats: &PlatformStats) {
-    env.storage().instance().set(&DataKey::PlatformQuestsCreated,     &stats.total_quests_created);
-    env.storage().instance().set(&DataKey::PlatformSubmissions,       &stats.total_submissions);
-    env.storage().instance().set(&DataKey::PlatformRewardsDistributed,&stats.total_rewards_distributed);
-    env.storage().instance().set(&DataKey::PlatformActiveUsers,       &stats.total_active_users);
-    env.storage().instance().set(&DataKey::PlatformRewardsClaimed,    &stats.total_rewards_claimed);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformQuestsCreated, &stats.total_quests_created);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformSubmissions, &stats.total_submissions);
+    env.storage().instance().set(
+        &DataKey::PlatformRewardsDistributed,
+        &stats.total_rewards_distributed,
+    );
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformActiveUsers, &stats.total_active_users);
+    env.storage().instance().set(
+        &DataKey::PlatformRewardsClaimed,
+        &stats.total_rewards_claimed,
+    );
 }
 
 /// Increment only the quests-created counter (1 read + 1 write instead of 5+5).
 pub fn inc_platform_quests_created(env: &Env) {
-    let v: u64 = env.storage().instance().get(&DataKey::PlatformQuestsCreated).unwrap_or(0);
-    env.storage().instance().set(&DataKey::PlatformQuestsCreated, &v.saturating_add(1));
+    let v: u64 = env
+        .storage()
+        .instance()
+        .get(&DataKey::PlatformQuestsCreated)
+        .unwrap_or(0);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformQuestsCreated, &v.saturating_add(1));
 }
 
 /// Increment only the submissions counter.
 pub fn inc_platform_submissions(env: &Env) {
-    let v: u64 = env.storage().instance().get(&DataKey::PlatformSubmissions).unwrap_or(0);
-    env.storage().instance().set(&DataKey::PlatformSubmissions, &v.saturating_add(1));
+    let v: u64 = env
+        .storage()
+        .instance()
+        .get(&DataKey::PlatformSubmissions)
+        .unwrap_or(0);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformSubmissions, &v.saturating_add(1));
 }
 
 /// Increment only the rewards-claimed counter.
 pub fn inc_platform_rewards_claimed(env: &Env) {
-    let v: u64 = env.storage().instance().get(&DataKey::PlatformRewardsClaimed).unwrap_or(0);
-    env.storage().instance().set(&DataKey::PlatformRewardsClaimed, &v.saturating_add(1));
+    let v: u64 = env
+        .storage()
+        .instance()
+        .get(&DataKey::PlatformRewardsClaimed)
+        .unwrap_or(0);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformRewardsClaimed, &v.saturating_add(1));
 }
 
 /// Add to the rewards-distributed counter.
 pub fn add_platform_rewards_distributed(env: &Env, amount: u128) {
-    let v: u128 = env.storage().instance().get(&DataKey::PlatformRewardsDistributed).unwrap_or(0);
-    env.storage().instance().set(&DataKey::PlatformRewardsDistributed, &v.saturating_add(amount));
+    let v: u128 = env
+        .storage()
+        .instance()
+        .get(&DataKey::PlatformRewardsDistributed)
+        .unwrap_or(0);
+    env.storage().instance().set(
+        &DataKey::PlatformRewardsDistributed,
+        &v.saturating_add(amount),
+    );
 }
 
 pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {
@@ -1202,7 +1256,11 @@ pub fn has_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> bool {
 }
 
 /// Retrieves a dispute by quest_id and initiator.
-pub fn get_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> Result<crate::types::Dispute, Error> {
+pub fn get_dispute(
+    env: &Env,
+    quest_id: &Symbol,
+    initiator: &Address,
+) -> Result<crate::types::Dispute, Error> {
     env.storage()
         .instance()
         .get(&DataKey::Dispute(quest_id.clone(), initiator.clone()))
@@ -1210,10 +1268,16 @@ pub fn get_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> Result<
 }
 
 /// Stores or updates a dispute record.
-pub fn set_dispute(env: &Env, quest_id: &Symbol, initiator: &Address, dispute: &crate::types::Dispute) {
-    env.storage()
-        .instance()
-        .set(&DataKey::Dispute(quest_id.clone(), initiator.clone()), dispute);
+pub fn set_dispute(
+    env: &Env,
+    quest_id: &Symbol,
+    initiator: &Address,
+    dispute: &crate::types::Dispute,
+) {
+    env.storage().instance().set(
+        &DataKey::Dispute(quest_id.clone(), initiator.clone()),
+        dispute,
+    );
 }
 
 /// Deletes a dispute record.
@@ -1233,7 +1297,11 @@ pub fn has_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address) -> b
         .has(&DataKey::VerifierStake(quest_id.clone(), verifier.clone()))
 }
 
-pub fn get_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address) -> Result<VerifierStake, Error> {
+pub fn get_verifier_stake(
+    env: &Env,
+    quest_id: &Symbol,
+    verifier: &Address,
+) -> Result<VerifierStake, Error> {
     env.storage()
         .instance()
         .get(&DataKey::VerifierStake(quest_id.clone(), verifier.clone()))
@@ -1241,9 +1309,10 @@ pub fn get_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address) -> R
 }
 
 pub fn set_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address, stake: &VerifierStake) {
-    env.storage()
-        .instance()
-        .set(&DataKey::VerifierStake(quest_id.clone(), verifier.clone()), stake);
+    env.storage().instance().set(
+        &DataKey::VerifierStake(quest_id.clone(), verifier.clone()),
+        stake,
+    );
 }
 
 //================================================================================
@@ -1456,7 +1525,7 @@ mod storage_key_tests {
         let keys = all_data_key_variants(&env);
         assert_eq!(
             keys.len(),
-            DOCUMENTED_VARIANT_COUNT as u32,
+            DOCUMENTED_VARIANT_COUNT,
             "DataKey variant count changed — update all_data_key_variants(), \
              DOCUMENTED_VARIANT_COUNT, and docs/STORAGE_LAYOUT.md"
         );
@@ -1464,7 +1533,7 @@ mod storage_key_tests {
 
     #[test]
     fn test_data_key_variant_names_are_unique() {
-        let names: [&str; DOCUMENTED_VARIANT_COUNT as usize] = [
+        let names: [&str; 44] = [
             "Quest",
             "QuestMetadata",
             "QuestMetadataExt",

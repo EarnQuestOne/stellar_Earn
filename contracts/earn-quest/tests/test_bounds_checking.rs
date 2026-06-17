@@ -1,12 +1,9 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    testutils::Address as _,
-    Address, BytesN, Env, String, Symbol, Vec,
-};
+use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Symbol, Vec};
 
+use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
-use earn_quest::types::{BatchQuestInput, BatchApprovalInput};
 
 fn setup_test_env() -> (Env, EarnQuestContractClient<'static>, Address, Address) {
     let env = Env::default();
@@ -31,12 +28,12 @@ fn test_batch_quest_registration_valid_bounds() {
     let verifier = Address::generate(&env);
 
     let mut quests = Vec::new(&env);
-    
+
     // Create 3 valid quests
     for i in 0..3 {
         let quest_id = Symbol::new(&env, &format!("quest_{}", i));
         let deadline = env.ledger().timestamp() + 86_400;
-        
+
         quests.push_back(BatchQuestInput {
             id: quest_id,
             reward_asset: token.clone(),
@@ -198,7 +195,7 @@ fn test_single_item_batch_operations() {
     let mut quests = Vec::new(&env);
     let quest_id = Symbol::new(&env, "single_quest");
     let deadline = env.ledger().timestamp() + 86_400;
-    
+
     quests.push_back(BatchQuestInput {
         id: quest_id.clone(),
         reward_asset: token.clone(),

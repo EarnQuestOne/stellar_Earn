@@ -9,7 +9,13 @@ use soroban_sdk::{
     Address, Env, IntoVal, Symbol,
 };
 
-fn setup() -> (Env, EarnQuestContractClient<'static>, Address, Address, Address) {
+fn setup() -> (
+    Env,
+    EarnQuestContractClient<'static>,
+    Address,
+    Address,
+    Address,
+) {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -44,7 +50,7 @@ fn test_open_and_resolve_dispute_emit_indexed_events() {
     assert_eq!(open_initiator, initiator);
     assert_eq!(open_arbitrator, arbitrator);
 
-    client.resolve_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
 
     let resolved = client.get_dispute(&quest_id, &initiator);
     assert_eq!(resolved.status, DisputeStatus::Resolved);
@@ -84,13 +90,13 @@ fn test_withdraw_dispute_emits_indexed_event() {
 
 #[test]
 fn test_appeal_process_emits_indexed_events() {
-    let (env, client, admin, initiator, arbitrator) = setup();
+    let (env, client, _, initiator, arbitrator) = setup();
     let quest_id = symbol_short!("disp03");
     let appeals_arbitrator = Address::generate(&env);
 
     // Open and resolve initial dispute
     client.open_dispute(&quest_id, &initiator, &arbitrator);
-    client.resolve_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
 
     // Appeal the resolution
     client.appeal_dispute(&quest_id, &initiator, &appeals_arbitrator);
@@ -109,10 +115,18 @@ fn test_appeal_process_emits_indexed_events() {
     assert_eq!(appeal_quest, quest_id);
     assert_eq!(appeal_initiator, initiator);
     assert_eq!(appeal_arbitrator, appeals_arbitrator);
+}
 
-    // Resolve the appeal (only admin can resolve)
-    // We use the admin account as the arbitrator for resolution
-    client.resolve_dispute(&quest_id, &initiator, &admin);
+#[test]
+fn test_resolve_appealed_dispute_emits_indexed_event() {
+    let (env, client, admin, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp04");
+    let appeals_arbitrator = Address::generate(&env);
+
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+    client.appeal_dispute(&quest_id, &initiator, &appeals_arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &admin, &false, &0_u32);
 
     let final_dispute = client.get_dispute(&quest_id, &initiator);
     assert_eq!(final_dispute.status, DisputeStatus::Resolved);

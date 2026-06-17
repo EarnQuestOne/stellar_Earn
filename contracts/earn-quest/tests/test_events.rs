@@ -66,8 +66,7 @@ fn test_full_quest_lifecycle_events() {
     assert_eq!(t_asset, token_address);
 
     // Verify Data: (reward_amount, verifier, deadline)
-    let (amount_data, verifier_data, deadline_data): (i128, Address, u64) =
-        data.into_val(&env);
+    let (amount_data, verifier_data, deadline_data): (i128, Address, u64) = data.into_val(&env);
     assert_eq!(amount_data, reward_amount);
     assert_eq!(verifier_data, verifier);
     assert_eq!(deadline_data, deadline);

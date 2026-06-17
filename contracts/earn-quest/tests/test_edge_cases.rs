@@ -112,7 +112,10 @@ fn test_deadline_exactly_min_duration_is_valid() {
         &verifier,
         &deadline,
     );
-    assert!(result.is_ok(), "deadline at exactly MIN_DEADLINE_DURATION should be accepted");
+    assert!(
+        result.is_ok(),
+        "deadline at exactly MIN_DEADLINE_DURATION should be accepted"
+    );
 }
 
 #[test]
@@ -132,7 +135,10 @@ fn test_deadline_one_second_before_min_duration_rejected() {
         &verifier,
         &deadline,
     );
-    assert!(result.is_err(), "deadline just below MIN_DEADLINE_DURATION should be rejected");
+    assert!(
+        result.is_err(),
+        "deadline just below MIN_DEADLINE_DURATION should be rejected"
+    );
 }
 
 #[test]
@@ -152,7 +158,10 @@ fn test_deadline_at_max_duration_is_valid() {
         &verifier,
         &deadline,
     );
-    assert!(result.is_ok(), "deadline at MAX_DEADLINE_DURATION should be accepted");
+    assert!(
+        result.is_ok(),
+        "deadline at MAX_DEADLINE_DURATION should be accepted"
+    );
 }
 
 #[test]
@@ -172,7 +181,10 @@ fn test_deadline_one_second_beyond_max_duration_rejected() {
         &verifier,
         &deadline,
     );
-    assert!(result.is_err(), "deadline beyond MAX_DEADLINE_DURATION should be rejected");
+    assert!(
+        result.is_err(),
+        "deadline beyond MAX_DEADLINE_DURATION should be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,7 +193,12 @@ fn test_deadline_one_second_beyond_max_duration_rejected() {
 
 /// Build the commitment hash the same way the contract does:
 ///   sha256(proof_hash || salt || submitter_xdr)
-fn make_commitment(env: &Env, proof: &BytesN<32>, salt: &BytesN<32>, submitter: &Address) -> BytesN<32> {
+fn make_commitment(
+    env: &Env,
+    proof: &BytesN<32>,
+    salt: &BytesN<32>,
+    submitter: &Address,
+) -> BytesN<32> {
     use soroban_sdk::{xdr::ToXdr, Bytes};
     let mut data = Bytes::new(env);
     data.append(&proof.clone().into());
@@ -294,7 +311,10 @@ fn test_reveal_without_prior_commit_rejected() {
 
     // No commit was made → CommitmentNotFound (#113)
     let result = client.try_reveal_submission(&quest_id, &submitter, &proof, &salt);
-    assert!(result.is_err(), "reveal without prior commit must be rejected");
+    assert!(
+        result.is_err(),
+        "reveal without prior commit must be rejected"
+    );
 }
 
 #[test]
@@ -305,7 +325,10 @@ fn test_commit_to_nonexistent_quest_rejected() {
     let commitment: BytesN<32> = BytesN::from_array(&env, &[1u8; 32]);
 
     let result = client.try_commit_submission(&fake_quest, &submitter, &commitment);
-    assert!(result.is_err(), "commit to non-existent quest must be rejected");
+    assert!(
+        result.is_err(),
+        "commit to non-existent quest must be rejected"
+    );
 }
 
 #[test]
@@ -319,7 +342,8 @@ fn test_commit_to_expired_quest_rejected() {
     register_quest(&env, &client, &quest_id, &creator, &token, &verifier);
 
     // Advance ledger past the deadline
-    env.ledger().with_mut(|l| l.timestamp = 1_000 + 86_400 + 100);
+    env.ledger()
+        .with_mut(|l| l.timestamp = 1_000 + 86_400 + 100);
 
     let commitment: BytesN<32> = BytesN::from_array(&env, &[1u8; 32]);
     let result = client.try_commit_submission(&quest_id, &submitter, &commitment);
@@ -344,8 +368,11 @@ fn test_claim_pending_submission_rejected() {
     client.submit_proof(&quest_id, &submitter, &proof);
 
     // Submission is Pending, not Approved → InvalidStatusTransition
-    let result = client.try_claim_reward(&quest_id, &submitter);
-    assert!(result.is_err(), "claiming a pending submission must be rejected");
+    let result = client.try_claim_reward(&quest_id, &submitter, &500_i128);
+    assert!(
+        result.is_err(),
+        "claiming a pending submission must be rejected"
+    );
 }
 
 #[test]
@@ -365,8 +392,11 @@ fn test_claim_rejected_submission_rejected() {
     // Since there is no explicit reject_submission entry point in lib.rs we
     // verify the claim guard by attempting to claim a non-approved submission.
     // The submission is still Pending, so this tests the same guard.
-    let result = client.try_claim_reward(&quest_id, &submitter);
-    assert!(result.is_err(), "claiming an unapproved submission must be rejected");
+    let result = client.try_claim_reward(&quest_id, &submitter, &500_i128);
+    assert!(
+        result.is_err(),
+        "claiming an unapproved submission must be rejected"
+    );
     let _ = admin; // silence unused warning
 }
 
@@ -381,8 +411,11 @@ fn test_claim_nonexistent_submission_rejected() {
     register_quest(&env, &client, &quest_id, &creator, &token, &verifier);
 
     // No submission was ever made by `stranger`
-    let result = client.try_claim_reward(&quest_id, &stranger);
-    assert!(result.is_err(), "claiming for a non-existent submission must be rejected");
+    let result = client.try_claim_reward(&quest_id, &stranger, &500_i128);
+    assert!(
+        result.is_err(),
+        "claiming for a non-existent submission must be rejected"
+    );
 }
 
 #[test]
@@ -390,8 +423,11 @@ fn test_claim_nonexistent_quest_rejected() {
     let (env, client, _admin, _token) = setup();
     let submitter = Address::generate(&env);
 
-    let result = client.try_claim_reward(&symbol_short!("NOPE"), &submitter);
-    assert!(result.is_err(), "claiming reward for non-existent quest must be rejected");
+    let result = client.try_claim_reward(&symbol_short!("NOPE"), &submitter, &500_i128);
+    assert!(
+        result.is_err(),
+        "claiming reward for non-existent quest must be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -429,7 +465,8 @@ fn test_submit_proof_after_deadline_rejected() {
     register_quest(&env, &client, &quest_id, &creator, &token, &verifier);
 
     // Advance time past the deadline
-    env.ledger().with_mut(|l| l.timestamp = 1_000 + 86_400 + 100);
+    env.ledger()
+        .with_mut(|l| l.timestamp = 1_000 + 86_400 + 100);
 
     let proof: BytesN<32> = BytesN::from_array(&env, &[1u8; 32]);
     let result = client.try_submit_proof(&quest_id, &submitter, &proof);
@@ -455,7 +492,10 @@ fn test_pause_already_paused_quest_rejected() {
 
     // Pausing an already-paused quest → InvalidStatusTransition
     let result = client.try_pause_quest(&admin, &quest_id);
-    assert!(result.is_err(), "pausing an already-paused quest must be rejected");
+    assert!(
+        result.is_err(),
+        "pausing an already-paused quest must be rejected"
+    );
 }
 
 #[test]
@@ -471,18 +511,24 @@ fn test_resume_active_quest_rejected() {
 
     // Quest is Active, cannot resume an already-active quest
     let result = client.try_resume_quest(&admin, &quest_id);
-    assert!(result.is_err(), "resuming an already-active quest must be rejected");
+    assert!(
+        result.is_err(),
+        "resuming an already-active quest must be rejected"
+    );
 }
 
 #[test]
 fn test_pause_nonexistent_quest_rejected() {
-    let (env, client, admin, _token) = setup();
+    let (_env, client, admin, _token) = setup();
 
     use earn_quest::types::Role;
     client.grant_role(&admin, &admin, &Role::Admin);
 
     let result = client.try_pause_quest(&admin, &symbol_short!("NONE"));
-    assert!(result.is_err(), "pausing a non-existent quest must be rejected");
+    assert!(
+        result.is_err(),
+        "pausing a non-existent quest must be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -500,7 +546,10 @@ fn test_open_duplicate_pending_dispute_rejected() {
 
     // Opening a second dispute while first is still Pending → DisputeAlreadyExists (#82)
     let result = client.try_open_dispute(&quest_id, &initiator, &arbitrator);
-    assert!(result.is_err(), "duplicate pending dispute must be rejected");
+    assert!(
+        result.is_err(),
+        "duplicate pending dispute must be rejected"
+    );
 }
 
 #[test]
@@ -509,8 +558,17 @@ fn test_resolve_nonexistent_dispute_rejected() {
     let initiator = Address::generate(&env);
     let arbitrator = Address::generate(&env);
 
-    let result = client.try_resolve_dispute(&symbol_short!("D2"), &initiator, &arbitrator);
-    assert!(result.is_err(), "resolving a non-existent dispute must be rejected");
+    let result = client.try_resolve_dispute(
+        &symbol_short!("D2"),
+        &initiator,
+        &arbitrator,
+        &false,
+        &0_u32,
+    );
+    assert!(
+        result.is_err(),
+        "resolving a non-existent dispute must be rejected"
+    );
 }
 
 #[test]
@@ -524,8 +582,12 @@ fn test_resolve_dispute_by_wrong_arbitrator_rejected() {
     client.open_dispute(&quest_id, &initiator, &arbitrator);
 
     // Wrong arbitrator → DisputeNotAuthorized (#84)
-    let result = client.try_resolve_dispute(&quest_id, &initiator, &wrong_arbitrator);
-    assert!(result.is_err(), "resolve by wrong arbitrator must be rejected");
+    let result =
+        client.try_resolve_dispute(&quest_id, &initiator, &wrong_arbitrator, &false, &0_u32);
+    assert!(
+        result.is_err(),
+        "resolve by wrong arbitrator must be rejected"
+    );
 }
 
 #[test]
@@ -536,11 +598,14 @@ fn test_withdraw_resolved_dispute_rejected() {
     let quest_id = symbol_short!("D4");
 
     client.open_dispute(&quest_id, &initiator, &arbitrator);
-    client.resolve_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
 
     // Already Resolved, cannot withdraw → DisputeNotPending (#83)
     let result = client.try_withdraw_dispute(&quest_id, &initiator);
-    assert!(result.is_err(), "withdrawing a resolved dispute must be rejected");
+    assert!(
+        result.is_err(),
+        "withdrawing a resolved dispute must be rejected"
+    );
 }
 
 #[test]
@@ -555,7 +620,10 @@ fn test_appeal_pending_dispute_rejected() {
 
     // Dispute is Pending (not Resolved) → DisputeNotResolved (#95)
     let result = client.try_appeal_dispute(&quest_id, &initiator, &new_arbitrator);
-    assert!(result.is_err(), "appealing a pending dispute must be rejected");
+    assert!(
+        result.is_err(),
+        "appealing a pending dispute must be rejected"
+    );
 }
 
 #[test]
@@ -564,7 +632,10 @@ fn test_get_nonexistent_dispute_rejected() {
     let initiator = Address::generate(&env);
 
     let result = client.try_get_dispute(&symbol_short!("D6"), &initiator);
-    assert!(result.is_err(), "fetching a non-existent dispute must be rejected");
+    assert!(
+        result.is_err(),
+        "fetching a non-existent dispute must be rejected"
+    );
 }
 
 #[test]
@@ -579,7 +650,10 @@ fn test_reopen_dispute_after_withdrawal_is_allowed() {
 
     // After withdrawal the contract allows a new dispute to overwrite the old record
     let result = client.try_open_dispute(&quest_id, &initiator, &arbitrator);
-    assert!(result.is_ok(), "re-opening after withdrawal must be allowed");
+    assert!(
+        result.is_ok(),
+        "re-opening after withdrawal must be allowed"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -605,7 +679,10 @@ fn test_batch_quest_registration_exceeds_max_rejected() {
     }
 
     let result = client.try_register_quests_batch(&creator, &quests);
-    assert!(result.is_err(), "batch exceeding MAX_BATCH_QUEST_REGISTRATION must be rejected");
+    assert!(
+        result.is_err(),
+        "batch exceeding MAX_BATCH_QUEST_REGISTRATION must be rejected"
+    );
 }
 
 #[test]
@@ -624,7 +701,10 @@ fn test_batch_approval_exceeds_max_rejected() {
     }
 
     let result = client.try_approve_submissions_batch(&verifier, &approvals);
-    assert!(result.is_err(), "batch approval exceeding MAX_BATCH_APPROVALS must be rejected");
+    assert!(
+        result.is_err(),
+        "batch approval exceeding MAX_BATCH_APPROVALS must be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -658,7 +738,11 @@ fn test_reward_range_exact_boundary_match() {
 
     // Query with min == max == 100: should match exactly one quest
     let results = client.get_quests_by_reward_range(&100_i128, &100_i128, &0, &10);
-    assert_eq!(results.len(), 1, "exact boundary reward query should return one result");
+    assert_eq!(
+        results.len(),
+        1,
+        "exact boundary reward query should return one result"
+    );
     assert_eq!(results.get(0).unwrap().reward_amount, 100);
 }
 
@@ -736,7 +820,10 @@ fn test_reset_platform_stats_by_non_stats_admin_rejected() {
     let unauthorized = Address::generate(&env);
 
     let result = client.try_reset_platform_stats(&unauthorized);
-    assert!(result.is_err(), "non-StatsAdmin must not reset platform stats");
+    assert!(
+        result.is_err(),
+        "non-StatsAdmin must not reset platform stats"
+    );
 }
 
 #[test]
@@ -792,7 +879,10 @@ fn test_expire_quest_before_deadline_rejected() {
 
     // Deadline is still in the future → cannot expire yet
     let result = client.try_expire_quest(&quest_id, &creator);
-    assert!(result.is_err(), "expiring a quest before its deadline must be rejected");
+    assert!(
+        result.is_err(),
+        "expiring a quest before its deadline must be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -806,7 +896,10 @@ fn test_add_admin_by_non_superadmin_rejected() {
     let new_admin = Address::generate(&env);
 
     let result = client.try_add_admin(&unauthorized, &new_admin);
-    assert!(result.is_err(), "add_admin by non-SuperAdmin must be rejected");
+    assert!(
+        result.is_err(),
+        "add_admin by non-SuperAdmin must be rejected"
+    );
 }
 
 #[test]

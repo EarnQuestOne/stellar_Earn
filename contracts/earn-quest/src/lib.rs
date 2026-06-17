@@ -1,8 +1,8 @@
 #![no_std]
 
 mod admin;
-pub mod errors;
 mod dispute;
+pub mod errors;
 mod escrow;
 mod events;
 mod init;
@@ -24,14 +24,13 @@ use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
 pub use crate::types::{
-    AggregatedPrice, Badge, BadgeType, BatchApprovalInput, BatchQuestInput, CreatorStats, Dispute,
-    DisputeStatus, EscrowInfo, OracleConfig, PlatformStats, PriceData, PriceFeedRequest, Quest,
-    QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore,
-    UserStats, Commitment, VerifierStake,
+    AggregatedPrice, Badge, BadgeType, BatchApprovalInput, BatchQuestInput, Commitment,
+    CreatorStats, Dispute, DisputeStatus, EscrowInfo, OracleConfig, PlatformStats, PriceData,
+    PriceFeedRequest, Quest, QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus,
+    UserBadges, UserCore, UserStats, VerifierStake,
 };
 
-
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, U256, Vec};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec, U256};
 
 #[contract]
 pub struct EarnQuestContract;
@@ -60,7 +59,7 @@ impl EarnQuestContract {
         storage::grant_role(&env, &admin, &Role::OracleAdmin);
         storage::grant_role(&env, &admin, &Role::StatsAdmin);
         storage::grant_role(&env, &admin, &Role::BadgeAdmin);
-        reputation::seed_default_badge_types(&env, &admin);
+        let _ = reputation::seed_default_badge_types(&env, &admin);
         storage::mark_initialized(&env);
     }
 
@@ -90,7 +89,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let version = client.get_version();
     /// ```
     pub fn get_version(env: Env) -> u32 {
@@ -105,7 +104,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let admin = client.get_admin();
     /// ```
     pub fn get_admin(env: Env) -> Address {
@@ -120,7 +119,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let config = client.get_config();
     /// ```
     pub fn get_config(env: Env) -> Vec<(String, String)> {
@@ -159,7 +158,12 @@ impl EarnQuestContract {
     /// * `caller` - The address of the caller.
     /// * `address` - The address receiving the role.
     /// * `role` - The role to grant.
-    pub fn grant_role(env: Env, caller: Address, address: Address, role: Role) -> Result<(), Error> {
+    pub fn grant_role(
+        env: Env,
+        caller: Address,
+        address: Address,
+        role: Role,
+    ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::grant_role(&env, &caller, &address, role)
     }
@@ -172,7 +176,12 @@ impl EarnQuestContract {
     /// * `caller` - The address of the caller.
     /// * `address` - The address to revoke the role from.
     /// * `role` - The role to revoke.
-    pub fn revoke_role(env: Env, caller: Address, address: Address, role: Role) -> Result<(), Error> {
+    pub fn revoke_role(
+        env: Env,
+        caller: Address,
+        address: Address,
+        role: Role,
+    ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::revoke_role(&env, &caller, &address, role)
     }
@@ -191,7 +200,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let has_role = client.has_role(&user, &Role::Admin);
     /// ```
     pub fn has_role(env: Env, address: Address, role: Role) -> bool {
@@ -211,7 +220,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let is_admin = client.is_admin(&user);
     /// ```
     pub fn is_admin(env: Env, address: Address) -> bool {
@@ -232,7 +241,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// client.register_quest(&id, &creator, &token, &1000, &verifier, &1700000000);
     /// ```
     pub fn register_quest(
@@ -315,10 +324,7 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_array_length(
-            quests.len() as u32,
-            validation::MAX_BATCH_QUEST_REGISTRATION,
-        )?;
+        validation::validate_array_length(quests.len(), validation::MAX_BATCH_QUEST_REGISTRATION)?;
         quest::register_quests_batch(&env, &creator, &quests)
     }
 
@@ -513,7 +519,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let stats = client.get_user_stats(&user);
     /// ```
     pub fn get_user_stats(env: Env, user: Address) -> UserCore {
@@ -533,7 +539,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let badges = client.get_user_badges(&user);
     /// ```
     pub fn get_user_badges(env: Env, user: Address) -> UserBadges {
@@ -548,12 +554,7 @@ impl EarnQuestContract {
     /// * `admin` - The address of the admin granting the badge.
     /// * `user` - The address of the user receiving the badge.
     /// * `badge` - The badge to be granted.
-    pub fn grant_badge(
-        env: Env,
-        admin: Address,
-        user: Address,
-        badge: Badge,
-    ) -> Result<(), Error> {
+    pub fn grant_badge(env: Env, admin: Address, user: Address, badge: Badge) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         let user_badges = storage::get_user_badges(&env, &user);
         validation::validate_badge_count(user_badges.badges.len())?;
@@ -645,15 +646,14 @@ impl EarnQuestContract {
         dispute::resolve_dispute(&env, quest_id, initiator, arbitrator, upheld, slash_bps)
     }
 
-
-    /// Withdraws a pending dispute (Initiator only).
+    /// Appeals a resolved dispute (Initiator only).
     ///
     /// # Arguments
     ///
     /// * `env` - The environment.
     /// * `quest_id` - The symbol of the quest.
     /// * `initiator` - The address of the initiator.
-
+    /// * `new_arbitrator` - The address of the arbitrator for the appeal.
     pub fn appeal_dispute(
         env: Env,
         quest_id: Symbol,
@@ -664,13 +664,8 @@ impl EarnQuestContract {
         dispute::appeal_dispute(&env, quest_id, initiator, new_arbitrator)
     }
 
-    /// Withdraw a pending dispute (only by initiator).
-
-    pub fn withdraw_dispute(
-        env: Env,
-        quest_id: Symbol,
-        initiator: Address,
-    ) -> Result<(), Error> {
+    /// Withdraws a pending dispute (Initiator only).
+    pub fn withdraw_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         dispute::withdraw_dispute(&env, quest_id, initiator)
     }
@@ -689,7 +684,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let dispute = client.get_dispute(&quest_id, &user)?;
     /// ```
     pub fn get_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<Dispute, Error> {
@@ -709,7 +704,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// client.emergency_pause(&pauser)?;
     /// ```
     pub fn emergency_pause(env: Env, caller: Address) -> Result<(), Error> {
@@ -868,11 +863,7 @@ impl EarnQuestContract {
     /// * `env` - The environment.
     /// * `quest_id` - The symbol of the quest.
     /// * `creator` - The address of the quest creator.
-    pub fn withdraw_unclaimed(
-        env: Env,
-        quest_id: Symbol,
-        creator: Address,
-    ) -> Result<i128, Error> {
+    pub fn withdraw_unclaimed(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
         creator.require_auth();
@@ -933,7 +924,7 @@ impl EarnQuestContract {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// let metadata = client.get_quest_metadata(&quest_id)?;
     /// ```
     pub fn get_quest_metadata(env: Env, quest_id: Symbol) -> Result<QuestMetadata, Error> {
@@ -989,7 +980,11 @@ impl EarnQuestContract {
     /// # Returns
     ///
     /// A `Result<Submission, Error>` containing the submission details.
-    pub fn get_submission(env: Env, quest_id: Symbol, submitter: Address) -> Result<Submission, Error> {
+    pub fn get_submission(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+    ) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
     }
 
@@ -1110,31 +1105,23 @@ impl EarnQuestContract {
     //================================================================================
 
     /// Adds a new price oracle configuration (OracleAdmin only).
-    pub fn add_oracle(
-        env: Env,
-        caller: Address,
-        oracle_config: OracleConfig,
-    ) -> Result<(), Error> {
+    pub fn add_oracle(env: Env, caller: Address, oracle_config: OracleConfig) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
+
         oracle::Oracle::validate_config(&oracle_config)?;
         storage::add_oracle_config(&env, &oracle_config)?;
-        
+
         Ok(())
     }
 
     /// Removes a price oracle configuration (OracleAdmin only).
-    pub fn remove_oracle(
-        env: Env,
-        caller: Address,
-        oracle_address: Address,
-    ) -> Result<(), Error> {
+    pub fn remove_oracle(env: Env, caller: Address, oracle_address: Address) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
+
         storage::remove_oracle_config(&env, &oracle_address)?;
-        
+
         Ok(())
     }
 
@@ -1146,10 +1133,10 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
+
         oracle::Oracle::validate_config(&oracle_config)?;
         storage::update_oracle_config(&env, &oracle_config)?;
-        
+
         Ok(())
     }
 
@@ -1173,7 +1160,7 @@ impl EarnQuestContract {
             quote_asset,
             max_age_seconds,
         };
-        
+
         oracle::Oracle::get_aggregated_price(&env, &oracle_configs, &request)
     }
 
@@ -1199,7 +1186,7 @@ impl EarnQuestContract {
             quote_asset,
             max_age_seconds,
         };
-        
+
         oracle::Oracle::get_price(&env, &oracle_config, &request)
     }
 
@@ -1232,13 +1219,13 @@ impl EarnQuestContract {
         }
 
         let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
-        
+
         // Convert amount using price (assuming 7 decimals)
         let amount_u256 = U256::from_u128(&env, amount as u128);
         let converted_amount = amount_u256
             .mul(&price.weighted_price)
             .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
-        
+
         // Convert back to i128 safely
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
         Ok(converted_value)
@@ -1256,20 +1243,20 @@ impl EarnQuestContract {
     pub fn validate_reward_with_oracle(
         env: Env,
         reward_asset: Address,
-        reward_amount: i128,
+        _reward_amount: i128,
         reference_asset: Address,
-        max_deviation_percent: u32,
+        _max_deviation_percent: u32,
     ) -> Result<(), Error> {
         let price = Self::get_price(env, reward_asset, reference_asset, 300)?;
-        
+
         // Check if price confidence is sufficient
         if price.confidence_score < 80 {
             return Err(Error::LowOracleConfidence);
         }
-        
+
         // Additional validation logic could be added here
         // For example, checking against historical prices, volatility limits, etc.
-        
+
         Ok(())
     }
 
@@ -1281,7 +1268,13 @@ impl EarnQuestContract {
         token::allowance(env, from, spender)
     }
 
-    pub fn approve(env: Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
+    pub fn approve(
+        env: Env,
+        from: Address,
+        spender: Address,
+        amount: i128,
+        expiration_ledger: u32,
+    ) {
         token::approve(env, from, spender, amount, expiration_ledger)
     }
 
@@ -1323,7 +1316,13 @@ impl EarnQuestContract {
         Ok(())
     }
 
-    pub fn set_token_metadata(env: Env, caller: Address, name: String, symbol: String, decimals: u32) -> Result<(), Error> {
+    pub fn set_token_metadata(
+        env: Env,
+        caller: Address,
+        name: String,
+        symbol: String,
+        decimals: u32,
+    ) -> Result<(), Error> {
         admin::require_role(&env, &caller, Role::Admin)?;
         token::set_metadata(&env, name, symbol, decimals);
         Ok(())
@@ -1357,7 +1356,11 @@ impl EarnQuestContract {
     }
 
     /// Removes an address from the creator whitelist (SuperAdmin only).
-    pub fn remove_creator_whitelist(env: Env, caller: Address, address: Address) -> Result<(), Error> {
+    pub fn remove_creator_whitelist(
+        env: Env,
+        caller: Address,
+        address: Address,
+    ) -> Result<(), Error> {
         admin::remove_creator_whitelist(&env, &caller, &address)
     }
 

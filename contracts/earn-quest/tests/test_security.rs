@@ -183,7 +183,7 @@ fn test_approvals_cleared_after_unpause() {
     // Unpause should fail because previous approvals are cleared (round incremented)
     let result = client.try_emergency_unpause(&admin1);
     assert!(result.is_err());
-    
+
     // Now approve again in new round
     client.emergency_approve_unpause(&admin1);
     client.emergency_approve_unpause(&admin2);

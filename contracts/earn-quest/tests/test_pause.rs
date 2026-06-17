@@ -1,9 +1,9 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, Env, symbol_short, BytesN};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
 
 extern crate earn_quest;
-use earn_quest::{EarnQuestContract, EarnQuestContractClient, types::QuestStatus};
+use earn_quest::{types::QuestStatus, EarnQuestContract, EarnQuestContractClient};
 
 fn setup_contract(env: &Env) -> (Address, EarnQuestContractClient<'_>) {
     let contract_id = env.register_contract(None, EarnQuestContract);
@@ -21,13 +21,22 @@ fn test_admin_can_pause_and_resume_quest() {
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_contract = env.register_stellar_asset_contract_v2(token_admin).address();
+    let token_contract = env
+        .register_stellar_asset_contract_v2(token_admin)
+        .address();
 
     client.initialize(&admin);
 
     let quest_id = symbol_short!("Q1");
     let deadline = env.ledger().timestamp() + 1000;
-    client.register_quest(&quest_id, &creator, &token_contract, &100, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &100,
+        &verifier,
+        &deadline,
+    );
 
     // Initial status should be Active
     let quest = client.get_quest(&quest_id);
@@ -56,13 +65,22 @@ fn test_paused_quest_rejects_submissions() {
     let submitter = Address::generate(&env);
     let verifier = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_contract = env.register_stellar_asset_contract_v2(token_admin).address();
+    let token_contract = env
+        .register_stellar_asset_contract_v2(token_admin)
+        .address();
 
     client.initialize(&admin);
 
     let quest_id = symbol_short!("Q1");
     let deadline = env.ledger().timestamp() + 1000;
-    client.register_quest(&quest_id, &creator, &token_contract, &100, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &100,
+        &verifier,
+        &deadline,
+    );
 
     // Admin pauses quest
     client.pause_quest(&admin, &quest_id);
@@ -84,13 +102,22 @@ fn test_non_admin_cannot_pause_quest() {
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_contract = env.register_stellar_asset_contract_v2(token_admin).address();
+    let token_contract = env
+        .register_stellar_asset_contract_v2(token_admin)
+        .address();
 
     client.initialize(&admin);
 
     let quest_id = symbol_short!("Q1");
     let deadline = env.ledger().timestamp() + 1000;
-    client.register_quest(&quest_id, &creator, &token_contract, &100, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &100,
+        &verifier,
+        &deadline,
+    );
 
     // Non-admin tries to pause - should panic with Unauthorized (#10)
     client.pause_quest(&non_admin, &quest_id);
@@ -107,13 +134,22 @@ fn test_invalid_status_transitions_blocked() {
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_contract = env.register_stellar_asset_contract_v2(token_admin).address();
+    let token_contract = env
+        .register_stellar_asset_contract_v2(token_admin)
+        .address();
 
     client.initialize(&admin);
 
     let quest_id = symbol_short!("Q1");
     let deadline = env.ledger().timestamp() + 1000;
-    client.register_quest(&quest_id, &creator, &token_contract, &100, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token_contract,
+        &100,
+        &verifier,
+        &deadline,
+    );
 
     // Admin resumes an already active quest - should panic with InvalidStatusTransition (#63)
     client.resume_quest(&admin, &quest_id);

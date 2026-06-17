@@ -208,7 +208,6 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let available = b.total_deposited - b.total_paid_out - b.total_refunded;
     let available = available_balance(&b);
     let depositor = meta.depositor.clone();
     let token = meta.token.clone();
@@ -223,11 +222,8 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
 
     if available > 0 {
         let token_client = token::Client::new(env, &token);
-        let transfer_result = token_client.try_transfer(
-            &env.current_contract_address(),
-            &depositor,
-            &available,
-        );
+        let transfer_result =
+            token_client.try_transfer(&env.current_contract_address(), &depositor, &available);
 
         match transfer_result {
             Ok(Ok(_)) => {}
@@ -473,7 +469,7 @@ pub fn slash_verifier_stake(
     env: &Env,
     quest_id: &Symbol,
     verifier: &Address,
-    slash_bps: u32,       // 0–10_000
+    slash_bps: u32, // 0–10_000
     slash_recipient: &Address,
 ) -> Result<u128, Error> {
     let mut stake = storage::get_verifier_stake(env, quest_id, verifier)?;

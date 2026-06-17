@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, symbol_short, Address, BytesN, Env, String, Symbol, Vec, U256};
+use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec, U256};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quest
