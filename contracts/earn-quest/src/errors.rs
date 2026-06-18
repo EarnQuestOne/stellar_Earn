@@ -153,4 +153,10 @@ pub enum Error {
     // Creator Level Errors
     /// Creator level is below the minimum required threshold.
     InsufficientCreatorLevel = 146,
+
+    // Clawback Errors
+    /// No pending clawback found for this quest/recipient pair.
+    ClawbackNotFound = 150,
+    /// This SuperAdmin has already signed the pending clawback.
+    ClawbackAlreadySigned = 151,
 }

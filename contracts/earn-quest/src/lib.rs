@@ -20,6 +20,9 @@ pub mod validation;
 #[cfg(test)]
 mod test_token;
 
+#[cfg(test)]
+mod test_clawback;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -498,6 +501,35 @@ impl EarnQuestContract {
 
         security::nonreentrant_exit(&env);
         Ok(())
+    }
+
+    /// Initiates a clawback of a post-payout reward (SuperAdmin only).
+    ///
+    /// The first SuperAdmin records the clawback intent. A *different* SuperAdmin
+    /// must call `execute_clawback` to complete the 2-of-2 flow.
+    pub fn initiate_clawback(
+        env: Env,
+        caller: Address,
+        quest_id: Symbol,
+        recipient: Address,
+        asset: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        payout::initiate_clawback(&env, &caller, &quest_id, &recipient, &asset, amount)
+    }
+
+    /// Executes a pending clawback after a second SuperAdmin co-signs.
+    ///
+    /// The caller must be a different SuperAdmin from the one who called
+    /// `initiate_clawback`. Funds are transferred from the recipient back
+    /// to the contract (escrow) and the pending record is cleared.
+    pub fn execute_clawback(
+        env: Env,
+        caller: Address,
+        quest_id: Symbol,
+        recipient: Address,
+    ) -> Result<(), Error> {
+        payout::execute_clawback(&env, &caller, &quest_id, &recipient)
     }
 
     /// Returns the core statistics for a user (XP, level, quests completed).

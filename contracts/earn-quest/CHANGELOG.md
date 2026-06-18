@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- 2-of-2 SuperAdmin clawback: `initiate_clawback` and `execute_clawback` entry points in `payout.rs` allow two distinct SuperAdmins to collaboratively recover funds sent to a fraudulent recipient. Emits `ClawbackInitiated` and `ClawbackExecuted` events. Adds `ClawbackPending` storage key, `ClawbackNotFound` (150) and `ClawbackAlreadySigned` (151) error variants.
 - Added 	est_double_claim.rs: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.
 - Added the [Changelog Discipline Policy](docs/CHANGELOG_DISCIPLINE.md) to define how contract-breaking changes, migrations, and version bumps must be documented.
 - Added CI validation for contract changelog updates and breaking-change metadata so contract interface changes cannot merge without matching release notes.

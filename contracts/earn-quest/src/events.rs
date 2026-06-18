@@ -442,3 +442,31 @@ pub fn creator_whitelist_removed(env: &Env, caller: Address, address: Address) {
     let data = ();
     env.events().publish(topics, data);
 }
+
+/// Emitted when the first SuperAdmin initiates a clawback (indexed: quest_id, initiator, recipient).
+pub fn clawback_initiated(
+    env: &Env,
+    quest_id: Symbol,
+    initiator: Address,
+    recipient: Address,
+    asset: Address,
+    amount: i128,
+) {
+    let topics = (symbol_short!("cb_init"), quest_id, initiator, recipient);
+    let data = (asset, amount);
+    env.events().publish(topics, data);
+}
+
+/// Emitted when the second SuperAdmin co-signs and the clawback is executed (indexed: quest_id, executor, recipient).
+pub fn clawback_executed(
+    env: &Env,
+    quest_id: Symbol,
+    executor: Address,
+    recipient: Address,
+    asset: Address,
+    amount: i128,
+) {
+    let topics = (symbol_short!("cb_exec"), quest_id, executor, recipient);
+    let data = (asset, amount);
+    env.events().publish(topics, data);
+}

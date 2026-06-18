@@ -1,5 +1,7 @@
 use crate::errors::Error;
-use soroban_sdk::{token, Address, Env};
+use crate::escrow;
+use crate::storage;
+use soroban_sdk::{token, Address, Env, Symbol};
 
 /// Transfer rewards from the contract escrow to the user (gas-optimized).
 ///
@@ -48,10 +50,6 @@ pub fn transfer_reward(
 // ADD below the existing transfer_reward function
 // ═══════════════════════════════════════════════════════════════
 
-use crate::escrow;
-use crate::storage;
-use soroban_sdk::Symbol;
-
 /// Transfer reward with escrow tracking.
 ///
 /// If the quest has escrow:
@@ -82,4 +80,104 @@ pub fn transfer_reward_from_escrow(
     }
 
     transfer_reward(env, reward_asset, to, amount)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 2-of-2 SuperAdmin Clawback
+// ═══════════════════════════════════════════════════════════════
+
+/// First SuperAdmin flags a post-payout payment for clawback.
+///
+/// The initiator records the clawback intent.  A *different* SuperAdmin
+/// must call `execute_clawback` to complete the transfer back to escrow.
+pub fn initiate_clawback(
+    env: &Env,
+    caller: &Address,
+    quest_id: &Symbol,
+    recipient: &Address,
+    asset: &Address,
+    amount: i128,
+) -> Result<(), Error> {
+    caller.require_auth();
+
+    if !storage::is_super_admin(env, caller) {
+        return Err(Error::Unauthorized);
+    }
+    if amount <= 0 {
+        return Err(Error::InvalidRewardAmount);
+    }
+    // Disallow any further initiation once a pending record exists.
+    if storage::has_clawback(env, quest_id, recipient) {
+        return Err(Error::ClawbackAlreadySigned);
+    }
+
+    storage::set_clawback(
+        env,
+        quest_id,
+        recipient,
+        &storage::ClawbackPending {
+            initiator: caller.clone(),
+            asset: asset.clone(),
+            amount,
+        },
+    );
+
+    crate::events::clawback_initiated(
+        env,
+        quest_id.clone(),
+        caller.clone(),
+        recipient.clone(),
+        asset.clone(),
+        amount,
+    );
+    Ok(())
+}
+
+/// Second SuperAdmin co-signs and pulls funds from the recipient back to the
+/// contract's escrow/treasury address (current contract).
+///
+/// The caller must be a *different* SuperAdmin from the initiator.
+/// On success the pending record is cleared and `ClawbackExecuted` is emitted.
+pub fn execute_clawback(
+    env: &Env,
+    caller: &Address,
+    quest_id: &Symbol,
+    recipient: &Address,
+) -> Result<(), Error> {
+    caller.require_auth();
+
+    if !storage::is_super_admin(env, caller) {
+        return Err(Error::Unauthorized);
+    }
+
+    let pending = storage::get_clawback(env, quest_id, recipient)?;
+
+    if pending.initiator == *caller {
+        return Err(Error::ClawbackAlreadySigned);
+    }
+
+    // Recipient must have authorised the transfer back (Soroban auth model).
+    recipient.require_auth();
+
+    let token_client = token::Client::new(env, &pending.asset);
+    let contract_address = env.current_contract_address();
+
+    // Pull funds from the recipient back to this contract (escrow).
+    let result = token_client.try_transfer(recipient, &contract_address, &pending.amount);
+    match result {
+        Ok(Ok(_)) => {}
+        _ => return Err(Error::TransferFailed),
+    }
+
+    storage::delete_clawback(env, quest_id, recipient);
+
+    crate::events::clawback_executed(
+        env,
+        quest_id.clone(),
+        caller.clone(),
+        recipient.clone(),
+        pending.asset,
+        pending.amount,
+    );
+    Ok(())
 }

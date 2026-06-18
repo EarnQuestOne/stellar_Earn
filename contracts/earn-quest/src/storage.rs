@@ -99,6 +99,8 @@ pub enum DataKey {
     MinCreatorLevel,
     /// Addresses whitelisted to bypass the creator level requirement
     CreatorWhitelist(Address),
+    /// Pending clawback record keyed by (quest_id, recipient)
+    ClawbackPending(Symbol, Address),
 }
 
 //================================================================================
@@ -1495,4 +1497,40 @@ mod layout_tests {
         assert_eq!(all_data_keys(&env).len() as usize, VARIANT_NAMES.len());
         assert_eq!(VARIANT_NAMES.len(), EXPECTED_VARIANT_COUNT);
     }
+//================================================================================
+// Clawback Storage (2-of-2 SuperAdmin approval)
+//================================================================================
+
+/// Pending clawback state: stores the first signer and how much they want to reclaim.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ClawbackPending {
+    pub initiator: Address,
+    pub asset: Address,
+    pub amount: i128,
+}
+
+pub fn has_clawback(env: &Env, quest_id: &Symbol, recipient: &Address) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::ClawbackPending(quest_id.clone(), recipient.clone()))
+}
+
+pub fn get_clawback(env: &Env, quest_id: &Symbol, recipient: &Address) -> Result<ClawbackPending, Error> {
+    env.storage()
+        .instance()
+        .get(&DataKey::ClawbackPending(quest_id.clone(), recipient.clone()))
+        .ok_or(Error::ClawbackNotFound)
+}
+
+pub fn set_clawback(env: &Env, quest_id: &Symbol, recipient: &Address, pending: &ClawbackPending) {
+    env.storage()
+        .instance()
+        .set(&DataKey::ClawbackPending(quest_id.clone(), recipient.clone()), pending);
+}
+
+pub fn delete_clawback(env: &Env, quest_id: &Symbol, recipient: &Address) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::ClawbackPending(quest_id.clone(), recipient.clone()));
 }
