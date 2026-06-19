@@ -204,9 +204,9 @@ pub fn withdraw_submission(
 ) -> Result<(), Error> {
     submitter.require_auth();
 
-
-    let quest = storage::get_quest(env, quest_id)?;
     validation::validate_quest_not_expired(env, quest.deadline)?;
+
+
 
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
 

@@ -40,7 +40,6 @@ fn test_withdraw_rejected_emits_and_allows_resubmit() {
     let res = client.try_withdraw_submission(&quest_id, &submitter);
     assert!(res.is_err());
 
-
     {
         use earn_quest::storage;
         use earn_quest::types::{SubmissionStatus, Submission};
@@ -48,6 +47,7 @@ fn test_withdraw_rejected_emits_and_allows_resubmit() {
         s.status = SubmissionStatus::Rejected;
         storage::set_submission(&env, &quest_id, &submitter, &s);
     }
+
 
 
     client.withdraw_submission(&quest_id, &submitter);
