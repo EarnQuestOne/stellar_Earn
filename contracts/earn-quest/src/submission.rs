@@ -214,10 +214,13 @@ pub fn withdraw_submission(
         return Err(Error::SubmissionNotRejected);
     }
 
+
     validation::validate_submission_status_transition(
         &submission.status,
         &SubmissionStatus::Withdrawn,
     )?;
+
+
 
     submission.status = SubmissionStatus::Withdrawn;
     storage::set_submission(env, quest_id, submitter, &submission);
