@@ -15,6 +15,7 @@ use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{symbol_short, Address, Env};
 
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
+use crate::Role;
 
 fn make_env() -> Env {
     let env = Env::default();
@@ -33,7 +34,7 @@ fn setup(env: &Env) -> (EarnQuestContractClient, Address, Address) {
     client.initialize(&admin1);
     // Grant SuperAdmin role to the second admin via add_admin + grant_role
     client.add_admin(&admin1, &admin2);
-    client.grant_role(&admin1, &admin2, &earn_quest::Role::SuperAdmin);
+    client.grant_role(&admin1, &admin2, &Role::SuperAdmin);
 
     (client, admin1, admin2)
 }
