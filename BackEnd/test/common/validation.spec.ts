@@ -1,6 +1,5 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { AppModule } from '#src/app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { CustomValidationPipe } from '#src/common/pipes/validation.pipe';
@@ -14,9 +13,7 @@ import {
   IsEmail,
   MinLength,
   MaxLength,
-  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 // Test DTOs
 class TestUserDto {
@@ -36,16 +33,6 @@ class TestUserDto {
 class TestProofDto {
   @IsProofHash()
   proofHash: string;
-}
-
-class TestNestedDto {
-  @ValidateNested()
-  @Type(() => TestUserDto)
-  user: TestUserDto;
-
-  @IsString()
-  @IsNotEmpty()
-  description: string;
 }
 
 describe('Validation System (Integration)', () => {

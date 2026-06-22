@@ -192,7 +192,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_submissions_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_submissions_user already exists or cannot be created');
     }
 
@@ -202,7 +202,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_quests_creator" 
         FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_quests_creator already exists or cannot be created');
     }
 
@@ -212,7 +212,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_submissions_quest" 
         FOREIGN KEY ("questId") REFERENCES "quests"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_submissions_quest already exists or cannot be created');
     }
 
@@ -222,7 +222,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_notifications_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_notifications_user already exists or cannot be created');
     }
 
@@ -232,7 +232,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_refresh_tokens_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_refresh_tokens_user already exists or cannot be created');
     }
 
@@ -254,7 +254,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     for (const indexQuery of indexes) {
       try {
         await queryRunner.query(indexQuery);
-      } catch (error) {
+      } catch {
         console.log(`Index creation failed: ${indexQuery}`);
       }
     }
@@ -279,7 +279,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         await queryRunner.query(
           `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
         );
-      } catch (error) {
+      } catch {
         console.log(
           `Constraint ${constraint} does not exist or cannot be dropped`,
         );
@@ -304,7 +304,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     for (const index of indexes) {
       try {
         await queryRunner.query(`DROP INDEX IF EXISTS "${index}"`);
-      } catch (error) {
+      } catch {
         console.log(`Index ${index} does not exist or cannot be dropped`);
       }
     }

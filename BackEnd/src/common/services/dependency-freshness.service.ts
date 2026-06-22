@@ -41,7 +41,7 @@ export class DependencyFreshnessService {
 
     try {
       // Generate the freshness report
-      const report = await this.generateReport(
+      const report = this.generateReport(
         repositoryOwner,
         repositoryName,
         branch,

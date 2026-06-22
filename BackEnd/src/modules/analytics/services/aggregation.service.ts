@@ -90,23 +90,26 @@ export class AnalyticsAggregationService {
     options: AggregationOptions,
   ): Promise<{ processed: number; skipped: number }> {
     switch (type) {
-      case SnapshotType.PLATFORM:
+      case SnapshotType.PLATFORM: {
         const platformResults =
           await this.platformAggregator.aggregatePlatformMetrics(options);
         return { processed: platformResults.length, skipped: 0 };
+      }
 
-      case SnapshotType.QUEST:
+      case SnapshotType.QUEST: {
         const questResults =
           await this.questAggregator.aggregateQuestMetrics(options);
         return { processed: questResults.length, skipped: 0 };
+      }
 
-      case SnapshotType.USER:
+      case SnapshotType.USER: {
         const userResults =
           await this.userAggregator.aggregateUserMetrics(options);
         return { processed: userResults.length, skipped: 0 };
+      }
 
       default:
-        throw new Error(`Unsupported aggregation type: ${type}`);
+        throw new Error(`Unsupported aggregation type: ${String(type)}`);
     }
   }
 

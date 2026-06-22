@@ -261,7 +261,7 @@ describe('CacheService', () => {
         .mockRejectedValue(new Error('Cache down'));
 
       // Should still retrieve from fallback
-      const result = await service.get(key);
+      await service.get(key);
 
       // Result should be from fallback store
       expect(analyticsService.recordError).toHaveBeenCalled();

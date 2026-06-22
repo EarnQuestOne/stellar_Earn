@@ -15,7 +15,7 @@ import { User } from '#src/modules/users/entities/user.entity';
 describe('Payouts-Stellar Integration', () => {
   let module: TestingModule;
   let payoutsService: PayoutsService;
-  let stellarService: StellarService;
+  let _stellarService: StellarService;
   let usersService: UsersService;
 
   beforeAll(async () => {
@@ -45,7 +45,7 @@ describe('Payouts-Stellar Integration', () => {
     }).compile();
 
     payoutsService = module.get<PayoutsService>(PayoutsService);
-    stellarService = module.get<StellarService>(StellarService);
+    _stellarService = module.get<StellarService>(StellarService);
     usersService = module.get<UsersService>(UsersService);
   });
 
@@ -138,7 +138,6 @@ describe('Payouts-Stellar Integration', () => {
 
       // Get initial user stats
       let userStats = await usersService.getUserStats(user.id);
-      const initialTotalEarned = userStats.totalEarned || 0;
 
       // Create and approve payout
       const payout = await payoutsService.create({

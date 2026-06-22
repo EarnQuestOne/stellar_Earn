@@ -42,7 +42,7 @@ const bootstrapLogger = WinstonModule.createLogger(createLoggerConfig());
 
 process.on('unhandledRejection', (reason, promise) => {
   bootstrapLogger.error('Unhandled Rejection', {
-    promise: String(promise),
+    promise: Object.prototype.toString.call(promise),
     reason: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
   });
@@ -192,8 +192,8 @@ async function bootstrap() {
     };
 
     // Register shutdown handlers
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => void gracefulShutdown('SIGINT'));
   } catch (error) {
     bootstrapLogger.error('Bootstrap failed', {
       message: error instanceof Error ? error.message : 'Unknown error',

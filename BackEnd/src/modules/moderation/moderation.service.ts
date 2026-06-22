@@ -134,7 +134,7 @@ export class ModerationService {
     const text =
       typeof proof === 'object' && proof !== null
         ? JSON.stringify(proof).slice(0, 50000)
-        : String(proof ?? '');
+        : String((proof as string | number | boolean | null | undefined) ?? '');
 
     const urls = this.imageModeration.extractUrlsFromProof(proof);
     const imageFlags = await this.imageModeration.moderateUrls(urls);

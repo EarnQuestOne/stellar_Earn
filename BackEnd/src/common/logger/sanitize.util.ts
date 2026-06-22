@@ -131,6 +131,7 @@ export function sanitizeLogObject(
   }
 
   if (typeof obj !== 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(obj);
   }
 

@@ -141,10 +141,10 @@ export function createMockJwtService() {
     sign: jest.fn().mockImplementation((payload: any) => {
       return `token.for.${payload.sub}`;
     }),
-    verify: jest.fn().mockImplementation((token: string) => {
+    verify: jest.fn().mockImplementation((_token: string) => {
       return createMockJwtPayload();
     }),
-    decode: jest.fn().mockImplementation((token: string) => {
+    decode: jest.fn().mockImplementation((_token: string) => {
       return createMockJwtPayload();
     }),
   };

@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 
-const sdk: any | null = null;
+const sdk: any = null;
 
 /**
  * Initialize OpenTelemetry SDK with:

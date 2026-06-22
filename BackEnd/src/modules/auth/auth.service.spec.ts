@@ -20,8 +20,8 @@ jest.mock('./utils/signature', () => ({
     (address, timestamp) => `Challenge for ${address} at ${timestamp}`,
   ),
   verifyStellarSignature: jest.fn(),
-  isChallengeExpired: jest.fn((timestamp, minutes) => false),
-  extractTimestampFromChallenge: jest.fn((challenge) => Date.now()),
+  isChallengeExpired: jest.fn((_timestamp, _minutes) => false),
+  extractTimestampFromChallenge: jest.fn((_challenge) => Date.now()),
 }));
 
 describe('AuthService', () => {

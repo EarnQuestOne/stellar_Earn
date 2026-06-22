@@ -480,7 +480,9 @@ describe('Submission Create + Approve flow (e2e)', () => {
         .send({ notes: 'looks good' })
         .expect(HttpStatus.BAD_REQUEST);
 
-      expect(res.body.message).toMatch(/On-chain approval failed|QuestNotFound/);
+      expect(res.body.message).toMatch(
+        /On-chain approval failed|QuestNotFound/,
+      );
 
       // Rollback path: status reverts to PENDING, approved_* cleared.
       const rollbackCall = submissionsRepo.update.mock.calls.find(
@@ -498,7 +500,9 @@ describe('Submission Create + Approve flow (e2e)', () => {
       expect(txHashWrite).toBeUndefined();
 
       // No approval notification must have been sent.
-      expect(notificationsService.sendSubmissionApproved).not.toHaveBeenCalled();
+      expect(
+        notificationsService.sendSubmissionApproved,
+      ).not.toHaveBeenCalled();
     });
 
     it('verifier must have a Stellar wallet: 400 BadRequest, no DB write', async () => {

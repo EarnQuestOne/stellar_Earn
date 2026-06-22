@@ -201,31 +201,29 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const worker = new Worker(
       name,
       async (job: Job) => {
-        try {
-          return await processor(job);
-        } catch (err) {
-          throw err;
-        }
+        return await processor(job);
       },
       redisConnection(),
     );
 
-    worker.on('failed', async (job, err) => {
-      if (!job) return;
-      const attempts = job.attemptsMade ?? 0;
-      const maxAttempts =
-        (job.opts && (job.opts as any).attempts) ||
-        DEFAULT_JOB_OPTIONS.attempts;
-      if (attempts >= maxAttempts) {
-        await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
-          failedJob: {
-            id: job.id,
-            name: job.name,
-            data: job.data,
-            failedReason: err?.message ?? String(err),
-          },
-        } as any);
-      }
+    worker.on('failed', (job, err) => {
+      void (async () => {
+        if (!job) return;
+        const attempts = job.attemptsMade ?? 0;
+        const maxAttempts =
+          (job.opts && (job.opts as any).attempts) ||
+          DEFAULT_JOB_OPTIONS.attempts;
+        if (attempts >= maxAttempts) {
+          await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
+            failedJob: {
+              id: job.id,
+              name: job.name,
+              data: job.data,
+              failedReason: err?.message ?? String(err),
+            },
+          } as any);
+        }
+      })();
     });
 
     this.workers.push(worker);

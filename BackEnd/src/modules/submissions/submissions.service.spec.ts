@@ -14,8 +14,8 @@ import { SubmissionBuilder } from '../../../test/utils/submission.builder';
 // sentinel address distinct from any submitter address so assertions can
 // tell the two apart.
 const VERIFIER_ID = 'verifier-1';
-const VERIFIER_STELLAR_ADDRESS = 'GVERIFIERSTELLARADDRESS0000000000000000000000';
-
+const VERIFIER_STELLAR_ADDRESS =
+  'GVERIFIERSTELLARADDRESS0000000000000000000000';
 
 const buildUpdateBuilder = (affected = 1) => {
   const execute = jest.fn().mockResolvedValue({ affected });
@@ -307,11 +307,7 @@ describe('SubmissionsService (N+1 prevention)', () => {
       submissionsRepo.createQueryBuilder =
         buildUpdateBuilder().createQueryBuilder;
 
-      await service.approveSubmission(
-        'sub-1',
-        { notes: 'ok' },
-        'verifier-1',
-      );
+      await service.approveSubmission('sub-1', { notes: 'ok' }, 'verifier-1');
 
       // The tx-hash write happens AFTER the chain call, with the tx hash
       // returned by StellarService.approveSubmission.

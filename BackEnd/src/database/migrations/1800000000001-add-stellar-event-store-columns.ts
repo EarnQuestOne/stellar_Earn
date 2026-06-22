@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddStellarEventStoreColumns1800000000001
-  implements MigrationInterface
-{
+export class AddStellarEventStoreColumns1800000000001 implements MigrationInterface {
   name = 'AddStellarEventStoreColumns1800000000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -33,16 +31,14 @@ export class AddStellarEventStoreColumns1800000000001
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE"`);
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE_CONTRACT_LEDGER"`,
     );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE_ID"`);
     await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE_ID"`,
+      `ALTER TABLE "event_store" DROP COLUMN IF EXISTS "ledger"`,
     );
-    await queryRunner.query(`ALTER TABLE "event_store" DROP COLUMN IF EXISTS "ledger"`);
     await queryRunner.query(
       `ALTER TABLE "event_store" DROP COLUMN IF EXISTS "transactionHash"`,
     );
@@ -52,6 +48,8 @@ export class AddStellarEventStoreColumns1800000000001
     await queryRunner.query(
       `ALTER TABLE "event_store" DROP COLUMN IF EXISTS "sourceId"`,
     );
-    await queryRunner.query(`ALTER TABLE "event_store" DROP COLUMN IF EXISTS "source"`);
+    await queryRunner.query(
+      `ALTER TABLE "event_store" DROP COLUMN IF EXISTS "source"`,
+    );
   }
 }

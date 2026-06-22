@@ -1,11 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import {
   ArgumentsHost,
-  HttpException,
-  HttpStatus,
   BadRequestException,
   NotFoundException,
-  InternalServerErrorException,
   UnauthorizedException,
   ForbiddenException,
   ConflictException,
@@ -16,8 +12,6 @@ import { AppLoggerService } from '../../logger/logger.service';
 import {
   assertNoStackLeakage,
   assertSafeErrorContract,
-  isOperationalError,
-  assertGenericMessage,
 } from './stack-trace-security.util';
 
 describe('ErrorLoggerFilter - Stack Trace Security', () => {

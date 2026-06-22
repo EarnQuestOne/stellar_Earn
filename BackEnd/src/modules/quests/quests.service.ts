@@ -225,7 +225,10 @@ export class QuestsService {
       throw new ForbiddenException('You can only update quests you created');
     }
 
-    if (updateQuestDto.status && updateQuestDto.status !== quest.status) {
+    if (
+      updateQuestDto.status &&
+      (updateQuestDto.status as string) !== quest.status
+    ) {
       this.validateStatusTransition(quest.status, updateQuestDto.status);
     }
 

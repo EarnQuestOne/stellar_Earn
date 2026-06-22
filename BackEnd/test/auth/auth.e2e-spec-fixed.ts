@@ -5,7 +5,6 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '#src/app.module';
 import { Keypair } from 'stellar-sdk';
@@ -14,8 +13,6 @@ import {
   sleep,
   createE2ETestContext,
   retryWithBackoff,
-  waitFor,
-  DEFAULT_RETRY_CONFIG,
 } from '../e2e-helpers';
 
 describe('Authentication E2E - Fixed (e2e)', () => {
@@ -23,7 +20,6 @@ describe('Authentication E2E - Fixed (e2e)', () => {
   let ctx: any; // E2E test context
   let testKeypair: Keypair;
   let stellarAddress: string;
-  let accessToken: string;
   let refreshToken: string;
 
   beforeAll(async () => {
@@ -181,7 +177,6 @@ describe('Authentication E2E - Fixed (e2e)', () => {
       expect(response.body.accessToken.length).toBeGreaterThan(0);
 
       // Save tokens for later tests
-      accessToken = response.body.accessToken;
       refreshToken = response.body.refreshToken;
     });
 

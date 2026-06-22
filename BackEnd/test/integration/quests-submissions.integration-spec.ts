@@ -219,7 +219,7 @@ describe('Quests-Submissions Integration', () => {
       // Listen for events (in a real scenario, this would be handled by listeners)
       const eventEmitter = module.get('EventEmitter2');
 
-      const eventPromise = new Promise((resolve) => {
+      const _eventPromise = new Promise((resolve) => {
         eventEmitter.on('submission.status.changed', (data) => {
           resolve(data);
         });

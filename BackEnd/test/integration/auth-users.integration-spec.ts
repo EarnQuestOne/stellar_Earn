@@ -61,7 +61,7 @@ describe('Auth-Users Integration', () => {
       const message = 'test_message';
 
       // Generate challenge (this would normally be called by the client)
-      const challenge = await authService.generateChallenge(stellarAddress);
+      await authService.generateChallenge(stellarAddress);
 
       // Verify signature and login (complete auth flow)
       const authResult = await authService.verifySignatureAndLogin(
@@ -109,7 +109,7 @@ describe('Auth-Users Integration', () => {
       );
 
       // Update user profile using the authenticated context
-      const updatedUser = await usersService.updateProfile(authResult.user.id, {
+      await usersService.updateProfile(authResult.user.id, {
         displayName: 'Test User',
         bio: 'Integration test user',
       });
@@ -136,7 +136,7 @@ describe('Auth-Users Integration', () => {
       expect(userFromAuth.lastLoginAt).toBeDefined();
 
       // Update user through users service
-      const updatedUser = await usersService.updateProfile(userFromAuth.id, {
+      await usersService.updateProfile(userFromAuth.id, {
         displayName: 'Updated Name',
       });
 

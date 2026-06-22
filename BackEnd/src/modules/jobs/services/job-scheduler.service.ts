@@ -32,7 +32,10 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Initializing Job Scheduler Service');
     await this.loadScheduledJobs();
     // Re-check for new schedules every 60 seconds
-    this.schedulerInterval = setInterval(() => this.syncScheduledJobs(), 60000);
+    this.schedulerInterval = setInterval(
+      () => void this.syncScheduledJobs(),
+      60000,
+    );
   }
 
   onModuleDestroy(): void {
@@ -52,7 +55,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       });
 
       for (const schedule of schedules) {
-        await this.startSchedule(schedule);
+        this.startSchedule(schedule);
       }
 
       this.logger.log(`Loaded ${schedules.length} scheduled jobs`);
@@ -83,7 +86,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       // Add new schedules
       for (const schedule of dbSchedules) {
         if (!activeScheduleIds.has(schedule.id)) {
-          await this.startSchedule(schedule);
+          this.startSchedule(schedule);
         }
       }
     } catch (error) {
@@ -123,7 +126,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     });
 
     const saved = await this.jobScheduleRepository.save(schedule);
-    await this.startSchedule(saved);
+    this.startSchedule(saved);
 
     this.logger.log(`Created scheduled job: ${saved.id} for ${jobType}`);
     return saved;
@@ -164,7 +167,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     const updated = await this.jobScheduleRepository.save(schedule);
 
     if (updated.isActive) {
-      await this.startSchedule(updated);
+      this.startSchedule(updated);
     }
 
     this.logger.log(`Updated scheduled job: ${scheduleId}`);
@@ -214,7 +217,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
     await this.jobScheduleRepository.save(schedule);
 
-    await this.startSchedule(schedule);
+    this.startSchedule(schedule);
     this.logger.log(`Enabled scheduled job: ${scheduleId}`);
   }
 

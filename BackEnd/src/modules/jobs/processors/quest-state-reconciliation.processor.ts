@@ -254,8 +254,9 @@ export class QuestStateReconciliationProcessor {
         ) || 'true'
       ).toLowerCase() !== 'false';
     const batchSize = Number(
-      this.configService.get<string>('QUEST_STATE_RECONCILIATION_EVENT_BATCH') ||
-        '200',
+      this.configService.get<string>(
+        'QUEST_STATE_RECONCILIATION_EVENT_BATCH',
+      ) || '200',
     );
 
     if (!enabled || !contractId) {
@@ -362,7 +363,9 @@ export class QuestStateReconciliationProcessor {
     }
   }
 
-  private async applyChainEvent(event: EventStore): Promise<{ changed: boolean }> {
+  private async applyChainEvent(
+    event: EventStore,
+  ): Promise<{ changed: boolean }> {
     const eventName = (event.eventName || '').toLowerCase();
     const payload = (event.payload || {}) as Record<string, any>;
     const transactionHash = this.readFirstString(

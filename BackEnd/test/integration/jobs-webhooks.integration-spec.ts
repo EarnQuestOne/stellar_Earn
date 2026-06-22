@@ -75,7 +75,7 @@ describe('Jobs-Webhooks Integration', () => {
       });
 
       // Create a webhook for job completion notifications
-      const webhook = await webhooksService.create({
+      await webhooksService.create({
         userId: user.id,
         url: 'https://api.example.com/webhooks/job-complete',
         events: ['job.completed', 'job.failed'],
@@ -127,7 +127,7 @@ describe('Jobs-Webhooks Integration', () => {
         displayName: 'Failure Test User',
       });
 
-      const webhook = await webhooksService.create({
+      await webhooksService.create({
         userId: user.id,
         url: 'https://api.example.com/webhooks/job-fail',
         events: ['job.failed'],
@@ -177,7 +177,7 @@ describe('Jobs-Webhooks Integration', () => {
       });
 
       // Create webhook with retry configuration
-      const webhook = await webhooksService.create({
+      await webhooksService.create({
         userId: user.id,
         url: 'https://api.example.com/webhooks/scheduled',
         events: ['job.scheduled', 'job.completed'],
@@ -237,7 +237,7 @@ describe('Jobs-Webhooks Integration', () => {
         displayName: 'Retry Test User',
       });
 
-      const webhook = await webhooksService.create({
+      await webhooksService.create({
         userId: user.id,
         url: 'https://unreliable-api.example.com/webhooks/retry', // Unreliable endpoint
         events: ['job.retry_test'],
@@ -284,7 +284,7 @@ describe('Jobs-Webhooks Integration', () => {
       });
 
       // Create webhook for batch notifications
-      const webhook = await webhooksService.create({
+      await webhooksService.create({
         userId: user.id,
         url: 'https://api.example.com/webhooks/bulk-jobs',
         events: ['jobs.batch_completed'],
@@ -350,7 +350,7 @@ describe('Jobs-Webhooks Integration', () => {
       const webhookTypes = ['data_jobs', 'payment_jobs', 'notification_jobs'];
 
       for (const type of webhookTypes) {
-        const webhook = await webhooksService.create({
+        await webhooksService.create({
           userId: user.id,
           url: `https://api.example.com/webhooks/${type}`,
           events: [`job.${type}_completed`],

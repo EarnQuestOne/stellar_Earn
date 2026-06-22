@@ -17,7 +17,7 @@ import { DataSource } from 'typeorm';
  */
 describe('Cursor Pagination (e2e)', () => {
   let app: INestApplication;
-  let dataSource: DataSource;
+  let _dataSource: DataSource;
   let adminToken: string;
   let userToken: string;
   let questId: string;
@@ -35,7 +35,7 @@ describe('Cursor Pagination (e2e)', () => {
     );
     await app.init();
 
-    dataSource = moduleFixture.get(DataSource);
+    _dataSource = moduleFixture.get(DataSource);
 
     // Obtain tokens
     const adminLogin = await request(app.getHttpServer())

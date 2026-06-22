@@ -6,9 +6,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * returned by StellarService.approveSubmission (which calls the
  * Soroban `approve_submission` contract method).
  */
-export class AddSubmissionTransactionHash1769900000000
-  implements MigrationInterface
-{
+export class AddSubmissionTransactionHash1769900000000 implements MigrationInterface {
   name = 'AddSubmissionTransactionHash1769900000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

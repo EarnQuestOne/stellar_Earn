@@ -9,8 +9,8 @@ export class EventAuditListener implements OnModuleInit {
   constructor(private eventEmitter: EventEmitter2) {}
 
   onModuleInit() {
-    this.eventEmitter.onAny(
-      async (eventName: string | string[], payload: any) => {
+    this.eventEmitter.onAny((eventName: string | string[], payload: any) => {
+      void (async () => {
         // eventemitter2 passes name as first arg, andpayload as second
         const name = Array.isArray(eventName) ? eventName.join('.') : eventName;
 
@@ -35,7 +35,7 @@ export class EventAuditListener implements OnModuleInit {
             );
           }
         }
-      },
-    );
+      })();
+    });
   }
 }

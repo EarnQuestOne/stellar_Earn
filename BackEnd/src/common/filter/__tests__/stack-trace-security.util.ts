@@ -34,7 +34,7 @@ export function assertNoStackLeakage(
   }
 
   // Pattern 2: File paths with line numbers (e.g., "/app/src/handlers/error.ts:42:15")
-  const filePathPattern = /[\\/][\w\/-]+\.(ts|js):\d+:\d+/g;
+  const filePathPattern = /[\\/][\w/-]+\.(ts|js):\d+:\d+/g;
   if (filePathPattern.test(bodyStr)) {
     leakages.push(
       'Found file path pattern: ' + bodyStr.match(filePathPattern)?.[0],

@@ -17,9 +17,9 @@ import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 
 describe('FeatureFlagsService', () => {
   let service: FeatureFlagsService;
-  let featureFlagRepository: Repository<FeatureFlag>;
-  let auditLogRepository: Repository<FeatureFlagAuditLog>;
-  let cacheManager: any;
+  let _featureFlagRepository: Repository<FeatureFlag>;
+  let _auditLogRepository: Repository<FeatureFlagAuditLog>;
+  let _cacheManager: any;
 
   const mockFeatureFlagRepository = {
     findOne: jest.fn(),
@@ -60,13 +60,13 @@ describe('FeatureFlagsService', () => {
     }).compile();
 
     service = module.get<FeatureFlagsService>(FeatureFlagsService);
-    featureFlagRepository = module.get<Repository<FeatureFlag>>(
+    _featureFlagRepository = module.get<Repository<FeatureFlag>>(
       getRepositoryToken(FeatureFlag),
     );
-    auditLogRepository = module.get<Repository<FeatureFlagAuditLog>>(
+    _auditLogRepository = module.get<Repository<FeatureFlagAuditLog>>(
       getRepositoryToken(FeatureFlagAuditLog),
     );
-    cacheManager = module.get(CACHE_MANAGER);
+    _cacheManager = module.get(CACHE_MANAGER);
 
     jest.clearAllMocks();
   });

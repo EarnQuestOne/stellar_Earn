@@ -35,7 +35,7 @@ export class BaseAnalyticsExporter {
       case ReportFormat.PDF:
         return this.exportToPdf(data, options);
       default:
-        throw new Error(`Unsupported export format: ${options.format}`);
+        throw new Error(`Unsupported export format: ${String(options.format)}`);
     }
   }
 
@@ -110,7 +110,7 @@ export class BaseAnalyticsExporter {
   ): Promise<ExportResult> {
     // For now, export as CSV with Excel MIME type
     // In a real implementation, you'd use a library like exceljs
-    const csvResult = await this.exportToCsv(data, options);
+    const csvResult = this.exportToCsv(data, options);
 
     return {
       ...csvResult,
@@ -208,7 +208,7 @@ export class BaseAnalyticsExporter {
         data.forEach((item) => {
           html += '<tr>';
           Object.values(item).forEach((value) => {
-            html += `<td>${value}</td>`;
+            html += `<td>${String(value)}</td>`;
           });
           html += '</tr>';
         });
@@ -217,7 +217,7 @@ export class BaseAnalyticsExporter {
     } else if (typeof data === 'object') {
       html += '<table>';
       Object.entries(data).forEach(([key, value]) => {
-        html += `<tr><th>${key}</th><td>${value}</td></tr>`;
+        html += `<tr><th>${key}</th><td>${String(value)}</td></tr>`;
       });
       html += '</table>';
     }

@@ -11,7 +11,7 @@ import { QuestStatus } from '#src/modules/quests/enums/quest-status.enum';
 describe('QuestsService with Caching', () => {
   let service: QuestsService;
   let questRepository: Repository<Quest>;
-  let cacheService: CacheService;
+  let _cacheService: CacheService;
   let cacheManager: any;
 
   const mockQuest = {
@@ -59,7 +59,7 @@ describe('QuestsService with Caching', () => {
 
     service = module.get<QuestsService>(QuestsService);
     questRepository = module.get<Repository<Quest>>(getRepositoryToken(Quest));
-    cacheService = module.get<CacheService>(CacheService);
+    _cacheService = module.get<CacheService>(CacheService);
   });
 
   afterEach(() => {
@@ -71,7 +71,7 @@ describe('QuestsService with Caching', () => {
       cacheManager.get.mockResolvedValueOnce(undefined);
       (questRepository.findOne as jest.Mock).mockResolvedValue(mockQuest);
 
-      const result = await service.findOne('1');
+      await service.findOne('1');
 
       expect(cacheManager.get).toHaveBeenCalledWith(
         `${CACHE_KEYS.QUEST_DETAIL}:1`,

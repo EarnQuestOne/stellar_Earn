@@ -15,7 +15,7 @@ import { ModerationItem } from '#src/modules/moderation/entities/moderation-item
 describe('Moderation-Health Integration', () => {
   let module: TestingModule;
   let moderationService: ModerationService;
-  let healthService: HealthService;
+  let _healthService: HealthService;
   let usersService: UsersService;
 
   beforeAll(async () => {
@@ -45,7 +45,7 @@ describe('Moderation-Health Integration', () => {
     }).compile();
 
     moderationService = module.get<ModerationService>(ModerationService);
-    healthService = module.get<HealthService>(HealthService);
+    _healthService = module.get<HealthService>(HealthService);
     usersService = module.get<UsersService>(UsersService);
   });
 
@@ -345,7 +345,7 @@ describe('Moderation-Health Integration', () => {
             'Load test approval',
           );
           processedCount++;
-        } catch (error) {
+        } catch {
           errorCount++;
         }
       }

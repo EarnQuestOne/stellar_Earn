@@ -16,7 +16,7 @@ import { Submission } from '#src/modules/submissions/entities/submission.entity'
 
 describe('Analytics-Cache Integration', () => {
   let module: TestingModule;
-  let analyticsService: AnalyticsService;
+  let _analyticsService: AnalyticsService;
   let cacheService: CacheService;
 
   beforeAll(async () => {
@@ -43,8 +43,8 @@ describe('Analytics-Cache Integration', () => {
       ],
     }).compile();
 
-    analyticsService = getAnalyticsService();
-    analyticsService = module.get<AnalyticsService>(AnalyticsService);
+    _analyticsService = getAnalyticsService();
+    _analyticsService = module.get<AnalyticsService>(AnalyticsService);
     cacheService = module.get<CacheService>(CacheService);
   });
 
@@ -107,7 +107,7 @@ describe('Analytics-Cache Integration', () => {
       const metrics = {
         dailyActiveUsers: 89,
         weeklyNewUsers: 23,
-        monthlyRevenue: 1250.50,
+        monthlyRevenue: 1250.5,
       };
 
       // Set with short TTL for testing
@@ -118,7 +118,7 @@ describe('Analytics-Cache Integration', () => {
       expect(cached).toEqual(metrics);
 
       // Wait for TTL to expire
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
 
       // Should be expired
       cached = await cacheService.get(cacheKey);
@@ -210,9 +210,9 @@ describe('Analytics-Cache Integration', () => {
 
     it('should handle bulk cache operations for analytics data', async () => {
       const bulkData = {
-        'dashboard_stats': { users: 1000, quests: 50 },
-        'performance_metrics': { responseTime: 150, throughput: 200 },
-        'user_engagement': { dailyVisits: 500, sessionDuration: 300 },
+        dashboard_stats: { users: 1000, quests: 50 },
+        performance_metrics: { responseTime: 150, throughput: 200 },
+        user_engagement: { dailyVisits: 500, sessionDuration: 300 },
       };
 
       // Set bulk data
@@ -236,5 +236,4 @@ describe('Analytics-Cache Integration', () => {
       }
     });
   });
-});
 });

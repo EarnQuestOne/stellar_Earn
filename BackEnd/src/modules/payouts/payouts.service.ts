@@ -367,7 +367,7 @@ export class PayoutsService {
       payout.nextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
       payout.status = PayoutStatus.RETRY_SCHEDULED;
       this.logger.log(
-        `Payout ${payout.id} scheduled for retry at ${payout.nextRetryAt}`,
+        `Payout ${payout.id} scheduled for retry at ${String(payout.nextRetryAt)}`,
       );
     } else {
       payout.status = PayoutStatus.FAILED;

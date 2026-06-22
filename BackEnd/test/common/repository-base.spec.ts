@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../../common/enums/role.enum';
 import {
@@ -109,7 +106,7 @@ describe('Repository Base Tests', () => {
 
       jest.spyOn(repository, 'findOne').mockResolvedValue(user);
 
-      const result = await repository.findOne({
+      await repository.findOne({
         where: { id: user.id },
         relations: ['createdQuests', 'submissions'],
       });
@@ -186,8 +183,7 @@ describe('Repository Base Tests', () => {
   describe('QueryBuilder Operations', () => {
     it('should build complex queries', async () => {
       const qb = repository.createQueryBuilder('user');
-      const chainedQb = qb
-        .where('user.role = :role', { role: Role.ADMIN })
+      qb.where('user.role = :role', { role: Role.ADMIN })
         .andWhere('user.isEmailVerified = :verified', { verified: true })
         .orderBy('user.createdAt', 'DESC')
         .take(10);
@@ -200,9 +196,10 @@ describe('Repository Base Tests', () => {
 
     it('should support join operations', async () => {
       const qb = repository.createQueryBuilder('user');
-      const joinedQb = qb
-        .leftJoinAndSelect('user.submissions', 'submissions')
-        .leftJoinAndSelect('user.createdQuests', 'quests');
+      qb.leftJoinAndSelect('user.submissions', 'submissions').leftJoinAndSelect(
+        'user.createdQuests',
+        'quests',
+      );
 
       expect(qb.leftJoinAndSelect).toBeDefined();
     });

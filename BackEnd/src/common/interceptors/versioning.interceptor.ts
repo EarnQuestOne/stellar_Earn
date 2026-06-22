@@ -59,14 +59,14 @@ export class VersioningInterceptor implements NestInterceptor {
         if (deprecationInfo.sunsetLink) {
           response.setHeader(
             'Link',
-            `<${deprecationInfo.sunsetLink}>; rel=\"sunset\"`,
+            `<${deprecationInfo.sunsetLink}>; rel="sunset"`,
           );
         }
       }
 
-      const warningMessage = `299 - \"Deprecated API version ${resolvedVersion}; ${
+      const warningMessage = `299 - "Deprecated API version ${resolvedVersion}; ${
         deprecationInfo?.reason || 'Please migrate to a newer API version.'
-      }\"`;
+      }"`;
       response.setHeader('Warning', warningMessage);
     }
 

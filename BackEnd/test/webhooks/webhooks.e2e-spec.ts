@@ -2,7 +2,10 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { WebhooksModule } from '#src/modules/webhooks/webhooks.module';
-import { generateWebhookSignature } from '#src/modules/webhooks/utils/signature';
+import {
+  generateWebhookSignature,
+  validateWebhookSecret,
+} from '#src/modules/webhooks/utils/signature';
 
 describe('WebhooksController (e2e)', () => {
   let app: INestApplication;
@@ -289,10 +292,6 @@ describe('WebhooksController (e2e)', () => {
     });
 
     it('should validate webhook secrets', () => {
-      const {
-        validateWebhookSecret,
-      } = require('../../src/modules/webhooks/utils/signature');
-
       expect(validateWebhookSecret('short')).toBe(false);
       expect(validateWebhookSecret('this_is_a_valid_secret_key')).toBe(true);
       expect(validateWebhookSecret('')).toBe(false);

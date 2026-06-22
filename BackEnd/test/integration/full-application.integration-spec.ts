@@ -35,7 +35,7 @@ describe('Full Application Integration', () => {
   let questsService: QuestsService;
   let submissionsService: SubmissionsService;
   let payoutsService: PayoutsService;
-  let stellarService: StellarService;
+  let _stellarService: StellarService;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -73,7 +73,7 @@ describe('Full Application Integration', () => {
     questsService = module.get<QuestsService>(QuestsService);
     submissionsService = module.get<SubmissionsService>(SubmissionsService);
     payoutsService = module.get<PayoutsService>(PayoutsService);
-    stellarService = module.get<StellarService>(StellarService);
+    _stellarService = module.get<StellarService>(StellarService);
   });
 
   afterAll(async () => {
@@ -94,7 +94,7 @@ describe('Full Application Integration', () => {
       try {
         const repo = module.get(repoName);
         await repo.clear();
-      } catch (error) {
+      } catch {
         // Repository might not exist in this test setup, continue
       }
     }

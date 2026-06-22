@@ -193,7 +193,7 @@ describe('Quests (e2e)', () => {
         .set('Authorization', `Bearer ${adminAccessToken}`)
         .send(createQuestDto)
         .expect(201)
-        .expect((res) => {});
+        .expect(() => {});
     });
 
     it('should reject quest with end date before start date', () => {

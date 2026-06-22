@@ -163,9 +163,8 @@ export class StellarService implements OnModuleInit {
 
         const adminKeypair = Keypair.fromSecret(secret);
         const sourcePubKey = adminKeypair.publicKey();
-        const accountResponse = await this.horizonServer.loadAccount(
-          sourcePubKey,
-        );
+        const accountResponse =
+          await this.horizonServer.loadAccount(sourcePubKey);
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
@@ -244,9 +243,10 @@ export class StellarService implements OnModuleInit {
   async ingestContractEvents(): Promise<void> {
     const contractId = this.configService.get<string>('CONTRACT_ID') || '';
     const enabled =
-      (this.configService.get<string>('STELLAR_EVENT_STREAMING_ENABLED') ||
-        'true')
-        .toLowerCase() !== 'false';
+      (
+        this.configService.get<string>('STELLAR_EVENT_STREAMING_ENABLED') ||
+        'true'
+      ).toLowerCase() !== 'false';
 
     if (!enabled || !contractId) {
       return;
@@ -278,7 +278,8 @@ export class StellarService implements OnModuleInit {
     let cursor: string | undefined;
     let totalSaved = 0;
 
-    do {
+    let hasMore = true;
+    while (hasMore) {
       const request: any = cursor
         ? {
             filters: [{ type: 'contract', contractIds: [contractId] }],
@@ -305,9 +306,9 @@ export class StellarService implements OnModuleInit {
       cursor = response?.cursor;
 
       if (!cursor || events.length === 0 || events.length < pageSize) {
-        break;
+        hasMore = false;
       }
-    } while (true);
+    }
 
     if (totalSaved > 0) {
       this.logger.log(
@@ -337,18 +338,15 @@ export class StellarService implements OnModuleInit {
         // For invokeContractFunction ops the SDK does not expose
         // `contract`/`function` as top-level instance properties; fall
         // back to inspecting the inner HostFunction if present.
-        contractId =
-          typeof op.contract === 'string' ? op.contract : 'unknown';
+        contractId = typeof op.contract === 'string' ? op.contract : 'unknown';
         functionName =
-          typeof op.function === 'string' ? op.function : 'invokeContractFunction';
+          typeof op.function === 'string'
+            ? op.function
+            : 'invokeContractFunction';
       }
     }
 
-    return this._signAndSubmitContract(
-      transaction,
-      contractId,
-      functionName,
-    );
+    return this._signAndSubmitContract(transaction, contractId, functionName);
   }
 
   /**
@@ -402,7 +400,10 @@ export class StellarService implements OnModuleInit {
           span.attributes['stellar.tx.ledger'] = result.ledger;
           span.attributes['stellar.tx.status'] = 'success';
 
-          return { hash: transaction.hash().toString('hex'), ledger: result.ledger };
+          return {
+            hash: transaction.hash().toString('hex'),
+            ledger: result.ledger,
+          };
         } catch (error) {
           const duration = Date.now() - startTime;
           this.metrics.observeHistogram(
@@ -425,9 +426,7 @@ export class StellarService implements OnModuleInit {
           span.status = 'error';
           span.attributes['error.message'] = errorMsg;
           span.attributes['error.type'] =
-            error instanceof Error
-              ? error.name
-              : 'SigningOrSubmissionError';
+            error instanceof Error ? error.name : 'SigningOrSubmissionError';
 
           this.metrics.incrementCounter(
             'stellar_contract_invocation_failures_total',
@@ -476,9 +475,7 @@ export class StellarService implements OnModuleInit {
     );
     const ledger = Number(event?.ledger ?? event?.ledgerSequence ?? NaN);
     const transactionHash =
-      typeof event?.transactionHash === 'string'
-        ? event.transactionHash
-        : null;
+      typeof event?.transactionHash === 'string' ? event.transactionHash : null;
     const timestamp = this.parseEventTimestamp(
       event?.ledgerClosedAt ?? event?.closedAt,
     );
@@ -541,10 +538,7 @@ export class StellarService implements OnModuleInit {
     }
   }
 
-  private normalizeContractEventName(
-    topics: any[],
-    nativeValue: any,
-  ): string {
+  private normalizeContractEventName(topics: any[], nativeValue: any): string {
     const candidate =
       this.extractEventLabel(topics[0]) || this.extractEventLabel(nativeValue);
 
@@ -561,14 +555,7 @@ export class StellarService implements OnModuleInit {
     }
 
     if (typeof value === 'object' && value !== null) {
-      const keys = [
-        'event',
-        'eventName',
-        'name',
-        'type',
-        'status',
-        'action',
-      ];
+      const keys = ['event', 'eventName', 'name', 'type', 'status', 'action'];
 
       for (const key of keys) {
         const candidate = value[key];

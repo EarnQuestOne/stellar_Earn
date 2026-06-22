@@ -18,8 +18,8 @@ describe('Events Architecture', () => {
   let eventEmitter: EventEmitter2;
   let userListener: UserListener;
   let questListener: QuestListener;
-  let payoutListener: PayoutListener;
-  let submissionListener: SubmissionListener;
+  let _payoutListener: PayoutListener;
+  let _submissionListener: SubmissionListener;
   let auditListener: EventAuditListener;
 
   beforeEach(async () => {
@@ -42,8 +42,8 @@ describe('Events Architecture', () => {
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
     userListener = module.get<UserListener>(UserListener);
     questListener = module.get<QuestListener>(QuestListener);
-    payoutListener = module.get<PayoutListener>(PayoutListener);
-    submissionListener = module.get<SubmissionListener>(SubmissionListener);
+    _payoutListener = module.get<PayoutListener>(PayoutListener);
+    _submissionListener = module.get<SubmissionListener>(SubmissionListener);
     auditListener = module.get<EventAuditListener>(EventAuditListener);
 
     await module.init();

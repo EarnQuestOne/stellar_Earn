@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { User } from './entities/user.entity';
 import { Quest } from '../quests/entities/quest.entity';
@@ -10,7 +10,6 @@ import {
 } from '../submissions/entities/submission.entity';
 import { SubmissionBuilder } from '../../../test/utils/submission.builder';
 import { Payout } from '../payouts/entities/payout.entity';
-import { Role } from '../../common/enums/role.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -429,10 +428,7 @@ describe('UsersService', () => {
         ...updateData,
       });
 
-      const result = await service.updateProfile(
-        user.stellarAddress,
-        updateData,
-      );
+      await service.updateProfile(user.stellarAddress, updateData);
 
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { stellarAddress: user.stellarAddress },
@@ -466,7 +462,6 @@ describe('UsersService', () => {
 
     it('should not update fields that are not provided', async () => {
       const user = createMockUser();
-      const originalBio = user.bio;
       const updateData = {
         avatarUrl: 'https://example.com/new-avatar.jpg',
       };

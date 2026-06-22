@@ -94,7 +94,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
 
   private sanitizeErrorMessage(message: string, status: number): string {
     // Don't sanitize 404 messages as they're not sensitive
-    if (status === HttpStatus.NOT_FOUND) {
+    if (status === Number(HttpStatus.NOT_FOUND)) {
       return message;
     }
 

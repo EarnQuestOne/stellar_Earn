@@ -13,7 +13,7 @@ import { Notification } from '#src/modules/notifications/entities/notification.e
 
 describe('Email-Notifications Integration', () => {
   let module: TestingModule;
-  let emailService: EmailService;
+  let _emailService: EmailService;
   let notificationsService: NotificationsService;
   let usersService: UsersService;
 
@@ -42,7 +42,7 @@ describe('Email-Notifications Integration', () => {
       ],
     }).compile();
 
-    emailService = module.get<EmailService>(EmailService);
+    _emailService = module.get<EmailService>(EmailService);
     notificationsService =
       module.get<NotificationsService>(NotificationsService);
     usersService = module.get<UsersService>(UsersService);

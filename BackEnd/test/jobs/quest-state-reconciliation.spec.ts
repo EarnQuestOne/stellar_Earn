@@ -6,7 +6,10 @@ import { JobLogService } from '../../src/modules/jobs/services/job-log.service';
 import { JobStatus } from '../../src/modules/jobs/job.types';
 import { Quest } from '../../src/modules/quests/entities/quest.entity';
 import { Submission } from '../../src/modules/submissions/entities/submission.entity';
-import { Payout, PayoutStatus } from '../../src/modules/payouts/entities/payout.entity';
+import {
+  Payout,
+  PayoutStatus,
+} from '../../src/modules/payouts/entities/payout.entity';
 import { EventStore } from '../../src/events/entities/event-store.entity';
 import { SorobanQuestReaderService } from '../../src/modules/stellar/soroban-quest-reader.service';
 

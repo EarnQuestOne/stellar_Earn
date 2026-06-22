@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { StellarService } from './stellar.service';
 import { TracingService } from '../../common/tracing/tracing.service';
@@ -182,9 +185,11 @@ describe('StellarService (Security)', () => {
   });
 
   it('ingests contract events into the event store with deduplication metadata', async () => {
-    jest.spyOn((service as any).rpcServer, 'getLatestLedger').mockResolvedValue({
-      sequence: 100,
-    } as any);
+    jest
+      .spyOn((service as any).rpcServer, 'getLatestLedger')
+      .mockResolvedValue({
+        sequence: 100,
+      } as any);
     jest.spyOn((service as any).rpcServer, 'getEvents').mockResolvedValue({
       events: [
         {
@@ -241,7 +246,9 @@ describe('StellarService.approveSubmission (Soroban contract call)', () => {
 
   // Override the parent mockConfig returns for keys specific to
   // approveSubmission.
-  const APPROVE_CONTRACT_ID = StellarSdk.StrKey.encodeContract(Buffer.alloc(32));
+  const APPROVE_CONTRACT_ID = StellarSdk.StrKey.encodeContract(
+    Buffer.alloc(32),
+  );
   const QUEST_ID = 'quest-1';
   const SUBMITTER = StellarSdk.Keypair.random().publicKey();
   const VERIFIER = StellarSdk.Keypair.random().publicKey();

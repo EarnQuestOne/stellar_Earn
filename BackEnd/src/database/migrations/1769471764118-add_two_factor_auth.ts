@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, Index } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
 /**
  * Migration: add_two_factor_auth

@@ -7,16 +7,12 @@ import { WebhookProcessor } from '../processors/webhook.processor';
 import { AnalyticsProcessor } from '../processors/analytics.processor';
 import { QuestProcessor } from '../processors/quest.processor';
 import { JobLogService } from '../services/job-log.service';
-import {
-  PayoutProcessPayload,
-  EmailSendPayload,
-  JobStatus,
-} from '../job.types';
+import { PayoutProcessPayload, EmailSendPayload } from '../job.types';
 import { Job } from 'bullmq';
 
 describe('Job Processors', () => {
   let module: TestingModule;
-  let jobLogService: JobLogService;
+  let _jobLogService: JobLogService;
   let payoutProcessor: PayoutProcessor;
   let emailProcessor: EmailProcessor;
   let exportProcessor: DataExportProcessor;
@@ -49,7 +45,7 @@ describe('Job Processors', () => {
       ],
     }).compile();
 
-    jobLogService = module.get<JobLogService>(JobLogService);
+    _jobLogService = module.get<JobLogService>(JobLogService);
     payoutProcessor = module.get<PayoutProcessor>(PayoutProcessor);
     emailProcessor = module.get<EmailProcessor>(EmailProcessor);
     exportProcessor = module.get<DataExportProcessor>(DataExportProcessor);

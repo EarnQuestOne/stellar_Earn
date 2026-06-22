@@ -37,9 +37,7 @@ export class SubmissionsController {
   @ApiOperation({ summary: 'List submissions for a quest' })
   @ApiParam({ name: 'questId', description: 'Quest ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Submissions list returned' })
-  async list(
-    @Param('questId') questId: string,
-  ): Promise<{
+  async list(@Param('questId') questId: string): Promise<{
     success: true;
     data: { submissions: Submission[]; total: number };
   }> {

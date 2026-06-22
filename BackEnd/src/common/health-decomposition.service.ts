@@ -59,8 +59,8 @@ export class HealthDecompositionService {
     return { status: 'ok', latencyMs: Date.now() - start };
   }
 
-  private checkRedis(): ComponentHealth {
+  private checkRedis(): Promise<ComponentHealth> {
     // Placeholder — wire up your Redis client here
-    return { status: 'ok', latencyMs: 0 };
+    return Promise.resolve({ status: 'ok', latencyMs: 0 });
   }
 }

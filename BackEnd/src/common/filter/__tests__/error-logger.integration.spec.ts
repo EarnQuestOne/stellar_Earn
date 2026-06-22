@@ -1,16 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  INestApplication,
-  BadRequestException,
-  NotFoundException,
-  HttpStatus,
-} from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication, HttpStatus } from '@nestjs/common';
 import { AppLoggerService } from '../../logger/logger.service';
-import { ErrorLoggerFilter } from '../error-logger.filter';
 import {
   assertNoStackLeakage,
-  assertSafeErrorContract,
   assertGenericMessage,
 } from './stack-trace-security.util';
 
@@ -20,12 +11,11 @@ import {
  */
 describe('ErrorLoggerFilter - Integration Tests (e2e)', () => {
   let app: INestApplication;
-  let logger: AppLoggerService;
 
   beforeAll(async () => {
     // In a real scenario, you would create a full test module here
     // For now, we provide the structure for integration testing
-    logger = new AppLoggerService();
+    new AppLoggerService();
   });
 
   afterAll(async () => {
@@ -147,7 +137,7 @@ describe('ErrorLoggerFilter - Integration Tests (e2e)', () => {
 
     it('Should preserve X-Correlation-ID header', () => {
       // Headers should pass through correlation ID
-      const testId = 'trace-12345';
+      // const testId = 'trace-12345';
       // expect(responseHeaders['x-correlation-id']).toBe(testId);
     });
   });

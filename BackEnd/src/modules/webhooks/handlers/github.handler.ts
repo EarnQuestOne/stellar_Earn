@@ -90,7 +90,7 @@ export class GithubHandler {
           action: action,
           approved: false, // PR opened, awaiting review/approval
         };
-      case 'closed':
+      case 'closed': {
         const merged = payload.pull_request?.merged;
         return {
           status: 'processed',
@@ -101,6 +101,7 @@ export class GithubHandler {
           merged: merged,
           approved: merged, // Auto-approve if merged
         };
+      }
       default:
         return {
           status: 'ignored',

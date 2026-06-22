@@ -122,15 +122,17 @@ export function generateWebhookSignature(
     typeof payload === 'string' ? payload : JSON.stringify(payload);
 
   switch (provider.toLowerCase()) {
-    case 'github':
+    case 'github': {
       const githubHmac = crypto.createHmac('sha256', secret);
       githubHmac.update(payloadString, 'utf8');
       return `sha256=${githubHmac.digest('hex')}`;
+    }
 
-    case 'api':
+    case 'api': {
       const apiHmac = crypto.createHmac('sha256', secret);
       apiHmac.update(payloadString, 'utf8');
       return `hmac-sha256=${apiHmac.digest('hex')}`;
+    }
 
     default:
       throw new Error(`Unsupported provider: ${provider}`);

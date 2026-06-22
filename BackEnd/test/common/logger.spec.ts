@@ -1,6 +1,6 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, HttpStatus } from '@nestjs/common';
-import * as request from 'supertest';
+import { HttpStatus, BadRequestException } from '@nestjs/common';
+import { of } from 'rxjs';
 import { AppLoggerService } from '#src/common/logger/logger.service';
 import { LoggerModule } from '#src/common/logger/logger.module';
 import {
@@ -466,8 +466,6 @@ describe('Logging Interceptor', () => {
   });
 
   it('should log successful requests', (done) => {
-    const { of } = require('rxjs');
-
     const mockExecutionContext = {
       getType: () => 'http',
       switchToHttp: () => ({
@@ -590,7 +588,6 @@ describe('Error Logger Filter', () => {
       }),
     };
 
-    const { BadRequestException } = require('@nestjs/common');
     const error = new BadRequestException('Bad request');
 
     filter.catch(error, mockHost as any);

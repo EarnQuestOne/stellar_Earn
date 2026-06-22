@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FraudRiskRulesService } from './fraud-risk-rules.service';
-import { Payout, PayoutStatus } from '../entities/payout.entity';
+import { Payout } from '../entities/payout.entity';
 
 describe('FraudRiskRulesService', () => {
   let service: FraudRiskRulesService;
-  let repository: Repository<Payout>;
+  let _repository: Repository<Payout>;
 
   const mockPayoutRepository = {
     findOne: jest.fn(),
@@ -27,7 +27,7 @@ describe('FraudRiskRulesService', () => {
     }).compile();
 
     service = module.get<FraudRiskRulesService>(FraudRiskRulesService);
-    repository = module.get<Repository<Payout>>(getRepositoryToken(Payout));
+    _repository = module.get<Repository<Payout>>(getRepositoryToken(Payout));
   });
 
   it('should be defined', () => {

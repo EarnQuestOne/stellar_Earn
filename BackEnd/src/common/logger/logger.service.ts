@@ -64,7 +64,7 @@ export class AppLoggerService implements LoggerService {
   log(message: string, ...optionalParams: any[]): void;
   log(
     message: string,
-    contextOrParams?: string | any,
+    contextOrParams?: any,
     meta?: Record<string, any>,
   ): void {
     const context =
@@ -79,7 +79,7 @@ export class AppLoggerService implements LoggerService {
   warn(message: string, ...optionalParams: any[]): void;
   warn(
     message: string,
-    contextOrParams?: string | any,
+    contextOrParams?: any,
     meta?: Record<string, any>,
   ): void {
     const context =
@@ -99,7 +99,7 @@ export class AppLoggerService implements LoggerService {
   error(message: string, ...optionalParams: any[]): void;
   error(
     message: string,
-    traceOrParams?: string | any,
+    traceOrParams?: any,
     context?: string,
     meta?: Record<string, any>,
   ): void {
@@ -118,7 +118,7 @@ export class AppLoggerService implements LoggerService {
   debug(message: string, ...optionalParams: any[]): void;
   debug(
     message: string,
-    contextOrParams?: string | any,
+    contextOrParams?: any,
     meta?: Record<string, any>,
   ): void {
     const context =
@@ -133,7 +133,7 @@ export class AppLoggerService implements LoggerService {
   verbose(message: string, ...optionalParams: any[]): void;
   verbose(
     message: string,
-    contextOrParams?: string | any,
+    contextOrParams?: any,
     meta?: Record<string, any>,
   ): void {
     const context =
@@ -152,7 +152,7 @@ export class AppLoggerService implements LoggerService {
   info(message: string, ...optionalParams: any[]): void;
   info(
     message: string,
-    contextOrParams?: string | any,
+    contextOrParams?: any,
     meta?: Record<string, any>,
   ): void {
     const context =

@@ -68,9 +68,10 @@ export class HttpCacheInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (response) => {
-        await this.cacheService.set(cacheKey, response, ttl, tags);
-        this.logger.debug(`Route cache SET: ${cacheKey}`);
+      tap((response) => {
+        void this.cacheService.set(cacheKey, response, ttl, tags).then(() => {
+          this.logger.debug(`Route cache SET: ${cacheKey}`);
+        });
       }),
     );
   }

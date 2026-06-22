@@ -32,7 +32,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
-import { UserRole } from '../auth/enums/user-role.enum';
 
 interface QuestVerifier {
   id: string;
@@ -255,9 +254,7 @@ export class SubmissionsService {
       relations: [],
     });
     if (!verifier) {
-      throw new ForbiddenException(
-        `Verifier with id ${verifierId} not found`,
-      );
+      throw new ForbiddenException(`Verifier with id ${verifierId} not found`);
     }
     if (!verifier.stellarAddress) {
       throw new BadRequestException(

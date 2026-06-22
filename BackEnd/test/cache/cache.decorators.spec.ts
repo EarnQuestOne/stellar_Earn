@@ -1,5 +1,5 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
-import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import {
@@ -71,14 +71,10 @@ describe('Cache Decorators', () => {
         .mockResolvedValueOnce(expectedValue);
 
       // First request - should miss cache
-      const firstResponse = await request(app.getHttpServer())
-        .get('/test/cacheable/123')
-        .expect(200);
+      await request(app.getHttpServer()).get('/test/cacheable/123').expect(200);
 
       // Second request - should hit cache
-      const secondResponse = await request(app.getHttpServer())
-        .get('/test/cacheable/123')
-        .expect(200);
+      await request(app.getHttpServer()).get('/test/cacheable/123').expect(200);
 
       expect(cacheManager.get).toHaveBeenCalledTimes(2);
       expect(cacheManager.set).toHaveBeenCalled();

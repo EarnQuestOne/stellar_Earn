@@ -12,8 +12,8 @@ export class EventPersistenceListener implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.eventEmitter.onAny(
-      async (eventName: string | string[], payload: any) => {
+    this.eventEmitter.onAny((eventName: string | string[], payload: any) => {
+      void (async () => {
         const name = Array.isArray(eventName) ? eventName.join('.') : eventName;
 
         // Avoid infinite loop if storing an event itself emits an event (though unlikely here)
@@ -35,7 +35,7 @@ export class EventPersistenceListener implements OnModuleInit {
             `Failed to persist event ${name}: ${error.message}`,
           );
         }
-      },
-    );
+      })();
+    });
   }
 }

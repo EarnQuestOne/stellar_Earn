@@ -42,7 +42,9 @@ describe('Transaction Signing Security', () => {
         },
         {
           provide: TracingService,
-          useValue: { trace: jest.fn((_, fn) => fn({ attributes: {}, status: 'ok' })) },
+          useValue: {
+            trace: jest.fn((_, fn) => fn({ attributes: {}, status: 'ok' })),
+          },
         },
         {
           provide: MetricsService,
@@ -75,9 +77,7 @@ describe('Transaction Signing Security', () => {
       .setTimeout(30)
       .build();
 
-    tx.sign(
-      signingKeypair,
-    );
+    tx.sign(signingKeypair);
     expect(tx.signatures.length).toBe(1);
   });
 });

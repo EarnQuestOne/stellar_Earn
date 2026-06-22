@@ -1,5 +1,4 @@
 ﻿import { JobsService } from '#src/modules/jobs/jobs.service';
-import { QUEUES } from '#src/modules/jobs/jobs.constants';
 
 describe('JobsService (unit)', () => {
   let service: JobsService;

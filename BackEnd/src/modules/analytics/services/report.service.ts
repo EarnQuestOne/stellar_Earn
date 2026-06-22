@@ -270,7 +270,7 @@ export class AnalyticsReportService {
           break;
 
         default:
-          throw new Error(`Unsupported report type: ${report.type}`);
+          throw new Error(`Unsupported report type: ${String(report.type)}`);
       }
 
       const generationTime = Date.now() - startTime;
