@@ -52,6 +52,9 @@ export class Submission {
   @Column({ nullable: true })
   verifierNotes: string;
 
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  transactionHash: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

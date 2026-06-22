@@ -26,6 +26,7 @@ export class SubmissionBuilder {
     rejectedAt: null,
     rejectionReason: null,
     verifierNotes: null,
+    transactionHash: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     deletedAt: null,
@@ -35,6 +36,11 @@ export class SubmissionBuilder {
 
   withId(id: string): this {
     this.data.id = id;
+    return this;
+  }
+
+  withTransactionHash(hash: string): this {
+    this.data.transactionHash = hash;
     return this;
   }
 
@@ -68,8 +74,13 @@ export class SubmissionBuilder {
     return this;
   }
 
+  /**
+   * Set the quest; merges with a sensible default `contractTaskId` so
+   * approval-flow tests that bind `quest.contractTaskId` into a Soroban
+   * `approve_submission` call don't fail at the input-validation gate.
+   */
   withQuest(quest: Record<string, unknown>): this {
-    this.data.quest = quest as any;
+    this.data.quest = { contractTaskId: 'default-task-id', ...quest } as any;
     return this;
   }
 
