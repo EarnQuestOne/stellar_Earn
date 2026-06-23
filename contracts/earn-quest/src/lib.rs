@@ -273,6 +273,39 @@ impl EarnQuestContract {
         )
     }
 
+    /// Registers a new quest with an explicit numeric category for filtering.
+    ///
+    /// Existing `register_quest` calls keep using category `0`; this entry point
+    /// lets new quests opt into category-specific discovery without breaking the
+    /// current client API.
+    pub fn register_quest_with_category(
+        env: Env,
+        id: Symbol,
+        creator: Address,
+        reward_asset: Address,
+        reward_amount: i128,
+        verifier: Address,
+        deadline: u64,
+        category: u32,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        creator.require_auth();
+        validation::validate_symbol_length(&id)?;
+        validation::validate_addresses_distinct(&creator, &verifier)?;
+        validation::validate_reward_amount(reward_amount)?;
+        validation::validate_deadline(&env, deadline)?;
+        quest::register_quest_with_category(
+            &env,
+            &id,
+            &creator,
+            &reward_asset,
+            reward_amount,
+            &verifier,
+            deadline,
+            category,
+        )
+    }
+
     /// Registers a new quest with detailed metadata.
     ///
     /// # Arguments
@@ -1065,6 +1098,16 @@ impl EarnQuestContract {
         limit: u32,
     ) -> Vec<Quest> {
         quest::get_quests_by_creator(&env, &creator, offset, limit)
+    }
+
+    /// Returns quests for a numeric category.
+    pub fn get_quests_by_category(
+        env: Env,
+        category: u32,
+        offset: u32,
+        limit: u32,
+    ) -> Vec<Quest> {
+        quest::get_quests_by_category(&env, category, offset, limit)
     }
 
     /// Returns a list of currently active quests.

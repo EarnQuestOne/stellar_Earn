@@ -101,6 +101,8 @@ pub enum DataKey {
     CreatorWhitelist(Address),
     /// Pending clawback record keyed by (quest_id, recipient)
     ClawbackPending(Symbol, Address),
+    /// Category index keyed by a numeric category, storing quest ids in insertion order
+    QuestCategory(u32),
 }
 
 //================================================================================
@@ -1113,6 +1115,49 @@ pub fn add_quest_id(env: &Env, id: &Symbol) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn get_quest_ids_by_category(env: &Env, category: u32) -> Vec<Symbol> {
+    env.storage()
+        .instance()
+        .get(&DataKey::QuestCategory(category))
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn add_quest_to_category_index(
+    env: &Env,
+    category: u32,
+    id: &Symbol,
+) -> Result<(), Error> {
+    let mut ids = get_quest_ids_by_category(env, category);
+    validation::validate_max_quests(ids.len())?;
+
+    for i in 0..ids.len() {
+        if ids.get(i).unwrap() == *id {
+            return Ok(());
+        }
+    }
+
+    ids.push_back(id.clone());
+    env.storage()
+        .instance()
+        .set(&DataKey::QuestCategory(category), &ids);
+    Ok(())
+}
+
+pub fn remove_quest_from_category_index(env: &Env, category: u32, id: &Symbol) {
+    let mut ids = get_quest_ids_by_category(env, category);
+    let mut i = 0u32;
+    while i < ids.len() {
+        if ids.get(i).unwrap() == *id {
+            ids.remove(i);
+            env.storage()
+                .instance()
+                .set(&DataKey::QuestCategory(category), &ids);
+            return;
+        }
+        i += 1;
+    }
+}
+
 //================================================================================
 // Platform & Creator Stats Storage
 // PlatformStats is split into individual counters for atomic single-field updates.
@@ -1470,9 +1515,11 @@ mod layout_tests {
         "BadgeTypeIds",
         "MinCreatorLevel",
         "CreatorWhitelist",
+        "ClawbackPending",
+        "QuestCategory",
     ];
 
-    const EXPECTED_VARIANT_COUNT: usize = 44;
+    const EXPECTED_VARIANT_COUNT: usize = 46;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
@@ -1525,6 +1572,8 @@ mod layout_tests {
         keys.push_back(DataKey::BadgeTypeIds);
         keys.push_back(DataKey::MinCreatorLevel);
         keys.push_back(DataKey::CreatorWhitelist(addr.clone()));
+        keys.push_back(DataKey::ClawbackPending(quest_id.clone(), addr.clone()));
+        keys.push_back(DataKey::QuestCategory(1));
         keys
     }
 

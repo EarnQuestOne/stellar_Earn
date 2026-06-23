@@ -94,8 +94,10 @@ When adding a new `DataKey` variant, follow these rules:
 | 41 | `BadgeTypeIds` | — | `Vec<Symbol>` | Instance | Index of all badge type IDs |
 | 42 | `MinCreatorLevel` | — | `u32` | Instance | Minimum user level to create quests (0 = disabled) |
 | 43 | `CreatorWhitelist` | `address: Address` | `bool` | Instance | Bypass min creator level for this address |
+| 44 | `ClawbackPending` | `quest_id: Symbol`, `recipient: Address` | `ClawbackPending` | Instance | Pending 2-of-2 SuperAdmin clawback approval |
+| 45 | `QuestCategory` | `category: u32` | `Vec<Symbol>` | Instance | Index of quest IDs by numeric category |
 
-**Total variants:** 44
+**Total variants:** 46
 
 ---
 
@@ -103,7 +105,7 @@ When adding a new `DataKey` variant, follow these rules:
 
 | Type | Fields (summary) |
 |------|------------------|
-| `Quest` | `id`, `creator`, `reward_asset`, `reward_amount`, `verifier`, `deadline`, `status`, `total_claims` |
+| `Quest` | `id`, `creator`, `reward_asset`, `reward_amount`, `verifier`, `deadline`, `category`, `status`, `total_claims` |
 | `QuestMetadataCore` | `title`, `description`, `category` |
 | `QuestMetadataExtended` | `requirements`, `tags` |
 | `Submission` | `quest_id`, `submitter`, `proof_hash`, `status`, `claimed_amount`, `timestamp` |
@@ -117,6 +119,7 @@ When adding a new `DataKey` variant, follow these rules:
 | `Commitment` | `hash`, `timestamp` |
 | `VerifierStake` | `token`, `amount`, `is_active` |
 | `BadgeType` | `id`, `name`, `description`, `xp_reward` |
+| `ClawbackPending` | `initiator`, `asset`, `amount` |
 | `PlatformStats` | `total_quests_created`, `total_submissions`, `total_rewards_distributed`, `total_active_users`, `total_rewards_claimed` (assembled on read from split keys) |
 
 Full struct definitions: `src/types.rs`.
@@ -129,7 +132,7 @@ The `#[cfg(test)]` module `layout_tests` in `storage.rs` enforces:
 
 - Every `DataKey` variant has a **unique Rust discriminant** (no accidental duplicate enum arms).
 - The canonical `VARIANT_NAMES` list has **no duplicate strings**.
-- The live variant count matches the documented count (44).
+- The live variant count matches the documented count (46).
 
 Run:
 

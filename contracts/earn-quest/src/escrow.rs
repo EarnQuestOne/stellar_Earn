@@ -271,6 +271,7 @@ pub fn cancel_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i1
     let mut quest = quest;
     quest.status = QuestStatus::Cancelled;
     storage::set_quest(env, quest_id, &quest);
+    storage::remove_quest_from_category_index(env, quest.category, quest_id);
 
     // Refund escrow if it exists (uses a single read inside refund_remaining)
     let refunded = if storage::has_escrow(env, quest_id) {
@@ -318,6 +319,7 @@ pub fn expire_quest(env: &Env, quest_id: &Symbol, caller: &Address) -> Result<i1
     let mut quest = quest;
     quest.status = QuestStatus::Expired;
     storage::set_quest(env, quest_id, &quest);
+    storage::remove_quest_from_category_index(env, quest.category, quest_id);
 
     let refunded = if storage::has_escrow(env, quest_id) {
         refund_remaining(env, quest_id)?
