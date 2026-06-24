@@ -1,4 +1,5 @@
 #![cfg(test)]
+#![allow(clippy::too_many_arguments)]
 
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::testutils::Ledger as _;
@@ -21,6 +22,7 @@ pub enum MockOracleState {
 #[contract]
 pub struct MockPriceFeedOracle;
 
+#[allow(clippy::too_many_arguments)]
 #[contractimpl]
 impl MockPriceFeedOracle {
     pub fn set_price_data(
@@ -41,7 +43,9 @@ impl MockPriceFeedOracle {
             timestamp,
             confidence,
         };
-        env.storage().instance().set(&key, &MockOracleState::Data(data));
+        env.storage()
+            .instance()
+            .set(&key, &MockOracleState::Data(data));
     }
 
     pub fn set_price_mismatch(
@@ -64,7 +68,9 @@ impl MockPriceFeedOracle {
             timestamp,
             confidence,
         };
-        env.storage().instance().set(&key, &MockOracleState::Data(data));
+        env.storage()
+            .instance()
+            .set(&key, &MockOracleState::Data(data));
     }
 
     pub fn set_price_none(env: Env, base: Address, quote: Address) {
@@ -139,7 +145,7 @@ fn test_oracle_admin_operations() {
 
     let configs = client.get_oracle_configs();
     assert_eq!(configs.len(), 1);
-    assert_eq!(configs.get(0).unwrap().is_active, false);
+    assert!(!configs.get(0).unwrap().is_active);
 
     // Remove oracle config
     client.remove_oracle(&admin, &oracle_addr);
@@ -341,7 +347,16 @@ fn test_oracle_response_mismatch_rejected() {
     let wrong_quote = Address::generate(&env);
 
     // Oracle returns wrong quote asset
-    oracle_client.set_price_mismatch(&base, &quote, &base, &wrong_quote, &U256::from_u32(&env, 5000), &7, &1000, &85);
+    oracle_client.set_price_mismatch(
+        &base,
+        &quote,
+        &base,
+        &wrong_quote,
+        &U256::from_u32(&env, 5000),
+        &7,
+        &1000,
+        &85,
+    );
 
     let oracle_config = OracleConfig {
         oracle_address: oracle_addr.clone(),
@@ -446,7 +461,10 @@ fn test_oracle_external_failures_handling() {
     let res2 = client.try_get_price_from_oracle(&oracle_addr2, &base, &quote, &300);
     match res2 {
         Err(Ok(Error::NoValidOracleData)) => {}
-        _ => panic!("expected NoValidOracleData on None response, got {:?}", res2),
+        _ => panic!(
+            "expected NoValidOracleData on None response, got {:?}",
+            res2
+        ),
     }
 
     // Case 3: Calling non-existent contract address
@@ -463,7 +481,10 @@ fn test_oracle_external_failures_handling() {
     let res3 = client.try_get_price_from_oracle(&non_existent_addr, &base, &quote, &300);
     match res3 {
         Err(Ok(Error::NoValidOracleData)) => {}
-        _ => panic!("expected NoValidOracleData on non-existent contract, got {:?}", res3),
+        _ => panic!(
+            "expected NoValidOracleData on non-existent contract, got {:?}",
+            res3
+        ),
     }
 }
 
@@ -583,14 +604,31 @@ fn test_validate_reward_with_oracle_confidence_limits() {
     );
 
     // Case 1: Oracle confidence is 85. Aggregation avg confidence will be 85 (>= 80 threshold in validate_reward)
-    oracle_client.set_price_data(&reward_asset, &reference_asset, &U256::from_u32(&env, 10000000), &7, &1000, &85);
+    oracle_client.set_price_data(
+        &reward_asset,
+        &reference_asset,
+        &U256::from_u32(&env, 10000000),
+        &7,
+        &1000,
+        &85,
+    );
     client.validate_reward_with_oracle(&reward_asset, &100, &reference_asset, &5);
 
     // Case 2: Oracle confidence is 75 (valid for config, but average confidence 75 < 80 threshold in validate_reward)
-    oracle_client.set_price_data(&reward_asset, &reference_asset, &U256::from_u32(&env, 10000000), &7, &1000, &75);
+    oracle_client.set_price_data(
+        &reward_asset,
+        &reference_asset,
+        &U256::from_u32(&env, 10000000),
+        &7,
+        &1000,
+        &75,
+    );
     let res2 = client.try_validate_reward_with_oracle(&reward_asset, &100, &reference_asset, &5);
     match res2 {
         Err(Ok(Error::LowOracleConfidence)) => {}
-        _ => panic!("expected LowOracleConfidence in reward validation, got {:?}", res2),
+        _ => panic!(
+            "expected LowOracleConfidence in reward validation, got {:?}",
+            res2
+        ),
     }
 }

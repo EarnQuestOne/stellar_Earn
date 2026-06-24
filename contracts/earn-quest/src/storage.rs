@@ -829,13 +829,11 @@ pub fn set_unpause_approval(env: &Env, admin: &Address, approved: bool) {
                 .set(&DataKey::UnpauseApproval(round, admin.clone()), &true);
             inc_unpause_approval_count(env);
         }
-    } else {
-        if has_unpause_approval(env, admin) {
-            env.storage()
-                .instance()
-                .remove(&DataKey::UnpauseApproval(round, admin.clone()));
-            dec_unpause_approval_count(env);
-        }
+    } else if has_unpause_approval(env, admin) {
+        env.storage()
+            .instance()
+            .remove(&DataKey::UnpauseApproval(round, admin.clone()));
+        dec_unpause_approval_count(env);
     }
 }
 
@@ -1122,11 +1120,7 @@ pub fn get_quest_ids_by_category(env: &Env, category: u32) -> Vec<Symbol> {
         .unwrap_or_else(|| Vec::new(env))
 }
 
-pub fn add_quest_to_category_index(
-    env: &Env,
-    category: u32,
-    id: &Symbol,
-) -> Result<(), Error> {
+pub fn add_quest_to_category_index(env: &Env, category: u32, id: &Symbol) -> Result<(), Error> {
     let mut ids = get_quest_ids_by_category(env, category);
     validation::validate_max_quests(ids.len())?;
 

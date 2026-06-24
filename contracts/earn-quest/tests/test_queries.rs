@@ -34,13 +34,7 @@ fn register_with_category(
     let token = Address::generate(env);
     let verifier = Address::generate(env);
     client.register_quest_with_category(
-        &id,
-        creator,
-        &token,
-        &reward,
-        &verifier,
-        &99999u64,
-        &category,
+        &id, creator, &token, &reward, &verifier, &99999u64, &category,
     );
 }
 
@@ -236,17 +230,10 @@ fn test_category_index_removes_expired_quests() {
     let deadline = 1_000u64 + 86_400;
 
     client.register_quest_with_category(
-        &quest_id,
-        &creator,
-        &token,
-        &100i128,
-        &verifier,
-        &deadline,
-        &5u32,
+        &quest_id, &creator, &token, &100i128, &verifier, &deadline, &5u32,
     );
 
-    env.ledger()
-        .with_mut(|l| l.timestamp = deadline + 20);
+    env.ledger().with_mut(|l| l.timestamp = deadline + 20);
     client.expire_quest(&quest_id, &creator);
 
     let results = client.get_quests_by_category(&5, &0, &10);
