@@ -826,33 +826,6 @@
                         "key": {
                           "vec": [
                             {
-                              "symbol": "PlatformQuestsCreated"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "u64": 1
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "PlatformRewardsDistributed"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "u128": {
-                            "hi": 0,
-                            "lo": 1000
-                          }
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
                               "symbol": "Quest"
                             },
                             {
@@ -862,14 +835,6 @@
                         },
                         "val": {
                           "map": [
-                            {
-                              "key": {
-                                "symbol": "category"
-                              },
-                              "val": {
-                                "u32": 0
-                              }
-                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -942,21 +907,6 @@
                               }
                             }
                           ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "QuestCategory"
-                            },
-                            {
-                              "u32": 0
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": []
                         }
                       },
                       {

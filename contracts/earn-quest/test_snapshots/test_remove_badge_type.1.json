@@ -67,8 +67,6 @@
         }
       ]
     ],
-    [],
-    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
@@ -76,20 +74,13 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "grant_badge",
+              "function_name": "remove_badge_type",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "Legend"
-                    }
-                  ]
+                  "symbol": "legend"
                 }
               ]
             }
@@ -98,6 +89,7 @@
         }
       ]
     ],
+    [],
     []
   ],
   "ledger": {
@@ -216,7 +208,7 @@
                               "symbol": "BadgeType"
                             },
                             {
-                              "symbol": "EXPLORER"
+                              "symbol": "explorer"
                             }
                           ]
                         },
@@ -227,7 +219,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "For users who have explored multiple quests"
+                                "string": "Reached level 2."
                               }
                             },
                             {
@@ -235,7 +227,15 @@
                                 "symbol": "id"
                               },
                               "val": {
-                                "symbol": "EXPLORER"
+                                "symbol": "explorer"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
                               }
                             },
                             {
@@ -248,10 +248,10 @@
                             },
                             {
                               "key": {
-                                "symbol": "xp_reward"
+                                "symbol": "xp_threshold"
                               },
                               "val": {
-                                "u64": 20
+                                "u64": 300
                               }
                             }
                           ]
@@ -264,7 +264,7 @@
                               "symbol": "BadgeType"
                             },
                             {
-                              "symbol": "MASTER"
+                              "symbol": "master"
                             }
                           ]
                         },
@@ -275,7 +275,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "For top-tier contributors"
+                                "string": "Reached level 4."
                               }
                             },
                             {
@@ -283,7 +283,15 @@
                                 "symbol": "id"
                               },
                               "val": {
-                                "symbol": "MASTER"
+                                "symbol": "master"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
                               }
                             },
                             {
@@ -296,10 +304,10 @@
                             },
                             {
                               "key": {
-                                "symbol": "xp_reward"
+                                "symbol": "xp_threshold"
                               },
                               "val": {
-                                "u64": 50
+                                "u64": 1000
                               }
                             }
                           ]
@@ -312,7 +320,7 @@
                               "symbol": "BadgeType"
                             },
                             {
-                              "symbol": "ROOKIE"
+                              "symbol": "rookie"
                             }
                           ]
                         },
@@ -323,7 +331,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "Initial badge for new users"
+                                "string": "First quest completed."
                               }
                             },
                             {
@@ -331,7 +339,15 @@
                                 "symbol": "id"
                               },
                               "val": {
-                                "symbol": "ROOKIE"
+                                "symbol": "rookie"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
                               }
                             },
                             {
@@ -344,10 +360,10 @@
                             },
                             {
                               "key": {
-                                "symbol": "xp_reward"
+                                "symbol": "xp_threshold"
                               },
                               "val": {
-                                "u64": 10
+                                "u64": 0
                               }
                             }
                           ]
@@ -360,7 +376,7 @@
                               "symbol": "BadgeType"
                             },
                             {
-                              "symbol": "VETERAN"
+                              "symbol": "veteran"
                             }
                           ]
                         },
@@ -371,7 +387,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "For experienced quest completers"
+                                "string": "Reached level 3."
                               }
                             },
                             {
@@ -379,7 +395,15 @@
                                 "symbol": "id"
                               },
                               "val": {
-                                "symbol": "VETERAN"
+                                "symbol": "veteran"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "is_active"
+                              },
+                              "val": {
+                                "bool": true
                               }
                             },
                             {
@@ -392,10 +416,10 @@
                             },
                             {
                               "key": {
-                                "symbol": "xp_reward"
+                                "symbol": "xp_threshold"
                               },
                               "val": {
-                                "u64": 30
+                                "u64": 600
                               }
                             }
                           ]
@@ -412,16 +436,16 @@
                         "val": {
                           "vec": [
                             {
-                              "symbol": "ROOKIE"
+                              "symbol": "rookie"
                             },
                             {
-                              "symbol": "EXPLORER"
+                              "symbol": "explorer"
                             },
                             {
-                              "symbol": "VETERAN"
+                              "symbol": "veteran"
                             },
                             {
-                              "symbol": "MASTER"
+                              "symbol": "master"
                             }
                           ]
                         }
@@ -556,78 +580,6 @@
                         },
                         "val": {
                           "bool": true
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "UserBadges"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "badges"
-                              },
-                              "val": {
-                                "vec": [
-                                  {
-                                    "vec": [
-                                      {
-                                        "symbol": "Legend"
-                                      }
-                                    ]
-                                  }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "UserStats"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "map": [
-                            {
-                              "key": {
-                                "symbol": "level"
-                              },
-                              "val": {
-                                "u32": 1
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "quests_completed"
-                              },
-                              "val": {
-                                "u32": 1
-                              }
-                            },
-                            {
-                              "key": {
-                                "symbol": "xp"
-                              },
-                              "val": {
-                                "u64": 100
-                              }
-                            }
-                          ]
                         }
                       }
                     ]
@@ -1187,141 +1139,6 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "btype_reg"
-              },
-              {
-                "symbol": "ROOKIE"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "Rookie"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "btype_reg"
-              },
-              {
-                "symbol": "EXPLORER"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "Explorer"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "btype_reg"
-              },
-              {
-                "symbol": "VETERAN"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "Veteran"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "btype_reg"
-              },
-              {
-                "symbol": "MASTER"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "Master"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "btype_reg"
-              },
-              {
-                "symbol": "LEGEND"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "Legend"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1363,7 +1180,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "symbol": "LEGEND"
+                  "symbol": "legend"
                 }
               ]
             }
@@ -1384,7 +1201,7 @@
                 "symbol": "btype_rm"
               },
               {
-                "symbol": "LEGEND"
+                "symbol": "legend"
               }
             ],
             "data": "void"
@@ -1462,7 +1279,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Initial badge for new users"
+                        "string": "First quest completed."
                       }
                     },
                     {
@@ -1470,7 +1287,15 @@
                         "symbol": "id"
                       },
                       "val": {
-                        "symbol": "ROOKIE"
+                        "symbol": "rookie"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_active"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -1483,10 +1308,10 @@
                     },
                     {
                       "key": {
-                        "symbol": "xp_reward"
+                        "symbol": "xp_threshold"
                       },
                       "val": {
-                        "u64": 10
+                        "u64": 0
                       }
                     }
                   ]
@@ -1498,7 +1323,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "For users who have explored multiple quests"
+                        "string": "Reached level 2."
                       }
                     },
                     {
@@ -1506,7 +1331,15 @@
                         "symbol": "id"
                       },
                       "val": {
-                        "symbol": "EXPLORER"
+                        "symbol": "explorer"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_active"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -1519,10 +1352,10 @@
                     },
                     {
                       "key": {
-                        "symbol": "xp_reward"
+                        "symbol": "xp_threshold"
                       },
                       "val": {
-                        "u64": 20
+                        "u64": 300
                       }
                     }
                   ]
@@ -1534,7 +1367,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "For experienced quest completers"
+                        "string": "Reached level 3."
                       }
                     },
                     {
@@ -1542,7 +1375,15 @@
                         "symbol": "id"
                       },
                       "val": {
-                        "symbol": "VETERAN"
+                        "symbol": "veteran"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_active"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -1555,10 +1396,10 @@
                     },
                     {
                       "key": {
-                        "symbol": "xp_reward"
+                        "symbol": "xp_threshold"
                       },
                       "val": {
-                        "u64": 30
+                        "u64": 600
                       }
                     }
                   ]
@@ -1570,7 +1411,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "For top-tier contributors"
+                        "string": "Reached level 4."
                       }
                     },
                     {
@@ -1578,7 +1419,15 @@
                         "symbol": "id"
                       },
                       "val": {
-                        "symbol": "MASTER"
+                        "symbol": "master"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_active"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -1591,10 +1440,10 @@
                     },
                     {
                       "key": {
-                        "symbol": "xp_reward"
+                        "symbol": "xp_threshold"
                       },
                       "val": {
-                        "u64": 50
+                        "u64": 1000
                       }
                     }
                   ]
@@ -1633,68 +1482,16 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "vec": [
+                  "map": [
                     {
-                      "symbol": "Legend"
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "symbol": "legend"
+                      }
                     }
                   ]
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "badge_grt"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-              },
-              {
-                "symbol": "LEGEND"
-              }
-            ],
-            "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "xp_award"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u64": 100
-                },
-                {
-                  "u64": 100
-                },
-                {
-                  "u32": 1
                 }
               ]
             }
@@ -1718,37 +1515,15 @@
                 "symbol": "grant_badge"
               }
             ],
-            "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
-              },
-              {
-                "symbol": "get_user_badges"
-              }
-            ],
             "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+              "error": {
+                "contract": 43
+              }
             }
           }
         }
       },
-      "failed_call": false
+      "failed_call": true
     },
     {
       "event": {
@@ -1759,29 +1534,68 @@
           "v0": {
             "topics": [
               {
-                "symbol": "fn_return"
+                "symbol": "error"
               },
               {
-                "symbol": "get_user_badges"
+                "error": {
+                  "contract": 43
+                }
               }
             ],
             "data": {
-              "map": [
+              "string": "escalating Ok(ScErrorType::Contract) frame-exit to Err"
+            }
+          }
+        }
+      },
+      "failed_call": true
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "error"
+              },
+              {
+                "error": {
+                  "contract": 43
+                }
+              }
+            ],
+            "data": {
+              "vec": [
                 {
-                  "key": {
-                    "symbol": "badges"
-                  },
-                  "val": {
-                    "vec": [
-                      {
-                        "vec": [
-                          {
-                            "symbol": "Legend"
+                  "string": "contract try_call failed"
+                },
+                {
+                  "symbol": "grant_badge"
+                },
+                {
+                  "vec": [
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                    },
+                    {
+                      "map": [
+                        {
+                          "key": {
+                            "symbol": "id"
+                          },
+                          "val": {
+                            "symbol": "legend"
                           }
-                        ]
-                      }
-                    ]
-                  }
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }

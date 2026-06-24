@@ -116,33 +116,6 @@
                         "key": {
                           "vec": [
                             {
-                              "symbol": "PlatformQuestsCreated"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "u64": 2
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "PlatformRewardsDistributed"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "u128": {
-                            "hi": 0,
-                            "lo": 3000
-                          }
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
                               "symbol": "Quest"
                             },
                             {
@@ -152,14 +125,6 @@
                         },
                         "val": {
                           "map": [
-                            {
-                              "key": {
-                                "symbol": "category"
-                              },
-                              "val": {
-                                "u32": 0
-                              }
-                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -249,14 +214,6 @@
                           "map": [
                             {
                               "key": {
-                                "symbol": "category"
-                              },
-                              "val": {
-                                "u32": 0
-                              }
-                            },
-                            {
-                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -325,28 +282,6 @@
                               "val": {
                                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                               }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "QuestCategory"
-                            },
-                            {
-                              "u32": 0
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": [
-                            {
-                              "symbol": "QUEST1"
-                            },
-                            {
-                              "symbol": "QUEST2"
                             }
                           ]
                         }

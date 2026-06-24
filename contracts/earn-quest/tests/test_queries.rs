@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{symbol_short, testutils::Address as _, testutils::Ledger as _, Address, Env};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 extern crate earn_quest;
 use earn_quest::types::QuestStatus;
