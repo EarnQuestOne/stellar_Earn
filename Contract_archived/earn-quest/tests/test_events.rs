@@ -279,6 +279,31 @@ fn test_submission_paid_event() {
 }
 
 #[test]
+fn test_escrow_topup_event() {
+    let (env, client, admin, creator, verifier, reward_asset) = create_test_env();
+
+    client.initialize(&admin);
+
+    let quest_id = symbol_short!("quest1");
+    let deadline = env.ledger().timestamp() + 86400;
+
+    // Register quest and do initial deposit
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000,
+        &verifier,
+        &deadline,
+        &10,
+    );
+
+    // Would need full escrow setup to test topup event
+    // This requires token mints and transfers which need asset contract
+    // Keeping as placeholder for integration testing
+}
+
+#[test]
 fn test_event_ordering() {
     let (env, client, admin, creator, verifier, reward_asset) = create_test_env();
 

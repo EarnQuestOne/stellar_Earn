@@ -214,6 +214,19 @@ env.events().publish(
 );
 ```
 
+#### `escrow_topup`
+**Emitted when:** Additional funds are topped up into an existing escrow
+**Topics:** `("escrow_topup", quest_id)` — `quest_id` is indexed for efficient filtering
+**Data:** `EscrowToppedUpEvent { depositor: Address, amount: i128, new_balance: i128 }`
+**Source:** `escrow.rs::topup_escrow()`
+
+```rust
+env.events().publish(
+    (Symbol::new(env, "escrow_topup"), quest_id),
+    EscrowToppedUpEvent { depositor, amount, new_balance },
+);
+```
+
 ### 5. Reputation Events
 
 #### `xp_award`
@@ -369,7 +382,7 @@ env.events().publish(
 
 - **Registration/Creation:** `*_reg` (e.g., `quest_reg`)
 - **Updates:** `*_upd` (e.g., `status_upd`, `admin_upd`)
-- **Deposits:** `*_dep` (e.g., `escrow_dep`)
+- **Deposits/Top-ups:** `*_dep`, `*_topup` (e.g., `escrow_dep`, `escrow_topup`)
 - **Withdrawals:** `*_wd` (e.g., `escrow_wd`)
 - **Payments:** `*_pay` (e.g., `escrow_pay`)
 - **Expiration:** `*_exp` (e.g., `quest_exp`, `auto_exp`)
@@ -391,7 +404,7 @@ env.events().publish(
    - `xp_award`, `badge_grant` - Track reputation
 
 3. **Financial Tracking:**
-   - `escrow_dep`, `escrow_pay`, `escrow_wd` - Track fund movements
+   - `escrow_dep`, `escrow_topup`, `escrow_pay`, `escrow_wd` - Track fund movements
 
 4. **System Monitoring:**
    - `init`, `admin_upd` - Track admin changes

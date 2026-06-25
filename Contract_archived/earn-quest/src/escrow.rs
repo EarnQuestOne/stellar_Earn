@@ -118,6 +118,67 @@ pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, creator: &Address) -> Re
     Ok(balance)
 }
 
+/// Top-up escrow for a quest with additional funds.
+/// Unlike initial deposit, this requires the quest to already have a non-zero escrow balance.
+/// Emits an EscrowToppedUp event with quest_id as an indexed topic.
+pub fn topup_escrow(
+    env: &Env,
+    quest_id: &Symbol,
+    depositor: &Address,
+    amount: i128,
+) -> Result<(), Error> {
+    depositor.require_auth();
+
+    if amount <= 0 {
+        return Err(Error::InvalidEscrowAmount);
+    }
+
+    let quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
+
+    if quest.creator != *depositor {
+        return Err(Error::Unauthorized);
+    }
+
+    if quest.status != QuestStatus::Active && quest.status != QuestStatus::Paused {
+        return Err(Error::QuestNotActive);
+    }
+
+    let current_balance = storage::get_escrow_balance(env, quest_id);
+    if current_balance <= 0 {
+        return Err(Error::NoEscrowBalance);
+    }
+
+    let token_client = token::Client::new(env, &quest.reward_asset);
+    let contract_address = env.current_contract_address();
+    token_client.transfer(depositor, &contract_address, &amount);
+
+    // Check for overflow before adding
+    let new_balance = current_balance.checked_add(amount)
+        .ok_or(Error::ArithmeticOverflow)?;
+
+    storage::set_escrow_balance(env, quest_id, new_balance);
+
+    // Emit EscrowToppedUp event with quest_id as indexed topic
+    #[soroban_sdk::contracttype]
+    #[derive(Clone)]
+    pub struct EscrowToppedUpEvent {
+        pub depositor: Address,
+        pub amount: i128,
+        pub new_balance: i128,
+    }
+
+    env.events().publish(
+        (Symbol::new(env, "escrow_topup"), quest_id.clone()),
+        EscrowToppedUpEvent {
+            depositor: depositor.clone(),
+            amount,
+            new_balance,
+        },
+    );
+
+    Ok(())
+}
+
 /// Get the current escrow balance for a quest
 pub fn get_escrow_balance(env: &Env, quest_id: &Symbol) -> i128 {
     storage::get_escrow_balance(env, quest_id)

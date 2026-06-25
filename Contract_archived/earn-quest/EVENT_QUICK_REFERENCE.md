@@ -17,6 +17,7 @@
 | `rejected` | `reject_submission()` | `("rejected", quest_id)` | `submitter: Address` | High |
 | `sub_paid` | `approve_submission()` | `("sub_paid", quest_id)` | `submitter: Address` | High |
 | `escrow_dep` | `deposit_escrow()` | `("escrow_dep", quest_id)` | `amount: i128` | High |
+| `escrow_topup` | `topup_escrow()` | `("escrow_topup", quest_id)` | `EscrowToppedUpEvent { depositor, amount, new_balance }` | High |
 | `escrow_pay` | `process_payout()` | `("escrow_pay", quest_id)` | `recipient: Address` | High |
 | `escrow_wd` | `withdraw_unclaimed()` | `("escrow_wd", quest_id)` | `amount: i128` | High |
 | `xp_award` | `award_xp()` | `("xp_award", user)` | `xp: u32` | Medium |
@@ -42,7 +43,7 @@
 ### 🟡 High Priority Events (Core Functionality)
 - Quest lifecycle: `quest_reg`, `status_upd`, `quest_full`, `quest_exp`, `auto_exp`, `quest_can`
 - Submissions: `proof_sub`, `approved`, `rejected`, `sub_paid`
-- Escrow: `escrow_dep`, `escrow_pay`, `escrow_wd`
+- Escrow: `escrow_dep`, `escrow_topup`, `escrow_pay`, `escrow_wd`
 
 ### 🟢 Medium Priority Events (User Features)
 - Reputation: `xp_award`, `badge_grant`
@@ -88,7 +89,7 @@ subscribe_to_events([
 subscribe_to_events([
     "quest_reg", "status_upd", "quest_full", "quest_exp", "quest_can",
     "proof_sub", "approved", "rejected", "sub_paid",
-    "escrow_dep", "escrow_pay", "escrow_wd",
+    "escrow_dep", "escrow_topup", "escrow_pay", "escrow_wd",
     "xp_award", "badge_grant",
 ])
 ```

@@ -231,6 +231,18 @@ impl EarnQuestContract {
         escrow::deposit_escrow(&env, &quest_id, &creator, amount)
     }
 
+    /// Top-up additional funds into an existing escrow for a quest (creator only).
+    /// Requires the quest to already have a non-zero escrow balance.
+    /// Emits an EscrowToppedUp event with quest_id as an indexed topic.
+    pub fn topup_escrow(
+        env: Env,
+        quest_id: Symbol,
+        creator: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        escrow::topup_escrow(&env, &quest_id, &creator, amount)
+    }
+
     /// Get the current escrow balance for a quest
     pub fn get_escrow_balance(env: Env, quest_id: Symbol) -> i128 {
         escrow::get_escrow_balance(&env, &quest_id)

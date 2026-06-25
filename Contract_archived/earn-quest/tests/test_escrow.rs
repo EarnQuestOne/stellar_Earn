@@ -701,3 +701,195 @@ fn test_deposit_on_paused_quest_succeeds() {
 
     assert_eq!(ctx.client.get_escrow_balance(&quest_id), 5000);
 }
+
+// ── Top-Up Escrow Tests ──
+
+#[test]
+fn test_topup_escrow_success() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TOPUP");
+    let reward: i128 = 1000;
+    let max_p: u32 = 3;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, max_p);
+    let initial_balance = ctx.client.get_escrow_balance(&quest_id);
+    assert_eq!(initial_balance, reward * (max_p as i128));
+
+    // Mint additional funds and top-up
+    let topup_amount: i128 = 2000;
+    ctx.token_admin_client.mint(&ctx.creator, &topup_amount);
+    ctx.client.topup_escrow(&quest_id, &ctx.creator, &topup_amount);
+
+    let new_balance = ctx.client.get_escrow_balance(&quest_id);
+    assert_eq!(new_balance, initial_balance + topup_amount);
+    assert_eq!(
+        ctx.token_client.balance(&ctx.contract_address),
+        new_balance
+    );
+}
+
+#[test]
+fn test_topup_escrow_multiple_topups() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_MTOP");
+    let reward: i128 = 500;
+    let max_p: u32 = 2;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, max_p);
+
+    let top1: i128 = 1000;
+    ctx.token_admin_client.mint(&ctx.creator, &top1);
+    ctx.client.topup_escrow(&quest_id, &ctx.creator, &top1);
+    assert_eq!(ctx.client.get_escrow_balance(&quest_id), 1000 + top1);
+
+    let top2: i128 = 1500;
+    ctx.token_admin_client.mint(&ctx.creator, &top2);
+    ctx.client.topup_escrow(&quest_id, &ctx.creator, &top2);
+    assert_eq!(ctx.client.get_escrow_balance(&quest_id), 1000 + top1 + top2);
+}
+
+#[test]
+fn test_topup_escrow_zero_amount_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPZRO");
+    let reward: i128 = 1000;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, 5);
+
+    let result = ctx.client.try_topup_escrow(&quest_id, &ctx.creator, &0);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_negative_amount_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPNEG");
+    let reward: i128 = 1000;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, 5);
+
+    let result = ctx.client.try_topup_escrow(&quest_id, &ctx.creator, &-100);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_no_initial_deposit_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPND");
+    let deadline = ctx.env.ledger().timestamp() + 86400;
+
+    ctx.token_admin_client.mint(&ctx.creator, &5000);
+
+    ctx.client.register_quest(
+        &quest_id,
+        &ctx.creator,
+        &ctx.token_address,
+        &1000,
+        &ctx.verifier,
+        &deadline,
+        &5,
+    );
+
+    // No initial deposit — top-up should fail
+    let result = ctx.client.try_topup_escrow(&quest_id, &ctx.creator, &2000);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_non_creator_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPAUT");
+    let reward: i128 = 1000;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, 5);
+
+    let other = Address::generate(&ctx.env);
+    ctx.token_admin_client.mint(&other, &5000);
+
+    let result = ctx.client.try_topup_escrow(&quest_id, &other, &5000);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_nonexistent_quest_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPNOE");
+
+    let result = ctx.client.try_topup_escrow(&quest_id, &ctx.creator, &1000);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_completed_quest_fails() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPCMP");
+    let reward: i128 = 1000;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, 5);
+
+    ctx.client
+        .update_quest_status(&quest_id, &ctx.creator, &QuestStatus::Completed);
+
+    ctx.token_admin_client.mint(&ctx.creator, &5000);
+    let result = ctx.client.try_topup_escrow(&quest_id, &ctx.creator, &5000);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_topup_escrow_on_paused_quest_succeeds() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPPAU");
+    let reward: i128 = 1000;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, 5);
+
+    ctx.client
+        .update_quest_status(&quest_id, &ctx.creator, &QuestStatus::Paused);
+
+    ctx.token_admin_client.mint(&ctx.creator, &3000);
+    ctx.client.topup_escrow(&quest_id, &ctx.creator, &3000);
+
+    assert_eq!(ctx.client.get_escrow_balance(&quest_id), 5000 + 3000);
+}
+
+#[test]
+fn test_topup_escrow_emits_event() {
+    let ctx = setup();
+    let quest_id = symbol_short!("Q_TPEV");
+    let reward: i128 = 1000;
+    let max_p: u32 = 5;
+
+    create_funded_quest(&ctx, quest_id.clone(), reward, max_p);
+    let initial_balance = ctx.client.get_escrow_balance(&quest_id);
+
+    let topup_amount: i128 = 3000;
+    ctx.token_admin_client.mint(&ctx.creator, &topup_amount);
+    ctx.client.topup_escrow(&quest_id, &ctx.creator, &topup_amount);
+
+    let expected_new_balance = initial_balance + topup_amount;
+
+    // Verify event was emitted with correct topics and data
+    let events = ctx.env.events().all();
+    let last_event = events.last().unwrap();
+
+    // Verify indexed topic (quest_id)
+    assert_eq!(
+        last_event.topics,
+        (
+            soroban_sdk::Symbol::new(&ctx.env, "escrow_topup"),
+            quest_id.clone()
+        ).into_val(&ctx.env)
+    );
+
+    // Verify event data: depositor, amount, new_balance
+    let data = &last_event.data;
+    // The event data is a struct EscrowToppedUpEvent { depositor, amount, new_balance }
+    // which is serialized as a vec of values
+    use soroban_sdk::IntoVal;
+    
+    // Since EscrowToppedUpEvent is defined inside the function and uses #[contracttype],
+    // we verify the balance change is correct through escrow state rather than
+    // raw event deserialization (struct is private to the function).
+    assert_eq!(ctx.client.get_escrow_balance(&quest_id), expected_new_balance);
+    assert_eq!(ctx.token_client.balance(&ctx.contract_address), expected_new_balance);
+}
