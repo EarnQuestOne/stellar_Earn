@@ -6,7 +6,9 @@ import { EventStore } from '../../src/events/entities/event-store.entity';
 describe('UserExperienceListener atomicity across service boundaries', () => {
   let listener: UserExperienceListener;
   let eventEmitter: jest.Mocked<EventEmitter2>;
-  let userService: jest.Mocked<Pick<UsersService, 'applyReputationDeltaAtomic'>>;
+  let userService: jest.Mocked<
+    Pick<UsersService, 'applyReputationDeltaAtomic'>
+  >;
 
   const approvedEvent = {
     submissionId: 'sub-1',

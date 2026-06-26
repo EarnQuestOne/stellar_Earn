@@ -169,9 +169,7 @@ export class TraceService {
   private async findOneOrFail(traceId: string): Promise<ExecutionTrace> {
     const trace = this.store.get(traceId);
     if (!trace) {
-      throw new NotFoundException(
-        `Trace not found for traceId: ${traceId}`,
-      );
+      throw new NotFoundException(`Trace not found for traceId: ${traceId}`);
     }
     return trace;
   }
