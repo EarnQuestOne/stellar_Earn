@@ -85,6 +85,6 @@ export class CreateQuestDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  @ValidateIf((o) => o.startDate && o.endDate)
+  @ValidateIf((o: any) => o.startDate && o.endDate)
   endDate?: Date;
 }
