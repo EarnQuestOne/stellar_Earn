@@ -29,7 +29,6 @@ import { env } from '@/lib/config/env';
 // Configuration
 // ---------------------------------------------------------------------------
 
-const BASE_URL = env.apiBaseUrl();
 const API_VERSION = 'v1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
@@ -196,97 +195,113 @@ function transformAxiosError(error: unknown): AppError {
 }
 
 // ---------------------------------------------------------------------------
-// Axios instance
+// Axios instance (lazy singleton – avoids import-time env reads)
 // ---------------------------------------------------------------------------
 
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: `${BASE_URL}/api/${API_VERSION}`,
-  timeout: DEFAULT_TIMEOUT_MS,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
+let _apiClient: AxiosInstance | null = null;
 
-// ---------------------------------------------------------------------------
-// Request interceptor – cookies are sent automatically
-// ---------------------------------------------------------------------------
+/**
+ * Returns the shared Axios instance, creating it on first call.
+ * Deferring creation to the first request prevents a hard throw at module
+ * import time when environment variables are not yet available.
+ */
+export function getApiClient(): AxiosInstance {
+  if (_apiClient) return _apiClient;
 
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    if (isClient() && !window.navigator.onLine) {
-      const offlineError = new axios.Cancel('No internet connection');
-      return Promise.reject(offlineError);
-    }
-    return config;
-  },
-  (error: unknown) => Promise.reject(transformAxiosError(error))
-);
+  const baseUrl = env.apiBaseUrl();
 
-// ---------------------------------------------------------------------------
-// Response interceptor – handle 401 with token refresh via cookies
-// ---------------------------------------------------------------------------
+  _apiClient = axios.create({
+    baseURL: `${baseUrl}/api/${API_VERSION}`,
+    timeout: DEFAULT_TIMEOUT_MS,
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,
+  });
 
-apiClient.interceptors.response.use(
-  (response: any) => response,
-  async (error: unknown) => {
-    if (!isAxiosError(error)) {
-      return Promise.reject(transformAxiosError(error));
-    }
+  // ---------------------------------------------------------------------------
+  // Request interceptor – cookies are sent automatically
+  // ---------------------------------------------------------------------------
 
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+  _apiClient.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+      if (isClient() && !window.navigator.onLine) {
+        const offlineError = new axios.Cancel('No internet connection');
+        return Promise.reject(offlineError);
+      }
+      return config;
+    },
+    (error: unknown) => Promise.reject(transformAxiosError(error))
+  );
 
-    if (
-      !error.response &&
-      (error.code === 'ERR_NETWORK' ||
-        error.code === 'ECONNABORTED' ||
-        axios.isCancel(error))
-    ) {
-      return Promise.reject(transformAxiosError(error));
-    }
+  // ---------------------------------------------------------------------------
+  // Response interceptor – handle 401 with token refresh via cookies
+  // ---------------------------------------------------------------------------
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => apiClient(originalRequest))
-          .catch((err) => Promise.reject(err));
+  _apiClient.interceptors.response.use(
+    (response: any) => response,
+    async (error: unknown) => {
+      if (!isAxiosError(error)) {
+        return Promise.reject(transformAxiosError(error));
       }
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: boolean;
+      };
 
-      try {
-        await axios.post(
-          `${BASE_URL}/api/${API_VERSION}/auth/refresh`,
-          {},
-          {
-            timeout: DEFAULT_TIMEOUT_MS,
-            withCredentials: true,
-          }
-        );
-        processQueue(null, 'refreshed');
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        tokenManager.clearTokens();
-        if (isClient()) {
-          window.dispatchEvent(
-            new CustomEvent('session-expired', {
-              detail: { reason: 'token_refresh_failed' },
-            })
-          );
+      if (
+        !error.response &&
+        (error.code === 'ERR_NETWORK' ||
+          error.code === 'ECONNABORTED' ||
+          axios.isCancel(error))
+      ) {
+        return Promise.reject(transformAxiosError(error));
+      }
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        if (isRefreshing) {
+          return new Promise<string>((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(() => getApiClient()(originalRequest))
+            .catch((err) => Promise.reject(err));
         }
-        processQueue(refreshError, null);
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
 
-    return Promise.reject(transformAxiosError(error));
-  }
-);
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          const refreshBaseUrl = env.apiBaseUrl();
+          await axios.post(
+            `${refreshBaseUrl}/api/${API_VERSION}/auth/refresh`,
+            {},
+            {
+              timeout: DEFAULT_TIMEOUT_MS,
+              withCredentials: true,
+            }
+          );
+          processQueue(null, 'refreshed');
+          return getApiClient()(originalRequest);
+        } catch (refreshError) {
+          tokenManager.clearTokens();
+          if (isClient()) {
+            window.dispatchEvent(
+              new CustomEvent('session-expired', {
+                detail: { reason: 'token_refresh_failed' },
+              })
+            );
+          }
+          processQueue(refreshError, null);
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      return Promise.reject(transformAxiosError(error));
+    }
+  );
+
+  return _apiClient;
+}
 
 // ---------------------------------------------------------------------------
 // Retry helper
@@ -362,7 +377,7 @@ type RequestConfig = {
 };
 
 export async function get<T>(url: string, config?: RequestConfig): Promise<T> {
-  const { data } = await apiClient.get<T>(url, {
+  const { data } = await getApiClient().get<T>(url, {
     params: config?.params,
     signal: config?.signal,
     timeout: config?.timeout,
@@ -375,7 +390,7 @@ export async function post<T>(
   body?: unknown,
   config?: RequestConfig
 ): Promise<T> {
-  const { data } = await apiClient.post<T>(url, body, {
+  const { data } = await getApiClient().post<T>(url, body, {
     signal: config?.signal,
     timeout: config?.timeout,
   });
@@ -387,7 +402,7 @@ export async function patch<T>(
   body?: unknown,
   config?: RequestConfig
 ): Promise<T> {
-  const { data } = await apiClient.patch<T>(url, body, {
+  const { data } = await getApiClient().patch<T>(url, body, {
     signal: config?.signal,
     timeout: config?.timeout,
   });
@@ -398,7 +413,7 @@ export async function del<T = void>(
   url: string,
   config?: RequestConfig
 ): Promise<T> {
-  const { data } = await apiClient.delete<T>(url, {
+  const { data } = await getApiClient().delete<T>(url, {
     signal: config?.signal,
     timeout: config?.timeout,
   });

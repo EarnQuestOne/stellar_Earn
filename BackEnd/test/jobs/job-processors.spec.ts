@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PayoutProcessor } from '../processors/payout.processor';
-import { EmailProcessor } from '../processors/email.processor';
-import { DataExportProcessor } from '../processors/export.processor';
-import { CleanupProcessor } from '../processors/cleanup.processor';
-import { WebhookProcessor } from '../processors/webhook.processor';
-import { AnalyticsProcessor } from '../processors/analytics.processor';
-import { QuestProcessor } from '../processors/quest.processor';
-import { JobLogService } from '../services/job-log.service';
-import { PayoutProcessPayload, EmailSendPayload } from '../job.types';
+import { PayoutProcessor } from 'src/modules/jobs/processors/payout.processor';
+import { EmailProcessor } from 'src/modules/jobs/processors/email.processor';
+import { DataExportProcessor } from 'src/modules/jobs/processors/export.processor';
+import { CleanupProcessor } from 'src/modules/jobs/processors/cleanup.processor';
+import { WebhookProcessor } from 'src/modules/jobs/processors/webhook.processor';
+import { AnalyticsProcessor } from 'src/modules/jobs/processors/analytics.processor';
+import { QuestProcessor } from 'src/modules/jobs/processors/quest.processor';
+import { JobLogService } from 'src/modules/jobs/services/job-log.service';
+import { PayoutProcessPayload, EmailSendPayload } from 'src/modules/jobs/job.types';
 import { Job } from 'bullmq';
 
 describe('Job Processors', () => {

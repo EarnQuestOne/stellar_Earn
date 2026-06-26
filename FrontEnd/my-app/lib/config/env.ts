@@ -1,10 +1,4 @@
-/**
- * Environment Variable Validation
- *
- * This module validates required environment variables at application startup
- * to ensure the app fails fast with clear error messages rather than failing
- * silently at runtime.
- */
+import { z } from 'zod';
 
 /**
  * Required environment variables for the application
@@ -66,6 +60,40 @@ const OPTIONAL_ENV_VARS = {
   },
 } as const;
 
+// Define Zod schema dynamically/statically using these mappings
+const envSchema = z.object({
+  NEXT_PUBLIC_API_BASE_URL: z
+    .string()
+    .url()
+    .default(REQUIRED_ENV_VARS.NEXT_PUBLIC_API_BASE_URL.default),
+  NEXT_PUBLIC_STELLAR_NETWORK: z
+    .enum(['testnet', 'mainnet'])
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_STELLAR_NETWORK.default),
+  NEXT_PUBLIC_SOROBAN_RPC_URL: z
+    .string()
+    .url()
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_SOROBAN_RPC_URL.default),
+  NEXT_PUBLIC_CONTRACT_ID: z
+    .string()
+    .optional()
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_CONTRACT_ID.default),
+  NEXT_PUBLIC_ANALYTICS_TEST_MODE: z
+    .enum(['true', 'false'])
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_ANALYTICS_TEST_MODE.default),
+  NEXT_PUBLIC_ANALYTICS_ID: z
+    .string()
+    .optional()
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_ANALYTICS_ID.default),
+  NEXT_PUBLIC_SENTRY_DSN: z
+    .string()
+    .optional()
+    .default(OPTIONAL_ENV_VARS.NEXT_PUBLIC_SENTRY_DSN.default),
+  E2E_BASE_URL: z
+    .string()
+    .url()
+    .default(OPTIONAL_ENV_VARS.E2E_BASE_URL.default),
+});
+
 /**
  * Validation error details
  */
@@ -112,49 +140,48 @@ function readEnvValue(name: string): string | undefined {
 }
 
 /**
- * Validates a single environment variable
- */
-function validateEnvVar(
-  name: string,
-  config: {
-    description: string;
-    example: string;
-    required?: boolean;
-    default?: string;
-  }
-): ValidationError | null {
-  const value = readEnvValue(name);
-
-  // Check if required variable is missing and has no default
-  if (config.required && !value && !config.default) {
-    return {
-      variable: name,
-      description: config.description,
-      example: config.example,
-    };
-  }
-
-  return null;
-}
-
-/**
  * Validates all required environment variables
  */
 export function validateEnv(): ValidationResult {
+  // Statically construct the env object to allow Next.js compiler inlining
+  const envObj = {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_STELLAR_NETWORK: process.env.NEXT_PUBLIC_STELLAR_NETWORK,
+    NEXT_PUBLIC_SOROBAN_RPC_URL: process.env.NEXT_PUBLIC_SOROBAN_RPC_URL,
+    NEXT_PUBLIC_CONTRACT_ID: process.env.NEXT_PUBLIC_CONTRACT_ID,
+    NEXT_PUBLIC_ANALYTICS_TEST_MODE:
+      process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE,
+    NEXT_PUBLIC_ANALYTICS_ID: process.env.NEXT_PUBLIC_ANALYTICS_ID,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    E2E_BASE_URL: process.env.E2E_BASE_URL,
+  };
+
+  const parseResult = envSchema.safeParse(envObj);
   const errors: ValidationError[] = [];
   const warnings: string[] = [];
 
-  // Validate required variables
-  for (const [name, config] of Object.entries(REQUIRED_ENV_VARS)) {
-    const error = validateEnvVar(name, config);
-    if (error) {
-      errors.push(error);
-    }
+  if (!parseResult.success) {
+    parseResult.error.issues.forEach((issue) => {
+      const field = issue.path[0] as string;
+      const requiredConfig =
+        REQUIRED_ENV_VARS[field as keyof typeof REQUIRED_ENV_VARS];
+      const optionalConfig =
+        OPTIONAL_ENV_VARS[field as keyof typeof OPTIONAL_ENV_VARS];
+
+      const config = requiredConfig || optionalConfig;
+      if (config) {
+        errors.push({
+          variable: field,
+          description: config.description,
+          example: config.example,
+        });
+      }
+    });
   }
 
-  // Check optional variables and warn about missing ones
+  // Check optional variables and warn about missing ones to match expectations of warning reporting
   for (const [name, config] of Object.entries(OPTIONAL_ENV_VARS)) {
-    const value = readEnvValue(name);
+    const value = envObj[name as keyof typeof envObj];
     if (!value && config.default) {
       warnings.push(`${name} not set, using default: "${config.default}"`);
     }
@@ -172,9 +199,9 @@ export function validateEnv(): ValidationResult {
  */
 function formatValidationErrors(errors: ValidationError[]): string {
   const lines = [
-    '❌ Missing Required Environment Variables',
+    '❌ Missing or Invalid Required Environment Variables',
     '',
-    'The following environment variables are required but not set:',
+    'The following environment variables failed validation:',
     '',
   ];
 
@@ -185,7 +212,9 @@ function formatValidationErrors(errors: ValidationError[]): string {
     lines.push('');
   });
 
-  lines.push('Please create a .env.local file with the required variables.');
+  lines.push(
+    'Please create or update your .env.local file with valid variables.'
+  );
   lines.push('See the README.md for more information.');
 
   return lines.join('\n');
@@ -226,7 +255,7 @@ export function getEnv(
   defaultValue?: string
 ): string {
   const value = readEnvValue(name);
-  if (value) return value;
+  if (value !== undefined && value !== '') return value;
 
   const config = OPTIONAL_ENV_VARS[name];
   if (config.default) return config.default;
@@ -240,7 +269,7 @@ export function getEnv(
  */
 export function getRequiredEnv(name: keyof typeof REQUIRED_ENV_VARS): string {
   const value = readEnvValue(name);
-  if (value) return value;
+  if (value !== undefined && value !== '') return value;
 
   // If there's a default value, use it as fallback
   const config = REQUIRED_ENV_VARS[name];

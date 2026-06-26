@@ -105,8 +105,8 @@ export function useSubmission({
   // Check if wallet is connected - make a profile request to verify authentication
   const isWalletConnected = useCallback(async () => {
     try {
-      const { apiClient } = await import('../api/client');
-      await apiClient.get('/auth/profile');
+      const { getApiClient } = await import('../api/client');
+      await getApiClient().get('/auth/profile');
       return true;
     } catch {
       return false;

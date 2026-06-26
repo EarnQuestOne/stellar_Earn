@@ -146,3 +146,40 @@ describe('Environment Variable Validation', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// FE-022 regression: tests/setup.ts must bootstrap all NEXT_PUBLIC_* vars
+// ---------------------------------------------------------------------------
+
+describe('test env bootstrap (FE-022)', () => {
+  const REQUIRED_VARS = [
+    'NEXT_PUBLIC_API_BASE_URL',
+    'NEXT_PUBLIC_STELLAR_NETWORK',
+    'NEXT_PUBLIC_SOROBAN_RPC_URL',
+    'NEXT_PUBLIC_CONTRACT_ID',
+    'NEXT_PUBLIC_ANALYTICS_TEST_MODE',
+    'NEXT_PUBLIC_ANALYTICS_ID',
+    'NEXT_PUBLIC_SENTRY_DSN',
+  ] as const;
+
+  it('tests/setup.ts sets every required NEXT_PUBLIC_* variable', () => {
+    for (const name of REQUIRED_VARS) {
+      expect(
+        process.env[name],
+        `${name} should be set by tests/setup.ts`
+      ).toBeDefined();
+    }
+  });
+
+  it('NEXT_PUBLIC_API_BASE_URL points to the test server', () => {
+    expect(process.env.NEXT_PUBLIC_API_BASE_URL).toBe('http://localhost:3000');
+  });
+
+  it('NEXT_PUBLIC_STELLAR_NETWORK is testnet in tests', () => {
+    expect(process.env.NEXT_PUBLIC_STELLAR_NETWORK).toBe('testnet');
+  });
+
+  it('NEXT_PUBLIC_ANALYTICS_TEST_MODE is enabled in tests', () => {
+    expect(process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE).toBe('true');
+  });
+});
