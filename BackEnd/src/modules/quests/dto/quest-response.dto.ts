@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Quest } from '../entities/quest.entity';
 
 export class QuestResponseDto {
@@ -30,6 +30,28 @@ export class QuestResponseDto {
   @ApiProperty({ example: '2026-01-24T08:00:00.000Z' })
   updatedAt: Date;
 
+  // Extra fields for compatibility with frontend serialization contract
+  @ApiProperty({ example: '42' })
+  contractQuestId: string;
+
+  @ApiProperty({ example: 'XLM' })
+  rewardAsset: string;
+
+  @ApiPropertyOptional({ example: '2026-07-01T00:00:00.000Z', nullable: true })
+  deadline?: Date | null;
+
+  @ApiProperty({ example: 0 })
+  totalClaims: number;
+
+  @ApiPropertyOptional({ example: 100, nullable: true })
+  maxParticipants?: number;
+
+  @ApiProperty({ example: 0 })
+  currentParticipants: number;
+
+  @ApiPropertyOptional({ example: 'General' })
+  category?: string;
+
   static fromEntity(quest: Quest): QuestResponseDto {
     const dto = new QuestResponseDto();
     dto.id = quest.id;
@@ -40,6 +62,16 @@ export class QuestResponseDto {
     dto.createdBy = quest.createdBy;
     dto.createdAt = quest.createdAt;
     dto.updatedAt = quest.updatedAt;
+
+    // Map the database columns to the frontend contract fields
+    dto.contractQuestId = quest.contractTaskId || '0';
+    dto.rewardAsset = quest.rewardAsset || 'XLM';
+    dto.deadline = quest.deadline || null;
+    dto.currentParticipants = quest.currentCompletions || 0;
+    dto.totalClaims = quest.currentCompletions || 0;
+    dto.maxParticipants = quest.maxCompletions ?? undefined;
+    dto.category = quest.category || 'General';
+
     return dto;
   }
 }

@@ -393,7 +393,10 @@ describe('getQuestById – integration via MSW fixture', () => {
   it('deserializes a full quest response correctly', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-        HttpResponse.json(questFullFixture)
+        HttpResponse.json({
+          data: questFullFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -413,7 +416,10 @@ describe('getQuestById – integration via MSW fixture', () => {
   it('deserializes a minimal quest response without throwing', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-        HttpResponse.json(questMinimalFixture)
+        HttpResponse.json({
+          data: questMinimalFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -427,7 +433,10 @@ describe('getQuestById – integration via MSW fixture', () => {
   it('deserializes a quest with null optional fields without throwing', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-        HttpResponse.json(questNullOptionalsFixture)
+        HttpResponse.json({
+          data: questNullOptionalsFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -442,7 +451,10 @@ describe('getQuestById – integration via MSW fixture', () => {
   it('preserves rewardAmount as a string when backend sends a string', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-        HttpResponse.json({ ...questFullFixture, rewardAmount: '750' })
+        HttpResponse.json({
+          data: { ...questFullFixture, rewardAmount: '750' },
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -454,7 +466,10 @@ describe('getQuestById – integration via MSW fixture', () => {
   it('preserves rewardAmount as a number when backend sends a number', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-        HttpResponse.json({ ...questMinimalFixture, rewardAmount: 200 })
+        HttpResponse.json({
+          data: { ...questMinimalFixture, rewardAmount: 200 },
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -468,7 +483,10 @@ describe('getQuestById – integration via MSW fixture', () => {
       cacheManager.clear();
       server.use(
         http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-          HttpResponse.json({ ...questFullFixture, status })
+          HttpResponse.json({
+            data: { ...questFullFixture, status },
+            meta: { timestamp: Date.now() },
+          })
         )
       );
 
@@ -482,7 +500,10 @@ describe('getQuestById – integration via MSW fixture', () => {
       cacheManager.clear();
       server.use(
         http.get(`${API_BASE}/api/v1/quests/:id`, () =>
-          HttpResponse.json({ ...questFullFixture, difficulty })
+          HttpResponse.json({
+            data: { ...questFullFixture, difficulty },
+            meta: { timestamp: Date.now() },
+          })
         )
       );
 
@@ -504,7 +525,10 @@ describe('getQuests – integration via MSW fixture', () => {
   it('deserializes a paginated quest list correctly', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests`, () =>
-        HttpResponse.json(questPaginatedFixture)
+        HttpResponse.json({
+          data: questPaginatedFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -521,7 +545,10 @@ describe('getQuests – integration via MSW fixture', () => {
   it('each quest in the list has required fields', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests`, () =>
-        HttpResponse.json(questPaginatedFixture)
+        HttpResponse.json({
+          data: questPaginatedFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -535,7 +562,10 @@ describe('getQuests – integration via MSW fixture', () => {
   it('deserializes an empty quest list without throwing', async () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests`, () =>
-        HttpResponse.json(questPaginatedEmptyFixture)
+        HttpResponse.json({
+          data: questPaginatedEmptyFixture,
+          meta: { timestamp: Date.now() },
+        })
       )
     );
 
@@ -551,7 +581,10 @@ describe('getQuests – integration via MSW fixture', () => {
     server.use(
       http.get(`${API_BASE}/api/v1/quests`, ({ request }) => {
         capturedUrl = request.url;
-        return HttpResponse.json(questPaginatedEmptyFixture);
+        return HttpResponse.json({
+          data: questPaginatedEmptyFixture,
+          meta: { timestamp: Date.now() },
+        });
       })
     );
 
