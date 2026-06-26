@@ -131,7 +131,9 @@ async function bootstrap() {
       type: VersioningType.CUSTOM,
       defaultVersion: API_VERSION_CONFIG.defaultVersion,
       extractor: (request) => {
-        return extractApiVersion(request) || API_VERSION_CONFIG.defaultVersion;
+        return (
+          extractApiVersion(request as any) || API_VERSION_CONFIG.defaultVersion
+        );
       },
     });
 
