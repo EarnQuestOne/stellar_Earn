@@ -56,6 +56,13 @@ expect.extend({
       message: () => `expected element to be empty`,
     };
   },
+  toHaveFocus(received) {
+    const pass = document.activeElement === received;
+    return {
+      pass,
+      message: () => `expected element to have focus`,
+    };
+  },
 });
 
 // Start server before all tests
