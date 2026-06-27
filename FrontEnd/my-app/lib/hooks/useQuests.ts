@@ -48,7 +48,7 @@ export function useQuests(
         ...memoizedFilters,
         ...memoizedPagination,
       });
-      setQuests(response.quests as any);
+      setQuests(response.data);
       setPagination({
         page: response.page ?? 1,
         limit: response.limit ?? 12,

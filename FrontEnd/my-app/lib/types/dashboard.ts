@@ -1,12 +1,9 @@
-import type {
-  QuestResponse,
-  SubmissionResponse,
-  UserStatsResponse,
-} from './api.types';
+import type { UserStatsResponse } from './api.types';
+import type { Quest } from './quest';
+import type { Submission } from './submission';
 
+export type { Quest, Submission };
 export type UserStats = UserStatsResponse;
-export type Quest = QuestResponse;
-export type Submission = SubmissionResponse;
 
 export interface EarningsData {
   date: string;

@@ -32,6 +32,8 @@
     "dompurify": "^3.4.1",
     "framer-motion": "^12.26.2",
     "lucide-react": "^0.562.0",
+    "motion": "^12.42.0",
+    "motion-dom": "^12.42.0",
     "next": "15.5.18",
     "next-intl": "^3.26.3",
     "react": "19.2.5",
