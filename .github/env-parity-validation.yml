@@ -1,0 +1,31 @@
+# Continuous Integration Boundary Parity Guard
+# Reference: Issue #815
+
+name: 🧪 Security & Configuration Verification
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-env-parity:
+    name: Verify Env Example Parity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository Footprints
+        uses: actions/checkout@v4
+
+      - name: Initialize Node.js Run Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Allocate Workspace Dependencies
+        run: npm ci
+
+      - name: Run Parity Check Suite
+        run: npx ts-node scripts/validate_env_parity.ts
