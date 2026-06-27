@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit",
     "validate:path-aliases": "node scripts/validate-path-aliases.js",
     "test": "vitest run",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts'",
+    "test:integration": "vitest run --include '**/*.integration.test.ts'",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
