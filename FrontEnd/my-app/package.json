@@ -42,6 +42,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@jest/globals": "^30.4.1",
     "@next/bundle-analyzer": "^15.0.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
