@@ -1,24 +1,34 @@
 #![cfg(test)]
 
-//! Gas Optimization Benchmarks - Documentation Tests
+//! Gas benchmark suite for EarnQuest entrypoints.
 //!
-//! This module documents the gas optimization improvements made to the contract.
-//! The optimizations target 30%+ reduction in compute units (CUs) through:
-//! - Storage access pattern improvements
-//! - Loop optimizations  
-//! - Data structure efficiency
-//! - Batch operation enhancements
-//! - Lazy evaluation and caching
+//! Each test measures the Soroban CPU instruction cost of one entrypoint,
+//! asserts the cost stays within the budget defined in gas_budget::default_targets(),
+//! and prints the raw measurement so results can be transcribed to SLA_SLO.md.
+//!
+//! The Soroban simulation environment uses the same CPU cost model as testnet,
+//! so these numbers are representative of real-network gas consumption.
+//!
+//! To refresh the constants after a contract change:
+//!   1. Run `cargo test -p earn_quest -- gas_benchmarks --nocapture`
+//!   2. Read the "Measured cost" lines in the output
+//!   3. Apply +20% safety margin and update gas_budget::default_targets()
+//!   4. Update the measurement table in SLA_SLO.md
 
 extern crate earn_quest;
-use earn_quest::{EarnQuestContract, EarnQuestContractClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, String, Symbol, Vec};
+use earn_quest::{gas_budget, EarnQuestContract, EarnQuestContractClient};
+use soroban_sdk::{
+    symbol_short,
+    testutils::{Address as _, Ledger},
+    token::StellarAssetClient,
+    Address, BytesN, Env, Symbol,
+};
 
-/// Setup helper for quest tests
-fn setup_quest(
+fn setup(
     env: &Env,
 ) -> (
     EarnQuestContractClient<'_>,
+    Address,
     Address,
     Address,
     Address,
@@ -27,185 +37,179 @@ fn setup_quest(
     let contract_id = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &contract_id);
 
-    // Initialize
-    let admin = Address::generate(env);
-    client.initialize(&admin);
-
-    // Setup token
     let token_admin = Address::generate(env);
-    let token_contract_obj = env.register_stellar_asset_contract_v2(token_admin.clone());
-    let token_address = token_contract_obj.address();
+    let token_obj = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_obj.address();
 
+    let admin = Address::generate(env);
     let creator = Address::generate(env);
     let verifier = Address::generate(env);
     let submitter = Address::generate(env);
 
-    (client, token_address, creator, verifier, submitter)
+    StellarAssetClient::new(env, &token).mint(&contract_id, &1_000_000);
+
+    (client, token, admin, creator, verifier, submitter)
 }
 
-// ═══════════════════════════════════════════════════════════════
-// OPTIMIZATION DOCUMENTATION TESTS
-// ═══════════════════════════════════════════════════════════════
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
-#[test]
-fn document_storage_access_optimizations() {
-    let env = Env::default();
-    env.mock_all_auths();
+fn check_within_budget(label: &str, symbol: Symbol, cost: u64) {
+    let within = gas_budget::within_budget(&symbol, cost);
+    let target = gas_budget::default_targets()
+        .iter()
+        .find(|t| t.entrypoint == symbol)
+        .map(|t| t.max_instructions)
+        .unwrap_or(u64::MAX);
 
-    let (client, token_address, creator, verifier, _) = setup_quest(&env);
-
-    // Register multiple quests
-    for i in 0..5u32 {
-        let quest_id = Symbol::new(&env, &format!("q{}", i));
-        client.register_quest(
-            &quest_id,
-            &creator,
-            &token_address,
-            &100i128,
-            &verifier,
-            &(env.ledger().timestamp() + 86400),
-        );
-    }
-
-    // OPTIMIZATION: Query all active quests
-    // Before: Direct get_quest calls (~15000 CUs for 5 quests)
-    // After: has_quest check before get_quest (~10500 CUs, 30% reduction)
-    let active_quests = client.get_active_quests(&0u32, &10u32);
-    assert_eq!(active_quests.len(), 5);
-
-    println!("✓ Storage Access Optimization: 30% reduction achieved");
+    println!(
+        "[gas_benchmark] {}: measured = {}, budget = {}, within = {}",
+        label, cost, target, within
+    );
+    assert!(
+        within,
+        "entrypoint '{}' exceeded gas budget: measured {} > budget {}",
+        label, cost, target
+    );
 }
 
+// ─── benchmarks ──────────────────────────────────────────────────────────────
+
 #[test]
-fn document_loop_optimization() {
+fn benchmark_initialize() {
     let env = Env::default();
     env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
 
-    let (client, token_address, creator, verifier, _) = setup_quest(&env);
+    let (client, _, admin, _, _, _) = setup(&env);
 
-    // Register quests with varying rewards
-    for i in 0..10u32 {
-        let quest_id = Symbol::new(&env, &format!("q{}", i));
-        let reward = 50i128 + (i * 10) as i128;
-        client.register_quest(
-            &quest_id,
-            &creator,
-            &token_address,
-            &reward,
-            &verifier,
-            &(env.ledger().timestamp() + 86400),
-        );
-    }
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
 
-    // OPTIMIZATION: Filter by reward range
-    // Before: Full iteration every time (~20000 CUs)
-    // After: Early termination when limit reached (~14000 CUs, 30% reduction)
-    let filtered = client.get_quests_by_reward_range(&50i128, &100i128, &0u32, &10u32);
-    assert!(!filtered.is_empty());
+    client.initialize(&admin);
 
-    println!("✓ Loop Optimization: 30% reduction achieved");
+    let cost = budget.cpu_instruction_cost() - before;
+    check_within_budget("initialize", symbol_short!("init"), cost);
 }
 
 #[test]
-fn document_batch_operation_optimization() {
+fn benchmark_register_quest() {
     let env = Env::default();
     env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
 
-    let (client, token_address, creator, verifier, _) = setup_quest(&env);
-
-    // Create batch input using soroban_sdk::Vec
-    let batch_size = 5u32;
-    let mut batch_inputs: Vec<earn_quest::types::BatchQuestInput> = Vec::new(&env);
-    for i in 0..batch_size {
-        let quest_id = Symbol::new(&env, &format!("batch_q{}", i));
-        batch_inputs.push_back(earn_quest::types::BatchQuestInput {
-            id: quest_id,
-            reward_asset: token_address.clone(),
-            reward_amount: 100i128,
-            verifier: verifier.clone(),
-            deadline: (env.ledger().timestamp() + 86400),
-        });
-    }
-
-    // OPTIMIZATION: Batch registration with caching
-    // Before: ~50000 CUs for 10 quests (no caching)
-    // After: ~35000 CUs (30% reduction through optimized storage)
-    client.register_quests_batch(&creator, &batch_inputs);
-
-    println!("✓ Batch Operation Optimization: 30% reduction achieved");
-}
-
-#[test]
-fn document_data_structure_efficiency() {
-    let env = Env::default();
-    env.mock_all_auths();
-
-    let (client, token_address, creator, verifier, _) = setup_quest(&env);
+    let (client, token, admin, creator, verifier, _) = setup(&env);
+    client.initialize(&admin);
 
     let quest_id = symbol_short!("q1");
-    let reward_amount = 100i128;
-    let deadline = env.ledger().timestamp() + 86400;
+    let deadline = 99_999u64;
 
-    // Create metadata with inline description (efficient storage mode)
-    let metadata = earn_quest::types::QuestMetadata {
-        title: String::from_str(&env, "Efficient Quest"),
-        description: earn_quest::types::MetadataDescription::Inline(String::from_str(
-            &env,
-            "Short description",
-        )),
-        requirements: Vec::new(&env),
-        category: String::from_str(&env, "Test"),
-        tags: Vec::new(&env),
-    };
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
 
-    // OPTIMIZATION: Combined registration reduces total storage operations
-    // Before: Two separate transactions (~8000 CUs)
-    // After: Single transaction (~5600 CUs, 30% reduction)
-    client.register_quest_with_metadata(
-        &quest_id,
-        &creator,
-        &token_address,
-        &reward_amount,
-        &verifier,
-        &deadline,
-        &metadata,
+    client.register_quest(
+        &quest_id, &creator, &token, &1_000i128, &verifier, &deadline,
     );
 
-    println!("✓ Data Structure Efficiency: 30% reduction achieved");
+    let cost = budget.cpu_instruction_cost() - before;
+    check_within_budget("register_quest", symbol_short!("reg_qst"), cost);
 }
 
 #[test]
-fn summarize_gas_optimization_results() {
-    println!("\n=== GAS OPTIMIZATION SUMMARY ===\n");
+fn benchmark_submit_proof() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
 
-    println!("Storage Access Patterns: 30%+ reduction");
-    println!("  ✓ Added has_quest checks before expensive get_quest calls");
-    println!("  ✓ Cached contract addresses in hot paths");
-    println!("  ✓ Optimized XP level calculation with match expressions");
-    println!();
+    let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    client.initialize(&admin);
 
-    println!("Loop Optimizations: 30%+ reduction");
-    println!("  ✓ Early termination when limit reached");
-    println!("  ✓ Cached quest data in batch iterations");
-    println!("  ✓ Pre-validation to fail fast");
-    println!();
+    let quest_id = symbol_short!("q1");
+    client.register_quest(&quest_id, &creator, &token, &1_000i128, &verifier, &99_999);
 
-    println!("Data Structure Efficiency: 30%+ reduction");
-    println!("  ✓ Match expressions instead of if-else chains");
-    println!("  ✓ Inline vs Hash description modes");
-    println!("  ✓ Combined metadata registration");
-    println!();
+    let proof = BytesN::from_array(&env, &[1u8; 32]);
 
-    println!("Batch Operations: Linear scaling maintained");
-    println!("  ✓ Quest data caching across iterations");
-    println!("  ✓ Efficient Vec operations");
-    println!();
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
 
-    println!("Event Indexing: Improved query performance");
-    println!("  ✓ Indexed fields for efficient filtering");
-    println!("  ✓ Subgraph-compatible schemas");
-    println!("  ✓ Standardized event structures");
-    println!();
+    client.submit_proof(&quest_id, &submitter, &proof);
 
-    println!("Overall Target: 30%+ gas cost reduction ✓ ACHIEVED");
+    let cost = budget.cpu_instruction_cost() - before;
+    check_within_budget("submit_proof", symbol_short!("sub_prf"), cost);
+}
+
+#[test]
+fn benchmark_approve_submission() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
+
+    let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    client.initialize(&admin);
+
+    let quest_id = symbol_short!("q1");
+    client.register_quest(&quest_id, &creator, &token, &1_000i128, &verifier, &99_999);
+
+    let proof = BytesN::from_array(&env, &[1u8; 32]);
+    client.submit_proof(&quest_id, &submitter, &proof);
+
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
+
+    client.approve_submission(&quest_id, &submitter, &verifier);
+
+    let cost = budget.cpu_instruction_cost() - before;
+    check_within_budget("approve_submission", symbol_short!("appr_sub"), cost);
+}
+
+#[test]
+fn benchmark_claim_reward() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
+
+    let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    client.initialize(&admin);
+
+    let quest_id = symbol_short!("q1");
+    let reward = 1_000i128;
+    client.register_quest(&quest_id, &creator, &token, &reward, &verifier, &99_999);
+
+    let proof = BytesN::from_array(&env, &[1u8; 32]);
+    client.submit_proof(&quest_id, &submitter, &proof);
+    client.approve_submission(&quest_id, &submitter, &verifier);
+
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
+
+    client.claim_reward(&quest_id, &submitter, &reward);
+
+    let cost = budget.cpu_instruction_cost() - before;
+    check_within_budget("claim_reward", symbol_short!("clm_rwd"), cost);
+}
+
+#[test]
+fn benchmark_summary() {
+    println!("\n=== GAS BUDGET CONSTANTS (soroban-sdk 21.7.4, 2026-06-26) ===");
+    println!(
+        "{:<20} {:>15} {:>15} {:>8}",
+        "Entrypoint", "Raw Baseline", "Budget (+20%)", "Symbol"
+    );
+    println!("{}", "-".repeat(62));
+
+    let rows = [
+        ("initialize", 284_753u64, 341_704u64, "init"),
+        ("register_quest", 341_268, 409_522, "reg_qst"),
+        ("submit_proof", 386_946, 464_336, "sub_prf"),
+        ("approve_submission", 438_714, 526_457, "appr_sub"),
+        ("claim_reward", 767_838, 921_406, "clm_rwd"),
+    ];
+    for (name, baseline, budget, sym) in rows {
+        println!("{:<20} {:>15} {:>15} {:>8}", name, baseline, budget, sym);
+    }
+    println!("=============================================================\n");
 }

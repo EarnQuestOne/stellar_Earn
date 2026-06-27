@@ -5,6 +5,7 @@ mod dispute;
 pub mod errors;
 mod escrow;
 mod events;
+pub mod gas_budget;
 mod init;
 mod oracle;
 mod payout;
