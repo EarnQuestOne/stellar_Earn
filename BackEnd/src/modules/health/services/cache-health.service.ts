@@ -126,7 +126,7 @@ export class CacheHealthService implements OnModuleInit, OnModuleDestroy {
     return null;
   }
 
-  private async pingWithClient(client: any): Promise<string> {
+  private pingWithClient(client: any): string {
     return client.ping();
   }
 

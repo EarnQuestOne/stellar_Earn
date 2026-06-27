@@ -24,7 +24,7 @@ export class WebVitalsAnalyticsController {
     status: 202,
     description: 'Web vitals metric accepted successfully.',
   })
-  async createWebVitals(@Body() metric: WebVitalsDto): Promise<void> {
+  createWebVitals(@Body() metric: WebVitalsDto): void {
     this.webVitalsAnalyticsService.recordWebVitals(metric);
   }
 }

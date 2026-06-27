@@ -19,6 +19,7 @@ export class InAppChannel implements NotificationChannel {
   ) {}
 
   async send(notification: Notification): Promise<DeliveryResult> {
+    await Promise.resolve();
     try {
       this.logger.log(
         `Sending in-app notification to user ${notification.userId}`,

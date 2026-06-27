@@ -389,7 +389,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   private stopSchedule(scheduleId: string): void {
     const cronJob = this.cronJobs.get(scheduleId);
     if (cronJob) {
-      cronJob.stop();
+      void cronJob.stop();
       this.cronJobs.delete(scheduleId);
       this.logger.log(`Stopped schedule ${scheduleId}`);
     }
@@ -400,7 +400,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   private stopAllSchedules(): void {
     for (const [_id, cronJob] of this.cronJobs.entries()) {
-      cronJob.stop();
+      void cronJob.stop();
     }
     this.cronJobs.clear();
     this.logger.log('Stopped all schedules');

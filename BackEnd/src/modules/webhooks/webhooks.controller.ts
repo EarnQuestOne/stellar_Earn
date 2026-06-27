@@ -23,6 +23,10 @@ import {
   WebhookResponse,
 } from './webhooks.service';
 import {
+  verifyWebhookSignatureWithTimestamp,
+  WEBHOOK_MAX_TIMESTAMP_AGE_MS,
+} from './utils/signature';
+import {
   WebhookResponseDto,
   WebhookHealthResponseDto,
 } from './dto/webhook-response.dto';
@@ -43,6 +47,33 @@ export class WebhooksController {
     private readonly webhooksService: WebhooksService,
     private readonly traceService: TraceService,
   ) {}
+
+  private verifyWebhookRequest(
+    payload: any,
+    signature: string | undefined,
+    secret: string | undefined,
+    provider: string,
+    timestampHeader: string | undefined,
+  ): void {
+    if (!signature) {
+      throw new UnauthorizedException('Missing webhook signature');
+    }
+    if (!timestampHeader) {
+      throw new UnauthorizedException('Missing webhook timestamp');
+    }
+    const result = verifyWebhookSignatureWithTimestamp(
+      payload,
+      signature,
+      secret || '',
+      provider,
+      timestampHeader,
+    );
+    if (!result.valid) {
+      throw new UnauthorizedException(
+        result.reason || 'Invalid webhook signature',
+      );
+    }
+  }
 
   /**
    * GitHub webhook endpoint
@@ -68,11 +99,20 @@ export class WebhooksController {
     @Headers('x-github-event') eventType: string,
     @Headers('x-github-delivery') deliveryId: string,
     @Headers('x-hub-signature-256') signature: string,
+    @Headers('x-webhook-timestamp') timestamp: string,
   ): Promise<WebhookResponse> {
     if (!eventType)
       throw new BadRequestException('Missing X-GitHub-Event header');
     if (!deliveryId)
       throw new BadRequestException('Missing X-GitHub-Delivery header');
+
+    this.verifyWebhookRequest(
+      payload,
+      signature,
+      process.env.GITHUB_WEBHOOK_SECRET,
+      'github',
+      timestamp,
+    );
 
     const traceId = TraceIdUtil.generate(deliveryId);
     const traceCtx: TraceContext = { traceId, webhookEventId: deliveryId };
@@ -174,11 +214,24 @@ export class WebhooksController {
     @Headers('x-event-type') eventType: string,
     @Headers('x-webhook-id') webhookId: string,
     @Headers('authorization') authHeader: string,
+    @Headers('x-webhook-timestamp') timestamp: string,
   ): Promise<WebhookResponse> {
     if (!eventType)
       throw new BadRequestException('Missing X-Event-Type header');
     if (!webhookId)
       throw new BadRequestException('Missing X-Webhook-ID header');
+
+    const apiSignature = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : authHeader;
+
+    this.verifyWebhookRequest(
+      payload,
+      apiSignature,
+      process.env.API_WEBHOOK_SECRET,
+      'api',
+      timestamp,
+    );
 
     const traceId = TraceIdUtil.generate(webhookId);
     const traceCtx: TraceContext = { traceId, webhookEventId: webhookId };
@@ -196,18 +249,13 @@ export class WebhooksController {
       });
 
       try {
-        let signature: string | undefined;
-        if (authHeader?.startsWith('Bearer ')) {
-          signature = authHeader.substring(7);
-        }
-
         const event: WebhookEvent = {
           id: webhookId,
           type: eventType,
           payload,
           timestamp: new Date(),
           source: 'api',
-          signature,
+          signature: apiSignature,
           secret: process.env.API_WEBHOOK_SECRET,
         };
 
@@ -280,11 +328,20 @@ export class WebhooksController {
     @Headers() headers: any,
     @Headers('x-signature') signature: string,
     @Headers('x-event-type') eventType: string,
+    @Headers('x-webhook-timestamp') timestamp: string,
     @Param('service') service: string,
   ): Promise<WebhookResponse> {
     const eventId = this.generateEventId();
     const traceId = TraceIdUtil.generate(eventId);
     const traceCtx: TraceContext = { traceId, webhookEventId: eventId };
+
+    this.verifyWebhookRequest(
+      payload,
+      signature,
+      process.env[`${service.toUpperCase()}_WEBHOOK_SECRET`],
+      service,
+      timestamp,
+    );
 
     return TraceContextStorage.run(traceCtx, async () => {
       this.logger.log(

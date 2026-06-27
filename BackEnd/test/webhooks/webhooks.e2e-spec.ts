@@ -50,6 +50,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-GitHub-Event', 'push')
         .set('X-GitHub-Delivery', 'test-delivery-id')
         .set('X-Hub-Signature-256', signature)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {
@@ -69,6 +70,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-GitHub-Event', 'push')
         .set('X-GitHub-Delivery', 'test-delivery-id')
         .set('X-Hub-Signature-256', invalidSignature)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(401)
         .expect((res) => {
@@ -102,6 +104,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-GitHub-Event', 'pull_request')
         .set('X-GitHub-Delivery', 'pr-test-id')
         .set('X-Hub-Signature-256', signature)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {
@@ -137,6 +140,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-GitHub-Event', 'issues')
         .set('X-GitHub-Delivery', 'issue-test-id')
         .set('X-Hub-Signature-256', signature)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {
@@ -153,6 +157,67 @@ describe('WebhooksController (e2e)', () => {
         .expect(400)
         .expect((res) => {
           expect(res.body.message).toContain('Missing X-GitHub-Event header');
+        });
+    });
+
+    it('should reject missing webhook signature', () => {
+      const payload = { test: 'data' };
+
+      return request(app.getHttpServer())
+        .post('/webhooks/github')
+        .set('X-GitHub-Event', 'push')
+        .set('X-GitHub-Delivery', 'test-delivery-id')
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
+        .send(payload)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Missing webhook signature');
+        });
+    });
+
+    it('should reject missing webhook timestamp', () => {
+      const payload = { test: 'data' };
+      const signature = generateWebhookSignature(
+        payload,
+        githubSecret,
+        'github',
+      );
+
+      return request(app.getHttpServer())
+        .post('/webhooks/github')
+        .set('X-GitHub-Event', 'push')
+        .set('X-GitHub-Delivery', 'test-delivery-id')
+        .set('X-Hub-Signature-256', signature)
+        .send(payload)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Missing webhook timestamp');
+        });
+    });
+
+    it('should reject expired timestamp (replay attack)', () => {
+      const payload = { test: 'data' };
+      const signature = generateWebhookSignature(
+        payload,
+        githubSecret,
+        'github',
+      );
+
+      return request(app.getHttpServer())
+        .post('/webhooks/github')
+        .set('X-GitHub-Event', 'push')
+        .set('X-GitHub-Delivery', 'test-delivery-id')
+        .set('X-Hub-Signature-256', signature)
+        .set(
+          'X-Webhook-Timestamp',
+          Math.floor((Date.now() - 10 * 60 * 1000) / 1000).toString(),
+        )
+        .send(payload)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain(
+            'Webhook timestamp expired or invalid',
+          );
         });
     });
   });
@@ -176,6 +241,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-Event-Type', 'submission_verify')
         .set('X-Webhook-ID', 'api-test-id')
         .set('Authorization', `Bearer ${signature}`)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {
@@ -194,6 +260,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-Event-Type', 'test_event')
         .set('X-Webhook-ID', 'test-id')
         .set('Authorization', 'Bearer invalid_signature')
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(401)
         .expect((res) => {
@@ -215,6 +282,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-Event-Type', 'auto_approve')
         .set('X-Webhook-ID', 'auto-approve-id')
         .set('Authorization', `Bearer ${signature}`)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {
@@ -242,6 +310,7 @@ describe('WebhooksController (e2e)', () => {
         .set('X-Event-Type', 'external_validation')
         .set('X-Webhook-ID', 'validation-id')
         .set('Authorization', `Bearer ${signature}`)
+        .set('X-Webhook-Timestamp', Math.floor(Date.now() / 1000).toString())
         .send(payload)
         .expect(200)
         .expect((res) => {

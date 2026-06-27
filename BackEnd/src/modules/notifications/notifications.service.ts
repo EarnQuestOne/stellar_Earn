@@ -11,7 +11,7 @@ export class NotificationsService {
   ) {}
 
   // Minimal implementation for server startup
-  async getUnreadCount(_userId: string): Promise<{ unreadCount: number }> {
+  getUnreadCount(_userId: string): { unreadCount: number } {
     return { unreadCount: 0 };
   }
 }

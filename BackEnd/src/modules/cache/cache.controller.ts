@@ -16,7 +16,7 @@ export class CacheController {
   @Get('stats')
   @ApiOperation({ summary: 'Get cache statistics' })
   @ApiResponse({ status: 200, description: 'Cache statistics retrieved' })
-  async getStats(@Query('key') key?: string) {
+  getStats(@Query('key') key?: string) {
     return this.cacheService.getStats(key);
   }
 

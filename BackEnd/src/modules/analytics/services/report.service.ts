@@ -87,7 +87,9 @@ export class AnalyticsReportService {
         savedReport.id,
         ReportStatus.FAILED,
         error.message,
-      );
+      ).catch(() => {
+        /* fire-and-forget status update */
+      });
     });
 
     return savedReport;

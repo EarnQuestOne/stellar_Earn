@@ -190,13 +190,7 @@ export class SecurityMiddleware implements NestMiddleware {
   }
 
   private sanitizeQueryParams(req: Request, maxDepth: number): void {
-    if (req.query) {
-      req.query = sanitizeObjectDeep(
-        req.query,
-        0,
-        maxDepth,
-      ) as Request['query'];
-    }
+    req.query = sanitizeObjectDeep(req.query, 0, maxDepth) as Request['query'];
   }
 
   private collectIssues(

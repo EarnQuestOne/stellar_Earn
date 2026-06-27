@@ -3,14 +3,42 @@ import { Logger } from '@nestjs/common';
 
 const logger = new Logger('WebhookSignature');
 
-/**
- * Verifies webhook signatures for different providers
- * @param payload - The webhook payload
- * @param signature - The signature from headers
- * @param secret - The webhook secret
- * @param provider - The webhook provider (github, api, etc.)
- * @returns boolean - Whether the signature is valid
- */
+export interface SignatureVerificationResult {
+  valid: boolean;
+  reason?: string;
+}
+
+export const WEBHOOK_MAX_TIMESTAMP_AGE_MS = 5 * 60 * 1000;
+
+export function verifyWebhookSignatureWithTimestamp(
+  payload: string | object,
+  signature: string,
+  secret: string,
+  provider: string,
+  timestampHeader?: string,
+): SignatureVerificationResult {
+  if (!timestampHeader) {
+    return { valid: false, reason: 'Missing webhook timestamp' };
+  }
+
+  const timestamp = parseInt(timestampHeader, 10);
+  if (isNaN(timestamp)) {
+    return { valid: false, reason: 'Invalid timestamp format' };
+  }
+
+  const age = Date.now() - timestamp * 1000;
+  if (Math.abs(age) > WEBHOOK_MAX_TIMESTAMP_AGE_MS) {
+    return { valid: false, reason: 'Webhook timestamp expired or invalid' };
+  }
+
+  const isValid = verifyWebhookSignature(payload, signature, secret, provider);
+  if (!isValid) {
+    return { valid: false, reason: 'Invalid webhook signature' };
+  }
+
+  return { valid: true };
+}
+
 export function verifyWebhookSignature(
   payload: string | object,
   signature: string,
@@ -26,9 +54,12 @@ export function verifyWebhookSignature(
         return verifyGithubSignature(payloadString, signature, secret);
       case 'api':
         return verifyApiSignature(payloadString, signature, secret);
-      default:
-        logger.warn(`Unsupported webhook provider: ${provider}`);
-        return false;
+      default: {
+        logger.warn(
+          `Unsupported webhook provider: ${provider}, attempting generic HMAC verification`,
+        );
+        return verifyGenericSignature(payloadString, signature, secret);
+      }
     }
   } catch (error) {
     logger.error(`Error verifying webhook signature: ${error.message}`);
@@ -106,6 +137,39 @@ function verifyApiSignature(
     return isValid;
   } catch (error) {
     logger.error(`Error in API signature verification: ${error.message}`);
+    return false;
+  }
+}
+
+function verifyGenericSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+): boolean {
+  try {
+    let expectedSignature = signature;
+    if (signature.startsWith('sha256=')) {
+      expectedSignature = signature.substring(7);
+    } else if (signature.startsWith('hmac-sha256=')) {
+      expectedSignature = signature.substring(12);
+    }
+
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(payload, 'utf8');
+    const calculatedSignature = hmac.digest('hex');
+
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(calculatedSignature, 'hex'),
+      Buffer.from(expectedSignature, 'hex'),
+    );
+
+    if (!isValid) {
+      logger.warn('Generic webhook signature verification failed');
+    }
+
+    return isValid;
+  } catch (error) {
+    logger.error(`Error in generic signature verification: ${error.message}`);
     return false;
   }
 }

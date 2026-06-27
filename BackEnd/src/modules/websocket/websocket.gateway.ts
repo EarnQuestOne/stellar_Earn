@@ -152,7 +152,7 @@ export class AppWebsocketGateway
     }
 
     const roomName = `chat:${data.roomId}`;
-    client.join(roomName);
+    void client.join(roomName);
 
     const user = client.data.user;
     this.server.to(roomName).emit('chat:user-joined', {
@@ -175,7 +175,7 @@ export class AppWebsocketGateway
     }
 
     const roomName = `chat:${data.roomId}`;
-    client.leave(roomName);
+    void client.leave(roomName);
 
     const user = client.data.user;
     this.server.to(roomName).emit('chat:user-left', {

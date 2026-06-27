@@ -412,7 +412,7 @@ export class FeatureFlagsService {
   /**
    * Clear all flag caches (use with caution)
    */
-  async clearAllCaches(): Promise<void> {
+  clearAllCaches(): void {
     // In a real implementation, you might need to iterate through all flag keys
     this.logger.warn('Clearing all feature flag caches');
   }

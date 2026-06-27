@@ -24,7 +24,7 @@ export class BaseAnalyticsExporter {
   /**
    * Convert data to specified format
    */
-  async export(data: any, options: ExportOptions): Promise<ExportResult> {
+  export(data: any, options: ExportOptions): ExportResult {
     switch (options.format) {
       case ReportFormat.JSON:
         return this.exportToJson(data, options);
@@ -104,10 +104,7 @@ export class BaseAnalyticsExporter {
   /**
    * Export data to Excel format (simplified - returns CSV with Excel MIME type)
    */
-  private async exportToExcel(
-    data: any,
-    options: ExportOptions,
-  ): Promise<ExportResult> {
+  private exportToExcel(data: any, options: ExportOptions): ExportResult {
     // For now, export as CSV with Excel MIME type
     // In a real implementation, you'd use a library like exceljs
     const csvResult = this.exportToCsv(data, options);

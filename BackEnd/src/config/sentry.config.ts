@@ -15,7 +15,7 @@ export function initSentry(): void {
       process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1',
     ),
     integrations: [Sentry.httpIntegration()],
-    beforeSend(event) {
+    beforeSend(event: any) {
       // Strip PII from user context
       if (event.user) {
         delete event.user.email;

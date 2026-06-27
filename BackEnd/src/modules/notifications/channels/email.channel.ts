@@ -12,6 +12,7 @@ export class EmailChannel implements NotificationChannel {
   readonly type = ChannelType.EMAIL;
 
   async send(notification: Notification): Promise<DeliveryResult> {
+    await Promise.resolve();
     try {
       this.logger.log(
         `Sending email notification to user ${notification.userId}`,

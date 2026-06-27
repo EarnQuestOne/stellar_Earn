@@ -9,7 +9,7 @@ export class RoomManagerService {
   joinRoom(server: Server, clientId: string, room: string): void {
     const socket = server.sockets.sockets.get(clientId);
     if (socket) {
-      socket.join(room);
+      void socket.join(room);
     }
   }
 
@@ -19,7 +19,7 @@ export class RoomManagerService {
   leaveRoom(server: Server, clientId: string, room: string): void {
     const socket = server.sockets.sockets.get(clientId);
     if (socket) {
-      socket.leave(room);
+      void socket.leave(room);
     }
   }
 

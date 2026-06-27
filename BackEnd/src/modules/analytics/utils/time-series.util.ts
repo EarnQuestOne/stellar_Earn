@@ -44,12 +44,13 @@ export class TimeSeriesUtil {
         count: existingData?.count || 0,
       });
 
-      // Increment by granularity
+      // Increment by granularity - only 'day' and 'week' need explicit handling
       if (granularity === 'day') {
         currentDate.setDate(currentDate.getDate() + 1);
       } else if (granularity === 'week') {
         currentDate.setDate(currentDate.getDate() + 7);
-      } else if (granularity === 'month') {
+      } else {
+        // 'month' case - month is the only remaining option in the union
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
     }

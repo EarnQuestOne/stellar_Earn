@@ -64,7 +64,7 @@ export class WebsocketService {
     }
     this.userSocketMap.get(user.id)!.add(socket.id);
 
-    socket.join(`user:${user.id}`);
+    void socket.join(`user:${user.id}`);
 
     this.logger.log(
       `Client connected: ${socket.id} (user: ${user.stellarAddress})`,
@@ -116,7 +116,7 @@ export class WebsocketService {
     }
 
     const roomName = this.buildRoomName(channel, resourceId);
-    client.socket.join(roomName);
+    void client.socket.join(roomName);
     client.subscribedChannels.add(roomName);
 
     const existing = await this.subscriptionRepo.findOne({
@@ -156,7 +156,7 @@ export class WebsocketService {
     }
 
     const roomName = this.buildRoomName(channel, resourceId);
-    client.socket.leave(roomName);
+    void client.socket.leave(roomName);
     client.subscribedChannels.delete(roomName);
 
     const existing = await this.subscriptionRepo.findOne({
@@ -187,7 +187,7 @@ export class WebsocketService {
 
     for (const sub of subscriptions) {
       const roomName = this.buildRoomName(sub.channel, sub.resourceId);
-      socket.join(roomName);
+      void socket.join(roomName);
 
       const client = this.clients.get(socket.id);
       if (client) {

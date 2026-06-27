@@ -244,11 +244,13 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleCleanup(job: Job) {
+    await Promise.resolve();
     console.log('Processing cleanup job', job.id, job.data);
     return { cleaned: true };
   }
 
   private async handleScheduled(job: Job) {
+    await Promise.resolve();
     console.log('Processing scheduled job', job.id, job.data);
     return { ran: true };
   }
