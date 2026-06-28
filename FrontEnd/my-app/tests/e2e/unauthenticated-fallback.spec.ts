@@ -1,25 +1,3 @@
-import { test, expect } from '@playwright/test';
-import { MOCK_PUBLIC_QUEST, mockQuestListApi } from './helpers/quest-api-mock';
-
-/**
- * FE-039 / Issue #828: End-to-end tests for unauthenticated homepage
- * and quest listing fallback.
- *
- * Verifies that visitors without a wallet session can browse the public
- * homepage and quest catalog, and that quest listing error states render
- * gracefully when the quests API is unavailable.
- */
-test.describe('Unauthenticated Homepage and Quest Listing Fallback', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.removeItem('stellar_earn_access_token');
-      localStorage.removeItem('stellar_earn_refresh_token');
-      localStorage.removeItem('inheritx_wallet_address');
-      localStorage.removeItem('inheritx_wallet_id');
-      localStorage.setItem(
-        'stellar_earn_analytics_consent',
-        JSON.stringify({ status: 'denied', version: '1' })
-      );
 /**
  * Unauthenticated Fallback Flow — stellar_earn
  *
@@ -40,6 +18,7 @@ test.describe('Unauthenticated Homepage and Quest Listing Fallback', () => {
  */
 
 import { test, expect, Page } from '@playwright/test';
+import { MOCK_PUBLIC_QUEST, mockQuestListApi } from './helpers/quest-api-mock';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

@@ -17,11 +17,11 @@
  *  - Retry / back-off test: expired session → dismiss → reconnect.
  */
 
-import { expect, test, Page, BrowserContext } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const ANALYTICS_KEY = 'stellar_earn_analytics_consent';
+const _ANALYTICS_KEY = 'stellar_earn_analytics_consent';
 const ACCESS_TOKEN_KEY = 'stellar_earn_access_token';
 const REFRESH_TOKEN_KEY = 'stellar_earn_refresh_token';
 const SESSION_TOKEN_KEY = 'stellar_earn_session_token';
@@ -61,7 +61,7 @@ function injectExpiredSession() {
  * Inject a resolved wallet mock (freighter-compatible API) so the connect
  * flow can proceed without a real browser extension installed.
  */
-function injectWalletMock(address: string) {
+function injectWalletMock(_address: string) {
   return (mockAddress: string) => {
     const stub = {
       isConnected: async () => ({ isConnected: true }),
@@ -73,8 +73,11 @@ function injectWalletMock(address: string) {
       }),
     };
     // Expose under both common extension names.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).freighter = stub;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).freighterApi = stub;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).xbull = stub;
   };
 }
@@ -341,7 +344,7 @@ test.describe('Session Expired Flow', () => {
     await authPage.goto();
   });
 
-  test('shows session-expired modal when event is dispatched', async ({ page }) => {
+  test('shows session-expired modal when event is dispatched', async () => {
     await authPage.dispatchSessionExpired('token_refresh_failed');
 
     await expect(authPage.sessionExpiredHeading).toBeVisible();
@@ -394,7 +397,7 @@ test.describe('Session Expired Flow', () => {
       { reason: 'server_revoked',       expected: /revoked|sign.*again/i },
     ];
 
-    for (const { reason, expected } of reasons) {
+    for (const { reason } of reasons) {
       await authPage.dispatchSessionExpired(reason);
       // At minimum the modal must be visible; copy can vary by reason.
       await expect(authPage.sessionExpiredModal).toBeVisible();
@@ -402,7 +405,7 @@ test.describe('Session Expired Flow', () => {
     }
   });
 
-  test('session-expired modal visual snapshot', async ({ page }) => {
+  test('session-expired modal visual snapshot', async () => {
     await authPage.dispatchSessionExpired();
     await expect(authPage.sessionExpiredModal).toBeVisible();
     await expect(authPage.sessionExpiredModal).toHaveScreenshot(
