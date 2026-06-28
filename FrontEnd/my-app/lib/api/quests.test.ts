@@ -4,8 +4,7 @@ import { getQuests, getQuestById } from './quests';
 import { cacheManager } from '@/lib/utils/cache';
 import { server } from '@/tests/mocks/server';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 function questListResponse(version: number) {
   return {

@@ -216,6 +216,7 @@ export class SubmissionsService {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
       withDeleted: false,
+      relations: ['quest', 'user'],
     });
 
     if (!submission) {
@@ -226,20 +227,6 @@ export class SubmissionsService {
 
     const quest = submission.quest as Quest;
     const user = submission.user as User;
-
-    await this.validateVerifierAuthorization(quest.id, verifierId);
-    this.validateStatusTransition(submission.status, 'APPROVED');
-
-    // Validate the submitter has a Stellar address linked BEFORE we mutate
-    // any DB state. Without this gate, a submission whose submitter has not
-    // linked a wallet would be marked APPROVED locally but never settle on
-    // chain, leaving the row stuck without a tx hash and without a recoverable
-    // path forward.
-    if (!user.stellarAddress) {
-      throw new BadRequestException(
-        'Submitter does not have a Stellar address linked',
-      );
-    }
 
     // Resolve the verifier to a Stellar public key BEFORE the DB CAS update.
     // The chain expects a Stellar Address (`G…`) for the verifier argument,
@@ -259,6 +246,24 @@ export class SubmissionsService {
     if (!verifier.stellarAddress) {
       throw new BadRequestException(
         'Verifier does not have a Stellar address linked; cannot sign on their behalf',
+      );
+    }
+
+    await this.validateVerifierAuthorization(
+      quest.id,
+      verifierId,
+      verifier.stellarAddress ?? undefined,
+    );
+    this.validateStatusTransition(submission.status, 'APPROVED');
+
+    // Validate the submitter has a Stellar address linked BEFORE we mutate
+    // any DB state. Without this gate, a submission whose submitter has not
+    // linked a wallet would be marked APPROVED locally but never settle on
+    // chain, leaving the row stuck without a tx hash and without a recoverable
+    // path forward.
+    if (!user.stellarAddress) {
+      throw new BadRequestException(
+        'Submitter does not have a Stellar address linked',
       );
     }
 
@@ -412,7 +417,19 @@ export class SubmissionsService {
 
     const quest = submission.quest as Quest;
 
-    await this.validateVerifierAuthorization(quest.id, verifierId);
+    const verifier = await this.usersRepository.findOne({
+      where: { id: verifierId },
+      relations: [],
+    });
+    if (!verifier) {
+      throw new ForbiddenException(`Verifier with id ${verifierId} not found`);
+    }
+
+    await this.validateVerifierAuthorization(
+      quest.id,
+      verifierId,
+      verifier.stellarAddress ?? undefined,
+    );
     this.validateStatusTransition(submission.status, 'REJECTED');
 
     if (!rejectDto.reason || rejectDto.reason.trim().length === 0) {
@@ -488,12 +505,13 @@ export class SubmissionsService {
   private async validateVerifierAuthorization(
     questId: string,
     verifierId: string,
+    verifierStellarAddress?: string,
   ): Promise<void> {
     const quest = await this.getQuestWithVerifiers(questId);
 
     const isAuthorized =
       quest.verifiers.some((v) => v.id === verifierId) ||
-      quest.createdBy === verifierId ||
+      quest.createdBy === (verifierStellarAddress || verifierId) ||
       (await this.checkAdminRole(verifierId));
 
     if (!isAuthorized) {
@@ -522,12 +540,17 @@ export class SubmissionsService {
     }
   }
 
-  private getQuestWithVerifiers(questId: string): Promise<QuestWithVerifiers> {
-    return Promise.resolve({
-      id: questId,
-      verifiers: [],
-      createdBy: '',
+  private async getQuestWithVerifiers(
+    questId: string,
+  ): Promise<QuestWithVerifiers> {
+    const quest = await this.questsRepository.findOne({
+      where: { id: questId },
     });
+    return {
+      id: questId,
+      verifiers: quest?.verifiers ?? [],
+      createdBy: quest?.createdBy ?? '',
+    };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

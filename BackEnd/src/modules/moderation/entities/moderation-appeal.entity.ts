@@ -40,7 +40,7 @@ export class ModerationAppeal {
   @Index()
   status: AppealStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   resolvedBy: string | null;
 
   @Column({ type: 'timestamp with time zone', nullable: true })

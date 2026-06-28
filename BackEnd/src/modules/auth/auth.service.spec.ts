@@ -12,7 +12,7 @@ import {
   createMockJwtService,
   createMockConfigService,
   generateRandomStellarAddress,
-} from '../../test/utils/test-helpers';
+} from 'test/utils/test-helpers';
 
 // Mock the signature utilities
 jest.mock('./utils/signature', () => ({

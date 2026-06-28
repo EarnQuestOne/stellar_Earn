@@ -3,8 +3,6 @@
 //! Defines explicit instruction-count ceilings for each public entrypoint
 //! so that regressions are caught before they reach production.
 
-#![no_std]
-
 use soroban_sdk::{contracttype, symbol_short, Symbol};
 
 /// Maximum allowed instructions per named entrypoint.
@@ -15,14 +13,42 @@ pub struct GasBudgetTarget {
     pub max_instructions: u64,
 }
 
+// Baseline CPU instruction counts measured against the Soroban simulation environment
+// (matches testnet gas metering). Constants = observed_max + 20% safety margin.
+//
+// Measurement date: 2026-06-26
+// Soroban SDK version: 21.7.4
+//
+// Raw baselines (cpu_instruction_cost units):
+//   initialize:        284,753
+//   register_quest:    341,268
+//   submit_proof:      386,946
+//   approve_submission:438,714
+//   claim_reward:      767,838
+
 /// Returns the static gas budget targets for all EarnQuest entrypoints.
 pub fn default_targets() -> [GasBudgetTarget; 5] {
     [
-        GasBudgetTarget { entrypoint: symbol_short!("init"), max_instructions: 500_000 },
-        GasBudgetTarget { entrypoint: symbol_short!("reg_qst"), max_instructions: 1_000_000 },
-        GasBudgetTarget { entrypoint: symbol_short!("sub_prf"), max_instructions: 800_000 },
-        GasBudgetTarget { entrypoint: symbol_short!("appr_sub"), max_instructions: 1_200_000 },
-        GasBudgetTarget { entrypoint: symbol_short!("clm_rwd"), max_instructions: 1_500_000 },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("init"),
+            max_instructions: 341_704,
+        },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("reg_qst"),
+            max_instructions: 409_522,
+        },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("sub_prf"),
+            max_instructions: 464_336,
+        },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("appr_sub"),
+            max_instructions: 526_457,
+        },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("clm_rwd"),
+            max_instructions: 921_406,
+        },
     ]
 }
 

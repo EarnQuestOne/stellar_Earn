@@ -15,6 +15,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { QuestStatus } from '../enums/quest-status.enum';
+import { QuestDifficulty } from '../enums/quest-difficulty.enum';
 
 export class CreateQuestDto {
   @ApiProperty({
@@ -59,6 +60,14 @@ export class CreateQuestDto {
   @IsOptional()
   @IsEnum(QuestStatus)
   status?: QuestStatus;
+
+  @ApiPropertyOptional({
+    description: 'Quest difficulty',
+    enum: QuestDifficulty,
+  })
+  @IsOptional()
+  @IsEnum(QuestDifficulty)
+  difficulty?: QuestDifficulty;
 
   @ApiPropertyOptional({
     description: 'Maximum number of completions allowed',

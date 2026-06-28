@@ -1,5 +1,9 @@
 name: Backend CI
+# This workflow is triggered on push and pull request events for the main and master branches, specifically when changes are made to the BackEnd directory or the workflow file itself. It consists of two jobs: "build-and-lint" and "backend-ci-gate".
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [main, master]
@@ -10,7 +14,7 @@ on:
     paths:
       - "BackEnd/**"
       - ".github/workflows/backend-ci.yml"
-
+# The workflow consists of two jobs: "build-and-lint" and "backend-ci-gate". The "build-and-lint" job is responsible for checking out the code, setting up Node.js, caching npm dependencies, installing dependencies, compiling TypeScript, linting the code, and checking code formatting. The "backend-ci-gate" job runs after the "build-and-lint" job and checks if all previous steps were successful. If any step fails, it will exit with an error message.
 jobs:
   build-and-lint:
     name: Build, Lint & Format
@@ -40,6 +44,13 @@ jobs:
       - name: TypeScript compilation
         run: npm run build
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: BackEnd/dist/
+          retention-days: 7
+
       - name: Lint
         run: npm run lint
 
@@ -66,3 +77,21 @@ jobs:
 
           echo "All backend CI checks passed"
           exit 0
+
+      - name: Workflow Summary
+        if: always()
+        run: |
+          echo "## Backend CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Lint | ${{ needs.build-and-lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.build-and-lint.result }}" != "success" ]; then
+            echo "### ❌ Failed Checks" >> $GITHUB_STEP_SUMMARY
+            echo "The build or lint step failed. Please check the job logs for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ All Checks Passed" >> $GITHUB_STEP_SUMMARY
+            echo "All backend CI checks completed successfully." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,4 +1,25 @@
-process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:3000';
+// ---------------------------------------------------------------------------
+// Test-only env bootstrap (FE-022)
+//
+// Sets every NEXT_PUBLIC_* variable to a deterministic test value *before*
+// any module imports.  Using ||= ensures an outer env (CI, .env.test) can
+// still override individual values when needed.
+// ---------------------------------------------------------------------------
+
+process.env.NEXT_PUBLIC_API_BASE_URL ||= 'http://localhost:3000';
+process.env.NEXT_PUBLIC_STELLAR_NETWORK ||= 'testnet';
+process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ||=
+  'https://soroban-testnet.stellar.org';
+process.env.NEXT_PUBLIC_CONTRACT_ID ||=
+  'CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+process.env.NEXT_PUBLIC_ANALYTICS_TEST_MODE ||= 'true';
+process.env.NEXT_PUBLIC_ANALYTICS_ID ||= 'G-TEST-XXXXXXXXXX';
+process.env.NEXT_PUBLIC_SENTRY_DSN ||= '';
+process.env.E2E_BASE_URL ||= 'http://localhost:3000';
+
+// ---------------------------------------------------------------------------
+// Test infrastructure
+// ---------------------------------------------------------------------------
 
 import { cleanup } from '@testing-library/react';
 import { beforeAll, afterEach, afterAll, expect } from 'vitest';
@@ -54,6 +75,13 @@ expect.extend({
     return {
       pass,
       message: () => `expected element to be empty`,
+    };
+  },
+  toHaveFocus(received) {
+    const pass = document.activeElement === received;
+    return {
+      pass,
+      message: () => `expected element to have focus`,
     };
   },
 });

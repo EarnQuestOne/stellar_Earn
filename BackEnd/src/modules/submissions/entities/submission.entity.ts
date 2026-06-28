@@ -22,34 +22,34 @@ export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   questId: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   userId: string;
 
   @Column({ type: 'json' })
   proof: any;
 
-  @Column({ default: 'PENDING' })
+  @Column({ type: 'varchar', default: 'PENDING' })
   status: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   approvedBy: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   approvedAt: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   rejectedBy: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   rejectedAt: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   rejectionReason: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   verifierNotes: string | null;
 
   @Column({ type: 'varchar', length: 128, nullable: true })

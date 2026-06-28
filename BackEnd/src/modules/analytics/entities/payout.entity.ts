@@ -28,13 +28,13 @@ export class Payout {
   @Column({ type: 'bigint' })
   amount: string;
 
-  @Column()
+  @Column({ nullable: true })
   assetCode: string;
 
-  @Column()
+  @Column({ nullable: true })
   transactionHash: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   @Index()
   paidAt: Date;
 

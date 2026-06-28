@@ -4,72 +4,81 @@ import { DataSource } from 'typeorm';
 import { AppLoggerService } from '../../../common/logger/logger.service';
 import { MetricsService } from '../../../common/services/metrics.service';
 
+interface PoolOverrides {
+  pool?: Record<string, number> | null;
+  masterNull?: boolean;
+  driverNull?: boolean;
+  extra?: Record<string, unknown>;
+}
+
+function buildDataSourceMock(overrides: PoolOverrides = {}) {
+  const pool =
+    'pool' in overrides
+      ? overrides.pool
+      : { totalCount: 5, idleCount: 2, waitingCount: 0 };
+
+  const driver = overrides.driverNull
+    ? null
+    : { master: overrides.masterNull ? null : { pool } };
+
+  return {
+    driver,
+    options: {
+      extra:
+        overrides.extra !== undefined
+          ? overrides.extra
+          : { max: 10, min: 0, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 },
+    },
+  } as any;
+}
+
+function buildLoggerMock() {
+  return { log: jest.fn(), warn: jest.fn(), error: jest.fn() } as any;
+}
+
+function buildMetricsMock() {
+  return {
+    registerGauge: jest.fn(),
+    registerHistogram: jest.fn(),
+    registerCounter: jest.fn(),
+    setGauge: jest.fn(),
+    observeHistogram: jest.fn(),
+    incrementCounter: jest.fn(),
+  } as any;
+}
+
+async function buildModule(dsOverrides: PoolOverrides = {}) {
+  const mockDataSource = buildDataSourceMock(dsOverrides);
+  const mockLoggerService = buildLoggerMock();
+  const mockMetricsService = buildMetricsMock();
+
+  const module: TestingModule = await Test.createTestingModule({
+    providers: [
+      DatabasePoolMonitorService,
+      { provide: DataSource, useValue: mockDataSource },
+      { provide: AppLoggerService, useValue: mockLoggerService },
+      { provide: MetricsService, useValue: mockMetricsService },
+    ],
+  }).compile();
+
+  return {
+    service: module.get<DatabasePoolMonitorService>(DatabasePoolMonitorService),
+    dataSource: mockDataSource,
+    metricsService: mockMetricsService as jest.Mocked<MetricsService>,
+    loggerService: mockLoggerService as jest.Mocked<AppLoggerService>,
+  };
+}
+
 describe('DatabasePoolMonitorService', () => {
   let service: DatabasePoolMonitorService;
-  let dataSource: jest.Mocked<DataSource>;
   let metricsService: jest.Mocked<MetricsService>;
   let loggerService: jest.Mocked<AppLoggerService>;
 
   beforeEach(async () => {
-    const mockDataSource = {
-      driver: {
-        master: {
-          pool: {
-            totalCount: 5,
-            idleCount: 2,
-            waitingCount: 0,
-          },
-        },
-      },
-      options: {
-        extra: {
-          max: 10,
-          min: 0,
-          connectionTimeoutMillis: 10000,
-          idleTimeoutMillis: 30000,
-        },
-      },
-    } as any;
-
-    const mockLoggerService = {
-      log: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-    } as any;
-
-    const mockMetricsService = {
-      registerGauge: jest.fn(),
-      registerHistogram: jest.fn(),
-      registerCounter: jest.fn(),
-      setGauge: jest.fn(),
-      observeHistogram: jest.fn(),
-      incrementCounter: jest.fn(),
-    } as any;
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DatabasePoolMonitorService,
-        {
-          provide: DataSource,
-          useValue: mockDataSource,
-        },
-        {
-          provide: AppLoggerService,
-          useValue: mockLoggerService,
-        },
-        {
-          provide: MetricsService,
-          useValue: mockMetricsService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<DatabasePoolMonitorService>(
-      DatabasePoolMonitorService,
-    );
-    dataSource = mockDataSource;
-    metricsService = mockMetricsService;
-    loggerService = mockLoggerService;
+    const built = await buildModule();
+    service = built.service;
+    metricsService = built.metricsService;
+    loggerService = built.loggerService;
   });
 
   afterEach(() => {
@@ -83,7 +92,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('getPoolStats', () => {
     it('should return pool statistics when pool is available', () => {
       const stats = service.getPoolStats();
-
       expect(stats).toEqual({
         totalConnections: 5,
         activeConnections: 3,
@@ -92,11 +100,9 @@ describe('DatabasePoolMonitorService', () => {
       });
     });
 
-    it('should return zeros when pool is not available', () => {
-      dataSource.driver.master = null;
-
-      const stats = service.getPoolStats();
-
+    it('should return zeros when pool is not available', async () => {
+      const { service: svc } = await buildModule({ masterNull: true });
+      const stats = svc.getPoolStats();
       expect(stats).toEqual({
         totalConnections: 0,
         activeConnections: 0,
@@ -105,11 +111,9 @@ describe('DatabasePoolMonitorService', () => {
       });
     });
 
-    it('should handle missing pool properties gracefully', () => {
-      dataSource.driver.master.pool = {};
-
-      const stats = service.getPoolStats();
-
+    it('should handle missing pool properties gracefully', async () => {
+      const { service: svc } = await buildModule({ pool: {} });
+      const stats = svc.getPoolStats();
       expect(stats).toEqual({
         totalConnections: 0,
         activeConnections: 0,
@@ -122,7 +126,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('getPoolConfig', () => {
     it('should return pool configuration', () => {
       const config = service.getPoolConfig();
-
       expect(config).toEqual({
         max: 10,
         min: 0,
@@ -131,11 +134,9 @@ describe('DatabasePoolMonitorService', () => {
       });
     });
 
-    it('should use defaults when extra config is missing', () => {
-      dataSource.options.extra = {};
-
-      const config = service.getPoolConfig();
-
+    it('should use defaults when extra config is missing', async () => {
+      const { service: svc } = await buildModule({ extra: {} });
+      const config = svc.getPoolConfig();
       expect(config).toEqual({
         max: 10,
         min: 0,
@@ -148,13 +149,14 @@ describe('DatabasePoolMonitorService', () => {
   describe('getUtilizationPercentage', () => {
     it('should calculate utilization percentage correctly', () => {
       const utilization = service.getUtilizationPercentage();
-      expect(utilization).toBe(50); // 5/10 * 100
+      expect(utilization).toBe(50);
     });
 
-    it('should return 0 when max is 0', () => {
-      dataSource.options.extra.max = 0;
-
-      const utilization = service.getUtilizationPercentage();
+    it('should return 0 when max is 0', async () => {
+      const { service: svc } = await buildModule({
+        extra: { max: 0, min: 0, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 },
+      });
+      const utilization = svc.getUtilizationPercentage();
       expect(utilization).toBe(0);
     });
   });
@@ -162,7 +164,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('recordAcquisitionTime', () => {
     it('should record acquisition time and update histogram', () => {
       service.recordAcquisitionTime(100);
-
       expect(metricsService.observeHistogram).toHaveBeenCalledWith(
         'db_pool_acquire_duration_ms',
         100,
@@ -173,16 +174,14 @@ describe('DatabasePoolMonitorService', () => {
       for (let i = 0; i < 150; i++) {
         service.recordAcquisitionTime(i);
       }
-
       const avgTime = service.getAverageAcquisitionTime();
-      expect(avgTime).toBeGreaterThan(50); // Should be average of last 100 samples
+      expect(avgTime).toBeGreaterThan(50);
     });
   });
 
   describe('recordTimeout', () => {
     it('should record timeout and increment counter', () => {
       service.recordTimeout();
-
       expect(metricsService.incrementCounter).toHaveBeenCalledWith(
         'db_pool_timeout_total',
       );
@@ -197,7 +196,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('recordFailedConnection', () => {
     it('should record failed connection and increment counter', () => {
       service.recordFailedConnection();
-
       expect(metricsService.incrementCounter).toHaveBeenCalledWith(
         'db_pool_failed_connections_total',
       );
@@ -212,7 +210,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('recordRetry', () => {
     it('should record retry and increment counter', () => {
       service.recordRetry();
-
       expect(metricsService.incrementCounter).toHaveBeenCalledWith(
         'db_pool_retry_total',
       );
@@ -229,7 +226,6 @@ describe('DatabasePoolMonitorService', () => {
       service.recordAcquisitionTime(100);
       service.recordAcquisitionTime(200);
       service.recordAcquisitionTime(300);
-
       const avg = service.getAverageAcquisitionTime();
       expect(avg).toBe(200);
     });
@@ -238,7 +234,6 @@ describe('DatabasePoolMonitorService', () => {
   describe('onModuleInit', () => {
     it('should register metrics on initialization', () => {
       service.onModuleInit();
-
       expect(metricsService.registerGauge).toHaveBeenCalledWith(
         'db_pool_active_connections',
         'Number of active database connections',
@@ -286,26 +281,21 @@ describe('DatabasePoolMonitorService', () => {
     it('should clear monitoring interval on destroy', () => {
       service.onModuleInit();
       service.onModuleDestroy();
-
-      // Interval should be cleared (no easy way to test this directly without spy)
       expect(service).toBeDefined();
     });
   });
 
   describe('exhaustion detection', () => {
-    it('should detect pool exhaustion when max connections reached and waiting requests exist', () => {
-      dataSource.driver.master.pool.totalCount = 10;
-      dataSource.driver.master.pool.waitingCount = 5;
+    it('should detect pool exhaustion when max connections reached and waiting requests exist', async () => {
+      const { service: svc, metricsService: metrics, loggerService: logger } =
+        await buildModule({ pool: { totalCount: 10, idleCount: 0, waitingCount: 5 } });
 
-      service.onModuleInit();
-      // Trigger collection
-      service['collectPoolMetrics']();
-      service['checkExhaustionConditions']();
+      svc.onModuleInit();
+      svc['collectPoolMetrics']();
+      svc['checkExhaustionConditions']();
 
-      expect(metricsService.incrementCounter).toHaveBeenCalledWith(
-        'db_pool_exhaustion_total',
-      );
-      expect(loggerService.error).toHaveBeenCalledWith(
+      expect(metrics.incrementCounter).toHaveBeenCalledWith('db_pool_exhaustion_total');
+      expect(logger.error).toHaveBeenCalledWith(
         'Database pool exhaustion detected',
         'DatabasePoolMonitorService',
         expect.objectContaining({
@@ -316,33 +306,31 @@ describe('DatabasePoolMonitorService', () => {
       );
     });
 
-    it('should not alert on exhaustion within cooldown period', () => {
-      dataSource.driver.master.pool.totalCount = 10;
-      dataSource.driver.master.pool.waitingCount = 5;
+    it('should not alert on exhaustion within cooldown period', async () => {
+      const { service: svc, loggerService: logger } =
+        await buildModule({ pool: { totalCount: 10, idleCount: 0, waitingCount: 5 } });
 
-      service.onModuleInit();
-      service['collectPoolMetrics']();
-      service['checkExhaustionConditions']();
+      svc.onModuleInit();
+      svc['collectPoolMetrics']();
+      svc['checkExhaustionConditions']();
 
-      const callCount = loggerService.error.mock.calls.length;
+      const callCount = logger.error.mock.calls.length;
+      svc['checkExhaustionConditions']();
 
-      // Second call should not alert due to cooldown
-      service['checkExhaustionConditions']();
-
-      expect(loggerService.error.mock.calls.length).toBe(callCount);
+      expect(logger.error.mock.calls.length).toBe(callCount);
     });
   });
 
   describe('high utilization detection', () => {
-    it('should alert when utilization exceeds 90%', () => {
-      dataSource.driver.master.pool.totalCount = 9;
-      dataSource.driver.master.pool.idleCount = 0;
+    it('should alert when utilization exceeds 90%', async () => {
+      const { service: svc, loggerService: logger } =
+        await buildModule({ pool: { totalCount: 9, idleCount: 0, waitingCount: 0 } });
 
-      service.onModuleInit();
-      service['collectPoolMetrics']();
-      service['checkExhaustionConditions']();
+      svc.onModuleInit();
+      svc['collectPoolMetrics']();
+      svc['checkExhaustionConditions']();
 
-      expect(loggerService.warn).toHaveBeenCalledWith(
+      expect(logger.warn).toHaveBeenCalledWith(
         'Database pool utilization critical',
         'DatabasePoolMonitorService',
         expect.objectContaining({
@@ -353,39 +341,33 @@ describe('DatabasePoolMonitorService', () => {
   });
 
   describe('waiting queue detection', () => {
-    it('should log warning when waiting queue is elevated', () => {
-      dataSource.driver.master.pool.waitingCount = 6;
+    it('should log warning when waiting queue is elevated', async () => {
+      const { service: svc, loggerService: logger } =
+        await buildModule({ pool: { totalCount: 5, idleCount: 2, waitingCount: 6 } });
 
-      service.onModuleInit();
-      service['collectPoolMetrics']();
+      svc.onModuleInit();
+      svc['collectPoolMetrics']();
 
-      expect(loggerService.warn).toHaveBeenCalledWith(
+      expect(logger.warn).toHaveBeenCalledWith(
         'Database pool waiting queue elevated',
         'DatabasePoolMonitorService',
-        expect.objectContaining({
-          waitingRequests: 6,
-        }),
+        expect.objectContaining({ waitingRequests: 6 }),
       );
     });
   });
 
   describe('failure handling', () => {
-    it('should not crash when metrics collection fails', () => {
-      dataSource.driver = null;
-
-      service.onModuleInit();
-
-      // Should not throw
-      expect(() => service['collectPoolMetrics']()).not.toThrow();
+    it('should not crash when metrics collection fails', async () => {
+      const { service: svc } = await buildModule({ driverNull: true });
+      svc.onModuleInit();
+      expect(() => svc['collectPoolMetrics']()).not.toThrow();
     });
 
-    it('should log warning when collection fails', () => {
-      dataSource.driver = null;
-
-      service.onModuleInit();
-      service['collectPoolMetrics']();
-
-      expect(loggerService.warn).toHaveBeenCalledWith(
+    it('should log warning when collection fails', async () => {
+      const { service: svc, loggerService: logger } = await buildModule({ driverNull: true });
+      svc.onModuleInit();
+      svc['collectPoolMetrics']();
+      expect(logger.warn).toHaveBeenCalledWith(
         'Failed to collect pool metrics',
         'DatabasePoolMonitorService',
         expect.any(Object),

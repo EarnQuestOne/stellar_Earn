@@ -36,10 +36,10 @@ const DARK = {
 };
 
 const BADGES = {
-  pending:  { bg: '#332418', text: '#facc15' },
+  pending: { bg: '#332418', text: '#facc15' },
   approved: { bg: '#172a20', text: '#4ade80' },
   rejected: { bg: '#371a1c', text: '#f87171' },
-  paid:     { bg: '#172831', text: '#22d3ee' },
+  paid: { bg: '#172831', text: '#22d3ee' },
 };
 
 describe('RecentSubmissions – dark mode color contrast (FE-074)', () => {

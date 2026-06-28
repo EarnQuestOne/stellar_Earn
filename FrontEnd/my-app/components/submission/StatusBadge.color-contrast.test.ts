@@ -19,11 +19,11 @@ import {
 } from '@/lib/utils/color-contrast';
 
 const BADGES = {
-  pending:      { bg: '#361e18', text: '#fb923c' },
-  approved:     { bg: '#172a20', text: '#4ade80' },
-  rejected:     { bg: '#371a1c', text: '#f87171' },
-  paid:         { bg: '#1a222f', text: '#60a5fa' },
-  underReview:  { bg: '#1a222f', text: '#60a5fa' },
+  pending: { bg: '#361e18', text: '#fb923c' },
+  approved: { bg: '#172a20', text: '#4ade80' },
+  rejected: { bg: '#371a1c', text: '#f87171' },
+  paid: { bg: '#1a222f', text: '#60a5fa' },
+  underReview: { bg: '#1a222f', text: '#60a5fa' },
 };
 
 describe('StatusBadge (submission) – dark mode color contrast (FE-074)', () => {

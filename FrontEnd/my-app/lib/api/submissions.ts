@@ -19,7 +19,6 @@ import {
   get,
   post,
   withRetry,
-  apiClient,
   createCancelToken,
   type CancelToken,
 } from './client';

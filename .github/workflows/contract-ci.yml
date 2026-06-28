@@ -1,5 +1,7 @@
 name: Contract CI
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [main, master]
@@ -89,3 +91,21 @@ jobs:
             exit 1
           fi
           echo "All contract CI checks passed"
+
+      - name: Workflow Summary
+        if: always()
+        run: |
+          echo "## Contract CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build and Test | ${{ needs.build-and-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.build-and-test.result }}" != "success" ]; then
+            echo "### ❌ Failed Contract Checks" >> $GITHUB_STEP_SUMMARY
+            echo "Contract CI failed. Please check the job logs for details on failed test suites or linting issues." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ All Contract Checks Passed" >> $GITHUB_STEP_SUMMARY
+            echo "All contract CI checks completed successfully including build, tests, and linting." >> $GITHUB_STEP_SUMMARY
+          fi

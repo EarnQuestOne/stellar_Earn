@@ -43,8 +43,7 @@ const VALID_DIFFICULTIES: QuestDifficulty[] = [
 ];
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 function assertRequiredQuestFields(quest: QuestResponse): void {
   expect(typeof quest.id).toBe('string');

@@ -75,7 +75,7 @@ export class ModerationItem {
   @Column({ type: 'int', default: 0 })
   priority: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   reviewedBy: string | null;
 
   @Column({ type: 'timestamp with time zone', nullable: true })

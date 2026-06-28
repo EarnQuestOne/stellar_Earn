@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '../api/client';
+import { getApiClient } from '../api/client';
 
 export function useNetworkStatus() {
   const [isOnline, setIsOnline] = useState<boolean>(
@@ -30,7 +30,7 @@ export function useNetworkStatus() {
 
     const checkApiHealth = async () => {
       try {
-        await apiClient.get('/health', { timeout: 5000 });
+        await getApiClient().get('/health', { timeout: 5000 });
         setIsApiReachable(true);
       } catch (err) {
         setIsApiReachable(false);

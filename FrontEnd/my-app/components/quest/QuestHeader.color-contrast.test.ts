@@ -44,25 +44,25 @@ const DARK = {
 };
 
 const CATEGORY_BADGES = {
-  security:  { bg: '#27272a', text: '#d4d4d8' },
-  frontend:  { bg: '#1a222f', text: '#60a5fa' },
-  backend:   { bg: '#2b193b', text: '#c084fc' },
-  docs:      { bg: '#332418', text: '#facc15' },
-  testing:   { bg: '#381827', text: '#f472b6' },
+  security: { bg: '#27272a', text: '#d4d4d8' },
+  frontend: { bg: '#1a222f', text: '#60a5fa' },
+  backend: { bg: '#2b193b', text: '#c084fc' },
+  docs: { bg: '#332418', text: '#facc15' },
+  testing: { bg: '#381827', text: '#f472b6' },
   community: { bg: '#172a20', text: '#4ade80' },
 };
 
 const STATUS_BADGES = {
-  active:    { bg: '#172a20', text: '#4ade80' },
-  paused:    { bg: '#332418', text: '#facc15' },
+  active: { bg: '#172a20', text: '#4ade80' },
+  paused: { bg: '#332418', text: '#facc15' },
   completed: { bg: '#1a222f', text: '#60a5fa' },
-  expired:   { bg: '#371a1c', text: '#f87171' },
+  expired: { bg: '#371a1c', text: '#f87171' },
 };
 
 const DIFFICULTIES = [
-  { name: 'easy',   bg: '#22c55e', text: '#14532d' },
+  { name: 'easy', bg: '#22c55e', text: '#14532d' },
   { name: 'medium', bg: '#f97316', text: '#431407' },
-  { name: 'hard',   bg: '#ef4444', text: '#ffffff' },
+  { name: 'hard', bg: '#ef4444', text: '#ffffff' },
 ];
 
 describe('QuestHeader – dark mode color contrast (FE-074)', () => {

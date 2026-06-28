@@ -30,10 +30,14 @@ import { getCorsConfig } from './config/cors.config';
 import { createLoggerConfig } from './config/logger.config';
 import { AppLoggerService } from './common/logger/logger.service';
 import { initSentry } from './config/sentry.config';
+import { assertEnvValid } from './config/env.validation';
 import {
   initOpenTelemetry,
   shutdownOpenTelemetry,
 } from './config/opentelemetry.config';
+
+// Validate required environment variables before anything else
+assertEnvValid();
 
 // Initialise Sentry before anything else so it can capture bootstrap errors
 initSentry();

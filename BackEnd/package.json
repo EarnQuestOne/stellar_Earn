@@ -151,6 +151,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!uuid/)"
+    ],
     "collectCoverageFrom": [
       "src/**/*.(t|j)s"
     ],
@@ -158,7 +161,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^#src/(.*)$": "<rootDir>/src/$1",
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^test/(.*)$": "<rootDir>/test/$1"
     }
   },
   "overrides": {

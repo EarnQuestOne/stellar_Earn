@@ -10,15 +10,9 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
-vi.mock('@/lib/api/user', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/api/user')>('@/lib/api/user');
-
-  return {
-    ...actual,
-    fetchDashboardData: vi.fn(),
-  };
-});
+vi.mock('@/lib/api/user', () => ({
+  fetchDashboardData: vi.fn(),
+}));
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockFetchDashboardData = vi.mocked(fetchDashboardData);

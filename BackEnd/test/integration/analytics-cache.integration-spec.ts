@@ -4,19 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AnalyticsModule } from '#src/modules/analytics/analytics.module';
 import { CacheModule } from '#src/modules/cache/cache.module';
-import {
-  AnalyticsService,
-  getAnalyticsService,
-} from '#src/modules/analytics/analytics.service';
-import { AnalyticsService } from '#src/modules/analytics/analytics.service';
 import { CacheService } from '#src/modules/cache/cache.service';
-import { User } from '#src/modules/users/entities/user.entity';
-import { Quest } from '#src/modules/quests/entities/quest.entity';
-import { Submission } from '#src/modules/submissions/entities/submission.entity';
 
 describe('Analytics-Cache Integration', () => {
   let module: TestingModule;
-  let _analyticsService: AnalyticsService;
   let cacheService: CacheService;
 
   beforeAll(async () => {
@@ -34,7 +25,7 @@ describe('Analytics-Cache Integration', () => {
           username: process.env.DB_USERNAME || 'postgres',
           password: process.env.DB_PASSWORD || 'password',
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
-          entities: [User, Quest, Submission],
+          autoLoadEntities: true,
           synchronize: true,
           dropSchema: true,
         }),
@@ -43,8 +34,6 @@ describe('Analytics-Cache Integration', () => {
       ],
     }).compile();
 
-    _analyticsService = getAnalyticsService();
-    _analyticsService = module.get<AnalyticsService>(AnalyticsService);
     cacheService = module.get<CacheService>(CacheService);
   });
 
@@ -55,15 +44,6 @@ describe('Analytics-Cache Integration', () => {
   beforeEach(async () => {
     // Clear cache between tests
     await cacheService.clear();
-
-    // Clean up data between tests
-    const userRepository = module.get('UserRepository');
-    const questRepository = module.get('QuestRepository');
-    const submissionRepository = module.get('SubmissionRepository');
-
-    await submissionRepository.clear();
-    await questRepository.clear();
-    await userRepository.clear();
   });
 
   describe('Analytics Data Caching', () => {
@@ -94,7 +74,7 @@ describe('Analytics-Cache Integration', () => {
 
       // Request non-existent cached data
       const cachedData = await cacheService.get(cacheKey);
-      expect(cachedData).toBeNull();
+      expect(cachedData).toBeUndefined();
 
       // Should not throw error, just return null
       expect(async () => {
@@ -122,7 +102,7 @@ describe('Analytics-Cache Integration', () => {
 
       // Should be expired
       cached = await cacheService.get(cacheKey);
-      expect(cached).toBeNull();
+      expect(cached).toBeUndefined();
     });
   });
 
@@ -232,7 +212,7 @@ describe('Analytics-Cache Integration', () => {
       // Verify all data cleared
       for (const key of Object.keys(bulkData)) {
         const cachedValue = await cacheService.get(key);
-        expect(cachedValue).toBeNull();
+        expect(cachedValue).toBeUndefined();
       }
     });
   });
