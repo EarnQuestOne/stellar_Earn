@@ -1,9 +1,19 @@
 import { useTranslations } from 'next-intl';
+import {
+  LayoutDashboard,
+  Target,
+  FileText,
+  Gift,
+  Settings,
+  Shield,
+  type LucideIcon,
+} from 'lucide-react';
 
 export interface NavigationItem {
   href: string;
   labelKey: string;
   exact?: boolean;
+  icon?: LucideIcon;
 }
 
 export interface UserMenuItem {
@@ -12,12 +22,17 @@ export interface UserMenuItem {
 }
 
 export const navigationItems: NavigationItem[] = [
-  { href: '/dashboard', labelKey: 'nav.dashboard', exact: true },
-  { href: '/quests', labelKey: 'nav.quests' },
-  { href: '/submissions', labelKey: 'nav.submissions' },
-  { href: '/rewards', labelKey: 'nav.rewards' },
-  { href: '/settings/notifications', labelKey: 'nav.settings' },
-  { href: '/admin', labelKey: 'nav.admin' },
+  {
+    href: '/dashboard',
+    labelKey: 'nav.dashboard',
+    exact: true,
+    icon: LayoutDashboard,
+  },
+  { href: '/quests', labelKey: 'nav.quests', icon: Target },
+  { href: '/submissions', labelKey: 'nav.submissions', icon: FileText },
+  { href: '/rewards', labelKey: 'nav.rewards', icon: Gift },
+  { href: '/settings/notifications', labelKey: 'nav.settings', icon: Settings },
+  { href: '/admin', labelKey: 'nav.admin', icon: Shield },
 ];
 
 export const userMenuItems: UserMenuItem[] = [

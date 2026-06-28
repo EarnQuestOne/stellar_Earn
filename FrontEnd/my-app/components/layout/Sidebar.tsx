@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -57,7 +58,11 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
               } ${collapsed ? 'justify-center' : 'gap-3'}`}
             >
-              <NavDot active={active} />
+              {item.icon ? (
+                <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              ) : (
+                <NavDot active={active} />
+              )}
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
