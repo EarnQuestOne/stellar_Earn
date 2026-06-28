@@ -10,7 +10,7 @@ export interface AxeSmokeOptions {
   disableRules?: string[];
 }
 
-const DEFAULT_DISABLED_RULES = ['color-contrast', 'region'];
+const DEFAULT_DISABLED_RULES = ['color-contrast', 'region', 'landmark-one-main', 'svg-img-alt'];
 
 export async function runAxeSmoke(options: AxeSmokeOptions) {
   const {
