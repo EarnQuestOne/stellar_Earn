@@ -297,11 +297,7 @@ export interface LeaderboardEntry {
 // ---------------------------------------------------------------------------
 
 export type PayoutStatus =
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'retry_scheduled';
+  'pending' | 'processing' | 'completed' | 'failed' | 'retry_scheduled';
 export type PayoutType = 'quest_reward' | 'bonus' | 'referral';
 
 export interface PayoutResponse {
@@ -357,10 +353,7 @@ export interface PayoutQueryParams extends PaginationParams {
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 export type NotificationCategory =
-  | 'quest_update'
-  | 'submission_status'
-  | 'reward_claim'
-  | 'system';
+  'quest_update' | 'submission_status' | 'reward_claim' | 'system';
 
 export interface NotificationResponse {
   id: string;

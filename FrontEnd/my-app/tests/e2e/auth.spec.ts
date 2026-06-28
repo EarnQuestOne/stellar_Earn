@@ -66,7 +66,9 @@ function injectWalletMock(_address: string) {
     const stub = {
       isConnected: async () => ({ isConnected: true }),
       getPublicKey: async () => mockAddress,
-      signTransaction: async (_xdr: string) => ({ signedTxXdr: 'MOCK_SIGNED_XDR' }),
+      signTransaction: async (_xdr: string) => ({
+        signedTxXdr: 'MOCK_SIGNED_XDR',
+      }),
       signMessage: async (_message: string) => ({
         signedMessage: 'MOCK_SIGNATURE',
         signerAddress: mockAddress,
@@ -114,7 +116,10 @@ async function stubAuthApi(page: Page) {
 
   // Token-refresh endpoint — returns a stale/401 to simulate expiry.
   await page.route('**/api/auth/refresh', (route) =>
-    route.fulfill({ status: 401, body: JSON.stringify({ error: 'token_expired' }) })
+    route.fulfill({
+      status: 401,
+      body: JSON.stringify({ error: 'token_expired' }),
+    })
   );
 }
 
@@ -167,7 +172,9 @@ class AuthPage {
   }
 
   get logoutButton() {
-    return this.page.getByRole('button', { name: /disconnect|logout|sign out/i });
+    return this.page.getByRole('button', {
+      name: /disconnect|logout|sign out/i,
+    });
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -184,7 +191,9 @@ class AuthPage {
   async completeWalletConnection() {
     await this.openConnectWalletModal();
     // Click the first wallet option in the modal (freighter / mock).
-    const firstWalletOption = this.connectWalletModal.getByRole('button').first();
+    const firstWalletOption = this.connectWalletModal
+      .getByRole('button')
+      .first();
     await firstWalletOption.click();
     // Wait for the authenticated indicator.
     await expect(this.userAvatar).toBeVisible({ timeout: 8_000 });
@@ -211,7 +220,10 @@ test.describe('Authentication Flow', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(suppressAnalytics());
-    await page.addInitScript(injectWalletMock(MOCK_WALLET_ADDRESS), MOCK_WALLET_ADDRESS);
+    await page.addInitScript(
+      injectWalletMock(MOCK_WALLET_ADDRESS),
+      MOCK_WALLET_ADDRESS
+    );
     await stubAuthApi(page);
     authPage = new AuthPage(page);
     await authPage.goto();
@@ -238,7 +250,9 @@ test.describe('Authentication Flow', () => {
     await expect(authPage.connectWalletModal).toBeVisible();
 
     // Focus should move inside the modal.
-    const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+    const focusedElement = await page.evaluate(
+      () => document.activeElement?.tagName
+    );
     expect(['BUTTON', 'A', 'INPUT']).toContain(focusedElement);
   });
 
@@ -252,13 +266,15 @@ test.describe('Authentication Flow', () => {
 
   test('shows signing challenge after wallet is selected', async ({ page }) => {
     await authPage.openConnectWalletModal();
-    const firstWalletOption = authPage.connectWalletModal.getByRole('button').first();
+    const firstWalletOption = authPage.connectWalletModal
+      .getByRole('button')
+      .first();
     await firstWalletOption.click();
 
     // Challenge text or "waiting for signature" copy should appear.
-    await expect(
-      page.getByText(/sign|confirm|waiting/i)
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/sign|confirm|waiting/i)).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
   test('lands on authenticated state after full signing flow', async () => {
@@ -266,11 +282,19 @@ test.describe('Authentication Flow', () => {
     await expect(authPage.userAvatar).toBeVisible();
   });
 
-  test('stores session tokens in localStorage after authentication', async ({ page }) => {
+  test('stores session tokens in localStorage after authentication', async ({
+    page,
+  }) => {
     await authPage.completeWalletConnection();
 
-    const accessToken = await page.evaluate((key) => localStorage.getItem(key), ACCESS_TOKEN_KEY);
-    const refreshToken = await page.evaluate((key) => localStorage.getItem(key), REFRESH_TOKEN_KEY);
+    const accessToken = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      ACCESS_TOKEN_KEY
+    );
+    const refreshToken = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      REFRESH_TOKEN_KEY
+    );
 
     expect(accessToken).toBeTruthy();
     expect(refreshToken).toBeTruthy();
@@ -286,17 +310,22 @@ test.describe('Authentication Flow', () => {
     await expect(authPage.userAvatar).toBeVisible({ timeout: 6_000 });
   });
 
-  test('restores auth state from localStorage without re-signing', async ({ page }) => {
+  test('restores auth state from localStorage without re-signing', async ({
+    page,
+  }) => {
     // Pre-seed valid mock tokens instead of going through the full flow.
-    await page.addInitScript((tokens) => {
-      localStorage.setItem(tokens.accessKey, tokens.accessToken);
-      localStorage.setItem(tokens.refreshKey, tokens.refreshToken);
-    }, {
-      accessKey: ACCESS_TOKEN_KEY,
-      refreshKey: REFRESH_TOKEN_KEY,
-      accessToken: MOCK_ACCESS_TOKEN,
-      refreshToken: MOCK_REFRESH_TOKEN,
-    });
+    await page.addInitScript(
+      (tokens) => {
+        localStorage.setItem(tokens.accessKey, tokens.accessToken);
+        localStorage.setItem(tokens.refreshKey, tokens.refreshToken);
+      },
+      {
+        accessKey: ACCESS_TOKEN_KEY,
+        refreshKey: REFRESH_TOKEN_KEY,
+        accessToken: MOCK_ACCESS_TOKEN,
+        refreshToken: MOCK_REFRESH_TOKEN,
+      }
+    );
 
     await authPage.goto();
     await expect(authPage.userAvatar).toBeVisible({ timeout: 6_000 });
@@ -304,7 +333,9 @@ test.describe('Authentication Flow', () => {
 
   // ── Logout ──────────────────────────────────────────────────────────────────
 
-  test('logout clears session tokens and returns to unauthenticated state', async ({ page }) => {
+  test('logout clears session tokens and returns to unauthenticated state', async ({
+    page,
+  }) => {
     await authPage.completeWalletConnection();
     await authPage.logout();
 
@@ -315,11 +346,16 @@ test.describe('Authentication Flow', () => {
     await expect(authPage.connectWalletButton).toBeVisible();
 
     // Storage must be cleared.
-    const accessToken = await page.evaluate((key) => localStorage.getItem(key), ACCESS_TOKEN_KEY);
+    const accessToken = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      ACCESS_TOKEN_KEY
+    );
     expect(accessToken).toBeNull();
   });
 
-  test('logout does not leave stale tokens in localStorage', async ({ page }) => {
+  test('logout does not leave stale tokens in localStorage', async ({
+    page,
+  }) => {
     await authPage.completeWalletConnection();
     await authPage.logout();
 
@@ -356,8 +392,14 @@ test.describe('Session Expired Flow', () => {
   test('session-expired modal has correct accessibility attributes', async () => {
     await authPage.dispatchSessionExpired();
 
-    await expect(authPage.sessionExpiredModal).toHaveAttribute('role', 'dialog');
-    await expect(authPage.sessionExpiredModal).toHaveAttribute('aria-modal', 'true');
+    await expect(authPage.sessionExpiredModal).toHaveAttribute(
+      'role',
+      'dialog'
+    );
+    await expect(authPage.sessionExpiredModal).toHaveAttribute(
+      'aria-modal',
+      'true'
+    );
   });
 
   test('dismiss button closes the session-expired modal', async () => {
@@ -377,24 +419,34 @@ test.describe('Session Expired Flow', () => {
     await expect(authPage.connectWalletModal).toBeVisible({ timeout: 4_000 });
   });
 
-  test('expired tokens are cleared from localStorage on session-expired event', async ({ page }) => {
+  test('expired tokens are cleared from localStorage on session-expired event', async ({
+    page,
+  }) => {
     await authPage.dispatchSessionExpired();
 
     // Give the app a tick to react to the event.
     await page.waitForTimeout(300);
 
-    const accessToken = await page.evaluate((k) => localStorage.getItem(k), ACCESS_TOKEN_KEY);
-    const refreshToken = await page.evaluate((k) => localStorage.getItem(k), REFRESH_TOKEN_KEY);
+    const accessToken = await page.evaluate(
+      (k) => localStorage.getItem(k),
+      ACCESS_TOKEN_KEY
+    );
+    const refreshToken = await page.evaluate(
+      (k) => localStorage.getItem(k),
+      REFRESH_TOKEN_KEY
+    );
 
     expect(accessToken).toBeNull();
     expect(refreshToken).toBeNull();
   });
 
-  test('different expiry reasons display appropriate modal copy', async ({ page }) => {
+  test('different expiry reasons display appropriate modal copy', async ({
+    page,
+  }) => {
     const reasons = [
       { reason: 'token_refresh_failed', expected: /session has expired/i },
-      { reason: 'concurrent_session',   expected: /another device|concurrent/i },
-      { reason: 'server_revoked',       expected: /revoked|sign.*again/i },
+      { reason: 'concurrent_session', expected: /another device|concurrent/i },
+      { reason: 'server_revoked', expected: /revoked|sign.*again/i },
     ];
 
     for (const { reason } of reasons) {
@@ -420,12 +472,18 @@ test.describe('Session Expired Flow', () => {
 test.describe('Network Failure Scenarios', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(suppressAnalytics());
-    await page.addInitScript(injectWalletMock(MOCK_WALLET_ADDRESS), MOCK_WALLET_ADDRESS);
+    await page.addInitScript(
+      injectWalletMock(MOCK_WALLET_ADDRESS),
+      MOCK_WALLET_ADDRESS
+    );
   });
 
   test('shows error state when challenge endpoint fails', async ({ page }) => {
     await page.route('**/api/auth/challenge', (route) =>
-      route.fulfill({ status: 503, body: JSON.stringify({ error: 'service_unavailable' }) })
+      route.fulfill({
+        status: 503,
+        body: JSON.stringify({ error: 'service_unavailable' }),
+      })
     );
 
     const authPage = new AuthPage(page);
@@ -435,7 +493,9 @@ test.describe('Network Failure Scenarios', () => {
     const firstOption = authPage.connectWalletModal.getByRole('button').first();
     await firstOption.click();
 
-    await expect(page.getByText(/error|failed|try again/i)).toBeVisible({ timeout: 6_000 });
+    await expect(page.getByText(/error|failed|try again/i)).toBeVisible({
+      timeout: 6_000,
+    });
   });
 
   test('shows error state when verify endpoint fails', async ({ page }) => {
@@ -446,7 +506,10 @@ test.describe('Network Failure Scenarios', () => {
       })
     );
     await page.route('**/api/auth/verify', (route) =>
-      route.fulfill({ status: 401, body: JSON.stringify({ error: 'invalid_signature' }) })
+      route.fulfill({
+        status: 401,
+        body: JSON.stringify({ error: 'invalid_signature' }),
+      })
     );
 
     const authPage = new AuthPage(page);
@@ -456,6 +519,8 @@ test.describe('Network Failure Scenarios', () => {
     const firstOption = authPage.connectWalletModal.getByRole('button').first();
     await firstOption.click();
 
-    await expect(page.getByText(/invalid|signature|failed/i)).toBeVisible({ timeout: 6_000 });
+    await expect(page.getByText(/invalid|signature|failed/i)).toBeVisible({
+      timeout: 6_000,
+    });
   });
 });

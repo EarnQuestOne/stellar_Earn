@@ -91,13 +91,22 @@ async function stubQuestApi(page: Page) {
 /** Return a 401 for any protected API route so the app can react accordingly. */
 async function stubProtectedApi(page: Page) {
   await page.route('**/api/dashboard**', (route) =>
-    route.fulfill({ status: 401, body: JSON.stringify({ error: 'unauthorized' }) })
+    route.fulfill({
+      status: 401,
+      body: JSON.stringify({ error: 'unauthorized' }),
+    })
   );
   await page.route('**/api/profile**', (route) =>
-    route.fulfill({ status: 401, body: JSON.stringify({ error: 'unauthorized' }) })
+    route.fulfill({
+      status: 401,
+      body: JSON.stringify({ error: 'unauthorized' }),
+    })
   );
   await page.route('**/api/settings**', (route) =>
-    route.fulfill({ status: 401, body: JSON.stringify({ error: 'unauthorized' }) })
+    route.fulfill({
+      status: 401,
+      body: JSON.stringify({ error: 'unauthorized' }),
+    })
   );
 }
 
@@ -113,7 +122,9 @@ class UnauthPage {
   }
 
   get exploreQuestsLink() {
-    return this.page.getByRole('link', { name: /explore all available quests/i });
+    return this.page.getByRole('link', {
+      name: /explore all available quests/i,
+    });
   }
 
   get connectWalletLink() {
@@ -139,7 +150,9 @@ class UnauthPage {
   }
 
   get unauthorizedMessage() {
-    return this.page.getByText(/connect wallet|sign in|unauthori[sz]ed|access denied/i);
+    return this.page.getByText(
+      /connect wallet|sign in|unauthori[sz]ed|access denied/i
+    );
   }
 
   get dashboardHeading() {
@@ -155,7 +168,9 @@ class UnauthPage {
   async goto(path = '/') {
     await this.page.goto(path);
     // Wait for any loading indicator to resolve before asserting.
-    await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => {});
+    await this.loadingSpinner
+      .waitFor({ state: 'hidden', timeout: 8_000 })
+      .catch(() => {});
   }
 
   async waitForRedirect(expectedPath: string) {
@@ -212,7 +227,9 @@ test.describe('Homepage — unauthenticated', () => {
     await expect(p.connectWalletLink).toBeFocused();
   });
 
-  test('hero section is not hidden behind an overlay or modal', async ({ page }) => {
+  test('hero section is not hidden behind an overlay or modal', async ({
+    page,
+  }) => {
     const p = new UnauthPage(page);
     await p.goto('/');
     await expect(p.heroSection).toBeInViewport();
@@ -261,7 +278,9 @@ test.describe('Quest board — unauthenticated', () => {
     await stubQuestApi(page);
   });
 
-  test('renders quest board heading and at least one card', async ({ page }) => {
+  test('renders quest board heading and at least one card', async ({
+    page,
+  }) => {
     const p = new UnauthPage(page);
     await p.goto('/quests');
 
@@ -375,7 +394,9 @@ test.describe('Quest board — unauthenticated', () => {
     ).toBeVisible();
   });
 
-  test('explore quests CTA routes unauthenticated users to the quest board', async ({ page }) => {
+  test('explore quests CTA routes unauthenticated users to the quest board', async ({
+    page,
+  }) => {
     const p = new UnauthPage(page);
     await p.goto('/quests');
 
