@@ -396,7 +396,7 @@ test.describe('Quest board — unauthenticated', () => {
     ).toBeVisible();
   });
 
-  test('explore quests CTA routes unauthenticated users to the quest board', async ({
+  test('explore quests CTA routes unauthenticated users to the quest board', async ({ page }) => {
     const p = new UnauthPage(page);
     await p.goto('/quests');
 

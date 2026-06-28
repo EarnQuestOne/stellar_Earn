@@ -4,20 +4,16 @@ import { ThemeProvider, useThemeContext } from '@/app/providers/ThemeProvider';
 
 // Test component that uses the theme context
 const ThemeConsumer = () => {
-  try {
-    const { theme, isDark, toggleTheme } = useThemeContext();
-    return (
-      <div>
-        <div data-testid="theme-value">{theme}</div>
-        <div data-testid="is-dark">{isDark.toString()}</div>
-        <button data-testid="toggle-btn" onClick={toggleTheme}>
-          Toggle
-        </button>
-      </div>
-    );
-  } catch (err) {
-    return <div data-testid="error">Error: {(err as Error).message}</div>;
-  }
+  const { theme, isDark, toggleTheme } = useThemeContext();
+  return (
+    <div>
+      <div data-testid="theme-value">{theme}</div>
+      <div data-testid="is-dark">{isDark.toString()}</div>
+      <button data-testid="toggle-btn" onClick={toggleTheme}>
+        Toggle
+      </button>
+    </div>
+  );
 };
 
 describe('ThemeProvider - Hydration Safety', () => {
@@ -42,7 +38,7 @@ describe('ThemeProvider - Hydration Safety', () => {
   });
 
   it('should initialize with default theme on server', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <ThemeProvider>
         <ThemeConsumer />
       </ThemeProvider>
@@ -55,7 +51,7 @@ describe('ThemeProvider - Hydration Safety', () => {
 
   it('should prevent hydration mismatch by using safe default', async () => {
     // Don't set localStorage - server and client should both use default
-    const { container } = render(
+    const { container: _container } = render(
       <ThemeProvider>
         <ThemeConsumer />
       </ThemeProvider>
@@ -121,7 +117,7 @@ describe('ThemeProvider - Hydration Safety', () => {
       throw new Error('Storage unavailable');
     });
 
-    const { rerender } = render(
+    const { rerender: _rerender } = render(
       <ThemeProvider>
         <ThemeConsumer />
       </ThemeProvider>
@@ -155,13 +151,13 @@ describe('ThemeProvider - Hydration Safety', () => {
   });
 
   it('should not apply theme during server render phase', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <ThemeProvider>
         <div data-testid="content">Content</div>
       </ThemeProvider>
     );
 
-    const html = document.documentElement;
+    const _html = document.documentElement;
     // Server shouldn't have applied dark class immediately
     // This is handled by the inline script in layout.tsx
     expect(screen.getByTestId('content')).toBeInTheDocument();
