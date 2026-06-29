@@ -742,6 +742,60 @@
                             },
                             {
                               "key": {
+                                "symbol": "token_balances"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "token"
+                                        },
+                                        "val": {
+                                          "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_deposited"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 100
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_paid_out"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 100
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_refunded"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 0
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "total_deposited"
                               },
                               "val": {
@@ -811,6 +865,18 @@
                               },
                               "val": {
                                 "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "tokens"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                                  }
+                                ]
                               }
                             }
                           ]
@@ -898,6 +964,35 @@
                               },
                               "val": {
                                 "symbol": "QFL"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "reward_allocations"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "asset"
+                                        },
+                                        "val": {
+                                          "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "percentage"
+                                        },
+                                        "val": {
+                                          "u32": 100
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
                               }
                             },
                             {

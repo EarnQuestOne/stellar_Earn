@@ -2,7 +2,10 @@ use crate::errors::Error;
 use crate::events;
 use crate::reputation;
 use crate::storage;
-use crate::types::{BatchQuestInput, MetadataDescription, Quest, QuestMetadata, QuestStatus, Role};
+use crate::types::{
+    BatchQuestInput, MetadataDescription, Quest, QuestMetadata, QuestStatus, RewardAllocation,
+    Role,
+};
 use crate::validation;
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
@@ -50,12 +53,17 @@ pub fn register_quest(
     verifier: &Address,
     deadline: u64,
 ) -> Result<(), Error> {
-    register_quest_with_category(
+    let mut allocations = Vec::new(env);
+    allocations.push_back(RewardAllocation {
+        asset: reward_asset.clone(),
+        percentage: 100,
+    });
+    register_quest_with_allocations_and_category(
         env,
         id,
         creator,
-        reward_asset,
         reward_amount,
+        &allocations,
         verifier,
         deadline,
         0,
@@ -73,6 +81,54 @@ pub fn register_quest_with_category(
     deadline: u64,
     category: u32,
 ) -> Result<(), Error> {
+    let mut allocations = Vec::new(env);
+    allocations.push_back(RewardAllocation {
+        asset: reward_asset.clone(),
+        percentage: 100,
+    });
+    register_quest_with_allocations_and_category(
+        env,
+        id,
+        creator,
+        reward_amount,
+        &allocations,
+        verifier,
+        deadline,
+        category,
+    )
+}
+
+pub fn register_quest_with_reward_allocations(
+    env: &Env,
+    id: &Symbol,
+    creator: &Address,
+    reward_amount: i128,
+    allocations: &Vec<RewardAllocation>,
+    verifier: &Address,
+    deadline: u64,
+) -> Result<(), Error> {
+    register_quest_with_allocations_and_category(
+        env,
+        id,
+        creator,
+        reward_amount,
+        allocations,
+        verifier,
+        deadline,
+        0,
+    )
+}
+
+fn register_quest_with_allocations_and_category(
+    env: &Env,
+    id: &Symbol,
+    creator: &Address,
+    reward_amount: i128,
+    allocations: &Vec<RewardAllocation>,
+    verifier: &Address,
+    deadline: u64,
+    category: u32,
+) -> Result<(), Error> {
     validation::validate_symbol_length(id)?;
 
     if storage::has_quest(env, id) {
@@ -82,6 +138,7 @@ pub fn register_quest_with_category(
     validation::validate_reward_amount(reward_amount)?;
     validation::validate_deadline(env, deadline)?;
     validation::validate_addresses_distinct(creator, verifier)?;
+    validate_reward_allocations(allocations)?;
 
     // Check minimum creator level requirement
     let min_level = storage::get_min_creator_level(env);
@@ -92,6 +149,7 @@ pub fn register_quest_with_category(
         }
     }
 
+    let reward_asset = allocations.get(0).ok_or(Error::IndexOutOfBounds)?.asset.clone();
     let quest = Quest {
         id: id.clone(),
         creator: creator.clone(),
@@ -102,19 +160,26 @@ pub fn register_quest_with_category(
         category,
         status: QuestStatus::Active,
         total_claims: 0,
+        reward_allocations: allocations.clone(),
     };
 
     storage::set_quest(env, id, &quest);
     storage::add_quest_id(env, id)?;
     storage::add_quest_to_category_index(env, category, id)?;
     storage::inc_platform_quests_created(env);
-    storage::add_platform_rewards_distributed(env, reward_amount as u128);
+
+    let mut distributed_total = 0u128;
+    for i in 0..allocations.len() {
+        let allocation = allocations.get(i).ok_or(Error::IndexOutOfBounds)?;
+        distributed_total += (reward_amount * allocation.percentage as i128 / 100) as u128;
+    }
+    storage::add_platform_rewards_distributed(env, distributed_total);
 
     events::quest_registered(
         env,
         id.clone(),
         creator.clone(),
-        reward_asset.clone(),
+        reward_asset,
         reward_amount,
         verifier.clone(),
         deadline,
@@ -306,6 +371,28 @@ fn validate_metadata(metadata: &QuestMetadata) -> Result<(), Error> {
 
     if let MetadataDescription::Inline(desc) = &metadata.description {
         validate_string_len(desc, MAX_METADATA_INLINE_DESCRIPTION_LEN)?;
+    }
+
+    Ok(())
+}
+
+fn validate_reward_allocations(allocations: &Vec<RewardAllocation>) -> Result<(), Error> {
+    let len = allocations.len();
+    if len == 0 || len > 3 {
+        return Err(Error::InvalidRewardAmount);
+    }
+
+    let mut total_percentage = 0u32;
+    for i in 0..len {
+        let allocation = allocations.get(i).ok_or(Error::IndexOutOfBounds)?;
+        if allocation.percentage == 0 || allocation.percentage > 100 {
+            return Err(Error::InvalidRewardAmount);
+        }
+        total_percentage += allocation.percentage;
+    }
+
+    if total_percentage != 100 {
+        return Err(Error::InvalidRewardAmount);
     }
 
     Ok(())

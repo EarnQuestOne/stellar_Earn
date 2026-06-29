@@ -1,8 +1,9 @@
 use crate::errors::Error;
 use crate::types::{
     BadgeType, Commitment, CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig,
-    PlatformStats, Quest, QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus,
-    Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
+    PlatformStats, Quest, QuestMetadata, QuestMetadataCore,
+    QuestMetadataExtended, QuestStatus, Role, Submission, SubmissionStatus, UserBadges,
+    UserCore, VerifierStake,
 };
 
 use crate::validation;
@@ -986,16 +987,23 @@ pub fn set_escrow_meta(env: &Env, quest_id: &Symbol, meta: &EscrowMeta) {
 pub fn get_escrow(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
     let balances = get_escrow_balances(env, quest_id)?;
     let meta = get_escrow_meta(env, quest_id)?;
+    let token = if meta.tokens.len() > 0 {
+        meta.tokens.get(0).unwrap()
+    } else {
+        meta.token.clone()
+    };
     Ok(EscrowInfo {
         quest_id: quest_id.clone(),
         depositor: meta.depositor,
-        token: meta.token,
+        token,
+        tokens: meta.tokens,
         total_deposited: balances.total_deposited,
         total_paid_out: balances.total_paid_out,
         total_refunded: balances.total_refunded,
         is_active: balances.is_active,
         created_at: meta.created_at,
         deposit_count: balances.deposit_count,
+        token_balances: balances.token_balances,
     })
 }
 

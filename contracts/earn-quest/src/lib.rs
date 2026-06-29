@@ -24,14 +24,17 @@ mod test_token;
 #[cfg(test)]
 mod test_clawback;
 
+#[cfg(test)]
+mod test_multitoken;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
 pub use crate::types::{
     AggregatedPrice, Badge, BadgeType, BatchApprovalInput, BatchQuestInput, Commitment,
     CreatorStats, Dispute, DisputeStatus, EscrowInfo, OracleConfig, PlatformStats, PriceData,
-    PriceFeedRequest, Quest, QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus,
-    UserBadges, UserCore, UserStats, VerifierStake,
+    PriceFeedRequest, Quest, QuestMetadata, QuestStatus, RewardAllocation, Role, Submission,
+    SubmissionStatus, UserBadges, UserCore, UserStats, VerifierStake,
 };
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec, U256};
@@ -269,6 +272,33 @@ impl EarnQuestContract {
             &creator,
             &reward_asset,
             reward_amount,
+            &verifier,
+            deadline,
+        )
+    }
+
+    /// Registers a new quest with reward-token allocations split by percentage.
+    pub fn register_quest_with_rewards(
+        env: Env,
+        id: Symbol,
+        creator: Address,
+        reward_amount: i128,
+        allocations: Vec<RewardAllocation>,
+        verifier: Address,
+        deadline: u64,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        creator.require_auth();
+        validation::validate_symbol_length(&id)?;
+        validation::validate_addresses_distinct(&creator, &verifier)?;
+        validation::validate_reward_amount(reward_amount)?;
+        validation::validate_deadline(&env, deadline)?;
+        quest::register_quest_with_reward_allocations(
+            &env,
+            &id,
+            &creator,
+            reward_amount,
+            &allocations,
             &verifier,
             deadline,
         )
@@ -521,21 +551,42 @@ impl EarnQuestContract {
         quest.total_claims += 1;
         storage::set_quest(&env, &quest_id, &quest);
 
-        payout::transfer_reward_from_escrow(
-            &env,
-            &quest_id,
-            &quest.reward_asset,
-            &submitter,
-            amount,
-        )?;
+        if quest.reward_allocations.len() > 1 {
+            for index in 0..quest.reward_allocations.len() {
+                let allocation = quest.reward_allocations.get(index).unwrap();
+                let payout_amount = quest.reward_amount * allocation.percentage as i128 / 100;
+                payout::transfer_reward_from_escrow(
+                    &env,
+                    &quest_id,
+                    &allocation.asset,
+                    &submitter,
+                    payout_amount,
+                )?;
+                events::reward_claimed(
+                    &env,
+                    quest_id.clone(),
+                    submitter.clone(),
+                    allocation.asset.clone(),
+                    payout_amount,
+                );
+            }
+        } else {
+            payout::transfer_reward_from_escrow(
+                &env,
+                &quest_id,
+                &quest.reward_asset,
+                &submitter,
+                amount,
+            )?;
 
-        events::reward_claimed(
-            &env,
-            quest_id.clone(),
-            submitter.clone(),
-            quest.reward_asset,
-            amount,
-        );
+            events::reward_claimed(
+                &env,
+                quest_id.clone(),
+                submitter.clone(),
+                quest.reward_asset,
+                amount,
+            );
+        }
 
         reputation::award_xp(&env, &submitter, 100)?;
 

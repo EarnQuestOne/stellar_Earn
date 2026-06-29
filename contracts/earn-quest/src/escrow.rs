@@ -8,16 +8,32 @@
 //!   record_payout:     Update EscrowBalances after payout::transfer_reward
 //!   refund_remaining:  Contract  →  Creator wallet  (leftover returned)
 
-use soroban_sdk::{token, Address, Env, Symbol};
+use soroban_sdk::{token, Address, Env, Symbol, Vec};
 
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
-use crate::types::{EscrowBalances, EscrowInfo, EscrowMeta, QuestStatus, VerifierStake};
+use crate::types::{
+    EscrowBalances, EscrowInfo, EscrowMeta, EscrowTokenBalance, QuestStatus, VerifierStake,
+};
 use crate::validation;
 
 fn available_balance(balances: &EscrowBalances) -> i128 {
     balances.total_deposited - balances.total_paid_out - balances.total_refunded
+}
+
+fn find_token_balance_index(balances: &EscrowBalances, token: &Address) -> Option<u32> {
+    for index in 0..balances.token_balances.len() {
+        let balance = balances.token_balances.get(index).unwrap();
+        if balance.token == *token {
+            return Some(index);
+        }
+    }
+    None
+}
+
+fn set_token_balance(balances: &mut EscrowBalances, index: u32, value: &EscrowTokenBalance) {
+    balances.token_balances.set(index, value.clone());
 }
 
 fn require_active_escrow(balances: &EscrowBalances) -> Result<(), Error> {
@@ -69,7 +85,20 @@ pub fn deposit(
     if validation::is_quest_terminal(&quest.status) {
         return Err(Error::QuestNotActive);
     }
-    if *token_address != quest.reward_asset {
+
+    let mut is_allowed = false;
+    if quest.reward_allocations.len() > 0 {
+        for index in 0..quest.reward_allocations.len() {
+            let allocation = quest.reward_allocations.get(index).unwrap();
+            if allocation.asset == *token_address {
+                is_allowed = true;
+                break;
+            }
+        }
+    } else if *token_address == quest.reward_asset {
+        is_allowed = true;
+    }
+    if !is_allowed {
         return Err(Error::TokenMismatch);
     }
 
@@ -84,12 +113,22 @@ pub fn deposit(
         existing
     } else {
         // First deposit — also write cold-path metadata (once only)
+        let mut tokens = Vec::new(env);
+        for index in 0..quest.reward_allocations.len() {
+            let allocation = quest.reward_allocations.get(index).unwrap();
+            tokens.push_back(allocation.asset.clone());
+        }
+        if tokens.is_empty() {
+            tokens.push_back(token_address.clone());
+        }
+
         storage::set_escrow_meta(
             env,
             quest_id,
             &EscrowMeta {
                 depositor: depositor.clone(),
                 token: token_address.clone(),
+                tokens: tokens.clone(),
                 created_at: env.ledger().timestamp(),
             },
         );
@@ -99,11 +138,25 @@ pub fn deposit(
             total_refunded: 0,
             is_active: true,
             deposit_count: 0,
+            token_balances: Vec::new(env),
         }
     };
 
     balances.total_deposited += amount;
     balances.deposit_count += 1;
+    if let Some(index) = find_token_balance_index(&balances, token_address) {
+        let mut token_balance = balances.token_balances.get(index).unwrap();
+        token_balance.total_deposited += amount;
+        set_token_balance(&mut balances, index, &token_balance);
+    } else {
+        let token_balance = EscrowTokenBalance {
+            token: token_address.clone(),
+            total_deposited: amount,
+            total_paid_out: 0,
+            total_refunded: 0,
+        };
+        balances.token_balances.push_back(token_balance);
+    }
     storage::set_escrow_balances(env, quest_id, &balances);
 
     let available = available_balance(&balances);
@@ -133,11 +186,20 @@ pub fn deposit(
 
 /// Returns Ok if the quest's escrow can cover the given amount.
 /// Only reads EscrowBalances (hot-path entry) — no Address deserialization.
-pub fn validate_sufficient(env: &Env, quest_id: &Symbol, amount: i128) -> Result<(), Error> {
+pub fn validate_sufficient(
+    env: &Env,
+    quest_id: &Symbol,
+    token_address: &Address,
+    amount: i128,
+) -> Result<(), Error> {
     let b = storage::get_escrow_balances(env, quest_id)?;
     require_active_escrow(&b)?;
 
-    let available = available_balance(&b);
+    let Some(index) = find_token_balance_index(&b, token_address) else {
+        return Err(Error::InsufficientEscrow);
+    };
+    let balance = b.token_balances.get(index).unwrap();
+    let available = balance.total_deposited - balance.total_paid_out - balance.total_refunded;
     if available < amount {
         return Err(Error::InsufficientEscrow);
     }
@@ -177,15 +239,22 @@ pub fn record_payout(
 
     require_active_escrow(&b)?;
 
-    let available = available_balance(&b);
+    let Some(index) = find_token_balance_index(&b, token_address) else {
+        return Err(Error::InsufficientEscrow);
+    };
+
+    let mut balance = b.token_balances.get(index).unwrap();
+    let available = balance.total_deposited - balance.total_paid_out - balance.total_refunded;
     if available < amount {
         return Err(Error::InsufficientEscrow);
     }
 
     b.total_paid_out += amount;
+    balance.total_paid_out += amount;
+    set_token_balance(&mut b, index, &balance);
     storage::set_escrow_balances(env, quest_id, &b);
 
-    let remaining = available_balance(&b);
+    let remaining = balance.total_deposited - balance.total_paid_out - balance.total_refunded;
     events::escrow_payout(
         env,
         quest_id.clone(),
@@ -208,20 +277,21 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let _available = b.total_deposited - b.total_paid_out - b.total_refunded;
-    let available = available_balance(&b);
     let depositor = meta.depositor.clone();
-    let token = meta.token.clone();
+    let mut refunded_total = 0i128;
 
-    // CEI ordering: mark the escrow refunded and inactive FIRST so a
-    // re-entrant call during the transfer below cannot trigger a second
-    // refund (it would see is_active=false). On transfer failure the
-    // transaction reverts and the storage write is rolled back atomically.
-    b.total_refunded += available;
-    b.is_active = false;
-    storage::set_escrow_balances(env, quest_id, &b);
+    for index in 0..b.token_balances.len() {
+        let mut balance = b.token_balances.get(index).unwrap();
+        let available = balance.total_deposited - balance.total_paid_out - balance.total_refunded;
+        if available <= 0 {
+            continue;
+        }
 
-    if available > 0 {
+        refunded_total += available;
+        balance.total_refunded += available;
+        set_token_balance(&mut b, index, &balance);
+
+        let token = balance.token.clone();
         let token_client = token::Client::new(env, &token);
         let transfer_result =
             token_client.try_transfer(&env.current_contract_address(), &depositor, &available);
@@ -231,10 +301,14 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
             _ => return Err(Error::TransferFailed),
         }
 
-        events::escrow_refunded(env, quest_id.clone(), depositor, token, available);
+        events::escrow_refunded(env, quest_id.clone(), depositor.clone(), token, available);
     }
 
-    Ok(available)
+    b.total_refunded += refunded_total;
+    b.is_active = false;
+    storage::set_escrow_balances(env, quest_id, &b);
+
+    Ok(refunded_total)
 }
 
 // ═══════════════════════════════════════════════════════════════
