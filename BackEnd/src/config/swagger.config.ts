@@ -2,12 +2,14 @@ import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
+const packageJson = require('../../package.json') as { version: string };
+
 export function setupSwagger(
   app: INestApplication,
   configService?: ConfigService,
 ) {
   const title = configService?.get('APP_NAME') || 'StellarEarn API';
-  const version = configService?.get('API_VERSION') || '1.0';
+  const version = configService?.get('API_VERSION') || packageJson.version || '1.0';
   const description =
     configService?.get('API_DESCRIPTION') ||
     'Quest-based earning platform on Stellar blockchain';
@@ -34,4 +36,6 @@ export function setupSwagger(
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
+
+  return document;
 }

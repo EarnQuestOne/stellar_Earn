@@ -1,0 +1,42 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "StellarEarn API",
+    "description": "Quest-based earning platform on Stellar blockchain\n\nSupported API versions: v1, v2. Use path versioning (/api/v1/*, /api/v2/*) and/or header versioning (X-API-Version: 1).",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API v1"
+    },
+    {
+      "url": "/api/v2",
+      "description": "API v2"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Health",
+      "description": "System health and readiness probes"
+    }
+  ],
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "JWT-auth": []
+    }
+  ]
+}
