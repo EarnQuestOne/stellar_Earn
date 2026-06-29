@@ -8,8 +8,8 @@ on:
       - '.github/workflows/frontend-check-summary.yml'
 
 permissions:
-  pull-requests: write
   contents: read
+  pull-requests: write
 
 jobs:
   verify-and-summarize:
