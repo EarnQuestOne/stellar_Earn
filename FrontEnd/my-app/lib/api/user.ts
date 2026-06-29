@@ -24,12 +24,12 @@ import {
 import type {
   UserResponse,
   UserStatsResponse,
+  QuestResponse,
+  SubmissionResponse,
   UpdateProfileRequest,
   UserSearchParams,
   PaginationParams,
 } from '@/lib/types/api.types';
-
-import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
 
 // Re-export legacy dashboard types for backward compat
 export type {
