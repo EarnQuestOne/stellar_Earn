@@ -1,3 +1,20 @@
+## [Unreleased]
+
+### Added
+
+- `TokenRewardSupportToQuestRegistration`: Quest registration now supports multi-token
+  reward allocations (up to 3 assets) with percentage splits. Escrow accounting and payout
+  logic track balances per token. A regression test `test_multitoken.rs` was added.
+
+### Notes
+
+- Backward compatible: existing single-token quests continue to work. New multi-token quests
+  require deposits for each configured token into escrow.
+
+### Migration
+
+- If upgrading a deployed contract instance, ensure storage layout compatibility or provide a
+  migration path to convert existing `EscrowBalances` entries to include `token_balances`.
 # Changelog
 
 All notable changes to the EarnQuest smart contract will be documented in this file.
