@@ -1052,3 +1052,140 @@ fn test_escrow_info_reflects_correct_depositor() {
     assert_eq!(info.token, t.token_address);
     assert_eq!(info.quest_id, qid);
 }
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 13: ESCROW TOP-UP EVENT EMISSION  (#1721)
+// ══════════════════════════════════════════════════════════════
+
+/// Verifies that the first `deposit_escrow` call emits an `esc_dep` event
+/// (initial deposit) and that a subsequent call emits an `esc_top` event
+/// (top-up) with the correct indexed `quest_id` topic and correct data
+/// (top-up amount, new available balance).
+#[test]
+fn test_topup_emits_escrow_topped_up_event() {
+    use soroban_sdk::testutils::Events;
+    use soroban_sdk::IntoVal;
+
+    let t = setup();
+    let qid = symbol_short!("qtopev");
+    register_quest(&t, &qid);
+
+    // ── Initial deposit ──────────────────────────────────────
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &3000);
+
+    let events_after_first = t.env.events().all();
+    // The last event must be the initial escrow_deposited (esc_dep)
+    let (_, topics, _) = events_after_first.last().unwrap();
+    let event_name: Symbol = topics.get(0).unwrap().into_val(&t.env);
+    assert_eq!(
+        event_name,
+        symbol_short!("esc_dep"),
+        "first deposit should emit esc_dep, not esc_top"
+    );
+
+    // ── Top-up ───────────────────────────────────────────────
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &2000);
+
+    let events_after_topup = t.env.events().all();
+    let (contract_addr, topics, data) = events_after_topup.last().unwrap();
+
+    // Emitted by our contract
+    assert_eq!(contract_addr, t.contract.address);
+
+    // Topics[0] == "esc_top"
+    let event_name: Symbol = topics.get(0).unwrap().into_val(&t.env);
+    assert_eq!(
+        event_name,
+        symbol_short!("esc_top"),
+        "top-up should emit esc_top event"
+    );
+
+    // Topics[1] == quest_id  (indexed for efficient filtering)
+    let indexed_quest_id: Symbol = topics.get(1).unwrap().into_val(&t.env);
+    assert_eq!(
+        indexed_quest_id, qid,
+        "quest_id must be the indexed topic on EscrowToppedUp"
+    );
+
+    // Topics[2] == depositor address
+    let indexed_depositor: Address = topics.get(2).unwrap().into_val(&t.env);
+    assert_eq!(indexed_depositor, t.creator);
+
+    // Data: (amount: i128, new_balance: i128)
+    let (amount, new_balance): (i128, i128) = data.into_val(&t.env);
+    assert_eq!(amount, 2000, "event amount should equal the top-up amount");
+    assert_eq!(
+        new_balance, 5000,
+        "new_balance should be the total available after top-up (3000 + 2000)"
+    );
+}
+
+/// Verifies that multiple successive top-ups each emit an `esc_top` event
+/// and that the `new_balance` value in the data payload accumulates correctly.
+#[test]
+fn test_multiple_topups_each_emit_event() {
+    use soroban_sdk::testutils::Events;
+    use soroban_sdk::IntoVal;
+
+    let t = setup();
+    let qid = symbol_short!("qmulte");
+    register_quest(&t, &qid);
+
+    // Initial deposit
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &1000);
+
+    // Top-up 1
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &500);
+    let evs = t.env.events().all();
+    let (_, topics, data) = evs.last().unwrap();
+    let name: Symbol = topics.get(0).unwrap().into_val(&t.env);
+    assert_eq!(name, symbol_short!("esc_top"));
+    let (amt, bal): (i128, i128) = data.into_val(&t.env);
+    assert_eq!(amt, 500);
+    assert_eq!(bal, 1500);
+
+    // Top-up 2
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &250);
+    let evs = t.env.events().all();
+    let (_, topics, data) = evs.last().unwrap();
+    let name: Symbol = topics.get(0).unwrap().into_val(&t.env);
+    assert_eq!(name, symbol_short!("esc_top"));
+    let (amt, bal): (i128, i128) = data.into_val(&t.env);
+    assert_eq!(amt, 250);
+    assert_eq!(bal, 1750);
+}
+
+/// Verifies that the `new_balance` in the top-up event correctly reflects
+/// the net available balance after a partial payout has been made.
+#[test]
+fn test_topup_event_new_balance_after_payout() {
+    use soroban_sdk::testutils::Events;
+    use soroban_sdk::IntoVal;
+
+    let t = setup();
+    let qid = symbol_short!("qtopbal");
+    register_quest(&t, &qid);
+
+    // Deposit 2000, pay out 1000 (one completion), then top up 500
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &2000);
+    complete_quest(&t, &qid, &t.user_a); // escrow now 1000
+
+    t.contract
+        .deposit_escrow(&qid, &t.creator, &t.token_address, &500);
+
+    let evs = t.env.events().all();
+    let (_, topics, data) = evs.last().unwrap();
+    let name: Symbol = topics.get(0).unwrap().into_val(&t.env);
+    assert_eq!(name, symbol_short!("esc_top"));
+
+    // new_balance should be 1000 (remaining after payout) + 500 (top-up) = 1500
+    let (amt, new_bal): (i128, i128) = data.into_val(&t.env);
+    assert_eq!(amt, 500);
+    assert_eq!(new_bal, 1500);
+}

@@ -78,7 +78,9 @@ pub fn deposit(
     // transaction reverts and the storage write is rolled back, but a
     // re-entrant call during the transfer will see a fully-updated record
     // and cannot inflate the deposit total a second time.
-    let mut balances = if storage::has_escrow(env, quest_id) {
+    let is_topup = storage::has_escrow(env, quest_id);
+
+    let mut balances = if is_topup {
         let existing = storage::get_escrow_balances(env, quest_id)?;
         require_active_escrow(&existing)?;
         existing
@@ -107,14 +109,28 @@ pub fn deposit(
     storage::set_escrow_balances(env, quest_id, &balances);
 
     let available = available_balance(&balances);
-    events::escrow_deposited(
-        env,
-        quest_id.clone(),
-        depositor.clone(),
-        token_address.clone(),
-        amount,
-        available,
-    );
+
+    // Emit the appropriate event depending on whether this is the initial
+    // deposit or a subsequent top-up.
+    if is_topup {
+        // EscrowToppedUp — indexed quest_id topic for efficient filtering
+        events::escrow_topped_up(
+            env,
+            quest_id.clone(),
+            depositor.clone(),
+            amount,
+            available,
+        );
+    } else {
+        events::escrow_deposited(
+            env,
+            quest_id.clone(),
+            depositor.clone(),
+            token_address.clone(),
+            amount,
+            available,
+        );
+    }
 
     // Transfer tokens: creator → contract (external call, kept last)
     let token_client = token::Client::new(env, token_address);

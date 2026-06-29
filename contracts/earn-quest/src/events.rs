@@ -26,6 +26,7 @@ const TOPIC_DISPUTE_RESOLVED: Symbol = symbol_short!("disp_res");
 const TOPIC_DISPUTE_WITHDRAWN: Symbol = symbol_short!("disp_wd");
 const TOPIC_DISPUTE_APPEALED: Symbol = symbol_short!("disp_appl");
 const TOPIC_ESCROW_DEPOSITED: Symbol = symbol_short!("esc_dep");
+const TOPIC_ESCROW_TOPPED_UP: Symbol = symbol_short!("esc_top");
 const TOPIC_ESCROW_PAYOUT: Symbol = symbol_short!("esc_pay");
 const TOPIC_ESCROW_REFUNDED: Symbol = symbol_short!("esc_ref");
 const TOPIC_COMMITMENT_SUBMITTED: Symbol = symbol_short!("com_sub");
@@ -291,6 +292,34 @@ pub fn escrow_deposited(
     );
     // Data: amounts
     let data = (amount, total_balance);
+    env.events().publish(topics, data);
+}
+
+/// Emit when additional tokens are deposited into an existing escrow (top-up).
+///
+/// Distinct from the initial deposit so indexers can track top-ups separately
+/// from the first funding event.
+///
+/// # Event Schema
+/// Topics: [EventName, QuestID, Depositor] — `quest_id` is the indexed topic
+/// that enables efficient filtering by quest.
+/// Data:   (amount: i128, new_balance: i128)
+///
+/// # Indexing Benefits
+/// * Filter all top-ups for a specific quest by `quest_id` topic
+/// * Track how many times a quest was re-funded and by how much
+/// * Backend / indexers can react to top-ups without polling storage
+pub fn escrow_topped_up(
+    env: &Env,
+    quest_id: Symbol,
+    depositor: Address,
+    amount: i128,
+    new_balance: i128,
+) {
+    // Topics: [EventName, QuestID, Depositor] — quest_id indexed for efficient filtering
+    let topics = (TOPIC_ESCROW_TOPPED_UP, quest_id, depositor);
+    // Data: top-up amount and resulting available balance
+    let data = (amount, new_balance);
     env.events().publish(topics, data);
 }
 
