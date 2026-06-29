@@ -1,45 +1,26 @@
 [package]
 name = "earn-quest-fuzz"
-version = "0.1.0"
+version = "0.0.0"
+authors = ["Automated Delivery"]
 edition = "2021"
+publish = false
 
 [package.metadata]
 cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-arbitrary = { version = "1.3", features = ["derive"] }
-soroban-sdk = "21.7.4"
-
-[dependencies.earn-quest]
-path = ".."
+soroban-sdk = { version = "20.0.0", features = ["testutils"] }
+earn-quest = { path = ".." }
 
 [[bin]]
-name = "quest_creation_fuzzer"
-path = "fuzz_targets/quest_creation_fuzzer.rs"
+name = "batch_registration_fuzzer"
+path = "fuzz_targets/batch_registration_fuzzer.rs"
 test = false
 doc = false
 
 [[bin]]
-name = "submission_fuzzer"
-path = "fuzz_targets/submission_fuzzer.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "validation_fuzzer"
-path = "fuzz_targets/validation_fuzzer.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "input_decoding_fuzzer"
-path = "fuzz_targets/input_decoding_fuzzer.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "state_transitions_fuzzer"
-path = "fuzz_targets/state_transitions_fuzzer.rs"
+name = "batch_approval_fuzzer"
+path = "fuzz_targets/batch_approval_fuzzer.rs"
 test = false
 doc = false
