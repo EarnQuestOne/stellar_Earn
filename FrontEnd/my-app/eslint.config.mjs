@@ -14,9 +14,13 @@ const compat = new FlatCompat({ baseDirectory: __dirname });
  * Layer order (lower index = lower level; higher layers may import lower ones,
  * but not the other way around):
  *
- *  lib  →  context  →  components  →  app
+ *   lib  →  context  →  components  →  app
  */
 const eslintConfig = [
+  // ── Global Ignores ──────────────────────────────────────────────────────────
+  // Must be first and standalone to intercept directory tracking paths
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+
   // Wrap legacy eslint-config-next via FlatCompat
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
 
@@ -54,9 +58,6 @@ const eslintConfig = [
       ],
     },
   },
-
-  // Override default ignores of eslint-config-next.
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
 
   // ── OptimizedImage enforcement ────────────────────────────────────────────
   // The `eslint-plugin-jsx-a11y` package as installed (v6.10.2) does not

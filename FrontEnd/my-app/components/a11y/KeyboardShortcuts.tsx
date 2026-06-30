@@ -95,7 +95,7 @@ export function KeyboardShortcuts({
           </h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+            className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
             aria-label="Close keyboard shortcuts panel"
           >
             <svg
@@ -178,7 +178,7 @@ export function KeyboardShortcutsButton({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800 ${className}`}
+        className={`rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800 ${className}`}
         aria-label="Show keyboard shortcuts"
         aria-haspopup="dialog"
       >

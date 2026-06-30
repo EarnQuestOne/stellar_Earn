@@ -50,14 +50,14 @@ export function WalletModal() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-96 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-300 bg-white p-5 shadow-2xl dark:border-[#2A3338] dark:bg-[#161E22] sm:w-96 sm:p-8"
+              className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-96 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-300 bg-white p-5 shadow-2xl dark:border-dark-border dark:bg-dark-surface-elevated sm:w-96 sm:p-8"
             >
               <div className="flex flex-col items-center">
                 <div className="mb-6 text-center">
                   <h2 className="text-2xl font-medium text-zinc-900 dark:text-white">
                     Connect Wallet
                   </h2>
-                  <p className="mt-2 text-sm text-zinc-500 dark:text-[#92A5A8]">
+                  <p className="mt-2 text-sm text-zinc-500 dark:text-dark-muted">
                     Connect your wallet to get started with SoroScope
                   </p>
                 </div>
@@ -79,15 +79,15 @@ export function WalletModal() {
                         onClick={() => setActiveSelection(wallet.id)}
                         className={`flex w-full items-center gap-4 rounded-xl border p-4 transition-all ${
                           isSelected
-                            ? 'border-[#33C5E0]/30 bg-[#1a2333]/10 dark:bg-[#1a2333]'
-                            : 'border-zinc-300 bg-transparent hover:border-[#33C5E0]/20 hover:bg-zinc-100 dark:border-[#2A3338] dark:hover:bg-[#1a2333]'
+                            ? 'border-secondary/30 bg-dark-surface-overlay/10 dark:bg-dark-surface-overlay'
+                            : 'border-zinc-300 bg-transparent hover:border-secondary/20 hover:bg-zinc-100 dark:border-dark-border dark:hover:bg-dark-surface-overlay'
                         }`}
                       >
                         <div
                           className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${
                             isSelected
-                              ? 'border-[#33C5E0] bg-[#33C5E0]'
-                              : 'border-zinc-400 dark:border-[#2d3b4f]'
+                              ? 'border-secondary bg-secondary'
+                              : 'border-zinc-400 dark:border-dark-border-accent'
                           }`}
                         >
                           {isSelected && (
@@ -98,7 +98,7 @@ export function WalletModal() {
                           )}
                         </div>
 
-                        <div className="text-zinc-500 dark:text-[#92A5A8]">
+                        <div className="text-zinc-500 dark:text-dark-muted">
                           <Wallet className="h-5 w-5" />
                         </div>
 
@@ -116,8 +116,8 @@ export function WalletModal() {
                   disabled={!activeSelection || isConnecting}
                   className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-medium transition-all ${
                     activeSelection && !isConnecting
-                      ? 'bg-[#33C5E0] text-black hover:bg-[#33C5E0]/90'
-                      : 'cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-[#2A3338] dark:text-gray-500'
+                      ? 'bg-secondary text-black hover:bg-secondary/90'
+                      : 'cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-dark-border dark:text-gray-500'
                   }`}
                 >
                   <UserIcon />

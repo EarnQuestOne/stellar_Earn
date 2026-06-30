@@ -52,7 +52,7 @@ export function WelcomeModal({
             type="checkbox"
             checked={tutorialMode}
             onChange={(event) => onTutorialModeChange(event.target.checked)}
-            className="h-4 w-4 accent-[#089ec3]"
+            className="h-4 w-4 accent-primary"
           />
         </label>
 
@@ -65,7 +65,7 @@ export function WelcomeModal({
           </button>
           <button
             onClick={onStart}
-            className="rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0ab8d4]"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
           >
             Start tour
           </button>

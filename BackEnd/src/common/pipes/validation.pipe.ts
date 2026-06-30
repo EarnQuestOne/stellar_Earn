@@ -7,6 +7,21 @@ import {
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
+/**
+ * Custom validation pipe that enforces strict DTO whitelisting for all write
+ * endpoints (POST, PUT, PATCH).
+ *
+ * - `whitelist: true` — strips any properties that are not decorated with a
+ *   class-validator decorator, so they never reach the service layer.
+ * - `forbidNonWhitelisted: true` — instead of silently stripping unknown
+ *   properties, the pipe rejects the entire request with a 400 Bad Request,
+ *   making injection of unauthorised fields immediately visible to callers
+ *   and surfaced in logs.
+ *
+ * These options mirror the global `ValidationPipe` configured in `main.ts`.
+ * Applying them here as well ensures whitelisting is enforced at the
+ * `CustomValidationPipe` stage before the global pipe runs.
+ */
 @Injectable()
 export class CustomValidationPipe implements PipeTransform<any> {
   async transform(value: any, { metatype }: ArgumentMetadata) {
@@ -15,7 +30,10 @@ export class CustomValidationPipe implements PipeTransform<any> {
     }
 
     const object = plainToInstance(metatype, value);
-    const errors = await validate(object);
+    const errors = await validate(object, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
 
     if (errors.length > 0) {
       throw new BadRequestException({
@@ -24,6 +42,8 @@ export class CustomValidationPipe implements PipeTransform<any> {
       });
     }
 
+    // Return the transformed (and now whitelisted) object so that any
+    // properties not covered by a decorator have already been stripped.
     return object;
   }
 
