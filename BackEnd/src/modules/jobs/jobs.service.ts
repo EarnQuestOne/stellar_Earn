@@ -11,6 +11,7 @@ import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
+import { JobPayloadValidatorService } from './validation/job-payload-validator.service';
 
 export interface QueueMetrics {
   queue: string;
@@ -41,6 +42,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly tracing: TracingService,
     private readonly dataExportProcessor?: DataExportProcessor,
+    private readonly payloadValidator?: JobPayloadValidatorService,
   ) {}
 
   registerEmailProcessor(
@@ -171,6 +173,12 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   async addJob(name: string, data: any, opts: any = {}) {
     const queue = this.getQueue(name);
     if (!queue) throw new Error(`Queue ${name} not found`);
+
+    // Validate payload before enqueueing to prevent malformed jobs from
+    // entering the queue (GitHub Issue #1136).
+    if (this.payloadValidator) {
+      await this.payloadValidator.assertValid(name, data);
+    }
 
     const traceContext = this.tracing.getCurrentContext();
     const tracedData = this.attachTraceContext(data, traceContext);

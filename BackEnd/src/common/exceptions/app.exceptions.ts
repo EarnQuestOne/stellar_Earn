@@ -62,3 +62,15 @@ export class UserNotFoundException extends HttpException {
     super(`User '${userId}' not found`, HttpStatus.NOT_FOUND);
   }
 }
+
+export class InvalidJobPayloadException extends HttpException {
+  constructor(queue: string, errors: string[]) {
+    super(
+      {
+        message: `Invalid payload for queue '${queue}'`,
+        errors,
+      },
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    );
+  }
+}
