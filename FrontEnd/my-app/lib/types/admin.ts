@@ -23,7 +23,7 @@ export interface Quest {
   description: string;
   shortDescription: string;
   category: QuestCategory;
-  difficulty: QuestDifficulty;
+  difficulty?: QuestDifficulty;
   status: QuestStatus;
   reward: number;
   xpReward: number;

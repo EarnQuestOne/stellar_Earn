@@ -85,7 +85,15 @@ const ENV_SCHEMA: Record<string, EnvVarSchema> = {
     type: 'string',
     required: false,
     default: 'info',
-    allowedValues: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
+    allowedValues: [
+      'error',
+      'warn',
+      'info',
+      'http',
+      'verbose',
+      'debug',
+      'silly',
+    ],
   },
 };
 

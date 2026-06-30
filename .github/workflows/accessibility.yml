@@ -1,0 +1,51 @@
+name: Accessibility Audit
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'FrontEnd/my-app/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'FrontEnd/my-app/**'
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  axe-audit:
+    name: Axe Accessibility Smoke Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FrontEnd/my-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: FrontEnd/my-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run axe accessibility tests
+        run: npm run test:a11y:ci
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-a11y-report
+          path: FrontEnd/my-app/playwright-a11y-report/
+          retention-days: 14

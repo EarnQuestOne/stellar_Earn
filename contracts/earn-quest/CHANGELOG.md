@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Resolved appealed disputes no longer call `require_auth` twice on the admin arbitrator, which caused `Auth(ExistingValue)` failures.
 
 ### Added
+
 - Property-based quest lifecycle invariant tests in `tests/property_tests.rs`: escrow balance, payout bounds, and cancel acyclicity are fuzzed via QuickCheck (1000 sequences) and proptest against the live Soroban client (50 sequences).
 - 2-of-2 SuperAdmin clawback: `initiate_clawback` and `execute_clawback` entry points in `payout.rs` allow two distinct SuperAdmins to collaboratively recover funds sent to a fraudulent recipient. Emits `ClawbackInitiated` and `ClawbackExecuted` events. Adds `ClawbackPending` storage key, `ClawbackNotFound` (150) and `ClawbackAlreadySigned` (151) error variants.
 - Added 	est_double_claim.rs: verifies that a second claim on the same submission is rejected, preventing double-claim under concurrent attempts.

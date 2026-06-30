@@ -1,9 +1,21 @@
 import { test, expect } from '@playwright/test';
+import { MOCK_PUBLIC_QUEST, mockQuestListApi } from './helpers/quest-api-mock';
 
-test.describe('Unauthenticated Fallback Flow', () => {
+/**
+ * FE-039 / Issue #828: End-to-end tests for unauthenticated homepage
+ * and quest listing fallback.
+ *
+ * Verifies that visitors without a wallet session can browse the public
+ * homepage and quest catalog, and that quest listing error states render
+ * gracefully when the quests API is unavailable.
+ */
+test.describe('Unauthenticated Homepage and Quest Listing Fallback', () => {
   test.beforeEach(async ({ page }) => {
-    // Suppress analytics banner to avoid intercepting clicks in tests
     await page.addInitScript(() => {
+      localStorage.removeItem('stellar_earn_access_token');
+      localStorage.removeItem('stellar_earn_refresh_token');
+      localStorage.removeItem('inheritx_wallet_address');
+      localStorage.removeItem('inheritx_wallet_id');
       localStorage.setItem(
         'stellar_earn_analytics_consent',
         JSON.stringify({ status: 'denied', version: '1' })
@@ -16,56 +28,79 @@ test.describe('Unauthenticated Fallback Flow', () => {
   }) => {
     await page.goto('/');
 
-    // Check that the Hero section renders
     await expect(page.getByRole('region', { name: 'Hero' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /explore all available quests/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /connect your wallet/i })
+    ).toBeVisible();
+  });
 
-    // Check CTA buttons are visible
-    const exploreBtn = page.getByRole('link', {
-      name: /explore all available quests/i,
+  test('homepage featured quests load without authentication', async ({
+    page,
+  }) => {
+    await mockQuestListApi(page);
+
+    await page.goto('/');
+
+    const featuredHeading = page.getByRole('heading', {
+      name: 'Top Quests Right Now',
     });
-    await expect(exploreBtn).toBeVisible();
+    await featuredHeading.scrollIntoViewIfNeeded();
+    await expect(featuredHeading).toBeVisible();
 
-    const connectBtn = page.getByRole('link', { name: /connect your wallet/i });
-    await expect(connectBtn).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: new RegExp(MOCK_PUBLIC_QUEST.title) })
+    ).toBeVisible();
   });
 
   test('quest listing renders for unauthenticated users', async ({ page }) => {
+    await mockQuestListApi(page);
+
     await page.goto('/quests');
 
-    // Quest Board should be visible
     await expect(
       page.getByRole('heading', { name: 'Quest Board', level: 1 })
     ).toBeVisible();
-
-    // The user should still see a list of quests
-    const firstCard = page
-      .locator('[role="button"][aria-label^="View quest:"]')
-      .first();
-    await expect(firstCard).toBeVisible();
+    await expect(
+      page.getByRole('list', { name: /1 quest found/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: new RegExp(MOCK_PUBLIC_QUEST.title) })
+    ).toBeVisible();
   });
 
-  test('restricted actions prompt connection or redirect gracefully', async ({
+  test('quest listing shows error fallback when the quests API fails', async ({
     page,
   }) => {
-    // Navigating to dashboard directly without authentication
-    await page.goto('/dashboard');
+    await mockQuestListApi(page, { status: 500 });
 
-    // The application should likely redirect to home or prompt for wallet connection
-    // We expect the Connect Wallet modal to either be visible or a redirect to happen.
-    // For safety in this test, we just ensure it doesn't crash and we aren't showing authenticated views.
+    await page.goto('/quests');
 
-    // Check if the connect wallet text or an unauthorized message is visible,
-    // or if we are redirected away from the protected dashboard content.
-    const connectWalletText = page.locator('text=Connect Wallet').first();
-    const isConnectWalletVisible = await connectWalletText.isVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Quest Board', level: 1 })
+    ).toBeVisible();
+    await expect(page.getByText(/error loading quests/i)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /try again/i })
+    ).toBeVisible();
+  });
 
-    if (!isConnectWalletVisible) {
-      // If no modal, verify we aren't seeing actual dashboard content
-      await expect(
-        page.getByRole('heading', { name: /Dashboard/i })
-      ).not.toBeVisible();
-    } else {
-      await expect(connectWalletText).toBeVisible();
-    }
+  test('explore quests CTA routes unauthenticated users to the quest board', async ({
+    page,
+  }) => {
+    await mockQuestListApi(page);
+
+    await page.goto('/');
+
+    await page
+      .getByRole('link', { name: /explore all available quests/i })
+      .click();
+
+    await expect(page).toHaveURL(/\/quests$/);
+    await expect(
+      page.getByRole('heading', { name: 'Quest Board', level: 1 })
+    ).toBeVisible();
   });
 });

@@ -1,5 +1,7 @@
 name: Backend Integration Tests
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [main, master]
@@ -100,3 +102,21 @@ jobs:
             exit 1
           fi
           echo "All integration tests passed"
+
+      - name: Workflow Summary
+        if: always()
+        run: |
+          echo "## Backend Integration Tests Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.integration-tests.result }}" != "success" ]; then
+            echo "### ❌ Failed Integration Tests" >> $GITHUB_STEP_SUMMARY
+            echo "Integration tests failed. Please check the job logs for details on failed test suites." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ All Integration Tests Passed" >> $GITHUB_STEP_SUMMARY
+            echo "All integration tests completed successfully." >> $GITHUB_STEP_SUMMARY
+          fi

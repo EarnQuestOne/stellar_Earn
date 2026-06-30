@@ -28,6 +28,11 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+
+# Playwright reports
+**/playwright-report/
+**/playwright-a11y-report/
+**/test-results/
 */node_modules/
 **/node_modules/
 

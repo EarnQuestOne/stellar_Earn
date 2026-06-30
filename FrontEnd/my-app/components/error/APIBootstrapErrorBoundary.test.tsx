@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { APIBootstrapErrorBoundary } from '@/components/error/APIBootstrapErrorBoundary';
 import { BootstrapErrorFallback } from '@/components/error/BootstrapErrorFallback';
@@ -14,8 +14,15 @@ import { BootstrapErrorFallback } from '@/components/error/BootstrapErrorFallbac
  * Test suite for APIBootstrapErrorBoundary component
  */
 describe('APIBootstrapErrorBoundary', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('should render children without error', () => {
@@ -223,8 +230,15 @@ describe('APIBootstrapErrorBoundary', () => {
 describe('BootstrapErrorFallback', () => {
   const mockResetError = vi.fn();
 
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('should render error message', () => {

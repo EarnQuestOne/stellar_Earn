@@ -79,7 +79,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             return (
               <Link
                 aria-current={active ? 'page' : undefined}
-                className={`block rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
+                className={`flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
                   active
                     ? 'bg-[#089ec3] text-white'
                     : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
@@ -88,6 +88,12 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                 key={item.href}
                 onClick={onClose}
               >
+                {item.icon && (
+                  <item.icon
+                    className="mr-3 h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                )}
                 {item.label}
               </Link>
             );

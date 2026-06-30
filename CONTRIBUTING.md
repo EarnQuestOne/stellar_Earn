@@ -55,6 +55,15 @@ cd Contract
 cargo build --workspace
 ```
 
+### Lockfile Policy
+
+This project uses **npm** as the package manager for the frontend (`FrontEnd/my-app`). The `package-lock.json` file **must be committed** to the repository and kept up to date.
+
+- **Always run `npm install`** (never `yarn`, `pnpm`, or `bun`) inside `FrontEnd/my-app`.
+- **Commit `package-lock.json`** whenever you add, remove, or update dependencies. CI runs `npm ci`, which requires a valid lockfile.
+- **Do not delete or add** `package-lock.json` to `.gitignore`.
+- If you see a merge conflict in `package-lock.json`, resolve it by running `npm install` after resolving `package.json`, then commit the regenerated lockfile.
+
 ---
 
 ## 2. Branch & Commit Conventions
