@@ -376,4 +376,5 @@ MIT - See [LICENSE](../../LICENSE) for details
 We use ESLint Flat Config standards to analyze our files under high performance thresholds.
 
 ## Config Interoperability Layers
+
 Because `eslint-config-next` depends on the deprecated configuration format, we resolve imports through the `@eslint/eslintrc` interoperability wrapper (`FlatCompat`). This converts legacy `.eslintrc` structures into compliant `.js` module paths during runtime compilation, ensuring that local executions and CI pipelines check code quality rules accurately.

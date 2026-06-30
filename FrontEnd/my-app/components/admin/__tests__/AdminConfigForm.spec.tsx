@@ -14,11 +14,18 @@ describe('Issue #804 [FE-015]: AdminConfigForm Type Enforcement Suite', () => {
 
   it('should cleanly accept explicit parameters and fire submit callbacks accurately', async () => {
     const mockSubmitHandler = vi.fn().mockResolvedValue(undefined); // <-- Swap jest.fn() to vi.fn()
-    
-    render(<AdminConfigForm initialData={mockInitialData} onSubmit={mockSubmitHandler} />);
+
+    render(
+      <AdminConfigForm
+        initialData={mockInitialData}
+        onSubmit={mockSubmitHandler}
+      />
+    );
 
     const limitInput = screen.getByTestId('input-claim-limit');
-    fireEvent.change(limitInput, { target: { name: 'maxDailyClaimLimit', value: '2500' } });
+    fireEvent.change(limitInput, {
+      target: { name: 'maxDailyClaimLimit', value: '2500' },
+    });
 
     const form = screen.getByTestId('admin-config-form');
     fireEvent.submit(form);

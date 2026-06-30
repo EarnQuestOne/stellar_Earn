@@ -12,12 +12,16 @@ export interface AdminConfigPayload {
 /**
  * Strict handler signature for administrative input mutations.
  */
-export type FormInputChangeHandler = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+export type FormInputChangeHandler = (
+  event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => void;
 
 /**
  * Explicit callback contract executed upon successful form validation and submission.
  */
-export type AdminFormSubmitCallback = (values: AdminConfigPayload) => Promise<void>;
+export type AdminFormSubmitCallback = (
+  values: AdminConfigPayload
+) => Promise<void>;
 
 /**
  * Form component configuration parameter bindings.
