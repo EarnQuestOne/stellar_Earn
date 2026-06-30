@@ -1,7 +1,10 @@
 use crate::errors::Error;
+use crate::storage;
 use crate::types::{
     AggregatedPrice, OracleConfig, OracleResponse, OracleType, PriceData, PriceFeedRequest,
+    PushedPrice,
 };
+use crate::validation;
 use soroban_sdk::{Address, Env, Vec, U256};
 
 #[allow(dead_code)]
@@ -261,5 +264,51 @@ impl Oracle {
         // This would implement historical price queries
         // For now, return current price as fallback
         Self::get_price(env, oracle_config, request)
+    }
+
+    /// Pushes a price for `token` from the OracleAdmin's own upstream feed
+    /// into the contract's instance storage (addresses GH #1710).
+    ///
+    /// The pushed price lives at `DataKey::PushedPrice(token)` and is what
+    /// the circuit-breaker (`validate_price_feed_fresh`) reads when the
+    /// price-feed TTL is active.
+    ///
+    /// Returns:
+    /// * `Err(Error::Paused)` if the contract is paused.
+    /// * `Err(Error::OracleRespMismatch)` if `token` != `price_data.base_asset`.
+    /// * `Err(Error::InvalidOracleData)` if any bounds check fails.
+    /// * `Ok(())` on successful push.
+    pub fn set_price(
+        env: &Env,
+        token: &Address,
+        price_data: &PriceData,
+    ) -> Result<(), Error> {
+        if storage::is_paused(env) {
+            return Err(Error::Paused);
+        }
+
+        if price_data.base_asset != *token {
+            return Err(Error::OracleRespMismatch);
+        }
+
+        validation::validate_price_data_bounds(env, price_data)?;
+
+        let pushed = PushedPrice {
+            price: price_data.clone(),
+            pushed_at: env.ledger().timestamp(),
+        };
+        storage::set_pushed_price(env, token, &pushed);
+        Ok(())
+    }
+
+    /// Sets the price-feed staleness TTL in seconds. TTL = 0 disables the
+    /// circuit-breaker. See `validation::validate_price_feed_fresh`.
+    pub fn set_price_ttl(env: &Env, ttl_seconds: u64) {
+        storage::set_price_feed_ttl(env, ttl_seconds);
+    }
+
+    /// Returns the currently configured price-feed staleness TTL in seconds.
+    pub fn get_price_ttl(env: &Env) -> u64 {
+        storage::get_price_feed_ttl(env)
     }
 }

@@ -1,6 +1,7 @@
 use crate::errors::Error;
-use crate::types::{QuestStatus, SubmissionStatus};
-use soroban_sdk::Env;
+use crate::storage;
+use crate::types::{PriceData, QuestStatus, SubmissionStatus};
+use soroban_sdk::{Address, Env, U256};
 
 //================================================================================
 // Constants — Validation Limits
@@ -387,4 +388,103 @@ pub fn is_quest_terminal(status: &QuestStatus) -> bool {
         status,
         QuestStatus::Completed | QuestStatus::Expired | QuestStatus::Cancelled
     )
+}
+
+//================================================================================
+// Price Feed Staleness & Circuit-Breaker Validation
+//================================================================================
+
+/// Validates the bounds of a price pushed by an OracleAdmin.
+///
+/// Ensures:
+/// * price is non-zero
+/// * confidence is in `[0, 100]`
+/// * decimals is non-zero and sane (<= 38, matching Soroban U256 limits)
+/// * timestamp is not in the future
+///
+/// # Arguments
+/// * `env` - The contract environment (to read current ledger timestamp)
+/// * `price_data` - The price data to validate
+///
+/// # Returns
+/// * `Ok(())` if all invariants hold
+/// * `Err(Error::InvalidOracleData)` otherwise
+pub fn validate_price_data_bounds(env: &Env, price_data: &PriceData) -> Result<(), Error> {
+    // Confidence must fit on the [0, 100] precentage scale.
+    if price_data.confidence > 100 {
+        return Err(Error::InvalidOracleData);
+    }
+
+    // decimals > 0; Soroban-cap-friendly upper bound prevents misuse.
+    if price_data.decimals == 0 || price_data.decimals > 38 {
+        return Err(Error::InvalidOracleData);
+    }
+
+    // timestamp must be at or before current ledger time (no future timestamps).
+    let current_time = env.ledger().timestamp();
+    if price_data.timestamp > current_time {
+        return Err(Error::InvalidOracleData);
+    }
+
+    // Price value must be non-zero.
+    let zero = U256::from_u32(env, 0);
+    if price_data.price.eq(&zero) {
+        return Err(Error::InvalidOracleData);
+    }
+
+    Ok(())
+}
+
+/// Returns true if there is a fresh, valid pushed price for `reward_asset`.
+///
+/// Reads the configured TTL from `DataKey::PriceFeedTtl`. A TTL of `0`
+/// disables the breaker entirely (returns true). Otherwise, looks up the
+/// most recent pushed price for the asset and compares its timestamp against
+/// `(now - TTL)`.
+///
+/// # Arguments
+/// * `env` - The contract environment
+/// * `reward_asset` - The reward asset whose price feed freshness is checked
+///
+/// # Returns
+/// * `true` if no TTL is configured OR a pushed price exists within TTL
+/// * `false` if a TTL is configured and the latest price is missing or stale
+pub fn is_price_feed_fresh(env: &Env, reward_asset: &Address) -> bool {
+    let ttl = storage::get_price_feed_ttl(env);
+    if ttl == 0 {
+        return true;
+    }
+    let Some(pushed) = storage::get_pushed_price(env, reward_asset) else {
+        return false;
+    };
+
+    let current_time = env.ledger().timestamp();
+    if pushed.price.timestamp > current_time {
+        // Future timestamp is invalid; treat as stale.
+        return false;
+    }
+    let age = current_time - pushed.price.timestamp;
+    age <= ttl
+}
+
+/// Circuit-breaker: fail quest registration if the price feed for
+/// `reward_asset` is stale or missing.
+///
+/// The breaker is opt-in: when the configured TTL is `0` (default after init)
+/// the check passes unconditionally. SuperAdmins activate enforcement by
+/// calling `set_price_feed_ttl(seconds > 0)` through an OracleAdmin.
+///
+/// # Arguments
+/// * `env` - The contract environment
+/// * `reward_asset` - The asset whose price feed must be fresh
+///
+/// # Returns
+/// * `Ok(())` if the breaker is disabled or the feed is fresh
+/// * `Err(Error::StaleOracleData)` if the feed is stale or missing
+pub fn validate_price_feed_fresh(env: &Env, reward_asset: &Address) -> Result<(), Error> {
+    if is_price_feed_fresh(env, reward_asset) {
+        Ok(())
+    } else {
+        Err(Error::StaleOracleData)
+    }
 }

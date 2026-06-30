@@ -29,8 +29,8 @@ use crate::storage::{get_badge_type, list_badge_types};
 
 pub use crate::types::{
     AggregatedPrice, Badge, BadgeType, BatchApprovalInput, BatchQuestInput, Commitment,
-    CreatorStats, Dispute, DisputeStatus, EscrowInfo, OracleConfig, PlatformStats, PriceData,
-    PriceFeedRequest, Quest, QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus,
+    CreatorStats, Dispute, DisputeStatus, EscrowInfo, OracleConfig, PlatformStats,    PriceData,
+    PriceFeedRequest, PushedPrice, Quest, QuestMetadata, QuestStatus, Role, Submission, SubmissionStatus,
     UserBadges, UserCore, UserStats, VerifierStake,
 };
 
@@ -1328,6 +1328,53 @@ impl EarnQuestContract {
         // For example, checking against historical prices, volatility limits, etc.
 
         Ok(())
+    }
+
+    //================================================================================
+    // Oracle Price Push (set_price) & Configurable TTL Circuit-Breaker (issue #1710)
+    //================================================================================
+
+    /// Pushes a price for `token` into the contract's instance storage
+    /// (OracleAdmin only). The push is what the circuit-breaker reads when
+    /// the price-feed TTL has been activated via `set_price_feed_ttl`.
+    ///
+    /// Validates bounds (non-zero price, valid confidence, sane decimals,
+    /// non-future timestamp) and that `token` matches `price_data.base_asset`.
+    /// Refuses to update while the contract is paused.
+    pub fn set_price(
+        env: Env,
+        caller: Address,
+        token: Address,
+        price_data: PriceData,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        admin::require_role(&env, &caller, Role::OracleAdmin)?;
+        oracle::Oracle::set_price(&env, &token, &price_data)
+    }
+
+    /// Sets the price-feed staleness TTL in seconds (OracleAdmin only).
+    /// A TTL of `0` disables the circuit-breaker (default). Any positive value
+    /// activates it; quest registration will fail with `StaleOracleData` when
+    /// no fresh pushed price exists for the reward asset.
+    pub fn set_price_feed_ttl(
+        env: Env,
+        caller: Address,
+        ttl_seconds: u64,
+    ) -> Result<(), Error> {
+        security::require_not_paused(&env)?;
+        admin::require_role(&env, &caller, Role::OracleAdmin)?;
+        oracle::Oracle::set_price_ttl(&env, ttl_seconds);
+        Ok(())
+    }
+
+    /// Returns the currently configured price-feed staleness TTL in seconds.
+    pub fn get_price_feed_ttl(env: Env) -> u64 {
+        oracle::Oracle::get_price_ttl(&env)
+    }
+
+    /// Returns the latest pushed price for `token`, if any.
+    pub fn get_pushed_price(env: Env, token: Address) -> Option<PushedPrice> {
+        storage::get_pushed_price(&env, &token)
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
