@@ -15,6 +15,7 @@ import { AnalyticsProcessor } from './processors/analytics.processor';
 import { QuestProcessor } from './processors/quest.processor';
 import { QuestStateReconciliationProcessor } from './processors/quest-state-reconciliation.processor';
 import { DependencyProcessor } from './processors/dependency.processor';
+import { JobPayloadValidatorService } from './validation/job-payload-validator.service';
 import {
   JobLog,
   JobLogRetry,
@@ -68,6 +69,7 @@ import { EmailModule } from '../email/email.module';
     DependencyProcessor,
     DataExportListener,
     DependencyFreshnessService,
+    JobPayloadValidatorService,
   ],
   controllers: [JobsController],
   exports: [
@@ -85,6 +87,7 @@ import { EmailModule } from '../email/email.module';
     QuestStateReconciliationProcessor,
     DependencyProcessor,
     DependencyFreshnessService,
+    JobPayloadValidatorService,
   ],
 })
 export class JobsModule {}
