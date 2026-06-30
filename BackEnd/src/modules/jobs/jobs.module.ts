@@ -15,6 +15,7 @@ import { AnalyticsProcessor } from './processors/analytics.processor';
 import { QuestProcessor } from './processors/quest.processor';
 import { QuestStateReconciliationProcessor } from './processors/quest-state-reconciliation.processor';
 import { DependencyProcessor } from './processors/dependency.processor';
+import { DeadLetterProcessor } from './processors/dead-letter.processor';
 import {
   JobLog,
   JobLogRetry,
@@ -30,8 +31,11 @@ import { StellarModule } from '../stellar/stellar.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { DependencyFreshnessService } from '../../common/services/dependency-freshness.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+import { PoisonMessage } from '../../events/entities/poison-message.entity';
 import { User } from '../users/entities/user.entity';
 import { EmailModule } from '../email/email.module';
+import { PoisonMessageService } from '../../events/services/poison-message.service';
+import { DlqAlertService } from '../../events/services/dlq-alert.service';
 
 @Module({
   imports: [
@@ -45,6 +49,7 @@ import { EmailModule } from '../email/email.module';
       Quest,
       Submission,
       EventStore,
+      PoisonMessage,
       User,
     ]),
     EventEmitterModule,
@@ -66,6 +71,9 @@ import { EmailModule } from '../email/email.module';
     QuestProcessor,
     QuestStateReconciliationProcessor,
     DependencyProcessor,
+    DeadLetterProcessor,
+    PoisonMessageService,
+    DlqAlertService,
     DataExportListener,
     DependencyFreshnessService,
   ],
@@ -84,6 +92,9 @@ import { EmailModule } from '../email/email.module';
     QuestProcessor,
     QuestStateReconciliationProcessor,
     DependencyProcessor,
+    DeadLetterProcessor,
+    PoisonMessageService,
+    DlqAlertService,
     DependencyFreshnessService,
   ],
 })

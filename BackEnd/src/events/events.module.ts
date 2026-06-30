@@ -6,6 +6,7 @@ import { EventsService } from './events.service';
 import { AuditLogService } from './services/audit-log.service';
 import { RetryService } from './services/retry.service';
 import { PoisonMessageService } from './services/poison-message.service';
+import { DlqAlertService } from './services/dlq-alert.service';
 import { EventStoreService } from './event-store/event-store.service';
 import { EventStore } from './entities/event-store.entity';
 import { PoisonMessage } from './entities/poison-message.entity';
@@ -43,6 +44,7 @@ import { PayoutListener } from './listeners/payout.listener';
     AuditLogService,
     RetryService,
     PoisonMessageService,
+    DlqAlertService,
     // Event Handlers
     QuestEventsHandler,
     SubmissionEventsHandler,
@@ -58,6 +60,6 @@ import { PayoutListener } from './listeners/payout.listener';
     SubmissionListener,
     PayoutListener,
   ],
-  exports: [EventsService, EventStoreService, PoisonMessageService],
+  exports: [EventsService, EventStoreService, PoisonMessageService, DlqAlertService],
 })
 export class EventsModule {}

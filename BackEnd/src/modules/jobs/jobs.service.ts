@@ -7,6 +7,7 @@ import {
 import { Queue, Worker, Job } from 'bullmq';
 import { QUEUES, DEFAULT_JOB_OPTIONS } from './jobs.constants';
 import { DataExportProcessor } from './processors/export.processor';
+import { DeadLetterProcessor } from './processors/dead-letter.processor';
 
 export interface QueueMetrics {
   queue: string;
@@ -31,7 +32,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     | ((messageId: string, dto: any) => Promise<void>)
     | null = null;
 
-  constructor(private readonly dataExportProcessor?: DataExportProcessor) {}
+  constructor(
+    private readonly dataExportProcessor?: DataExportProcessor,
+    private readonly deadLetterProcessor?: DeadLetterProcessor,
+  ) {}
 
   registerEmailProcessor(
     processor: (messageId: string, dto: any) => Promise<void>,
@@ -72,6 +76,22 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.EXPORTS,
         this.dataExportProcessor.processExport.bind(this.dataExportProcessor),
+      );
+    }
+
+    // Wire the dead-letter processor as the exclusive consumer of the DLQ
+    if (
+      this.deadLetterProcessor &&
+      typeof this.deadLetterProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.DEAD_LETTER,
+        this.deadLetterProcessor.process.bind(this.deadLetterProcessor),
+      );
+      this.logger.log('Dead-letter queue processor registered');
+    } else {
+      this.logger.warn(
+        'DeadLetterProcessor not provided — DLQ jobs will not be consumed',
       );
     }
   }
