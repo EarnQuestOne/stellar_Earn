@@ -4,6 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
 import { PayoutsService } from './payouts.service';
+import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
+import { QuotaService } from '../quota/quota.service';
+import { MetricsService } from '../../common/services/metrics.service';
+import { JobsService } from '../jobs/jobs.service';
+import { QUEUES } from '../jobs/jobs.constants';
 
 const mockRepo = () => ({
   create: jest.fn(),
@@ -29,14 +34,14 @@ const buildPayout = (overrides: Partial<Payout> = {}): Payout =>
     settlementConfirmedAt: null,
     failureReason: null,
     retryCount: 0,
-    maxRetries: 3,
+    maxRetries: 5,
     nextRetryAt: null,
     processedAt: null,
     claimedAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    canRetry: jest.fn().mockReturnValue(true),
+    canRetry: Payout.prototype.canRetry,
     isClaimable: jest.fn().mockReturnValue(false),
     ...overrides,
   }) as Payout;
@@ -46,6 +51,8 @@ describe('PayoutsService settlement finality', () => {
   let repo: ReturnType<typeof mockRepo>;
   let config: { get: jest.Mock };
   let emitter: { emit: jest.Mock };
+  let metrics: { incrementCounter: jest.Mock };
+  let jobs: { addJob: jest.Mock };
 
   beforeEach(async () => {
     repo = mockRepo();
@@ -60,6 +67,8 @@ describe('PayoutsService settlement finality', () => {
       }),
     };
     emitter = { emit: jest.fn() };
+    metrics = { incrementCounter: jest.fn() };
+    jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -67,6 +76,10 @@ describe('PayoutsService settlement finality', () => {
         { provide: getRepositoryToken(Payout), useValue: repo },
         { provide: ConfigService, useValue: config },
         { provide: EventEmitter2, useValue: emitter },
+        { provide: FraudRiskRulesService, useValue: {} },
+        { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
+        { provide: MetricsService, useValue: metrics },
+        { provide: JobsService, useValue: jobs },
       ],
     }).compile();
 
@@ -156,6 +169,87 @@ describe('PayoutsService settlement finality', () => {
     expect(emitter.emit).toHaveBeenCalledWith(
       'payout.processed',
       expect.objectContaining({ payoutId: payout.id }),
+    );
+  });
+
+  it('schedules failed Stellar submissions for exponential backoff retry', async () => {
+    const now = Date.parse('2026-06-25T00:00:00.000Z');
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+    const payout = buildPayout();
+    repo.findOne.mockResolvedValue(payout);
+    jest
+      .spyOn(service as any, 'executeStellarPayment')
+      .mockRejectedValue(new Error('Horizon timeout'));
+
+    await service.processPayout(payout.id);
+
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: PayoutStatus.RETRY_SCHEDULED,
+        retryCount: 1,
+        maxRetries: 5,
+        failureReason: 'Horizon timeout',
+        nextRetryAt: new Date(now + 5 * 60 * 1000),
+      }),
+    );
+    expect(metrics.incrementCounter).toHaveBeenCalledWith(
+      'payout_failures_total',
+      { asset: 'XLM', outcome: 'retry_scheduled' },
+    );
+  });
+
+  it('moves exhausted payout retries to dead letter and alerts admins', async () => {
+    const payout = buildPayout({ retryCount: 4, maxRetries: 5 });
+    repo.findOne.mockResolvedValue(payout);
+    jest
+      .spyOn(service as any, 'executeStellarPayment')
+      .mockRejectedValue(new Error('Stellar submission failed'));
+
+    await service.processPayout(payout.id);
+
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'dead_letter',
+        retryCount: 5,
+        maxRetries: 5,
+        failureReason: 'Stellar submission failed',
+        nextRetryAt: null,
+      }),
+    );
+    expect(emitter.emit).toHaveBeenCalledWith(
+      'payout.dead_lettered',
+      expect.objectContaining({
+        payoutId: payout.id,
+        asset: 'XLM',
+        retryCount: 5,
+        reason: 'Stellar submission failed',
+      }),
+    );
+    expect(jobs.addJob).toHaveBeenCalledWith(
+      QUEUES.DEAD_LETTER,
+      expect.objectContaining({
+        failedJob: expect.objectContaining({
+          id: payout.id,
+          name: 'payout.settlement',
+          failedReason: 'Stellar submission failed',
+          data: {
+            payoutId: payout.id,
+            asset: 'XLM',
+            retryCount: 5,
+          },
+        }),
+      }),
+      expect.objectContaining({
+        jobId: `payout-${payout.id}-dead-letter`,
+      }),
+    );
+    expect(metrics.incrementCounter).toHaveBeenCalledWith(
+      'payout_failures_total',
+      { asset: 'XLM', outcome: 'dead_letter' },
+    );
+    expect(metrics.incrementCounter).toHaveBeenCalledWith(
+      'payout_dead_letter_total',
+      { asset: 'XLM' },
     );
   });
 });

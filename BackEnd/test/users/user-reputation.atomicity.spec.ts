@@ -1,12 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UserService } from '../../src/modules/users/users.service';
+import { UsersService } from '../../src/modules/users/users.service';
 import { User } from '../../src/modules/users/entities/user.entity';
 import { EventStore } from '../../src/events/entities/event-store.entity';
 
-describe('UserService reputation atomicity', () => {
-  let service: UserService;
+describe('UsersService reputation atomicity', () => {
+  let service: UsersService;
   let usersRepository: any;
   let txRepo: any;
   let eventTxRepo: any;
@@ -50,7 +50,7 @@ describe('UserService reputation atomicity', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserService,
+        UsersService,
         {
           provide: getRepositoryToken(User),
           useValue: usersRepository,
@@ -58,7 +58,7 @@ describe('UserService reputation atomicity', () => {
       ],
     }).compile();
 
-    service = module.get<UserService>(UserService);
+    service = module.get<UsersService>(UsersService);
   });
 
   it('applies XP delta atomically and returns old/new reputation state', async () => {

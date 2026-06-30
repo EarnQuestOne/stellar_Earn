@@ -1,3 +1,4 @@
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QuestDifficulty, QuestStatus, type Quest } from '@/lib/types/quest';
 import { QuestList } from './QuestList';

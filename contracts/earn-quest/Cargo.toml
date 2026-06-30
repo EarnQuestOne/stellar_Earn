@@ -15,6 +15,7 @@ soroban-sdk = "21.7.4"
 proptest = "1.4"
 quickcheck = "1"
 quickcheck_macros = "1"
+serde_json = "1.0"
 soroban-sdk = { version = "21.7.4", features = ["testutils"] }
 
 [profile.release]

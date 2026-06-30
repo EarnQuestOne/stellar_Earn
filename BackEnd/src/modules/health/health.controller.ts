@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Res } from '@nestjs/common';
+import { Controller, Get, Logger, Res, Version } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipLogging } from '../../common/interceptors/logging.interceptor';
@@ -28,6 +28,7 @@ export class HealthController {
   ) {}
 
   @Get('live')
+  @Version('1')
   @SkipLogging()
   @ApiOperation({ summary: 'Liveness probe — 200 while the process is alive' })
   @ApiResponse({ status: 200, description: 'Process is alive' })
@@ -42,6 +43,7 @@ export class HealthController {
 
   // Backwards compatibility: /health maps to deep health check
   @Get()
+  @Version('1')
   @SkipLogging()
   @ApiOperation({
     summary: 'Health check (legacy) — alias for /health/deep',
@@ -51,11 +53,82 @@ export class HealthController {
   async root(
     @Res({ passthrough: true }) res: Response,
   ): Promise<DeepHealthResponse> {
-    this.logger.debug('Legacy health check (/) - redirecting to deep');
-    return this.deep(res);
+    this.logger.debug('Legacy health check (/) - collecting dependency status');
+
+    const [dbResult, cacheResult, externalResult] = await Promise.all([
+      this.dbHealth.check(),
+      this.cacheHealth.check(),
+      this.externalHealth.check(),
+    ]);
+
+    const services = {
+      database: this.mapServiceHealth(dbResult),
+      cache: this.mapServiceHealth(cacheResult),
+      external: this.mapServiceHealth(externalResult),
+    };
+
+    const overallStatus = this.calculateLegacyOverallStatus([
+      dbResult,
+      cacheResult,
+      externalResult,
+    ]);
+
+    res.status(overallStatus === 'down' ? 503 : 200);
+
+    return {
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      services,
+    };
+  }
+
+  @Get('stellar')
+  @Version('1')
+  @SkipLogging()
+  @ApiOperation({
+    summary: 'Stellar Horizon health check',
+    description:
+      'Checks that the configured Stellar Horizon endpoint is reachable and responding.',
+  })
+  @ApiResponse({ status: 200, description: 'Stellar Horizon is healthy' })
+  @ApiResponse({ status: 503, description: 'Stellar Horizon is unreachable' })
+  async stellar(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ status: ServiceStatus; timestamp: string; service: ServiceHealth }> {
+    const result = await this.externalHealth.checkStellar();
+    res.status(result.status === 'down' ? 503 : 200);
+
+    return {
+      status: result.status,
+      timestamp: new Date().toISOString(),
+      service: this.mapServiceHealth(result),
+    };
+  }
+
+  @Get('redis')
+  @Version('1')
+  @SkipLogging()
+  @ApiOperation({
+    summary: 'Redis health check',
+    description: 'Checks that the Redis cache backend is reachable.',
+  })
+  @ApiResponse({ status: 200, description: 'Redis is healthy' })
+  @ApiResponse({ status: 503, description: 'Redis is unreachable' })
+  async redis(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ status: ServiceStatus; timestamp: string; service: ServiceHealth }> {
+    const result = await this.cacheHealth.check();
+    res.status(result.status === 'down' ? 503 : 200);
+
+    return {
+      status: result.status,
+      timestamp: new Date().toISOString(),
+      service: this.mapServiceHealth(result),
+    };
   }
 
   @Get('ready')
+  @Version('1')
   @SkipLogging()
   @ApiOperation({
     summary:
@@ -105,6 +178,7 @@ export class HealthController {
   }
 
   @Get('deep')
+  @Version('1')
   @SkipLogging()
   @ApiOperation({
     summary:
@@ -162,6 +236,7 @@ export class HealthController {
   }
 
   @Get('metrics')
+  @Version('1')
   @SkipLogging()
   @ApiOperation({
     summary: 'Prometheus metrics endpoint',
@@ -202,5 +277,24 @@ export class HealthController {
       return 'degraded';
     }
     return 'ok';
+  }
+
+  private calculateLegacyOverallStatus(
+    results: HealthCheckResult[],
+  ): ServiceStatus {
+    const [databaseResult, cacheResult, externalResult] = results;
+
+    if (
+      databaseResult?.status === 'down' ||
+      cacheResult?.status === 'down'
+    ) {
+      return 'down';
+    }
+
+    if (externalResult?.status === 'down') {
+      return 'degraded';
+    }
+
+    return this.calculateOverallStatus(results);
   }
 }

@@ -1,5 +1,9 @@
 import { randomBytes } from 'crypto';
 import { Keypair, StrKey } from 'stellar-sdk';
+import { config } from 'dotenv';
+
+// Load test environment variables
+config({ path: '.env.test' });
 
 process.env.NODE_ENV ??= 'test';
 process.env.JWT_SECRET ??= 'test-jwt-secret';

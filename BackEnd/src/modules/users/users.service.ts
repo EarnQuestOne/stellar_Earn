@@ -73,8 +73,8 @@ export class UsersService {
     return user;
   }
 
-  async findById(_id: string): Promise<User | null> {
-    return this.findByAddress('dummy');
+  async findById(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id } });
   }
 
   async findByGoogleId(_googleId: string): Promise<User | null> {
@@ -153,6 +153,3 @@ export class UsersService {
     });
   }
 }
-
-// Backward-compatible alias for existing imports/tests that use UserService.
-export class UserService extends UsersService {}

@@ -1,3 +1,4 @@
+import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QuestDifficulty, QuestStatus } from '@/lib/types/quest';
 import { FilterPanel } from './FilterPanel';

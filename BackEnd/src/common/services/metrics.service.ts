@@ -224,6 +224,14 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
       'job_dead_letter_jobs_total',
       'Total background jobs moved to the dead letter queue',
     );
+    this.registerCounter(
+      'payout_failures_total',
+      'Total failed payout processing attempts by retry outcome',
+    );
+    this.registerCounter(
+      'payout_dead_letter_total',
+      'Total payouts moved to the dead letter queue',
+    );
     this.registerGauge(
       'dead_letter_queue_size',
       'Number of jobs currently in the dead letter queue',

@@ -65,6 +65,10 @@ _None yet._
                           `npm run changelog:check` and the
                               [`frontend-changelog.yml`](../../.github/workflows/frontend-changelog.yml)
                                   workflow.
+- **`lib/api/submissions.ts` — `submitProof` helper** ([#1688](https://github.com/EarnQuestOne/stellar_Earn/issues/1688)).
+  - New exported function that wraps the upload-then-create flow for quest proof submission.
+  - For file proofs larger than 5 MB, calls `uploadProofFile` first (with progress tracking via XHR) then forwards the resulting IPFS URL to `createSubmission`; smaller proofs are inlined directly.
+  - Consumed by the new `components/submission/SubmissionForm` multi-step form component.
 
                                   ### 馃洜 Changed
 

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { apiClient } from '../../lib/api/client';
 import { useStore } from '../../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, RefreshCw, LogOut, Wallet } from 'lucide-react';

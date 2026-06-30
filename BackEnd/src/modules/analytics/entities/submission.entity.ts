@@ -10,10 +10,10 @@ import {
 } from 'typeorm';
 
 export enum SubmissionStatus {
-  PENDING = 'Pending',
-  APPROVED = 'Approved',
-  REJECTED = 'Rejected',
-  PAID = 'Paid',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PAID = 'PAID',
 }
 
 /**
@@ -25,7 +25,7 @@ export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
   contractSubmissionId: string;
 
@@ -35,18 +35,14 @@ export class Submission {
   @ManyToOne('User', 'submissions')
   user: any;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   proofHash: string;
 
-  @Column({
-    type: 'enum',
-    enum: SubmissionStatus,
-    default: SubmissionStatus.PENDING,
-  })
+  @Column({ default: 'PENDING' })
   @Index()
   status: SubmissionStatus;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   @Index()
   submittedAt: Date;
 

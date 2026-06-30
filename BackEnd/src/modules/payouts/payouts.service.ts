@@ -27,11 +27,16 @@ import {
   PaginatedResponseDto,
 } from '../../common/dto/pagination.dto';
 import { QuotaService } from '../quota/quota.service';
+import { MetricsService } from '../../common/services/metrics.service';
+import { JobsService } from '../jobs/jobs.service';
+import { QUEUES } from '../jobs/jobs.constants';
 
 @Injectable()
 export class PayoutsService {
   private readonly logger = new Logger(PayoutsService.name);
   private readonly settlementRetryDelayMs = 60_000;
+  private readonly maxAutomaticPayoutRetries = 5;
+  private readonly payoutRetryBaseDelayMs = 5 * 60 * 1000;
 
   constructor(
     @InjectRepository(Payout)
@@ -40,6 +45,8 @@ export class PayoutsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly fraudRiskRulesService: FraudRiskRulesService,
     private readonly quotaService: QuotaService,
+    private readonly metricsService: MetricsService,
+    private readonly jobsService: JobsService,
   ) {}
 
   // ─── Create ────────────────────────────────────────────────────────────────
@@ -58,6 +65,7 @@ export class PayoutsService {
       questId: createPayoutDto.questId,
       submissionId: createPayoutDto.submissionId,
       status: PayoutStatus.PENDING,
+      maxRetries: this.maxAutomaticPayoutRetries,
     });
 
     return this.payoutRepository.save(payout);
@@ -360,23 +368,97 @@ export class PayoutsService {
     this.logger.error(`Payout ${payout.id} failed: ${errorMessage}`);
 
     payout.retryCount += 1;
+    payout.maxRetries = this.maxAutomaticPayoutRetries;
     payout.failureReason = errorMessage;
 
-    if (payout.canRetry()) {
-      const delayMinutes = Math.pow(2, payout.retryCount) * 5;
-      payout.nextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+    if (this.shouldRetryPayout(payout)) {
+      payout.nextRetryAt = new Date(
+        Date.now() + this.getPayoutRetryDelayMs(payout.retryCount),
+      );
       payout.status = PayoutStatus.RETRY_SCHEDULED;
+      this.recordPayoutFailureMetric(payout, 'retry_scheduled');
       this.logger.log(
         `Payout ${payout.id} scheduled for retry at ${String(payout.nextRetryAt)}`,
       );
     } else {
-      payout.status = PayoutStatus.FAILED;
+      payout.status = PayoutStatus.DEAD_LETTER;
+      payout.nextRetryAt = null;
+      await this.enqueuePayoutDeadLetter(payout, errorMessage);
+      this.emitPayoutDeadLettered(payout, errorMessage);
+      this.recordPayoutFailureMetric(payout, 'dead_letter');
       this.logger.error(
-        `Payout ${payout.id} failed permanently after ${payout.retryCount} attempts`,
+        `Payout ${payout.id} moved to dead letter after ${payout.retryCount} attempts`,
       );
     }
 
     await this.payoutRepository.save(payout);
+  }
+
+  private shouldRetryPayout(payout: Payout): boolean {
+    return payout.retryCount < this.maxAutomaticPayoutRetries;
+  }
+
+  private getPayoutRetryDelayMs(retryCount: number): number {
+    const exponent = Math.max(0, retryCount - 1);
+    return Math.pow(2, exponent) * this.payoutRetryBaseDelayMs;
+  }
+
+  private async enqueuePayoutDeadLetter(
+    payout: Payout,
+    errorMessage: string,
+  ): Promise<void> {
+    try {
+      await this.jobsService.addJob(
+        QUEUES.DEAD_LETTER,
+        {
+          failedJob: {
+            id: payout.id,
+            name: 'payout.settlement',
+            failedReason: errorMessage,
+            data: {
+              payoutId: payout.id,
+              asset: payout.asset,
+              retryCount: payout.retryCount,
+            },
+          },
+        },
+        {
+          jobId: `payout-${payout.id}-dead-letter`,
+          attempts: 1,
+          removeOnComplete: false,
+          removeOnFail: false,
+        },
+      );
+    } catch (deadLetterError) {
+      this.logger.error(
+        `Failed to enqueue dead-letter entry for payout ${payout.id}`,
+        deadLetterError,
+      );
+    }
+  }
+
+  private emitPayoutDeadLettered(payout: Payout, reason: string): void {
+    this.eventEmitter.emit('payout.dead_lettered', {
+      payoutId: payout.id,
+      asset: payout.asset,
+      retryCount: payout.retryCount,
+      reason,
+      deadLetteredAt: new Date(),
+    });
+  }
+
+  private recordPayoutFailureMetric(
+    payout: Payout,
+    outcome: 'retry_scheduled' | 'dead_letter',
+  ): void {
+    const labels = { asset: payout.asset, outcome };
+    this.metricsService.incrementCounter('payout_failures_total', labels);
+
+    if (outcome === 'dead_letter') {
+      this.metricsService.incrementCounter('payout_dead_letter_total', {
+        asset: payout.asset,
+      });
+    }
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
@@ -507,12 +589,12 @@ export class PayoutsService {
         'COALESCE(SUM(CASE WHEN payout.status = :pending THEN payout.amount ELSE 0 END), 0) as "pendingAmount"',
         'COUNT(CASE WHEN payout.status = :completed THEN 1 END) as "completedPayouts"',
         'COALESCE(SUM(CASE WHEN payout.status = :completed THEN payout.amount ELSE 0 END), 0) as "completedAmount"',
-        'COUNT(CASE WHEN payout.status = :failed THEN 1 END) as "failedPayouts"',
+        'COUNT(CASE WHEN payout.status IN (:...failedStatuses) THEN 1 END) as "failedPayouts"',
       ])
       .setParameters({
         pending: PayoutStatus.PENDING,
         completed: PayoutStatus.COMPLETED,
-        failed: PayoutStatus.FAILED,
+        failedStatuses: [PayoutStatus.FAILED, PayoutStatus.DEAD_LETTER],
       })
       .getRawOne();
 
@@ -535,12 +617,14 @@ export class PayoutsService {
 
     if (!payout) throw new NotFoundException('Payout not found');
 
-    if (payout.status !== PayoutStatus.FAILED) {
+    if (
+      ![PayoutStatus.FAILED, PayoutStatus.DEAD_LETTER].includes(payout.status)
+    ) {
       throw new BadRequestException('Only failed payouts can be retried');
     }
 
     payout.retryCount = 0;
-    payout.maxRetries = 3;
+    payout.maxRetries = this.maxAutomaticPayoutRetries;
     payout.status = PayoutStatus.PROCESSING;
     payout.failureReason = null;
     await this.payoutRepository.save(payout);

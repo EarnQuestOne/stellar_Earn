@@ -1,11 +1,12 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import type { Quest } from '@/lib/types/quest';
 import { QuestDifficulty } from '@/lib/types/quest';
 
 import { useFormatter } from '@/lib/hooks/useFormatter';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useQuestSocket } from '@/lib/hooks/useQuestSocket';
 
 interface QuestCardProps {
   quest: Quest;
@@ -68,43 +69,64 @@ function avatarColor(name: string): string {
 
 export const QuestCard = memo(
   ({ quest, onClick, progress }: QuestCardProps) => {
+    const [localQuest, setLocalQuest] = useState<Quest>(quest);
+
+    useEffect(() => {
+      setLocalQuest(quest);
+    }, [quest]);
+
+    useQuestSocket({
+      questId: localQuest.id,
+      onQuestUpdated: (event) => {
+        if (event.questId === localQuest.id) {
+          import('@/lib/api/quests').then(({ getQuestById }) => {
+            getQuestById(localQuest.id).then((updatedQuest) => {
+              setLocalQuest(updatedQuest as Quest);
+            });
+          });
+        }
+      },
+    });
+
     // useFormatter reads navigator.language once and returns pre-bound,
     // memoised formatting functions — no locale prop drilling needed.
     const { deadline, reward, compactReward } = useFormatter();
 
     // Localised deadline label: "Ends in 3 days" | "Expired" | null
-    const timeLabel = quest.deadline ? deadline(quest.deadline) : null;
+    const timeLabel = localQuest.deadline
+      ? deadline(localQuest.deadline)
+      : null;
 
     // Urgency check is now locale-independent (raw ms comparison)
-    const isUrgent = isDeadlineUrgent(quest.deadline);
+    const isUrgent = isDeadlineUrgent(localQuest.deadline);
 
-    const handleClick = () => onClick?.(quest);
+    const handleClick = () => onClick?.(localQuest);
 
     // ── Accessible card label ────────────────────────────────────────────────
     // Previously: raw `${quest.rewardAmount} ${quest.rewardAsset}` interpolation
     // Now: uses formatReward so screen readers announce "500 XLM" not "500xlm"
     // and the number is formatted with locale-correct separators.
-    const formattedRewardAmount = reward(quest.rewardAmount, {
+    const formattedRewardAmount = reward(localQuest.rewardAmount, {
       type: 'custom',
       label: {
-        singular: quest.rewardAsset ?? 'token',
-        plural: quest.rewardAsset ?? 'tokens',
+        singular: localQuest.rewardAsset ?? 'token',
+        plural: localQuest.rewardAsset ?? 'tokens',
       },
     });
 
-    const rewardLabel = `${formattedRewardAmount} and ${quest.xpReward} XP`;
+    const rewardLabel = `${formattedRewardAmount} and ${localQuest.xpReward} XP`;
     const timeInfo = timeLabel ? `, deadline: ${timeLabel}` : '';
-    const cardLabel = `${quest.title}. Category: ${quest.category ?? 'Uncategorized'}, Difficulty: ${quest.difficulty}, Reward: ${rewardLabel}${timeInfo}`;
+    const cardLabel = `${localQuest.title}. Category: ${localQuest.category ?? 'Uncategorized'}, Difficulty: ${localQuest.difficulty}, Reward: ${rewardLabel}${timeInfo}`;
 
     // ── Compact reward for the badge in tight card space ────────────────────
     // Previously: `{quest.rewardAmount} {quest.rewardAsset}` — no number formatting
     // Now: "1.2K XLM" for large values, "500 XLM" for normal values, all
     //      with locale-correct digit grouping.
-    const compactRewardLabel = compactReward(quest.rewardAmount, {
+    const compactRewardLabel = compactReward(localQuest.rewardAmount, {
       type: 'custom',
       label: {
-        singular: quest.rewardAsset ?? 'token',
-        plural: quest.rewardAsset ?? 'tokens',
+        singular: localQuest.rewardAsset ?? 'token',
+        plural: localQuest.rewardAsset ?? 'tokens',
       },
     });
 
@@ -117,29 +139,29 @@ export const QuestCard = memo(
       >
         <div className="quest-card__top" aria-hidden="true">
           <span
-            className={`quest-card__cat ${categoryStyles[quest.category ?? ''] ?? 'quest-card__cat--default'}`}
+            className={`quest-card__cat ${categoryStyles[localQuest.category ?? ''] ?? 'quest-card__cat--default'}`}
           >
-            {quest.category}
+            {localQuest.category}
           </span>
           <span
-            className={`quest-card__diff ${quest.difficulty ? difficultyStyles[quest.difficulty] : ''}`}
+            className={`quest-card__diff ${localQuest.difficulty ? difficultyStyles[localQuest.difficulty] : ''}`}
           >
-            {quest.difficulty}
+            {localQuest.difficulty}
           </span>
         </div>
 
-        <h3 className="quest-card__title">{quest.title}</h3>
+        <h3 className="quest-card__title">{localQuest.title}</h3>
 
-        <p className="quest-card__desc">{quest.description}</p>
+        <p className="quest-card__desc">{localQuest.description}</p>
 
-        {quest.skills && quest.skills.length > 0 && (
+        {localQuest.skills && localQuest.skills.length > 0 && (
           <div
             className="quest-card__skills"
-            aria-label={`Required skills: ${quest.skills.join(', ')}`}
+            aria-label={`Required skills: ${localQuest.skills.join(', ')}`}
           >
-            {quest.skills.map((skill: string, index: number) => (
+            {localQuest.skills.map((skill: string, index: number) => (
               <span
-                key={`${quest.id}-skill-${skill}-${index}`}
+                key={`${localQuest.id}-skill-${skill}-${index}`}
                 className="quest-card__skill-tag"
                 aria-hidden="true"
               >
@@ -213,7 +235,7 @@ export const QuestCard = memo(
                   clipRule="evenodd"
                 />
               </svg>
-              +{quest.xpReward} XP
+              +{localQuest.xpReward} XP
             </span>
           </div>
 
@@ -250,11 +272,11 @@ export const QuestCard = memo(
         </div>
 
         <div className="quest-card__footer" aria-hidden="true">
-          {quest.creator && (
+          {localQuest.creator && (
             <div className="quest-card__creator">
-              {quest.creator.avatarUrl ? (
+              {localQuest.creator.avatarUrl ? (
                 <OptimizedImage
-                  src={quest.creator.avatarUrl}
+                  src={localQuest.creator.avatarUrl}
                   alt=""
                   width={22}
                   height={22}
@@ -266,16 +288,16 @@ export const QuestCard = memo(
                   className="quest-card__avatar"
                   style={{
                     backgroundColor: avatarColor(
-                      quest.creator.name || 'Unknown'
+                      localQuest.creator.name || 'Unknown'
                     ),
                   }}
                   aria-hidden="true"
                 >
-                  {(quest.creator.name || 'UN').slice(0, 2).toUpperCase()}
+                  {(localQuest.creator.name || 'UN').slice(0, 2).toUpperCase()}
                 </span>
               )}
               <span className="quest-card__creator-name">
-                {quest.creator.name || 'Unknown Creator'}
+                {localQuest.creator.name || 'Unknown Creator'}
               </span>
             </div>
           )}
@@ -303,9 +325,9 @@ export const QuestCard = memo(
           className="quest-card__quick-apply"
           onClick={(e) => {
             e.stopPropagation();
-            onClick?.(quest);
+            onClick?.(localQuest);
           }}
-          aria-label={`Quick apply for ${quest.title}`}
+          aria-label={`Quick apply for ${localQuest.title}`}
           tabIndex={-1}
         >
           Quick Apply →

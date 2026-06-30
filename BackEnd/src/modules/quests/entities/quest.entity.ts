@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
+import { QuestDifficulty } from '../enums/quest-difficulty.enum';
 
 @Entity('quests')
 export class Quest {
@@ -67,6 +68,9 @@ export class Quest {
 
   @Column({ type: 'timestamp', nullable: true })
   endDate: Date;
+
+  @Column({ type: 'enum', enum: QuestDifficulty, nullable: true })
+  difficulty: QuestDifficulty;
 
   @OneToMany('Submission', 'quest')
   submissions: any[];

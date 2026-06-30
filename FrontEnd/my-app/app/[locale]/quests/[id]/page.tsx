@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { QuestDetail } from '@/components/quest/QuestDetail';
+import { SubmissionForm } from '@/components/submission/SubmissionForm';
 import { OfflineIndicator } from '@/components/quest/OfflineIndicator';
 import { RetryButton } from '@/components/quest/RetryButton';
 import { getQuestById } from '@/lib/api/quests';
@@ -196,6 +197,23 @@ export default function QuestDetailPage() {
 
         {/* Quest Detail Component */}
         <QuestDetail quest={quest} />
+
+        {/* Submission Form */}
+        <div className="mt-6">
+          <SubmissionForm
+            questId={quest.id}
+            questTitle={quest.title}
+            isExpired={
+              quest.status === 'Expired' ||
+              (quest.deadline != null && new Date(quest.deadline) < new Date())
+            }
+            isFull={
+              quest.maxParticipants != null &&
+              quest.currentParticipants != null &&
+              quest.currentParticipants >= quest.maxParticipants
+            }
+          />
+        </div>
       </div>
     </AppLayout>
   );

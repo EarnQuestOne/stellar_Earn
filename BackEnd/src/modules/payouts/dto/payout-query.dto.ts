@@ -10,6 +10,7 @@ export enum PayoutStatus {
   PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
+  DEAD_LETTER = 'dead_letter',
   CANCELLED = 'cancelled',
   RETRY_SCHEDULED = 'retry_scheduled',
   AWAITING_APPROVAL = 'awaiting_approval',

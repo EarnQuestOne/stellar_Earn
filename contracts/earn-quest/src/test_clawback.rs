@@ -9,8 +9,6 @@
 //!   6. Execute fails when the caller is not a SuperAdmin
 //!   7. Second SuperAdmin can execute and the record is removed
 
-#![cfg(test)]
-
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{symbol_short, Address, Env};

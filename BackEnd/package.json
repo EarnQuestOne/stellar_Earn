@@ -20,8 +20,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:integration": "jest --config ./test/jest-integration.json",
+    "test:e2e": "jest --clearCache && jest --config ./test/jest-e2e.json",
+    "test:integration": "jest --clearCache && jest --config ./test/jest-integration.json",
     "db:backup": "ts-node scripts/db-backup.ts",
     "db:rollback": "ts-node scripts/db-rollback.ts",
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
@@ -151,6 +151,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!uuid/)"
+    ],
     "collectCoverageFrom": [
       "src/**/*.(t|j)s"
     ],
@@ -158,7 +161,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^#src/(.*)$": "<rootDir>/src/$1",
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^test/(.*)$": "<rootDir>/test/$1"
     }
   },
   "overrides": {

@@ -10,6 +10,7 @@ import { IdempotencyService } from './services/idempotency.service';
 import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
 import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { QuotaModule } from '../quota/quota.module';
+import { JobsModule } from '../jobs/jobs.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { QuotaModule } from '../quota/quota.module';
     ScheduleModule.forRoot(),
     EventEmitterModule,
     QuotaModule,
+    JobsModule,
   ],
   controllers: [PayoutsController],
   providers: [

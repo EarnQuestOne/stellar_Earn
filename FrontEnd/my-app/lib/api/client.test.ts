@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { tokenManager, apiClient } from './client';
+import { tokenManager, getApiClient } from './client';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/tests/mocks/server';
 
@@ -69,7 +69,7 @@ describe('response interceptor - refresh failure', () => {
     );
 
     try {
-      await apiClient.get('/auth/profile');
+      await getApiClient().get('/auth/profile');
     } catch {
       // expected
     }
@@ -97,7 +97,7 @@ describe('response interceptor - refresh failure', () => {
     );
 
     try {
-      await apiClient.get('/auth/profile');
+      await getApiClient().get('/auth/profile');
     } catch {
       // expected
     }
@@ -107,5 +107,38 @@ describe('response interceptor - refresh failure', () => {
     expect(event.detail).toEqual({ reason: 'token_refresh_failed' });
 
     window.removeEventListener('session-expired', eventSpy);
+  });
+});
+
+describe('getApiClient – lazy initialisation (FE-021)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns the same instance on repeated calls (singleton)', () => {
+    const first = getApiClient();
+    const second = getApiClient();
+    expect(first).toBe(second);
+  });
+
+  it('creates the client with the correct baseURL', () => {
+    const client = getApiClient();
+    expect(client.defaults.baseURL).toBe('http://localhost:3000/api/v1');
+  });
+
+  it('module import does not throw even when env var is unset', async () => {
+    const original = process.env.NEXT_PUBLIC_API_BASE_URL;
+    try {
+      delete (process.env as Record<string, string | undefined>)
+        .NEXT_PUBLIC_API_BASE_URL;
+
+      // Re-import the module – should not throw
+      const mod = await import('./client');
+      expect(typeof mod.getApiClient).toBe('function');
+    } finally {
+      if (original !== undefined) {
+        process.env.NEXT_PUBLIC_API_BASE_URL = original;
+      }
+    }
   });
 });

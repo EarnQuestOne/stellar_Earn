@@ -157,6 +157,51 @@ To make these SLOs measurable, production monitoring should capture:
 
 If these fields are not yet emitted consistently, treat instrumentation work as a dependency for claiming SLO compliance.
 
+## Gas Budget Constants
+
+Gas budget targets are defined in `src/gas_budget.rs` and validated by `tests/gas_benchmarks.rs`.
+Each constant is set to the observed CPU instruction ceiling plus a 20% safety margin.
+
+### Benchmark Methodology
+
+- Environment: Soroban SDK 21.7.4 test environment (`Env::default()`)
+- Budget tracking: `env.budget().reset_default()` before each call; `cpu_instruction_cost()` delta measured after
+- The Soroban simulation CPU cost model matches testnet gas metering exactly
+- Multiple isolated test runs confirm the environment is deterministic (no variance)
+- Margin applied to the observed peak: `budget = ceil(observed * 1.20)`
+
+### Measurement Results (2026-06-26, soroban-sdk 21.7.4)
+
+| Entrypoint | Symbol | Raw Baseline (CU) | Budget (+20%) |
+| --- | --- | --- | --- |
+| `initialize` | `init` | 284,753 | 341,704 |
+| `register_quest` | `reg_qst` | 341,268 | 409,522 |
+| `submit_proof` | `sub_prf` | 386,946 | 464,336 |
+| `approve_submission` | `appr_sub` | 438,714 | 526,457 |
+| `claim_reward` | `clm_rwd` | 767,838 | 921,406 |
+
+### Re-benchmarking Procedure
+
+Run the benchmark suite and pass `--nocapture` to see the measurement output:
+
+```
+cargo test -p earn_quest -- gas_benchmarks --nocapture
+```
+
+After any contract change that may affect instruction counts:
+
+1. Run the benchmark suite and note the "Measured cost" lines in the output
+2. Apply +20% margin and update `gas_budget::default_targets()` in `src/gas_budget.rs`
+3. Update the measurement table above with the new values and date
+4. Update `tests/gas_baselines.json` by running:
+   `UPDATE_GAS_BASELINES=1 cargo test -p earn_quest test_gas_regression_check`
+
+### Gas Budget CI Policy
+
+- `tests/gas_benchmarks.rs` asserts each entrypoint stays within its budget constant
+- `tests/test_gas_regression.rs` detects regressions against the pinned `tests/gas_baselines.json` baseline (max 5% increase allowed)
+- A failing benchmark or regression test blocks merge until constants are recalibrated
+
 ## Change Management
 
 Review this document when any of the following changes:

@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::{EarnQuestContract, EarnQuestContractClient};
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{Address, Env, String};

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { QuestCard } from './QuestCard';
 import { EmptyQuestState } from './EmptyQuestState';
 import type { Quest } from '@/lib/types/quest';
@@ -120,11 +121,28 @@ export const QuestList = memo(
       );
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const buttons = Array.from(
+        e.currentTarget.querySelectorAll('button')
+      ) as HTMLButtonElement[];
+      const idx = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      if (idx === -1) return;
+      if (e.key === 'ArrowDown' && idx < buttons.length - 1) {
+        e.preventDefault();
+        buttons[idx + 1].focus();
+      } else if (e.key === 'ArrowUp' && idx > 0) {
+        e.preventDefault();
+        buttons[idx - 1].focus();
+      }
+    };
+
     return (
       <div
         className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
         role="list"
         aria-label={`${quests.length} quest${quests.length !== 1 ? 's' : ''} found`}
+        onKeyDown={handleKeyDown}
       >
         {quests.map((quest) => (
           <div key={quest.id} role="listitem">

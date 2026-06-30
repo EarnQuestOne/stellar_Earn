@@ -5,6 +5,7 @@ mod dispute;
 pub mod errors;
 mod escrow;
 mod events;
+pub mod gas_budget;
 mod init;
 mod oracle;
 mod payout;
@@ -1101,12 +1102,7 @@ impl EarnQuestContract {
     }
 
     /// Returns quests for a numeric category.
-    pub fn get_quests_by_category(
-        env: Env,
-        category: u32,
-        offset: u32,
-        limit: u32,
-    ) -> Vec<Quest> {
+    pub fn get_quests_by_category(env: Env, category: u32, offset: u32, limit: u32) -> Vec<Quest> {
         quest::get_quests_by_category(&env, category, offset, limit)
     }
 
