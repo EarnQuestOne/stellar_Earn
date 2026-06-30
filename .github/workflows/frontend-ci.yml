@@ -58,6 +58,13 @@ jobs:
       - name: Tests
         run: npm run test
 
+      #  Install Playwright browser and run critical E2E journeys
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: npm run test:e2e -- --project=chromium
+
       #  Build Next.js app
       - name: Build
         run: npm run build

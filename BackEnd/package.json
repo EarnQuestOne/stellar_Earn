@@ -24,6 +24,7 @@
     "test:integration": "jest --clearCache && jest --config ./test/jest-integration.json",
     "db:backup": "ts-node scripts/db-backup.ts",
     "db:rollback": "ts-node scripts/db-rollback.ts",
+    "generate:openapi": "nest start --entryFile generate-openapi",
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
     "migration:generate": "bun run typeorm -- migration:generate",
     "migration:create": "typeorm migration:create",

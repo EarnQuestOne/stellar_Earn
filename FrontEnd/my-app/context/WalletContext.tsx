@@ -24,6 +24,27 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+const createMockWalletKit = () => {
+  const mockAddress =
+    (typeof window !== 'undefined' &&
+      (window as Window & {
+        __PLAYWRIGHT_MOCK_WALLET_ADDRESS__?: string;
+      }).__PLAYWRIGHT_MOCK_WALLET_ADDRESS__) ||
+    'GCLN3QY2X7V4R5J6K8M9P0Q1R2S3T4U5V6W7X8Y9Z0A1B2C3D4E5F6G7H8J9K';
+
+  return {
+    setWallet: async () => undefined,
+    getAddress: async () => ({ address: mockAddress }),
+    disconnect: async () => undefined,
+    sign: async ({ payload }: { payload: string }) => ({
+      result: `mock-signature:${payload}`,
+    }),
+    signTransaction: async (xdr: string) => ({
+      signedTxXdr: `mock-signed:${xdr}`,
+    }),
+  };
+};
+
 export const useWallet = () => {
   const context = useContext(WalletContext);
   if (!context)
@@ -52,6 +73,17 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initKit = async () => {
+      const isMockWalletEnabled =
+        typeof window !== 'undefined' &&
+        (window as Window & {
+          __PLAYWRIGHT_MOCK_WALLET__?: string;
+        }).__PLAYWRIGHT_MOCK_WALLET__ === 'true';
+
+      if (isMockWalletEnabled) {
+        setKit(createMockWalletKit());
+        return;
+      }
+
       try {
         const walletKitModule = await import('@creit.tech/stellar-wallets-kit');
         const kitInstance = new walletKitModule.StellarWalletsKit({

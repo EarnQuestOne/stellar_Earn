@@ -36,13 +36,15 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 import { TraceInterceptor } from './modules/trace/trace.interceptor';
 import { EventsModule } from './events/events.module';
 
+const isOpenApiGeneration = process.env.GENERATE_OPENAPI === 'true';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(dataSourceOptions),
+    ...(isOpenApiGeneration ? [] : [TypeOrmModule.forRoot(dataSourceOptions)]),
     LoggerModule.forRoot(),
     EventsModule,
     AdminModule,

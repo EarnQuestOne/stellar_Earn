@@ -44,12 +44,28 @@ jobs:
       - name: TypeScript compilation
         run: npm run build
 
+      - name: Generate OpenAPI spec
+        run: npm run generate:openapi
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-dist
           path: BackEnd/dist/
           retention-days: 7
+
+      - name: Upload OpenAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-openapi-spec
+          path: BackEnd/docs/openapi.json
+          retention-days: 7
+
+      - name: Check OpenAPI spec diff
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --exit-code -- docs/openapi.json
+        shell: bash
 
       - name: Lint
         run: npm run lint
