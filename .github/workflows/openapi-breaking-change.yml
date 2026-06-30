@@ -1,0 +1,178 @@
+name: OpenAPI Breaking Change Detection
+
+on:
+  pull_request:
+    paths:
+      - "BackEnd/src/**"
+      - "BackEnd/package.json"
+      - ".github/workflows/openapi-breaking-change.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-breaking-changes:
+    name: Diff OpenAPI Spec
+    runs-on: ubuntu-latest
+
+    env:
+      # Minimal env so NestJS can bootstrap without a real database/redis
+      NODE_ENV: production
+      JWT_SECRET: ci-placeholder-secret-32-chars-ok
+      JWT_REFRESH_SECRET: ci-placeholder-refresh-secret-ok
+      JWT_ACCESS_TOKEN_EXPIRATION: 15m
+      JWT_REFRESH_TOKEN_EXPIRATION: 7d
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      REDIS_URL: redis://localhost:6379
+      STELLAR_NETWORK: testnet
+      # Silence optional integrations
+      SENTRY_DSN: ""
+      OTEL_SDK_DISABLED: "true"
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need full history to check out base branch
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-backend-npm-${{ hashFiles('BackEnd/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-npm-
+
+      # ── Generate spec for the PR branch ────────────────────────────────────
+      - name: Install dependencies (PR branch)
+        run: npm ci
+        working-directory: BackEnd
+
+      - name: Generate OpenAPI spec (PR branch)
+        run: npx ts-node -r tsconfig-paths/register scripts/generate-openapi.ts openapi-pr.json
+        working-directory: BackEnd
+
+      # ── Switch to base branch and generate its spec ────────────────────────
+      - name: Checkout base branch (${{ github.base_ref }})
+        run: git checkout origin/${{ github.base_ref }}
+
+      - name: Install dependencies (base branch)
+        run: npm ci
+        working-directory: BackEnd
+
+      - name: Generate OpenAPI spec (base branch)
+        run: npx ts-node -r tsconfig-paths/register scripts/generate-openapi.ts openapi-base.json
+        working-directory: BackEnd
+
+      # ── Restore PR files so artifacts are accessible ───────────────────────
+      - name: Restore PR branch files
+        run: git checkout ${{ github.sha }} -- BackEnd/openapi-pr.json
+
+      # ── Install oasdiff and run the diff ───────────────────────────────────
+      - name: Install oasdiff
+        run: |
+          curl -sSL https://raw.githubusercontent.com/tufin/oasdiff/main/install.sh | sh
+          echo "$HOME/.oasdiff/bin" >> $GITHUB_PATH
+
+      - name: Detect breaking changes
+        id: diff
+        run: |
+          set +e
+          oasdiff breaking \
+            BackEnd/openapi-base.json \
+            BackEnd/openapi-pr.json \
+            --format text > breaking-changes.txt 2>&1
+          EXIT_CODE=$?
+          set -e
+
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+          if [ -s breaking-changes.txt ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR comment with breaking changes
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changes = fs.readFileSync('breaking-changes.txt', 'utf8');
+            const body = [
+              '## ⚠️ OpenAPI Breaking Changes Detected',
+              '',
+              'The following breaking changes were found between `${{ github.base_ref }}` and this PR:',
+              '',
+              '```',
+              changes.trim(),
+              '```',
+              '',
+              'Please review these changes. If they are intentional, bump the API version and update the changelog.',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.startsWith('## ⚠️ OpenAPI Breaking Changes Detected')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Upload spec artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-specs-${{ github.run_id }}
+          path: |
+            BackEnd/openapi-base.json
+            BackEnd/openapi-pr.json
+            breaking-changes.txt
+          retention-days: 14
+
+      - name: Fail on breaking changes
+        if: steps.diff.outputs.exit_code != '0'
+        run: |
+          echo "::error::Breaking API changes detected. See the PR comment and breaking-changes.txt artifact for details."
+          exit 1
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          echo "## OpenAPI Breaking Change Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.diff.outputs.exit_code }}" = "0" ]; then
+            echo "✅ No breaking changes detected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Breaking changes were found — see artifact \`breaking-changes.txt\`." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat breaking-changes.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi

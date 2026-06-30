@@ -38,7 +38,8 @@
     "verify:indexes": "ts-node scripts/verify-indexes.ts",
     "schema:sync": "bun run typeorm -- schema:sync",
     "schema:drop": "bun run typeorm -- schema:drop",
-    "schema:log": "bun run typeorm -- schema:log"
+    "schema:log": "bun run typeorm -- schema:log",
+    "generate:openapi": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts openapi.json"
   },
   "dependencies": {
     "@bull-board/api": "^6.19.0",
