@@ -10,7 +10,16 @@ const withAnalyzer = withBundleAnalyzer({
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
   async headers() {
-    return cspHeaders;
+    const isDev = process.env.NODE_ENV !== 'production';
+    const headerKey = isDev ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+    // Replace the CSP header key based on environment
+    const modifiedHeaders = cspHeaders.map(h => {
+      if (h.key === 'Content-Security-Policy') {
+        return { key: headerKey, value: h.value };
+      }
+      return h;
+    });
+    return [{ source: '/(.*)', headers: modifiedHeaders }];
   },
 };
 
