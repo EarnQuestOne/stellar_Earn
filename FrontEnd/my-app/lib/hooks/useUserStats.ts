@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type {
-  DashboardData,
-  UserStats,
   Quest,
   Submission,
   EarningsData,
@@ -16,6 +14,7 @@ import {
   fetchEarningsHistory,
   fetchBadges,
   fetchDashboardData,
+  type DashboardData,
 } from '../api/user';
 import { useAuth } from '@/context/AuthContext';
 

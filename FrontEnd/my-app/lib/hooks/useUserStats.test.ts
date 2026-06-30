@@ -23,6 +23,8 @@ const mockUser = {
 };
 
 const mockDashboardData = {
+  source: 'mock',
+  exportPath: '/api/v1/users/dashboard/export',
   stats: { totalXp: 100, level: 2, questsCompleted: 5 },
   activeQuests: [],
   recentSubmissions: [],

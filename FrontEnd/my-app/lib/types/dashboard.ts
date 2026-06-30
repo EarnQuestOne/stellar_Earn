@@ -22,10 +22,3 @@ export interface Badge {
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
 }
 
-export interface DashboardData {
-  stats: UserStats;
-  activeQuests: Quest[];
-  recentSubmissions: Submission[];
-  earningsHistory: EarningsData[];
-  badges: Badge[];
-}
