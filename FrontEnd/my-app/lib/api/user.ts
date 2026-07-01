@@ -38,9 +38,18 @@ export type {
   Submission,
   EarningsData,
   Badge,
-  DashboardData,
 } from '../types/dashboard';
-import type { EarningsData, Badge, DashboardData } from '../types/dashboard';
+import type { EarningsData, Badge, UserStats, Quest, Submission } from '../types/dashboard';
+
+export interface DashboardData {
+  stats: UserStats;
+  activeQuests: Quest[];
+  recentSubmissions: Submission[];
+  earningsHistory: EarningsData[];
+  badges: Badge[];
+  source?: string;
+  exportPath?: string;
+}
 
 const dashboardDelay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -343,6 +352,8 @@ export async function fetchDashboardData(
     ]);
 
   return {
+    source: 'mock',
+    exportPath: '/api/v1/users/dashboard/export',
     stats: mockUserStats,
     activeQuests,
     recentSubmissions,
