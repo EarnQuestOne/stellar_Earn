@@ -8,13 +8,13 @@ describe('ClientOnly Component', () => {
   });
 
   it('should render nothing on initial render', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <ClientOnly>
         <div>Client Content</div>
       </ClientOnly>
     );
 
-    expect(container.firstChild).toBeEmptyDOMElement();
+    expect(_container.firstChild).toBeEmptyDOMElement();
   });
 
   it('should render children after hydration', async () => {
@@ -30,7 +30,7 @@ describe('ClientOnly Component', () => {
   });
 
   it('should render fallback on initial server render', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <ClientOnly fallback={<div data-testid="fallback">Loading...</div>}>
         <div>Client Content</div>
       </ClientOnly>

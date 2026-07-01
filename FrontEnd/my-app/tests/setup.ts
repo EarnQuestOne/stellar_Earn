@@ -101,8 +101,7 @@ afterEach(() => {
 import 'vitest';
 
 declare module 'vitest' {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interface Assertion<T = any> {
+  interface Assertion {
     toBeInTheDocument(...args: unknown[]): void;
     toBeEmptyDOMElement(...args: unknown[]): void;
     toHaveTextContent(...args: unknown[]): void;

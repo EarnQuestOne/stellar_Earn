@@ -8,13 +8,13 @@ describe('HydrationBoundary Component', () => {
   });
 
   it('should render nothing initially (server render)', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <HydrationBoundary>
         <div>Client Content</div>
       </HydrationBoundary>
     );
 
-    expect(container.firstChild).toBeEmptyDOMElement();
+    expect(_container.firstChild).toBeEmptyDOMElement();
   });
 
   it('should render children after hydration', async () => {
@@ -30,7 +30,7 @@ describe('HydrationBoundary Component', () => {
   });
 
   it('should render fallback on server', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <HydrationBoundary
         fallback={<div data-testid="fallback">Loading...</div>}
       >

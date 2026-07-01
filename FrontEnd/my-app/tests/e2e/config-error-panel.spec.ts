@@ -24,6 +24,7 @@ test.describe('Config Error Panel - Visual Tests', () => {
     // Mock missing environment variable by intercepting any API calls
     // that might depend on NEXT_PUBLIC_API_BASE_URL
     await context.addInitScript(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).MISSING_ENV_TEST = true;
     });
 

@@ -1,14 +1,7 @@
 export type QuestStatus =
-  | 'draft'
-  | 'active'
-  | 'paused'
-  | 'completed'
-  | 'cancelled';
+  'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
 export type QuestDifficulty =
-  | 'beginner'
-  | 'intermediate'
-  | 'advanced'
-  | 'expert';
+  'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type QuestCategory =
   | 'Development'
   | 'Blockchain'
