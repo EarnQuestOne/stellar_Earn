@@ -45,7 +45,7 @@ impl Oracle {
         if price_data.timestamp > current_time {
             return Err(Error::InvalidOracleData);
         }
-        let age = current_time - price_data.timestamp;
+        let age = current_time.saturating_sub(price_data.timestamp);
         if age > oracle_config.max_age_seconds || age > request.max_age_seconds {
             return Err(Error::StaleOracleData);
         }
@@ -71,7 +71,7 @@ impl Oracle {
         let mut total_sources = 0;
 
         for config in oracle_configs.iter() {
-            total_sources += 1;
+            total_sources = total_sources.saturating_add(1);
 
             if let Ok(price_data) = Self::get_price(env, &config, request) {
                 valid_prices.push_back((price_data, config.min_confidence));
@@ -165,8 +165,8 @@ impl Oracle {
             let w = U256::from_u32(env, weight);
             let weighted_price = price_data.price.mul(&w);
             weighted_sum = weighted_sum.add(&weighted_price);
-            total_weight += weight;
-            confidence_sum += price_data.confidence;
+            total_weight = total_weight.saturating_add(weight);
+            confidence_sum = confidence_sum.saturating_add(price_data.confidence);
         }
 
         if total_weight == 0 {
@@ -174,7 +174,7 @@ impl Oracle {
         }
 
         let weighted_price = weighted_sum.div(&U256::from_u32(env, total_weight));
-        let avg_confidence = confidence_sum / valid_prices.len();
+        let avg_confidence = confidence_sum.saturating_div(valid_prices.len());
 
         Ok(AggregatedPrice {
             base_asset: request.base_asset.clone(),
@@ -217,7 +217,7 @@ impl Oracle {
 
         // Check if price is not stale
         let current_time = env.ledger().timestamp();
-        if current_time - response.price_data.timestamp > request.max_age_seconds {
+        if current_time.saturating_sub(response.price_data.timestamp) > request.max_age_seconds {
             return Err(Error::StaleOracleData);
         }
 
@@ -242,11 +242,11 @@ impl Oracle {
         }
 
         if from_decimals > to_decimals {
-            let diff = from_decimals - to_decimals;
-            Ok(price.div(&U256::from_u32(env, 10u32.pow(diff))))
+            let diff = from_decimals.saturating_sub(to_decimals);
+            Ok(price.div(&U256::from_u32(env, 10u32.saturating_pow(diff))))
         } else {
-            let diff = to_decimals - from_decimals;
-            Ok(price.mul(&U256::from_u32(env, 10u32.pow(diff))))
+            let diff = to_decimals.saturating_sub(from_decimals);
+            Ok(price.mul(&U256::from_u32(env, 10u32.saturating_pow(diff))))
         }
     }
 

@@ -466,7 +466,7 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
 /// * Type-safe increment operation
 pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     let mut quest = get_quest(env, id)?;
-    quest.total_claims += 1;
+    quest.total_claims = quest.total_claims.saturating_add(1);
     set_quest(env, id, &quest);
     Ok(())
 }
@@ -728,7 +728,7 @@ pub fn remove_oracle_config(env: &Env, oracle_address: &Address) -> Result<(), E
             addrs.remove(i);
             break;
         }
-        i += 1;
+        i = i.saturating_add(1);
     }
     set_oracle_addresses(env, &addrs);
     Ok(())
@@ -1148,7 +1148,7 @@ pub fn remove_quest_from_category_index(env: &Env, category: u32, id: &Symbol) {
                 .set(&DataKey::QuestCategory(category), &ids);
             return;
         }
-        i += 1;
+        i = i.saturating_add(1);
     }
 }
 
@@ -1401,7 +1401,7 @@ pub fn remove_badge_type_id(env: &Env, id: &Symbol) {
             env.storage().instance().set(&DataKey::BadgeTypeIds, &ids);
             return;
         }
-        i += 1;
+        i = i.saturating_add(1);
     }
 }
 
@@ -1413,7 +1413,7 @@ pub fn list_badge_types(env: &Env) -> Vec<BadgeType> {
         if let Ok(bt) = get_badge_type(env, &ids.get(i).unwrap()) {
             out.push_back(bt);
         }
-        i += 1;
+        i = i.saturating_add(1);
     }
     out
 }

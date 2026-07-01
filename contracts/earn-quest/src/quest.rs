@@ -357,9 +357,9 @@ pub fn get_quests_by_status(
                 if &quest.status == status {
                     if matched >= offset {
                         results.push_back(quest);
-                        count += 1;
+                        count = count.saturating_add(1);
                     }
-                    matched += 1;
+                    matched = matched.saturating_add(1);
                 }
             }
         }
@@ -398,9 +398,9 @@ pub fn get_quests_by_creator(env: &Env, creator: &Address, offset: u32, limit: u
                 if &quest.creator == creator {
                     if matched >= offset {
                         results.push_back(quest);
-                        count += 1;
+                        count = count.saturating_add(1);
                     }
-                    matched += 1;
+                    matched = matched.saturating_add(1);
                 }
             }
         }
@@ -425,9 +425,9 @@ pub fn get_quests_by_category(env: &Env, category: u32, offset: u32, limit: u32)
                 if quest.category == category {
                     if matched >= offset {
                         results.push_back(quest);
-                        count += 1;
+                        count = count.saturating_add(1);
                     }
-                    matched += 1;
+                    matched = matched.saturating_add(1);
                 }
             }
         }
@@ -488,9 +488,9 @@ pub fn get_quests_by_reward_range(
                 if quest.reward_amount >= min_reward && quest.reward_amount <= max_reward {
                     if matched >= offset {
                         results.push_back(quest);
-                        count += 1;
+                        count = count.saturating_add(1);
                     }
-                    matched += 1;
+                    matched = matched.saturating_add(1);
                 }
             }
         }

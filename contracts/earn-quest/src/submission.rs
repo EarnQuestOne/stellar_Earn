@@ -148,8 +148,6 @@ pub fn submit_proof(
     validation::validate_quest_is_active(&quest.status)?;
     // Validate quest has not expired
     validation::validate_quest_not_expired(env, quest.deadline)?;
-    // Validate submitter address
-    validation::validate_badge_count(0)?; // Example: badge count check for submitter
 
     let submission = Submission {
         quest_id: quest_id.clone(),
@@ -225,7 +223,9 @@ pub fn validate_claim_amount(
 ) -> Result<i128, Error> {
     validation::validate_reward_amount(amount)?;
 
-    let remaining = quest.reward_amount - submission.claimed_amount;
+    let remaining = quest
+        .reward_amount
+        .saturating_sub(submission.claimed_amount);
     if amount > remaining {
         return Err(Error::InvalidRewardAmount);
     }
@@ -378,8 +378,10 @@ pub fn approve_submissions_batch(
                 if !escrow.is_active {
                     return Err(Error::EscrowInactive);
                 }
-                let available =
-                    escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+                let available = escrow
+                    .total_deposited
+                    .saturating_sub(escrow.total_paid_out)
+                    .saturating_sub(escrow.total_refunded);
                 if available < quest.reward_amount {
                     return Err(Error::InsufficientEscrow);
                 }

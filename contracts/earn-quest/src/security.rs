@@ -109,7 +109,7 @@ pub fn emergency_approve_unpause(env: &Env, caller: &Address) -> Result<(), Erro
     if approvals >= threshold {
         let now = env.ledger().timestamp();
         let tl = storage::get_unpause_timelock_seconds(env);
-        let scheduled = now + tl;
+        let scheduled = now.saturating_add(tl);
         storage::set_scheduled_unpause_time(env, scheduled);
         events::timelock_scheduled(env, scheduled);
     }
