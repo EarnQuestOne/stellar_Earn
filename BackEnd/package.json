@@ -45,6 +45,7 @@
     "schema:sync": "bun run typeorm -- schema:sync",
     "schema:drop": "bun run typeorm -- schema:drop",
     "schema:log": "bun run typeorm -- schema:log",
+    "generate:openapi": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts openapi.json"
     "check:toolchain": "ts-node scripts/check-toolchain.ts",
     "onboarding": "ts-node scripts/check-toolchain.ts"
   },
