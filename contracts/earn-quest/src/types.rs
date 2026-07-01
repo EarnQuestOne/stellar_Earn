@@ -459,6 +459,24 @@ pub struct OracleResponse {
     pub response_timestamp: u64,
 }
 
+/// Price data pushed into the contract by an OracleAdmin via `set_price`.
+///
+/// `pushed_at` records the ledger timestamp at the moment of the push,
+/// while `price.timestamp` reflects the time the price was signed off by
+/// the upstream feed. Keeping both lets the circuit-breaker distinguish
+/// between an old push that was just refreshed (`price.timestamp` recent,
+/// `pushed_at` recent) and a push that has aged out.
+///
+/// `pushed_by` records the OracleAdmin address that authorised the push
+/// for audit/accountability.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PushedPrice {
+    pub price: PriceData,
+    pub pushed_at: u64,
+    pub pushed_by: Address,
+}
+
 /// Aggregated price result from multiple oracle sources.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]

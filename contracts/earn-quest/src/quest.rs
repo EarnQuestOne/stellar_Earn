@@ -83,6 +83,10 @@ pub fn register_quest_with_category(
     validation::validate_deadline(env, deadline)?;
     validation::validate_addresses_distinct(creator, verifier)?;
 
+    // Circuit-breaker (issue #1710): halt registration if the reward asset's
+    // price feed is stale or missing. No-op when TTL == 0 (default).
+    validation::validate_price_feed_fresh(env, reward_asset)?;
+
     // Check minimum creator level requirement
     let min_level = storage::get_min_creator_level(env);
     if min_level > 0 && !storage::is_creator_whitelisted(env, creator) {

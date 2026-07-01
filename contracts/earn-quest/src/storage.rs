@@ -1,8 +1,9 @@
 use crate::errors::Error;
 use crate::types::{
     BadgeType, Commitment, CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig,
-    PlatformStats, Quest, QuestMetadata, QuestMetadataCore, QuestMetadataExtended, QuestStatus,
-    Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
+    PushedPrice, PlatformStats, PriceData, Quest, QuestMetadata, QuestMetadataCore,
+    QuestMetadataExtended, QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore,
+    VerifierStake,
 };
 
 use crate::validation;
@@ -103,6 +104,12 @@ pub enum DataKey {
     ClawbackPending(Symbol, Address),
     /// Category index keyed by a numeric category, storing quest ids in insertion order
     QuestCategory(u32),
+    /// Latest price data pushed by an OracleAdmin, keyed by base asset address.
+    /// `pushed_at` records the ledger timestamp when the push happened so the
+    /// circuit-breaker can detect stale prices.
+    PushedPrice(Address),
+    /// Configurable price-feed staleness TTL in seconds. 0 disables the breaker.
+    PriceFeedTtl,
 }
 
 //================================================================================
@@ -1511,9 +1518,11 @@ mod layout_tests {
         "CreatorWhitelist",
         "ClawbackPending",
         "QuestCategory",
+        "PushedPrice",
+        "PriceFeedTtl",
     ];
 
-    const EXPECTED_VARIANT_COUNT: usize = 46;
+    const EXPECTED_VARIANT_COUNT: usize = 48;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
@@ -1568,6 +1577,8 @@ mod layout_tests {
         keys.push_back(DataKey::CreatorWhitelist(addr.clone()));
         keys.push_back(DataKey::ClawbackPending(quest_id.clone(), addr.clone()));
         keys.push_back(DataKey::QuestCategory(1));
+        keys.push_back(DataKey::PushedPrice(addr.clone()));
+        keys.push_back(DataKey::PriceFeedTtl);
         keys
     }
 
@@ -1652,4 +1663,52 @@ pub fn delete_clawback(env: &Env, quest_id: &Symbol, recipient: &Address) {
         quest_id.clone(),
         recipient.clone(),
     ));
+}
+
+//================================================================================
+// Pushed Price Storage (set_price entrypoint)
+//================================================================================
+
+/// Returns true if a pushed price exists for `base_asset` (i.e. an OracleAdmin
+/// has called `set_price` at least once for this asset).
+pub fn has_pushed_price(env: &Env, base_asset: &Address) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::PushedPrice(base_asset.clone()))
+}
+
+/// Retrieves the latest `PushedPrice` for `base_asset`.
+pub fn get_pushed_price(env: &Env, base_asset: &Address) -> Option<PushedPrice> {
+    env.storage()
+        .instance()
+        .get(&DataKey::PushedPrice(base_asset.clone()))
+}
+
+/// Stores (or overwrites) the latest pushed price for `base_asset`.
+pub fn set_pushed_price(env: &Env, base_asset: &Address, pushed: &PushedPrice) {
+    env.storage()
+        .instance()
+        .set(&DataKey::PushedPrice(base_asset.clone()), pushed);
+}
+
+/// Returns the configured price-feed staleness TTL in seconds.
+///
+/// A TTL of `0` means the circuit-breaker is disabled (no quest-registration
+/// check is performed).  The default after contract init is `0`.
+pub fn get_price_feed_ttl(env: &Env) -> u64 {
+    env.storage()
+        .instance()
+        .get(&DataKey::PriceFeedTtl)
+        .unwrap_or(0u64)
+}
+
+/// Sets the price-feed staleness TTL in seconds.
+///
+/// Setting `ttl_seconds = 0` disables the circuit-breaker; setting a
+/// positive value activates enforcement (quest registration fails with
+/// `StaleOracleData` when no fresh pushed price exists for the reward asset).
+pub fn set_price_feed_ttl(env: &Env, ttl_seconds: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::PriceFeedTtl, &ttl_seconds);
 }
