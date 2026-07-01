@@ -103,6 +103,10 @@ pub enum DataKey {
     ClawbackPending(Symbol, Address),
     /// Category index keyed by a numeric category, storing quest ids in insertion order
     QuestCategory(u32),
+    /// Ledger timestamp of the most recent contract unpause
+    LastUnpauseTimestamp,
+    /// Minimum seconds that must elapse after unpause before the contract can be paused again
+    PauseCooldownSeconds,
 }
 
 //================================================================================
@@ -912,6 +916,32 @@ pub fn clear_unpause_approvals(env: &Env) {
     env.storage()
         .instance()
         .remove(&DataKey::ScheduledUnpauseTime);
+}
+
+/// Default minimum seconds between unpause and the next pause (1 hour).
+const DEFAULT_PAUSE_COOLDOWN_SECONDS: u64 = 3600;
+
+pub fn set_last_unpause_timestamp(env: &Env, ts: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::LastUnpauseTimestamp, &ts);
+}
+
+pub fn get_last_unpause_timestamp(env: &Env) -> Option<u64> {
+    env.storage().instance().get(&DataKey::LastUnpauseTimestamp)
+}
+
+pub fn set_pause_cooldown_seconds(env: &Env, seconds: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::PauseCooldownSeconds, &seconds);
+}
+
+pub fn get_pause_cooldown_seconds(env: &Env) -> u64 {
+    env.storage()
+        .instance()
+        .get(&DataKey::PauseCooldownSeconds)
+        .unwrap_or(DEFAULT_PAUSE_COOLDOWN_SECONDS)
 }
 
 fn inc_unpause_approval_count(env: &Env) {
