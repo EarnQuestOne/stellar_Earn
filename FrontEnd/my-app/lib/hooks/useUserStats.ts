@@ -50,9 +50,9 @@ export function useUserStats(): UseUserStatsReturn {
     setError(null);
 
     try {
-      const data = (await fetchDashboardData(
+      const data = await fetchDashboardData(
         user.stellarAddress
-      )) as DashboardData;
+      );
       setStats(data.stats);
       setActiveQuests(data.activeQuests);
       setRecentSubmissions(data.recentSubmissions);
@@ -96,7 +96,7 @@ export function useStats() {
       return;
     }
     fetchUserStats(user.stellarAddress)
-      .then((data) => setStats(data as any))
+      .then((data) => setStats(data))
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [user?.stellarAddress]);

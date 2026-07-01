@@ -12,6 +12,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['motion', 'motion-dom'],
+      },
+    },
     include: [
       'app/**/*.test.{ts,tsx}',
       'components/**/*.test.{ts,tsx}',

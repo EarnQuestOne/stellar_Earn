@@ -56,14 +56,11 @@ function FeaturedQuestsContent() {
           customTimeout,
           {
             onRevalidate: (fresh) => {
-              const freshItems =
-                (fresh as any).data ?? (fresh as any).quests ?? [];
-              setQuests(freshItems);
+              setQuests(fresh.data);
             },
           }
         );
-        const items = (res as any).data ?? (res as any).quests ?? [];
-        setQuests(items);
+        setQuests(res.data);
         setRetryCount(0); // Reset retry count on success
       } catch (err) {
         // Don't show error if request was cancelled (e.g., component unmounting)

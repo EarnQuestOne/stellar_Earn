@@ -32,7 +32,7 @@ export default function QuestDetailPage() {
       setIsLoading(true);
       setError(null);
       const data = await getQuestById(questId);
-      setQuest(data as unknown as Quest);
+      setQuest(data);
       trackEvent(ANALYTICS_EVENTS.QUEST_VIEW, { questId });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch quest'));

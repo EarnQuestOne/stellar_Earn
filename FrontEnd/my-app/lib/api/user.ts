@@ -30,6 +30,7 @@ import type {
 } from '@/lib/types/api.types';
 
 import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
+import { mapQuest, mapSubmission, mapUserStats, mapBadgeIdToBadge } from './mappers';
 
 // Re-export legacy dashboard types for backward compat
 export type {
@@ -211,11 +212,12 @@ export async function fetchUserStats(
   address: string,
   cancelToken?: CancelToken
 ): Promise<UserStatsResponse> {
-  return withRetry(() =>
+  const raw = await withRetry(() =>
     get<UserStatsResponse>(`/users/${address}/stats`, {
       signal: cancelToken?.signal,
     })
   );
+  return mapUserStats(raw);
 }
 
 // ---------------------------------------------------------------------------
@@ -323,15 +325,30 @@ export async function fetchBadges(): Promise<Badge[]> {
  */
 export async function fetchDashboardData(
   address?: string
-): Promise<
-  DashboardData | { userProfile: UserResponse; userStats: UserStatsResponse }
-> {
+): Promise<DashboardData> {
   if (address) {
-    const [userProfile, userStats] = await Promise.all([
-      fetchUserByAddress(address),
-      fetchUserStats(address),
-    ]);
-    return { userProfile, userStats };
+    const [userStats, activeQuests, recentSubmissions, earningsHistory, badges] =
+      await Promise.all([
+        fetchUserStats(address),
+        fetchActiveQuests(),
+        fetchRecentSubmissions(),
+        fetchEarningsHistory(),
+        fetchBadges(),
+      ]);
+
+    const stats = mapUserStats(userStats);
+
+    const mappedBadges = stats.badges && stats.badges.length > 0
+      ? stats.badges.map(mapBadgeIdToBadge)
+      : badges;
+
+    return {
+      stats,
+      activeQuests: activeQuests.map(mapQuest),
+      recentSubmissions: recentSubmissions.map(mapSubmission),
+      earningsHistory,
+      badges: mappedBadges,
+    };
   }
 
   const [activeQuests, recentSubmissions, earningsHistory, badges] =
@@ -343,9 +360,9 @@ export async function fetchDashboardData(
     ]);
 
   return {
-    stats: mockUserStats,
-    activeQuests,
-    recentSubmissions,
+    stats: mapUserStats(mockUserStats),
+    activeQuests: activeQuests.map(mapQuest),
+    recentSubmissions: recentSubmissions.map(mapSubmission),
     earningsHistory,
     badges,
   };

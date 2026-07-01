@@ -44,12 +44,14 @@ Every **馃挜 Breaking 鈥� Types/Models** entry must include:
 
 ## [Unreleased]
 
-### 馃挜 Breaking 鈥� Types/Models
+### 馃挜 Breaking 鈥 Types/Models
 
 _None yet._
 
-### 鉁� Added
+### 鉁 Added
 
+- **Re-exported admin types from index barrel file** ([FE-011](https://github.com/Kappa16/stellar_Earn/issues/011)).
+  - Re-exported all types from `lib/types/admin.ts` inside `lib/types/index.ts` to allow central imports.
 - **Skeleton loading states for async card grids** ([FE-050](https://github.com/Kappa16/stellar_Earn/issues/050)).
   - Improved user experience with loading state indicators while fetching data.
   - Enhanced API client and validation modules for better async handling.

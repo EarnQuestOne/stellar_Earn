@@ -20,18 +20,18 @@ import {
 } from './client';
 import { cacheManager } from '@/lib/utils/cache';
 import type {
-  QuestResponse,
-  PaginatedQuestsResponse,
   CreateQuestRequest,
   UpdateQuestRequest,
   QuestQueryParams,
 } from '@/lib/types/api.types';
+import type { Quest, PaginatedResponse } from '@/lib/types/quest';
+import { mapQuest, mapPaginatedQuests } from './mappers';
 
 const QUEST_LIST_TTL_MS = 3 * 60 * 1000;
 const QUEST_LIST_STALE_TTL_MS = 10 * 60 * 1000;
 
 type QuestListCacheOptions = {
-  onRevalidate?: (data: PaginatedQuestsResponse) => void;
+  onRevalidate?: (data: PaginatedResponse<Quest>) => void;
 };
 
 // Re-export legacy types for backward compatibility with existing hooks
@@ -56,20 +56,22 @@ export async function getQuests(
   cancelToken?: CancelToken,
   timeout?: number,
   cacheOptions?: QuestListCacheOptions
-): Promise<PaginatedQuestsResponse> {
+): Promise<PaginatedResponse<Quest>> {
   const params = buildQuestParams(filters);
   const cacheKey = `${generateQuestsCacheKey(params)}${timeout ? `:t-${timeout}` : ''}`;
 
   return cacheManager.getStaleWhileRevalidate(
     cacheKey,
-    () =>
-      withRetry(() =>
-        get<PaginatedQuestsResponse>('/quests', {
+    async () => {
+      const raw = await withRetry(() =>
+        get<any>('/quests', {
           params,
           signal: cancelToken?.signal,
           timeout,
         })
-      ),
+      );
+      return mapPaginatedQuests(raw);
+    },
     {
       ttl: QUEST_LIST_TTL_MS,
       staleTtl: QUEST_LIST_STALE_TTL_MS,
@@ -89,15 +91,17 @@ export async function getQuests(
 export async function getQuestById(
   id: string,
   cancelToken?: CancelToken
-): Promise<QuestResponse> {
+): Promise<Quest> {
   return cacheManager.get(
     `quest-${id}`,
-    () =>
-      withRetry(() =>
-        get<QuestResponse>(`/quests/${id}`, {
+    async () => {
+      const raw = await withRetry(() =>
+        get<any>(`/quests/${id}`, {
           signal: cancelToken?.signal,
         })
-      ),
+      );
+      return mapQuest(raw);
+    },
     60_000
   );
 }
@@ -108,11 +112,11 @@ export async function getQuestById(
 
 export async function createQuest(
   payload: CreateQuestRequest
-): Promise<QuestResponse> {
-  const result = await post<QuestResponse>('/quests', payload);
+): Promise<Quest> {
+  const result = await post<any>('/quests', payload);
   // Invalidate list cache (no simple key, so just clear all quest entries)
   cacheManager.clear();
-  return result;
+  return mapQuest(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -122,10 +126,10 @@ export async function createQuest(
 export async function updateQuest(
   id: string,
   payload: UpdateQuestRequest
-): Promise<QuestResponse> {
-  const result = await patch<QuestResponse>(`/quests/${id}`, payload);
+): Promise<Quest> {
+  const result = await patch<any>(`/quests/${id}`, payload);
   cacheManager.invalidate(`quest-${id}`);
-  return result;
+  return mapQuest(result);
 }
 
 // ---------------------------------------------------------------------------
