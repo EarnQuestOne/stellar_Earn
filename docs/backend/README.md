@@ -21,6 +21,7 @@ What lives **here** instead is the context Swagger can't express on its own: wha
 | [Data Flow & Diagrams](./data-flow.md) | System context, the request pipeline, the quest → verification → payout lifecycle, the event-driven backbone, and trace correlation. Rendered as Mermaid. |
 | [Type Ownership Guidelines](./type-ownership-guidelines.md) | How DTOs, domain models, and view models map across layers — defining type ownership and boundaries. |
 | [Reliability Roadmap](./RELIABILITY_ROADMAP.md) | Milestones for green CI, test quality targets, and performance SLOs. |
+| [JWT Key Rotation](./jwt-key-rotation.md) | RS256 key management via env vars and zero-downtime rotation procedure. |
  
 ## Platform-wide conventions
  
