@@ -257,6 +257,7 @@ impl QuestLifecycleModel {
                     total_refunded: 0,
                     is_active: true,
                     deposit_count: 0,
+                    token_balances: soroban_sdk::Vec::new(&Env::default()),
                 });
                 if !balances.is_active {
                     return;
@@ -365,6 +366,7 @@ fn invariant_violation_panics_include_clear_escrow_message() {
             total_refunded: 0,
             is_active: true,
             deposit_count: 1,
+            token_balances: soroban_sdk::Vec::new(&Env::default()),
         }),
         deadline: 1_000 + 86_400,
         current_time: 1_000,
@@ -396,6 +398,7 @@ fn invariant_violation_panics_include_clear_payout_message() {
             total_refunded: 0,
             is_active: true,
             deposit_count: 1,
+            token_balances: soroban_sdk::Vec::new(&Env::default()),
         }),
         deadline: 1_000 + 86_400,
         current_time: 1_000,

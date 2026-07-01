@@ -915,6 +915,60 @@
                             },
                             {
                               "key": {
+                                "symbol": "token_balances"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "token"
+                                        },
+                                        "val": {
+                                          "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_deposited"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 5000
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_paid_out"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 1000
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "total_refunded"
+                                        },
+                                        "val": {
+                                          "i128": {
+                                            "hi": 0,
+                                            "lo": 4000
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "total_deposited"
                               },
                               "val": {
@@ -984,6 +1038,18 @@
                               },
                               "val": {
                                 "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "tokens"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                                  }
+                                ]
                               }
                             }
                           ]
@@ -1071,6 +1137,35 @@
                               },
                               "val": {
                                 "symbol": "q6"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "reward_allocations"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "asset"
+                                        },
+                                        "val": {
+                                          "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "percentage"
+                                        },
+                                        "val": {
+                                          "u32": 100
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
                               }
                             },
                             {
@@ -3424,6 +3519,72 @@
                   },
                   "val": {
                     "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "token_balances"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "total_deposited"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 5000
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "total_paid_out"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1000
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "total_refunded"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 4000
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "tokens"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "address": "CCFPZOCU33AWX2NKX47XD6W5JNYFP7MU57DTQFB5XOOQSJLSSC4PMX25"
+                      }
+                    ]
                   }
                 },
                 {

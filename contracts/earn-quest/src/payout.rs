@@ -75,7 +75,7 @@ pub fn transfer_reward_from_escrow(
     // re-entrant call lands during the transfer it sees the post-debit
     // balance and cannot drain the same funds twice.
     if has_escrow {
-        escrow::validate_sufficient(env, quest_id, amount)?;
+        escrow::validate_sufficient(env, quest_id, reward_asset, amount)?;
         escrow::record_payout(env, quest_id, to, reward_asset, amount)?;
     }
 

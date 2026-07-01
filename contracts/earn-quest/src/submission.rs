@@ -204,7 +204,15 @@ pub fn approve_submission(
 
     // Escrow check before approval: ensure sufficient funds if escrow is used
     if storage::has_escrow(env, quest_id) {
-        crate::escrow::validate_sufficient(env, quest_id, quest.reward_amount)?;
+        for index in 0..quest.reward_allocations.len() {
+            let allocation = quest.reward_allocations.get(index).unwrap();
+            crate::escrow::validate_sufficient(
+                env,
+                quest_id,
+                &allocation.asset,
+                quest.reward_amount * allocation.percentage as i128 / 100,
+            )?;
+        }
     }
 
     // Update submission status directly to avoid redundant read

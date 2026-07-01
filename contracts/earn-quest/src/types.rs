@@ -5,6 +5,16 @@ use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec, U256};
 // ─────────────────────────────────────────────────────────────────────────────
 // Quest is already lean (9 fields, no Vec).  No split needed.
 
+/// Represents a reward token allocation for a quest.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RewardAllocation {
+    /// Address of the reward token.
+    pub asset: Address,
+    /// Percentage of the quest reward assigned to this token.
+    pub percentage: u32,
+}
+
 /// Represents a quest on the StellarEarn platform.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -27,6 +37,8 @@ pub struct Quest {
     pub status: QuestStatus,
     /// Total number of successful claims.
     pub total_claims: u32,
+    /// Optional reward splits for multi-token quests.
+    pub reward_allocations: Vec<RewardAllocation>,
 }
 
 /// Possible states of a quest.
@@ -198,6 +210,20 @@ pub type UserStats = UserCore;
 // EscrowInfo  →  EscrowBalances  +  EscrowMeta
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Per-token escrow balances for multi-token quests.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EscrowTokenBalance {
+    /// Which token this balance belongs to.
+    pub token: Address,
+    /// Total tokens deposited for this asset.
+    pub total_deposited: i128,
+    /// Total tokens paid out for this asset.
+    pub total_paid_out: i128,
+    /// Total tokens refunded for this asset.
+    pub total_refunded: i128,
+}
+
 /// Hot-path escrow data: loaded on every deposit, payout, and balance check.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -212,6 +238,8 @@ pub struct EscrowBalances {
     pub is_active: bool,
     /// Number of deposits made (1 = initial, >1 = top-ups)
     pub deposit_count: u32,
+    /// Per-token balances for multi-token quests.
+    pub token_balances: Vec<EscrowTokenBalance>,
 }
 
 /// Cold-path escrow metadata: loaded only for refunds and display queries.
@@ -222,6 +250,8 @@ pub struct EscrowMeta {
     pub depositor: Address,
     /// Which token is held
     pub token: Address,
+    /// Which reward tokens are configured for the quest
+    pub tokens: Vec<Address>,
     /// Ledger timestamp when the escrow was first created
     pub created_at: u64,
 }
@@ -236,6 +266,8 @@ pub struct EscrowInfo {
     pub depositor: Address,
     /// Which token is held
     pub token: Address,
+    /// Which reward tokens are configured for the quest
+    pub tokens: Vec<Address>,
     /// Total tokens deposited (cumulative, includes top-ups)
     pub total_deposited: i128,
     /// Total tokens paid out to quest completers
@@ -248,6 +280,8 @@ pub struct EscrowInfo {
     pub created_at: u64,
     /// Number of deposits made (1 = initial, >1 = top-ups)
     pub deposit_count: u32,
+    /// Per-token balances for multi-token quests.
+    pub token_balances: Vec<EscrowTokenBalance>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

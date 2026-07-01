@@ -513,6 +513,35 @@
                             },
                             {
                               "key": {
+                                "symbol": "reward_allocations"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "asset"
+                                        },
+                                        "val": {
+                                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "percentage"
+                                        },
+                                        "val": {
+                                          "u32": 100
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "reward_amount"
                               },
                               "val": {
@@ -604,6 +633,35 @@
                               },
                               "val": {
                                 "symbol": "quest_1"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "reward_allocations"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "asset"
+                                        },
+                                        "val": {
+                                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "percentage"
+                                        },
+                                        "val": {
+                                          "u32": 100
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
                               }
                             },
                             {

@@ -305,6 +305,35 @@
                             },
                             {
                               "key": {
+                                "symbol": "reward_allocations"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "map": [
+                                      {
+                                        "key": {
+                                          "symbol": "asset"
+                                        },
+                                        "val": {
+                                          "address": "CBUSYNQKASUYFWYC3M2GUEDMX4AIVWPALDBYJPNK6554BREHTGZ2IUNF"
+                                        }
+                                      },
+                                      {
+                                        "key": {
+                                          "symbol": "percentage"
+                                        },
+                                        "val": {
+                                          "u32": 100
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "reward_amount"
                               },
                               "val": {
@@ -1333,7 +1362,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 0
+                    "lo": 18446744073709551614
                   }
                 }
               ]
@@ -1360,7 +1389,7 @@
             ],
             "data": {
               "error": {
-                "contract": 3
+                "contract": 64
               }
             }
           }
@@ -1381,7 +1410,7 @@
               },
               {
                 "error": {
-                  "contract": 3
+                  "contract": 64
                 }
               }
             ],
@@ -1406,7 +1435,7 @@
               },
               {
                 "error": {
-                  "contract": 3
+                  "contract": 64
                 }
               }
             ],
@@ -1429,7 +1458,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 0
+                        "lo": 18446744073709551614
                       }
                     }
                   ]
