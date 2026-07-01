@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -10,6 +10,7 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
 import { dataSourceOptions } from './database/data-source';
 import { LoggerModule } from './common/logger/logger.module';
 import { StartupReadinessService } from './common/services/startup-readiness.service';
+import { FileUploadModule } from './common/upload/file-upload.module';
 
 import { AdminModule } from './modules/admin/admin.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -47,6 +48,7 @@ import { VersioningInterceptor } from './common/interceptors/versioning.intercep
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     LoggerModule.forRoot(),
+    FileUploadModule,
     EventsModule,
     AdminModule,
     AnalyticsModule,
@@ -79,14 +81,19 @@ import { VersioningInterceptor } from './common/interceptors/versioning.intercep
     SecurityMiddleware,
     StartupReadinessService,
     {
-      provide: APP_INTERCEPTOR,
-      useClass: TraceInterceptor,
+      provide: APP_GUARD,
+      useClass: ApiVersionGuard,
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: VersioningInterceptor,
+      useFactory: (reflector: Reflector) =>
+        new VersioningInterceptor(reflector),
+      inject: [Reflector],
     },
-    ApiVersionGuard,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TraceInterceptor,
+    },
   ],
 })
 export class AppModule {}

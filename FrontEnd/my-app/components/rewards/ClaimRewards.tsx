@@ -104,7 +104,7 @@ export function ClaimRewards() {
 
         {/* Right Column: Stats & Info Sidebar */}
         <div className="space-y-6">
-          <div className="rounded-2xl bg-linear-to-br from-[#089ec3] to-[#056d86] p-6 text-white shadow-lg">
+          <div className="rounded-2xl bg-linear-to-br from-primary to-dark-primary-darker p-6 text-white shadow-lg">
             <h3 className="text-lg font-semibold mb-2">Stellar Rewards</h3>
             <p className="text-sm opacity-90 mb-4">
               Your earned assets are distributed directly to your connected
@@ -137,17 +137,17 @@ export function ClaimRewards() {
             </h4>
             <ul className="space-y-3 text-xs text-zinc-500 dark:text-zinc-400">
               <li className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#089ec3] mt-1 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
                 <span>Only approved quests are eligible for rewards.</span>
               </li>
               <li className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#089ec3] mt-1 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
                 <span>
                   Gas fees are minimized thanks to the Stellar network.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#089ec3] mt-1 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
                 <span>Rewards are typically processed within 3-5 seconds.</span>
               </li>
             </ul>

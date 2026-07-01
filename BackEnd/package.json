@@ -19,6 +19,8 @@
     "stop:prod:pm2": "pm2 stop stellar-earn-api",
     "reload:prod:pm2": "pm2 reload ecosystem.config.js --env production",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "changelog:check": "node ../scripts/backend-changelog.js check",
+    "changelog:generate": "node ../scripts/backend-changelog.js generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

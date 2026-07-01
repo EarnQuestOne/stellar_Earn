@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function CTASection() {
   return (
-    <section className="bg-[#071020] px-4 py-20 sm:py-28">
+    <section className="bg-dark-surface-hero px-4 py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -38,7 +38,7 @@ export function CTASection() {
         >
           <Link
             href="/quests"
-            className="rounded-lg bg-cyan-500 px-7 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:bg-cyan-400 hover:shadow-[0_0_28px_rgba(34,211,238,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="rounded-lg bg-cyan-500 px-7 py-3 text-sm font-semibold text-white shadow-glow-cta transition-all hover:bg-cyan-400 hover:shadow-glow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             Get Started
           </Link>

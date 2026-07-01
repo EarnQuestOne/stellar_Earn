@@ -110,7 +110,7 @@ export function DeadlineTimer({
       <div className="grid grid-cols-4 gap-4" aria-hidden="true">
         <div className="text-center">
           <div
-            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-[#089ec3]'}`}
+            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-primary'}`}
           >
             {timeRemaining.days}
           </div>
@@ -118,7 +118,7 @@ export function DeadlineTimer({
         </div>
         <div className="text-center">
           <div
-            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-[#089ec3]'}`}
+            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-primary'}`}
           >
             {String(timeRemaining.hours).padStart(2, '0')}
           </div>
@@ -126,7 +126,7 @@ export function DeadlineTimer({
         </div>
         <div className="text-center">
           <div
-            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-[#089ec3]'}`}
+            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-primary'}`}
           >
             {String(timeRemaining.minutes).padStart(2, '0')}
           </div>
@@ -136,7 +136,7 @@ export function DeadlineTimer({
         </div>
         <div className="text-center">
           <div
-            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-[#089ec3]'}`}
+            className={`text-3xl font-bold ${isUrgent ? 'text-orange-600 dark:text-orange-400' : 'text-primary'}`}
           >
             {String(timeRemaining.seconds).padStart(2, '0')}
           </div>
