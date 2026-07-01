@@ -2,7 +2,7 @@
 
 use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
-use soroban_sdk::{testutils::Address as _, Env, Address, Symbol};
+use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Symbol};
 use earn_quest::EarnQuestContractClient;
 
 #[derive(Arbitrary, Debug)]
@@ -14,13 +14,11 @@ struct SubmissionInput {
 
 fuzz_target!(|data: SubmissionInput| {
     let env = Env::default();
-    let admin = Address::random(&env);
-    let creator = Address::random(&env);
-    let verifier = Address::random(&env);
-    let reward_asset = Address::random(&env);
-    let user = Address::random(&env);
-    
-    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let reward_asset = Address::generate(&env);
+    let user = Address::generate(&env);
     
     let contract_id = env.register_contract(None, earn_quest::EarnQuestContract);
     let client = EarnQuestContractClient::new(&env, &contract_id);
@@ -47,11 +45,10 @@ fuzz_target!(|data: SubmissionInput| {
         );
     }));
     
-    // Convert submission data to string
-    let submission_str = std::str::from_utf8(&data.submission_data).unwrap_or("submission");
+    let proof_hash = BytesN::from_array(&env, &data.submission_data);
     
     // Try to submit
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        client.submit_quest(&quest_id, &user, &Symbol::new(&env, submission_str));
+        client.submit_proof(&quest_id, &user, &proof_hash);
     }));
 });

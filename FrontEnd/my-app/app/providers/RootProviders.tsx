@@ -9,6 +9,7 @@ import { WalletProvider } from '@/context/WalletContext';
 import { ToastProvider } from '@/components/notifications/Toast';
 import { AppErrorBoundary } from '@/components/error/ErrorBoundary';
 import { A11yAnnouncerProvider } from '@/components/a11y/A11yAnnouncer';
+import { OfflineModeProvider } from '@/components/providers/OfflineModeProvider';
 
 /**
  * RootProviders Component
@@ -46,7 +47,9 @@ export function RootProviders({ children }: RootProvidersProps) {
             <WalletProvider>
               <AuthProvider>
                 <AnalyticsProvider>
-                  <A11yAnnouncerProvider>{children}</A11yAnnouncerProvider>
+                  <OfflineModeProvider>
+                    <A11yAnnouncerProvider>{children}</A11yAnnouncerProvider>
+                  </OfflineModeProvider>
                 </AnalyticsProvider>
               </AuthProvider>
             </WalletProvider>

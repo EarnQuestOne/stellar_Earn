@@ -26,7 +26,7 @@ export default function NotFound() {
             aria-hidden="true"
           >
             <svg
-              className="h-12 w-12 text-[#089ec3]"
+              className="h-12 w-12 text-primary"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -38,7 +38,7 @@ export default function NotFound() {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            <div className="absolute -right-1 -top-2 rounded-full bg-[#089ec3] px-2 py-1 text-xs font-bold text-white">
+            <div className="absolute -right-1 -top-2 rounded-full bg-primary px-2 py-1 text-xs font-bold text-white">
               ?
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function NotFound() {
 
           <Link
             href="/"
-            className="rounded-lg bg-[#089ec3] px-6 py-3 text-center font-medium text-white transition-colors hover:bg-[#0ab8d4]"
+            className="rounded-lg bg-primary px-6 py-3 text-center font-medium text-white transition-colors hover:bg-primary"
           >
             Home
           </Link>

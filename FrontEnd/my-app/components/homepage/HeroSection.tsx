@@ -25,7 +25,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden bg-[#071020] px-4 pb-16 pt-24 text-center sm:pt-32"
+      className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden bg-dark-surface-hero px-4 pb-16 pt-24 text-center sm:pt-32"
       aria-label="Hero"
     >
       {/* Background grid */}
