@@ -84,6 +84,22 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         this.dataExportProcessor.processExport.bind(this.dataExportProcessor),
       );
     }
+
+    // Wire the dead-letter processor as the exclusive consumer of the DLQ
+    if (
+      this.deadLetterProcessor &&
+      typeof this.deadLetterProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.DEAD_LETTER,
+        this.deadLetterProcessor.process.bind(this.deadLetterProcessor),
+      );
+      this.logger.log('Dead-letter queue processor registered');
+    } else {
+      this.logger.warn(
+        'DeadLetterProcessor not provided — DLQ jobs will not be consumed',
+      );
+    }
   }
 
   async onModuleDestroy() {
