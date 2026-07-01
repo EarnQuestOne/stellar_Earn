@@ -5,6 +5,7 @@ import { JobsService } from './jobs.service';
 import { JobsController } from './jobs.controller';
 import { JobLogService } from './services/job-log.service';
 import { JobSchedulerService } from './services/job-scheduler.service';
+import { JobIdempotencyService } from './services/job-idempotency.service';
 import { PayoutProcessor } from './processors/payout.processor';
 import { PayoutReconciliationProcessor } from './processors/payout-reconciliation.processor';
 import { EmailProcessor } from './processors/email.processor';
@@ -32,6 +33,10 @@ import { DependencyFreshnessService } from '../../common/services/dependency-fre
 import { EventStore } from '../../events/entities/event-store.entity';
 import { User } from '../users/entities/user.entity';
 import { EmailModule } from '../email/email.module';
+// Import the IdempotencyKey entity and IdempotencyService from the payouts
+// module so that job-level idempotency can reuse the same persistence layer.
+import { IdempotencyKey } from '../payouts/entities/idempotency-key.entity';
+import { IdempotencyService } from '../payouts/services/idempotency.service';
 
 @Module({
   imports: [
@@ -46,6 +51,8 @@ import { EmailModule } from '../email/email.module';
       Submission,
       EventStore,
       User,
+      // Needed for IdempotencyService which is used by JobIdempotencyService
+      IdempotencyKey,
     ]),
     EventEmitterModule,
     StellarModule,
@@ -56,6 +63,10 @@ import { EmailModule } from '../email/email.module';
     JobsService,
     JobLogService,
     JobSchedulerService,
+    // Idempotency — shared entity/service wired directly so JobsModule has no
+    // circular dependency on PayoutsModule.
+    IdempotencyService,
+    JobIdempotencyService,
     PayoutProcessor,
     PayoutReconciliationProcessor,
     EmailProcessor,
@@ -74,6 +85,7 @@ import { EmailModule } from '../email/email.module';
     JobsService,
     JobLogService,
     JobSchedulerService,
+    JobIdempotencyService,
     PayoutProcessor,
     PayoutReconciliationProcessor,
     EmailProcessor,
