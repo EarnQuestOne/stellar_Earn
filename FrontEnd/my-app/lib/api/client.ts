@@ -30,6 +30,8 @@ import { env } from '@/lib/config/env';
 // ---------------------------------------------------------------------------
 
 const API_VERSION = 'v1';
+/** Integer major version sent via X-API-Version header (see docs/backend/API_VERSIONING_POLICY.md). */
+export const API_VERSION_NUM = '1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1_000;
@@ -213,7 +215,10 @@ export function getApiClient(): AxiosInstance {
   _apiClient = axios.create({
     baseURL: `${baseUrl}/api/${API_VERSION}`,
     timeout: DEFAULT_TIMEOUT_MS,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Version': API_VERSION_NUM,
+    },
     withCredentials: true,
   });
 

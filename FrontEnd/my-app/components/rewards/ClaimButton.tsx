@@ -19,7 +19,7 @@ export function ClaimButton({ onClick, status, disabled }: ClaimButtonProps) {
       className={`
         relative w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all
         ${isLoading ? 'cursor-not-allowed opacity-80' : 'hover:scale-[1.02] active:scale-[0.98]'}
-        ${disabled ? 'cursor-not-allowed bg-zinc-400' : 'bg-[#089ec3] hover:bg-[#078dae]'}
+        ${disabled ? 'cursor-not-allowed bg-zinc-400' : 'bg-primary hover:bg-primary-hover'}
       `}
       aria-label={
         isLoading

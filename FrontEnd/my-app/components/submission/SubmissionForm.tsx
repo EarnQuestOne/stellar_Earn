@@ -106,10 +106,10 @@ const PROOF_TYPES: {
 ];
 
 const INPUT_CLASS =
-  'w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-[#089ec3] focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500';
+  'w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500';
 
 const BTN_PRIMARY =
-  'rounded-lg bg-[#089ec3] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900';
+  'rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900';
 
 const BTN_SECONDARY =
   'rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800';
@@ -253,7 +253,7 @@ export function SubmissionForm({
               key={value}
               className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                 formData.proofType === value
-                  ? 'border-[#089ec3] bg-[#089ec3]/5 dark:bg-[#089ec3]/10'
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
                   : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600'
               }`}
             >
@@ -263,7 +263,7 @@ export function SubmissionForm({
                 value={value}
                 checked={formData.proofType === value}
                 onChange={() => updateField('proofType', value)}
-                className="mt-0.5 accent-[#089ec3]"
+                className="mt-0.5 accent-primary"
               />
               <span className="flex flex-col">
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">

@@ -49,7 +49,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-sm font-medium text-[#089ec3] hover:text-[#067a96] transition-colors"
+              className="text-sm font-medium text-primary hover:text-primary-text-hover transition-colors"
             >
               Mark all as read
             </button>
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
                       {n.link && (
                         <Link
                           href={n.link}
-                          className="text-xs text-[#089ec3] hover:underline"
+                          className="text-xs text-primary hover:underline"
                         >
                           View
                         </Link>
@@ -124,7 +124,7 @@ export default function NotificationsPage() {
                     {!n.read && (
                       <button
                         onClick={() => markAsRead(n.id)}
-                        className="text-xs text-[#089ec3] hover:text-[#067a96] transition-colors whitespace-nowrap"
+                        className="text-xs text-primary hover:text-primary-text-hover transition-colors whitespace-nowrap"
                         aria-label="Mark as read"
                       >
                         Mark read

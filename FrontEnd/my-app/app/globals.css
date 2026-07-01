@@ -14,6 +14,47 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-primary: var(--theme-primary);
+  --color-secondary: #33c5e0;
+  --color-surface: var(--theme-surface);
+  --color-surface-muted: var(--theme-surface-muted);
+  --color-body: var(--theme-text);
+  --color-muted: var(--theme-text-muted);
+  --color-border: var(--theme-border);
+  --color-bg: var(--theme-bg);
+
+  --color-dark-surface: #0f1621;
+  --color-dark-surface-elevated: #161e22;
+  --color-dark-surface-overlay: #1a2333;
+  --color-dark-border: #2a3338;
+  --color-dark-border-darker: #1e293b;
+  --color-dark-border-accent: #2d3b4f;
+  --color-dark-muted: #92a5a8;
+  --color-dark-muted-dimmer: #5d6b6e;
+  --color-dark-surface-hero: #071020;
+  --color-dark-surface-hero-alt: #0a1628;
+  --color-dark-primary-darker: #056d86;
+  --color-primary-hover: #078dae;
+  --color-primary-text-hover: #067a96;
+
+  --z-index-dropdown: 100;
+  --z-index-modal: 110;
+  --z-index-onboarding: 60;
+
+  --font-size-2xs: 0.625rem;
+
+  --width-200: 200px;
+
+  --shadow-glow-sm: 0 0 8px #33c5e0;
+  --shadow-glow: 0 0 20px rgba(51, 197, 224, 0.3);
+  --shadow-glow-md: 0 0 20px rgba(51, 197, 224, 0.1);
+  --shadow-glow-lg: 0 0 28px rgba(34, 211, 238, 0.45);
+  --shadow-glow-xl: 0 0 25px rgba(51, 197, 224, 0.3);
+  --shadow-glow-hero: 0 0 24px rgba(34, 211, 238, 0.2);
+  --shadow-glow-step: 0 0 16px rgba(34, 211, 238, 0.35);
+  --shadow-glow-cta: 0 0 20px rgba(34, 211, 238, 0.3);
+  --shadow-tooltip-backdrop: 0 0 0 9999px rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,7 +111,7 @@ body {
 
 /* Accessibility: Enhanced focus styles for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid #089ec3;
+  outline: 2px solid var(--theme-primary);
   outline-offset: 2px;
 }
 

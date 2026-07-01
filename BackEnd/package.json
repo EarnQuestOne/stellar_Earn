@@ -14,8 +14,13 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node --max-old-space-size=512 --expose-gc dist/main",
+    "start:prod:pm2": "pm2 start ecosystem.config.js --env production",
+    "stop:prod:pm2": "pm2 stop stellar-earn-api",
+    "reload:prod:pm2": "pm2 reload ecosystem.config.js --env production",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "changelog:check": "node ../scripts/backend-changelog.js check",
+    "changelog:generate": "node ../scripts/backend-changelog.js generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -36,9 +41,12 @@
     "migration:test:performance": "ts-node scripts/test-migrations.ts performance",
     "migration:test:syntax": "ts-node scripts/test-migration-syntax.ts",
     "verify:indexes": "ts-node scripts/verify-indexes.ts",
+    "openapi:generate": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts",
     "schema:sync": "bun run typeorm -- schema:sync",
     "schema:drop": "bun run typeorm -- schema:drop",
-    "schema:log": "bun run typeorm -- schema:log"
+    "schema:log": "bun run typeorm -- schema:log",
+    "check:toolchain": "ts-node scripts/check-toolchain.ts",
+    "onboarding": "ts-node scripts/check-toolchain.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.19.0",

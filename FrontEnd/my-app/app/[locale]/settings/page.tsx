@@ -46,7 +46,7 @@ export default function SettingsPage() {
             <div className="mt-4">
               <Link
                 href="/settings/notifications"
-                className="inline-flex items-center rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0ab8d4]"
+                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
               >
                 Open Notification Settings
               </Link>
