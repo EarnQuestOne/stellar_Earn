@@ -36,6 +36,8 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 import { TraceInterceptor } from './modules/trace/trace.interceptor';
 import { EventsModule } from './events/events.module';
 import { ProcessResourceModule } from './modules/process-resource/process-resource.module';
+import { ApiVersionGuard } from './common/guards/versioning.guard';
+import { VersioningInterceptor } from './common/interceptors/versioning.interceptor';
 
 @Module({
   imports: [
@@ -80,6 +82,11 @@ import { ProcessResourceModule } from './modules/process-resource/process-resour
       provide: APP_INTERCEPTOR,
       useClass: TraceInterceptor,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: VersioningInterceptor,
+    },
+    ApiVersionGuard,
   ],
 })
 export class AppModule {}
