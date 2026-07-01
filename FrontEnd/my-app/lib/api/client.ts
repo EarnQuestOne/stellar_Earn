@@ -22,7 +22,7 @@ import {
   type AppError,
 } from '@/lib/utils/error-handler';
 import { mapApiError, inferDomainFromUrl } from '@/lib/api/api-error-mapper';
-import type { ApiErrorResponse, AuthTokens } from '@/lib/types/api.types';
+import type { AuthTokens } from '@/lib/types/api.types';
 import { env } from '@/lib/config/env';
 
 // ---------------------------------------------------------------------------

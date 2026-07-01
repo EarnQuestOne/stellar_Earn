@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { ErrorMessage } from './ErrorMessage';
-import { logError, ERROR_CODES } from '@/lib/utils/error-handler';
-import type { AppError } from '@/lib/utils/error-handler';
+import { logError } from '@/lib/utils/error-handler';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;

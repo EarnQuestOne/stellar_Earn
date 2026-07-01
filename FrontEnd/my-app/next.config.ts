@@ -10,7 +10,19 @@ const withAnalyzer = withBundleAnalyzer({
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
   async headers() {
-    return cspHeaders;
+    const isDev = process.env.NODE_ENV !== 'production';
+    const headerKey = isDev
+      ? 'Content-Security-Policy-Report-Only'
+      : 'Content-Security-Policy';
+    // Flatten cspHeaders and replace key based on environment
+    const baseHeaders = cspHeaders[0].headers;
+    const modifiedHeaders = baseHeaders.map((h) => {
+      if (h.key === 'Content-Security-Policy') {
+        return { key: headerKey, value: h.value };
+      }
+      return h;
+    });
+    return [{ source: '/(.*)', headers: modifiedHeaders }];
   },
 };
 
@@ -21,3 +33,4 @@ export default withSentryConfig(withAnalyzer(nextConfig), {
   sourcemaps: { disable: true },
   silent: process.env.CI === 'true',
 });
+

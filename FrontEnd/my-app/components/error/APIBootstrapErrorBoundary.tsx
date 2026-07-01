@@ -100,22 +100,24 @@ export class APIBootstrapErrorBoundary extends React.Component<
   };
 
   static getDerivedStateFromError(
-    error: Error | AppError
+    error: Error | AppError | Record<string, unknown>
   ): Partial<APIBootstrapErrorState> {
+    const errorWithCode = error as Record<string, unknown>;
     const isNetworkError =
-      error.message.toLowerCase().includes('offline') ||
-      error.message.toLowerCase().includes('network') ||
-      error.message.toLowerCase().includes('unreachable') ||
-      (error as any).code === 'ERR_NETWORK' ||
-      (error as any).code === 'NETWORK_ERROR' ||
-      (error as any).code === 'TIMEOUT_ERROR';
+      (error instanceof Error || (error && typeof error.message === 'string')) &&
+      (error.message.toLowerCase().includes('offline') ||
+        error.message.toLowerCase().includes('network') ||
+        error.message.toLowerCase().includes('unreachable') ||
+        errorWithCode.code === 'ERR_NETWORK' ||
+        errorWithCode.code === 'NETWORK_ERROR' ||
+        errorWithCode.code === 'TIMEOUT_ERROR');
 
     return {
       hasError: true,
-      error,
+      error: error as Error | AppError,
       errorInfo: null,
       isOffline:
-        isNetworkError ||
+        !!isNetworkError ||
         (typeof navigator !== 'undefined' && !navigator.onLine),
     };
   }
