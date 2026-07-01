@@ -508,7 +508,7 @@ impl EarnQuestContract {
         // transfer. If a malicious token re-enters during the transfer the
         // AlreadyClaimed check in validate_claim_data rejects the second call.
         let mut submission = submission;
-        submission.claimed_amount += amount;
+        submission.claimed_amount = submission.claimed_amount.saturating_add(amount);
         submission.status = if submission.claimed_amount == quest.reward_amount {
             types::SubmissionStatus::Paid
         } else {
@@ -518,7 +518,7 @@ impl EarnQuestContract {
 
         // Increment claims: directly update quest to avoid extra read
         let mut quest = quest;
-        quest.total_claims += 1;
+        quest.total_claims = quest.total_claims.saturating_add(1);
         storage::set_quest(&env, &quest_id, &quest);
 
         payout::transfer_reward_from_escrow(

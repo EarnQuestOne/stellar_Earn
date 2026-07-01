@@ -295,14 +295,14 @@ pub fn escrow_deposited(
     env.events().publish(topics, data);
 }
 
-/// Emit when additional tokens are deposited into an existing escrow (top-up).
+/// Emit when tokens are added to an existing escrow (top-up) (indexed: quest_id, depositor).
 ///
-/// Distinct from the initial deposit so indexers can track top-ups separately
-/// from the first funding event.
+/// Emitted on every deposit after the initial one, allowing indexers and the backend
+/// to distinguish top-ups from the first funding event without polling storage.
 ///
 /// # Event Schema
-/// Topics: [EventName, QuestID, Depositor] — `quest_id` is the indexed topic
-/// that enables efficient filtering by quest.
+/// Topics: [EventName, QuestID, Depositor, Token] — `quest_id` is the primary
+/// indexed topic for efficient filtering by quest.
 /// Data:   (amount: i128, new_balance: i128)
 ///
 /// # Indexing Benefits
@@ -313,11 +313,17 @@ pub fn escrow_topped_up(
     env: &Env,
     quest_id: Symbol,
     depositor: Address,
+    token: Address,
     amount: i128,
     new_balance: i128,
 ) {
-    // Topics: [EventName, QuestID, Depositor] — quest_id indexed for efficient filtering
-    let topics = (TOPIC_ESCROW_TOPPED_UP, quest_id, depositor);
+    // Topics: [EventName, QuestID, Depositor, Token] — quest_id indexed for efficient filtering
+    let topics = (
+        TOPIC_ESCROW_TOPPED_UP,
+        quest_id,
+        depositor.clone(),
+        token.clone(),
+    );
     // Data: top-up amount and resulting available balance
     let data = (amount, new_balance);
     env.events().publish(topics, data);

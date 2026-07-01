@@ -78,9 +78,8 @@ pub fn deposit(
     // transaction reverts and the storage write is rolled back, but a
     // re-entrant call during the transfer will see a fully-updated record
     // and cannot inflate the deposit total a second time.
-    let is_topup = storage::has_escrow(env, quest_id);
-
-    let mut balances = if is_topup {
+    let is_top_up = storage::has_escrow(env, quest_id);
+    let mut balances = if is_top_up {
         let existing = storage::get_escrow_balances(env, quest_id)?;
         require_active_escrow(&existing)?;
         existing
@@ -104,24 +103,25 @@ pub fn deposit(
         }
     };
 
-    balances.total_deposited += amount;
-    balances.deposit_count += 1;
+    balances.total_deposited = balances.total_deposited.saturating_add(amount);
+    balances.deposit_count = balances.deposit_count.saturating_add(1);
     storage::set_escrow_balances(env, quest_id, &balances);
 
     let available = available_balance(&balances);
 
-    // Emit the appropriate event depending on whether this is the initial
-    // deposit or a subsequent top-up.
-    if is_topup {
-        // EscrowToppedUp — indexed quest_id topic for efficient filtering
+    if is_top_up {
+        // Subsequent deposit: emit dedicated top-up event so indexers and the
+        // backend can detect funding changes without polling storage.
         events::escrow_topped_up(
             env,
             quest_id.clone(),
             depositor.clone(),
+            token_address.clone(),
             amount,
             available,
         );
     } else {
+        // Initial deposit: emit the standard deposit event.
         events::escrow_deposited(
             env,
             quest_id.clone(),
@@ -198,7 +198,7 @@ pub fn record_payout(
         return Err(Error::InsufficientEscrow);
     }
 
-    b.total_paid_out += amount;
+    b.total_paid_out = b.total_paid_out.saturating_add(amount);
     storage::set_escrow_balances(env, quest_id, &b);
 
     let remaining = available_balance(&b);
@@ -233,7 +233,7 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     // re-entrant call during the transfer below cannot trigger a second
     // refund (it would see is_active=false). On transfer failure the
     // transaction reverts and the storage write is rolled back atomically.
-    b.total_refunded += available;
+    b.total_refunded = b.total_refunded.saturating_add(available);
     b.is_active = false;
     storage::set_escrow_balances(env, quest_id, &b);
 

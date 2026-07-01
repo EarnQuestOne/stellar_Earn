@@ -148,8 +148,6 @@ pub fn submit_proof(
     validation::validate_quest_is_active(&quest.status)?;
     // Validate quest has not expired
     validation::validate_quest_not_expired(env, quest.deadline)?;
-    // Validate submitter address
-    validation::validate_badge_count(0)?; // Example: badge count check for submitter
 
     let submission = Submission {
         quest_id: quest_id.clone(),

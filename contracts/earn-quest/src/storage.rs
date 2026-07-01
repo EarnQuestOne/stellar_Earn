@@ -466,7 +466,7 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
 /// * Type-safe increment operation
 pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     let mut quest = get_quest(env, id)?;
-    quest.total_claims += 1;
+    quest.total_claims = quest.total_claims.saturating_add(1);
     set_quest(env, id, &quest);
     Ok(())
 }
