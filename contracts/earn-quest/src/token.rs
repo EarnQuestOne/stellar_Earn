@@ -49,7 +49,7 @@ pub fn transfer_from(e: Env, spender: Address, from: Address, to: Address, amoun
     if allowance < amount {
         panic!("insufficient allowance");
     }
-    write_allowance(&e, from.clone(), spender, allowance - amount);
+    write_allowance(&e, from.clone(), spender, allowance.saturating_sub(amount));
     do_transfer(&e, from, to, amount);
 }
 
@@ -59,7 +59,7 @@ pub fn burn(e: Env, from: Address, amount: i128) {
     if balance < amount {
         panic!("insufficient balance");
     }
-    write_balance(&e, from, balance - amount);
+    write_balance(&e, from, balance.saturating_sub(amount));
 }
 
 pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
@@ -68,12 +68,12 @@ pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
     if allowance < amount {
         panic!("insufficient allowance");
     }
-    write_allowance(&e, from.clone(), spender, allowance - amount);
+    write_allowance(&e, from.clone(), spender, allowance.saturating_sub(amount));
     let balance = read_balance(&e, from.clone());
     if balance < amount {
         panic!("insufficient balance");
     }
-    write_balance(&e, from, balance - amount);
+    write_balance(&e, from, balance.saturating_sub(amount));
 }
 
 pub fn decimals(e: Env) -> u32 {
@@ -102,14 +102,14 @@ fn do_transfer(e: &Env, from: Address, to: Address, amount: i128) {
     if balance_from < amount {
         panic!("insufficient balance");
     }
-    write_balance(e, from, balance_from - amount);
+    write_balance(e, from, balance_from.saturating_sub(amount));
     let balance_to = read_balance(e, to.clone());
-    write_balance(e, to, balance_to + amount);
+    write_balance(e, to, balance_to.saturating_add(amount));
 }
 
 pub fn mint(e: Env, to: Address, amount: i128) {
     let balance = read_balance(&e, to.clone());
-    write_balance(&e, to, balance + amount);
+    write_balance(&e, to, balance.saturating_add(amount));
 }
 
 pub fn set_metadata(e: &Env, name: String, symbol: String, decimals: u32) {

@@ -121,7 +121,7 @@ pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
         return Err(Error::DeadlineInPast);
     }
 
-    let duration = deadline - current_time;
+    let duration = deadline.saturating_sub(current_time);
 
     // Enforce minimum relative duration to prevent single-ledger timestamp nudging
     if duration < MIN_DEADLINE_DURATION {

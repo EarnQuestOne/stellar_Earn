@@ -223,7 +223,9 @@ pub fn validate_claim_amount(
 ) -> Result<i128, Error> {
     validation::validate_reward_amount(amount)?;
 
-    let remaining = quest.reward_amount - submission.claimed_amount;
+    let remaining = quest
+        .reward_amount
+        .saturating_sub(submission.claimed_amount);
     if amount > remaining {
         return Err(Error::InvalidRewardAmount);
     }
@@ -376,8 +378,10 @@ pub fn approve_submissions_batch(
                 if !escrow.is_active {
                     return Err(Error::EscrowInactive);
                 }
-                let available =
-                    escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+                let available = escrow
+                    .total_deposited
+                    .saturating_sub(escrow.total_paid_out)
+                    .saturating_sub(escrow.total_refunded);
                 if available < quest.reward_amount {
                     return Err(Error::InsufficientEscrow);
                 }

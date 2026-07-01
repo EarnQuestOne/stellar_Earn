@@ -17,7 +17,10 @@ use crate::types::{EscrowBalances, EscrowInfo, EscrowMeta, QuestStatus, Verifier
 use crate::validation;
 
 fn available_balance(balances: &EscrowBalances) -> i128 {
-    balances.total_deposited - balances.total_paid_out - balances.total_refunded
+    balances
+        .total_deposited
+        .saturating_sub(balances.total_paid_out)
+        .saturating_sub(balances.total_refunded)
 }
 
 fn require_active_escrow(balances: &EscrowBalances) -> Result<(), Error> {
@@ -224,7 +227,10 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let _available = b.total_deposited - b.total_paid_out - b.total_refunded;
+    let _available = b
+        .total_deposited
+        .saturating_sub(b.total_paid_out)
+        .saturating_sub(b.total_refunded);
     let available = available_balance(&b);
     let depositor = meta.depositor.clone();
     let token = meta.token.clone();
@@ -496,8 +502,11 @@ pub fn slash_verifier_stake(
         return Err(Error::VerifierStakeInactive);
     }
 
-    let slash_amount = (stake.amount * slash_bps as u128) / 10_000;
-    let remainder = stake.amount - slash_amount;
+    let slash_amount = stake
+        .amount
+        .saturating_mul(slash_bps as u128)
+        .saturating_div(10_000);
+    let remainder = stake.amount.saturating_sub(slash_amount);
 
     stake.amount = 0;
     stake.is_active = false;
