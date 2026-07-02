@@ -103,14 +103,26 @@ export class APIBootstrapErrorBoundary extends React.Component<
     error: Error | AppError | Record<string, unknown>
   ): Partial<APIBootstrapErrorState> {
     const errorWithCode = error as Record<string, unknown>;
+
+    let errorMessage = '';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof (error as Record<string, unknown>).message === 'string'
+    ) {
+      errorMessage = (error as Record<string, unknown>).message as string;
+    }
+
     const isNetworkError =
-      (error instanceof Error || (error && typeof error.message === 'string')) &&
-      (error.message.toLowerCase().includes('offline') ||
-        error.message.toLowerCase().includes('network') ||
-        error.message.toLowerCase().includes('unreachable') ||
-        errorWithCode.code === 'ERR_NETWORK' ||
-        errorWithCode.code === 'NETWORK_ERROR' ||
-        errorWithCode.code === 'TIMEOUT_ERROR');
+      errorMessage.toLowerCase().includes('offline') ||
+      errorMessage.toLowerCase().includes('network') ||
+      errorMessage.toLowerCase().includes('unreachable') ||
+      errorWithCode.code === 'ERR_NETWORK' ||
+      errorWithCode.code === 'NETWORK_ERROR' ||
+      errorWithCode.code === 'TIMEOUT_ERROR';
 
     return {
       hasError: true,
