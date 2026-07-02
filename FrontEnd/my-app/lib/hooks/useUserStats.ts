@@ -96,7 +96,7 @@ export function useStats() {
       return;
     }
     fetchUserStats(user.stellarAddress)
-      .then((data) => setStats(data as any))
+      .then((data) => setStats(data))
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [user?.stellarAddress]);

@@ -26,7 +26,6 @@ import type {
   UserStatsResponse,
   UpdateProfileRequest,
   UserSearchParams,
-  PaginationParams,
 } from '@/lib/types/api.types';
 
 import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
