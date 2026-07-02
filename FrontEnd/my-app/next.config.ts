@@ -33,4 +33,3 @@ export default withSentryConfig(withAnalyzer(nextConfig), {
   sourcemaps: { disable: true },
   silent: process.env.CI === 'true',
 });
-
