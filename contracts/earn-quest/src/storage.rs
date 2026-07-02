@@ -107,6 +107,8 @@ pub enum DataKey {
     LastUnpauseTimestamp,
     /// Minimum seconds that must elapse after unpause before the contract can be paused again
     PauseCooldownSeconds,
+    /// Default grace period (in seconds) applied when checking quest expiry
+    DefaultQuestGracePeriodSeconds,
 }
 
 //================================================================================
@@ -1507,7 +1509,7 @@ mod layout_tests {
     use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, Vec};
 
     /// Canonical variant names — keep in sync with `DataKey` and `docs/STORAGE_LAYOUT.md`.
-    const VARIANT_NAMES: &[&str] = &[
+   const VARIANT_NAMES: &[&str] = &[
         "Quest",
         "QuestMetadata",
         "QuestMetadataExt",
@@ -1554,10 +1556,12 @@ mod layout_tests {
         "CreatorWhitelist",
         "ClawbackPending",
         "QuestCategory",
+        "LastUnpauseTimestamp",
+        "PauseCooldownSeconds",
         "DefaultQuestGracePeriodSeconds",
     ];
 
-    const EXPECTED_VARIANT_COUNT: usize = 47;
+    const EXPECTED_VARIANT_COUNT: usize = 49;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
@@ -1612,8 +1616,11 @@ mod layout_tests {
         keys.push_back(DataKey::CreatorWhitelist(addr.clone()));
         keys.push_back(DataKey::ClawbackPending(quest_id.clone(), addr.clone()));
         keys.push_back(DataKey::QuestCategory(1));
+        keys.push_back(DataKey::LastUnpauseTimestamp);
+        keys.push_back(DataKey::PauseCooldownSeconds);
         keys.push_back(DataKey::DefaultQuestGracePeriodSeconds);
         keys
+    }
     }
 
     #[test]
