@@ -1,25 +1,37 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import {
+  API_SEMVER,
+  API_VERSION_CONFIG,
+  API_VERSION_POLICY_PATH,
+} from './versioning.config';
 
 export function setupSwagger(
   app: INestApplication,
   configService?: ConfigService,
 ) {
   const title = configService?.get('APP_NAME') || 'StellarEarn API';
-  const version = configService?.get('API_VERSION') || '1.0';
+  const version = configService?.get('API_VERSION') || API_SEMVER;
   const description =
     configService?.get('API_DESCRIPTION') ||
     'Quest-based earning platform on Stellar blockchain';
 
+  const supportedVersions = API_VERSION_CONFIG.supportedVersions
+    .map((v) => `v${v}`)
+    .join(', ');
+
   const builder = new DocumentBuilder()
     .setTitle(title)
     .setDescription(
-      `${description}\n\nSupported API versions: v1, v2. Use path versioning (/api/v1/*, /api/v2/*) and/or header versioning (X-API-Version: 1).`,
+      `${description}\n\nSupported API versions: ${supportedVersions}. Use path versioning (/api/v1/*) and/or header versioning (X-API-Version: 1). See ${API_VERSION_POLICY_PATH} for the semantic versioning policy.`,
     )
     .setVersion(version)
     .addServer('/api/v1', 'API v1')
-    .addServer('/api/v2', 'API v2')
+    .addApiKey(
+      { type: 'apiKey', name: 'X-API-Version', in: 'header' },
+      'X-API-Version',
+    )
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'JWT-auth',

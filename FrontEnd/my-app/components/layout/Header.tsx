@@ -28,7 +28,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
       <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
         <button
           aria-label="Open mobile menu"
-          className="inline-flex rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800 lg:hidden"
+          className="inline-flex rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800 lg:hidden"
           onClick={onOpenMobileMenu}
           type="button"
         >
@@ -49,9 +49,9 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
             return (
               <Link
                 aria-current={active ? 'page' : undefined}
-                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   active
-                    ? 'bg-[#089ec3]/10 text-[#089ec3]'
+                    ? 'bg-primary/10 text-primary'
                     : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
                 }`}
                 href={item.href}

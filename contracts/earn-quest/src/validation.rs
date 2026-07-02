@@ -152,10 +152,14 @@ pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
 /// # Returns
 /// * `Ok(())` if the quest has not yet expired (with buffer)
 /// * `Err(Error::QuestExpired)` if the deadline + buffer has passed
-pub fn validate_quest_not_expired(env: &Env, deadline: u64) -> Result<(), Error> {
+pub fn validate_quest_not_expired(
+    env: &Env,
+    deadline: u64,
+    grace_period_seconds: u64,
+) -> Result<(), Error> {
     let current_time = env.ledger().timestamp();
     // Use saturating_add to prevent u64 overflow on extreme deadline values
-    if current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER) {
+    if current_time >= deadline.saturating_add(grace_period_seconds) {
         return Err(Error::QuestExpired);
     }
     Ok(())
@@ -165,9 +169,9 @@ pub fn validate_quest_not_expired(env: &Env, deadline: u64) -> Result<(), Error>
 ///
 /// Use this for read-only expiry checks (e.g. `expire_quest`, `auto_expire`).
 /// The buffer ensures we don't mark a quest expired due to minor clock drift.
-pub fn is_quest_expired(env: &Env, deadline: u64) -> bool {
+pub fn is_quest_expired(env: &Env, deadline: u64, grace_period_seconds: u64) -> bool {
     let current_time = env.ledger().timestamp();
-    current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER)
+    current_time >= deadline.saturating_add(grace_period_seconds)
 }
 
 //================================================================================

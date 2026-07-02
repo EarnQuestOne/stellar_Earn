@@ -20,7 +20,7 @@ const sizeClasses: Record<SpinnerSize, string> = {
 };
 
 const variantClasses: Record<SpinnerVariant, string> = {
-  primary: 'border-[#089ec3] border-t-transparent',
+  primary: 'border-primary border-t-transparent',
   neutral: 'border-zinc-400 border-t-transparent dark:border-zinc-500',
   white: 'border-white border-t-transparent',
 };

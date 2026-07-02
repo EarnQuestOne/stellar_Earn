@@ -124,7 +124,7 @@ export default function NetworkVisualization() {
     <div className="relative h-full w-full">
       <canvas ref={canvasRef} className="h-full w-full" />
       {/* Fade out bottom edge to blend with section */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#071020] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-dark-surface-hero to-transparent" />
     </div>
   );
 }

@@ -7,6 +7,10 @@ import {
 import { Queue, Worker, Job } from 'bullmq';
 import { QUEUES, DEFAULT_JOB_OPTIONS } from './jobs.constants';
 import { DataExportProcessor } from './processors/export.processor';
+import {
+  TracingService,
+  TraceContext,
+} from '../../common/tracing/tracing.service';
 
 export interface QueueMetrics {
   queue: string;
@@ -15,6 +19,10 @@ export interface QueueMetrics {
   failed: number;
   completed: number;
   waiting: number;
+}
+
+interface TraceableJobData {
+  __trace?: TraceContext;
 }
 
 const redisConnection = () => {
@@ -28,10 +36,12 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private queues: Record<string, Queue> = {};
   private workers: Worker[] = [];
   private emailProcessor:
-    | ((messageId: string, dto: any) => Promise<void>)
-    | null = null;
+    ((messageId: string, dto: any) => Promise<void>) | null = null;
 
-  constructor(private readonly dataExportProcessor?: DataExportProcessor) {}
+  constructor(
+    private readonly tracing: TracingService,
+    private readonly dataExportProcessor?: DataExportProcessor,
+  ) {}
 
   registerEmailProcessor(
     processor: (messageId: string, dto: any) => Promise<void>,
@@ -161,8 +171,28 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   async addJob(name: string, data: any, opts: any = {}) {
     const queue = this.getQueue(name);
     if (!queue) throw new Error(`Queue ${name} not found`);
+
+    const traceContext = this.tracing.getCurrentContext();
+    const tracedData = this.attachTraceContext(data, traceContext);
     const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...opts };
-    return queue.add(`${name}-job`, data, jobOpts);
+
+    return this.tracing.trace(
+      'jobs.queue.enqueue',
+      async (span) => {
+        span.attributes['queue.name'] = name;
+        span.attributes['job.name'] = `${name}-job`;
+        if (traceContext) {
+          span.attributes['trace.id'] = traceContext.traceId;
+          span.attributes['trace.parent_span_id'] = traceContext.spanId;
+        }
+
+        return queue.add(`${name}-job`, tracedData, jobOpts);
+      },
+      {
+        'queue.name': name,
+        'job.name': `${name}-job`,
+      },
+    );
   }
 
   /** Returns active, delayed, failed, and completed counts for every queue. */
@@ -201,7 +231,33 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const worker = new Worker(
       name,
       async (job: Job) => {
-        return await processor(job);
+        const traceContext = this.extractTraceContext(
+          job.data as TraceableJobData,
+        );
+
+        const processJob = () =>
+          this.tracing.trace(
+            'jobs.queue.process',
+            async (span) => {
+              span.attributes['queue.name'] = name;
+              span.attributes['job.id'] = String(job.id ?? 'unknown');
+              span.attributes['job.name'] = job.name;
+              span.attributes['job.attempt'] = job.attemptsMade ?? 0;
+              return await processor(job);
+            },
+            {
+              'queue.name': name,
+              'job.id': String(job.id ?? 'unknown'),
+              'job.name': job.name,
+              'job.attempt': job.attemptsMade ?? 0,
+            },
+          );
+
+        if (traceContext) {
+          return this.tracing.runInContext(traceContext, processJob);
+        }
+
+        return processJob();
       },
       redisConnection(),
     );
@@ -265,5 +321,31 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
     await job.updateProgress(100);
     return { sent: true, messageId };
+  }
+
+  private attachTraceContext(data: any, traceContext?: TraceContext): any {
+    if (!traceContext) return data;
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return { ...data, __trace: traceContext };
+    }
+    return data;
+  }
+
+  private extractTraceContext(
+    data?: TraceableJobData,
+  ): TraceContext | undefined {
+    if (!data?.__trace) return undefined;
+
+    const { traceId, spanId } = data.__trace;
+    if (
+      typeof traceId === 'string' &&
+      traceId.length === 32 &&
+      typeof spanId === 'string' &&
+      spanId.length === 16
+    ) {
+      return { traceId, spanId };
+    }
+
+    return undefined;
   }
 }

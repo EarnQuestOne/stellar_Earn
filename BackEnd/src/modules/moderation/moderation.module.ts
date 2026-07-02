@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpClientModule } from '../../common/http-client/http-client.module';
 import { ModerationItem } from './entities/moderation-item.entity';
 import { ModerationAppeal } from './entities/moderation-appeal.entity';
 import { ModerationService } from './moderation.service';
@@ -10,7 +11,7 @@ import { ImageModerationService } from './filters/image-moderation.service';
 import { ExternalModerationApiService } from './filters/external-moderation-api.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ModerationItem, ModerationAppeal])],
+  imports: [TypeOrmModule.forFeature([ModerationItem, ModerationAppeal]), HttpClientModule],
   controllers: [ModerationController],
   providers: [
     ModerationService,

@@ -11,6 +11,7 @@ import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
 import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { QuotaModule } from '../quota/quota.module';
 import { JobsModule } from '../jobs/jobs.module';
+import { BulkheadService } from '../../common/services/bulkhead.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { JobsModule } from '../jobs/jobs.module';
     FraudRiskRulesService,
     IdempotencyService,
     IdempotencyInterceptor,
+    BulkheadService,
   ],
   exports: [PayoutsService, FraudRiskRulesService, IdempotencyService],
 })

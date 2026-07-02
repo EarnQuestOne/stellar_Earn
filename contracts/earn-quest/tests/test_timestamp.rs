@@ -383,13 +383,16 @@ fn test_batch_registration_deadline_too_soon_rejected() {
     use earn_quest::types::BatchQuestInput;
     use soroban_sdk::Vec;
 
+    let too_soon = now + MIN_DEADLINE_DURATION - 1;
+
     let mut batch_inputs = Vec::new(&env);
     batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ1"),
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION - 1,
+        deadline: too_soon,
+        grace_period_seconds: None,
     });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
@@ -416,13 +419,16 @@ fn test_batch_registration_valid_deadline_accepted() {
     use earn_quest::types::BatchQuestInput;
     use soroban_sdk::Vec;
 
+    let valid_deadline = now + MIN_DEADLINE_DURATION + 1_000;
+
     let mut batch_inputs = Vec::new(&env);
     batch_inputs.push_back(BatchQuestInput {
         id: symbol_short!("BQ2"),
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION + 1_000,
+        deadline: valid_deadline,
+        grace_period_seconds: None,
     });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);

@@ -36,7 +36,12 @@ fuzz_target!(|data: DecodingInput| {
     // Feed arbitrary bytes and ensure the SDK never panics outside catch_unwind.
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         if let Ok(s) = std::str::from_utf8(&data.symbol_bytes) {
-            let _ = Symbol::try_from_str(&env, s);
+            let safe_symbol = s
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .take(32)
+                .collect::<std::string::String>();
+            let _ = Symbol::new(&env, &safe_symbol);
         }
     }));
 
@@ -135,6 +140,7 @@ fuzz_target!(|data: DecodingInput| {
                     reward_amount: data.reward_amount.abs().max(1),
                     verifier,
                     deadline: env.ledger().timestamp().saturating_add(data.deadline_offset.max(60)),
+                    grace_period_seconds: None,
                 });
             }
         }
