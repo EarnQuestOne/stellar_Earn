@@ -1134,9 +1134,10 @@ pub fn get_default_grace_period(env: &Env) -> u64 {
 }
 
 pub fn set_quest_grace_period(env: &Env, grace_period_seconds: u64) {
-    env.storage()
-        .instance()
-        .set(&DataKey::DefaultQuestGracePeriodSeconds, &grace_period_seconds);
+    env.storage().instance().set(
+        &DataKey::DefaultQuestGracePeriodSeconds,
+        &grace_period_seconds,
+    );
 }
 
 //================================================================================
@@ -1509,7 +1510,7 @@ mod layout_tests {
     use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, Vec};
 
     /// Canonical variant names — keep in sync with `DataKey` and `docs/STORAGE_LAYOUT.md`.
-   const VARIANT_NAMES: &[&str] = &[
+    const VARIANT_NAMES: &[&str] = &[
         "Quest",
         "QuestMetadata",
         "QuestMetadataExt",
@@ -1621,7 +1622,6 @@ mod layout_tests {
         keys.push_back(DataKey::DefaultQuestGracePeriodSeconds);
         keys
     }
-    
 
     #[test]
     fn data_key_variant_names_are_unique() {
