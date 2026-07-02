@@ -1,10 +1,10 @@
-export type QuestStatus =
+export type AdminQuestStatus =
   | 'draft'
   | 'active'
   | 'paused'
   | 'completed'
   | 'cancelled';
-export type QuestDifficulty =
+export type AdminQuestDifficulty =
   | 'beginner'
   | 'intermediate'
   | 'advanced'
@@ -17,14 +17,14 @@ export type QuestCategory =
   | 'Testing'
   | 'Community';
 
-export interface Quest {
+export interface AdminQuest {
   id: string;
   title: string;
   description: string;
   shortDescription: string;
   category: QuestCategory;
-  difficulty?: QuestDifficulty;
-  status: QuestStatus;
+  difficulty?: AdminQuestDifficulty;
+  status: AdminQuestStatus;
   reward: number;
   xpReward: number;
   deadline: string;
@@ -42,7 +42,7 @@ export interface QuestFormData {
   description: string;
   shortDescription: string;
   category: QuestCategory;
-  difficulty: QuestDifficulty;
+  difficulty: AdminQuestDifficulty;
   reward: number;
   xpReward: number;
   deadline: string;
@@ -82,3 +82,8 @@ export interface Notification {
   message: string;
   duration?: number;
 }
+
+// Backward compatibility exports
+export type QuestStatus = AdminQuestStatus;
+export type QuestDifficulty = AdminQuestDifficulty;
+export type Quest = AdminQuest;

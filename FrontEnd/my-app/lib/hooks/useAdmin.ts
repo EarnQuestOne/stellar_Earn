@@ -8,11 +8,11 @@ import {
   useContext,
 } from 'react';
 import type {
-  Quest,
+  AdminQuest as Quest,
   AdminStats,
   AdminUser,
   QuestFormData,
-  QuestStatus,
+  AdminQuestStatus as QuestStatus,
   BulkOperation,
   Notification,
 } from '../types/admin';

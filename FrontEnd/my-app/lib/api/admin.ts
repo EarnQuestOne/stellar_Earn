@@ -1,10 +1,10 @@
 import type {
-  Quest,
+  AdminQuest as Quest,
   QuestFormData,
   AdminStats,
   AdminUser,
   BulkOperation,
-  QuestStatus,
+  AdminQuestStatus as QuestStatus,
 } from '../types/admin';
 
 // Simulated delay for mock API calls
