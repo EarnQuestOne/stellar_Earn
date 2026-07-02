@@ -18,7 +18,7 @@
 use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
 use soroban_sdk::{symbol_short, Address, BytesN, Env};
 
-use earn_quest::{EarnQuestContract, EarnQuestContractClient};
+use crate::{EarnQuestContract, EarnQuestContractClient};
 
 // ---------------------------------------------------------------------------
 // Test helpers
