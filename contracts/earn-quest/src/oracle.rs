@@ -68,7 +68,7 @@ impl Oracle {
         request: &PriceFeedRequest,
     ) -> Result<AggregatedPrice, Error> {
         let mut valid_prices: Vec<(PriceData, u32)> = Vec::new(env);
-        let mut total_sources = 0;
+        let mut total_sources: u32 = 0;
 
         for config in oracle_configs.iter() {
             total_sources = total_sources.saturating_add(1);
