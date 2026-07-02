@@ -131,21 +131,18 @@ fuzz_target!(|data: DecodingInput| {
         let mut inputs: Vec<earn_quest::BatchQuestInput> = Vec::new(&env);
         for i in 0..count {
             let id_str = format!("q{i}");
-            let safe_id = id_str
-                .chars()
-                .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
-                .take(32)
-                .collect::<std::string::String>();
-            let sym = Symbol::new(&env, &safe_id);
-            let asset = Address::generate(&env);
-            let verifier = Address::generate(&env);
-            inputs.push_back(earn_quest::BatchQuestInput {
-                id: sym,
-                reward_asset: asset,
-                reward_amount: data.reward_amount.abs().max(1),
-                verifier,
-                deadline: env.ledger().timestamp().saturating_add(data.deadline_offset.max(60)),
-            });
+            if let Ok(sym) = Symbol::try_from_str(&env, &id_str) {
+                let asset = Address::generate(&env);
+                let verifier = Address::generate(&env);
+                inputs.push_back(earn_quest::BatchQuestInput {
+                    id: sym,
+                    reward_asset: asset,
+                    reward_amount: data.reward_amount.abs().max(1),
+                    verifier,
+                    deadline: env.ledger().timestamp().saturating_add(data.deadline_offset.max(60)),
+                    grace_period_seconds: None,
+                });
+            }
         }
     }));
 });

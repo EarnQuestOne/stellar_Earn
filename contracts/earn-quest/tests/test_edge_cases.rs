@@ -675,6 +675,7 @@ fn test_batch_quest_registration_exceeds_max_rejected() {
             reward_amount: 100_i128,
             verifier: verifier.clone(),
             deadline,
+            grace_period_seconds: None,
         });
     }
 

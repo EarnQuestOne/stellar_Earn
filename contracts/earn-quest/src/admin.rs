@@ -189,6 +189,20 @@ pub fn set_min_creator_level(env: &Env, caller: &Address, level: u32) -> Result<
     Ok(())
 }
 
+/// Sets the global default quest expiry grace period in seconds.
+///
+/// Quests with an explicit `grace_period_seconds` keep using their per-quest
+/// value; this default only applies when the quest does not define one.
+pub fn set_quest_grace_period(
+    env: &Env,
+    caller: &Address,
+    grace_period_seconds: u64,
+) -> Result<(), Error> {
+    require_admin(env, caller)?;
+    storage::set_quest_grace_period(env, grace_period_seconds);
+    Ok(())
+}
+
 /// Adds an address to the creator whitelist, allowing them to bypass
 /// the minimum creator level requirement when creating quests.
 ///

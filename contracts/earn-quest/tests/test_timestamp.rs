@@ -389,7 +389,8 @@ fn test_batch_registration_deadline_too_soon_rejected() {
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION - 1,
+        deadline: too_soon,
+        grace_period_seconds: None,
     });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
@@ -422,7 +423,8 @@ fn test_batch_registration_valid_deadline_accepted() {
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION + 1_000,
+        deadline: valid_deadline,
+        grace_period_seconds: None,
     });
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
