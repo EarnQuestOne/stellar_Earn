@@ -65,7 +65,7 @@ fn register_quest(
     let quest_id = symbol_short!(id);
     let token = mock_token(env);
     let verifier = Address::generate(env);
-    let deadline = env.ledger().timestamp() + 86_400;
+    let deadline = env.ledger().timestamp().saturating_add(86_400);
     client.register_quest(&quest_id, creator, &token, &reward_amount, &verifier, &deadline);
     quest_id
 }
@@ -91,7 +91,7 @@ fn full_lifecycle(
     let quest_id = symbol_short!(quest_sym);
     let token = mock_token(env);
     let verifier = Address::generate(env);
-    let deadline = env.ledger().timestamp() + 86_400;
+    let deadline = env.ledger().timestamp().saturating_add(86_400);
     client.register_quest(&quest_id, creator, &token, &reward_amount, &verifier, &deadline);
     let proof: BytesN<32> = BytesN::from_array(env, &[2u8; 32]);
     client.submit_proof(&quest_id, submitter, &proof);

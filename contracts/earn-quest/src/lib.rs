@@ -24,6 +24,9 @@ mod test_token;
 #[cfg(test)]
 mod test_clawback;
 
+#[cfg(test)]
+mod test_stats;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
