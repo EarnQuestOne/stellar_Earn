@@ -16,7 +16,7 @@
 #![cfg(test)]
 
 use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
-use soroban_sdk::{symbol_short, token, Address, BytesN, Env};
+use soroban_sdk::{symbol_short, token, Address, BytesN, Env, Symbol};
 
 use crate::{EarnQuestContract, EarnQuestContractClient};
 
@@ -57,54 +57,52 @@ fn mock_token(env: &Env) -> Address {
     token_obj.address()
 }
 
+/// Register a quest using an already-created Symbol.
 fn register_quest(
     client: &EarnQuestContractClient,
     env: &Env,
-    id: &str,
+    quest_id: &Symbol,
     creator: &Address,
     reward_amount: i128,
-) -> soroban_sdk::Symbol {
-    let quest_id = symbol_short!(id);
+) {
     let token = mock_token(env);
     let verifier = Address::generate(env);
     let deadline = env.ledger().timestamp().saturating_add(86_400);
-    client.register_quest(&quest_id, creator, &token, &reward_amount, &verifier, &deadline);
-    quest_id
+    client.register_quest(quest_id, creator, &token, &reward_amount, &verifier, &deadline);
 }
 
 fn submit(
     client: &EarnQuestContractClient,
     env: &Env,
-    quest_id: &soroban_sdk::Symbol,
+    quest_id: &Symbol,
     submitter: &Address,
 ) {
     let proof: BytesN<32> = BytesN::from_array(env, &[1u8; 32]);
     client.submit_proof(quest_id, submitter, &proof);
 }
 
+/// Register + submit + approve + claim in one shot using a real token.
 fn full_lifecycle(
     client: &EarnQuestContractClient,
     env: &Env,
-    quest_sym: &str,
+    quest_id: &Symbol,
     creator: &Address,
     submitter: &Address,
     reward_amount: i128,
-) -> soroban_sdk::Symbol {
-    let quest_id = symbol_short!(quest_sym);
+) {
     let token_admin = Address::generate(env);
     let token_obj = env.register_stellar_asset_contract_v2(token_admin.clone());
     let token_addr = token_obj.address();
     let token_client = token::StellarAssetClient::new(env, &token_addr);
     let verifier = Address::generate(env);
     let deadline = env.ledger().timestamp().saturating_add(86_400);
-    client.register_quest(&quest_id, creator, &token_addr, &reward_amount, &verifier, &deadline);
+    client.register_quest(quest_id, creator, &token_addr, &reward_amount, &verifier, &deadline);
     // Fund the contract so it can pay out the reward
     token_client.mint(&client.address, &reward_amount);
     let proof: BytesN<32> = BytesN::from_array(env, &[2u8; 32]);
-    client.submit_proof(&quest_id, submitter, &proof);
-    client.approve_submission(&quest_id, submitter, &verifier);
-    client.claim_reward(&quest_id, submitter, &reward_amount);
-    quest_id
+    client.submit_proof(quest_id, submitter, &proof);
+    client.approve_submission(quest_id, submitter, &verifier);
+    client.claim_reward(quest_id, submitter, &reward_amount);
 }
 
 // ---------------------------------------------------------------------------
@@ -150,7 +148,7 @@ fn test_platform_quest_count_increments_on_single_create() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 500);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 500);
 
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 1);
@@ -163,9 +161,9 @@ fn test_platform_quest_count_increments_multiple_times() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 100);
-    register_quest(&client, &env, "q002", &creator, 200);
-    register_quest(&client, &env, "q003", &creator, 300);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 100);
+    register_quest(&client, &env, &symbol_short!("q002"), &creator, 200);
+    register_quest(&client, &env, &symbol_short!("q003"), &creator, 300);
 
     assert_eq!(client.get_platform_stats().total_quests_created, 3);
 }
@@ -177,8 +175,8 @@ fn test_platform_rewards_distributed_tracks_sum_of_reward_amounts() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 1_000);
-    register_quest(&client, &env, "q002", &creator, 2_500);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 1_000);
+    register_quest(&client, &env, &symbol_short!("q002"), &creator, 2_500);
 
     assert_eq!(client.get_platform_stats().total_rewards_distributed, 3_500);
 }
@@ -190,8 +188,8 @@ fn test_creator_quest_count_and_rewards_posted_track_correctly() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 400);
-    register_quest(&client, &env, "q002", &creator, 600);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 400);
+    register_quest(&client, &env, &symbol_short!("q002"), &creator, 600);
 
     let c = client.get_creator_stats(&creator);
     assert_eq!(c.quests_created, 2);
@@ -206,9 +204,9 @@ fn test_platform_quest_count_is_monotonically_increasing() {
     let creator = Address::generate(&env);
 
     assert_eq!(client.get_platform_stats().total_quests_created, 0);
-    register_quest(&client, &env, "q001", &creator, 50);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 50);
     assert_eq!(client.get_platform_stats().total_quests_created, 1);
-    register_quest(&client, &env, "q002", &creator, 50);
+    register_quest(&client, &env, &symbol_short!("q002"), &creator, 50);
     assert_eq!(client.get_platform_stats().total_quests_created, 2);
 }
 
@@ -224,7 +222,8 @@ fn test_platform_submission_count_increments_on_submit() {
     let creator = Address::generate(&env);
     let submitter = Address::generate(&env);
 
-    let qid = register_quest(&client, &env, "q001", &creator, 500);
+    let qid = symbol_short!("q001");
+    register_quest(&client, &env, &qid, &creator, 500);
     submit(&client, &env, &qid, &submitter);
 
     assert_eq!(client.get_platform_stats().total_submissions, 1);
@@ -238,7 +237,8 @@ fn test_platform_active_users_increments_on_first_submission() {
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
 
-    let qid = register_quest(&client, &env, "q001", &creator, 500);
+    let qid = symbol_short!("q001");
+    register_quest(&client, &env, &qid, &creator, 500);
     submit(&client, &env, &qid, &user);
 
     assert_eq!(client.get_platform_stats().total_active_users, 1);
@@ -246,15 +246,16 @@ fn test_platform_active_users_increments_on_first_submission() {
 
 #[test]
 fn test_platform_active_users_does_not_double_count_same_user() {
-    // Same user submits on two different quests — must count as 1 unique user.
     let env = make_env();
     set_time(&env, 1_000);
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
 
-    let qid1 = register_quest(&client, &env, "q001", &creator, 100);
-    let qid2 = register_quest(&client, &env, "q002", &creator, 200);
+    let qid1 = symbol_short!("q001");
+    let qid2 = symbol_short!("q002");
+    register_quest(&client, &env, &qid1, &creator, 100);
+    register_quest(&client, &env, &qid2, &creator, 200);
     submit(&client, &env, &qid1, &user);
     submit(&client, &env, &qid2, &user);
 
@@ -273,9 +274,12 @@ fn test_platform_active_users_counts_each_distinct_address_once() {
     let u2 = Address::generate(&env);
     let u3 = Address::generate(&env);
 
-    let qid1 = register_quest(&client, &env, "q001", &creator, 300);
-    let qid2 = register_quest(&client, &env, "q002", &creator, 300);
-    let qid3 = register_quest(&client, &env, "q003", &creator, 300);
+    let qid1 = symbol_short!("q001");
+    let qid2 = symbol_short!("q002");
+    let qid3 = symbol_short!("q003");
+    register_quest(&client, &env, &qid1, &creator, 300);
+    register_quest(&client, &env, &qid2, &creator, 300);
+    register_quest(&client, &env, &qid3, &creator, 300);
 
     submit(&client, &env, &qid1, &u1);
     submit(&client, &env, &qid2, &u2);
@@ -293,7 +297,8 @@ fn test_creator_submissions_received_increments_per_submission() {
     let u1 = Address::generate(&env);
     let u2 = Address::generate(&env);
 
-    let qid = register_quest(&client, &env, "q001", &creator, 500);
+    let qid = symbol_short!("q001");
+    register_quest(&client, &env, &qid, &creator, 500);
     submit(&client, &env, &qid, &u1);
     submit(&client, &env, &qid, &u2);
 
@@ -303,15 +308,16 @@ fn test_creator_submissions_received_increments_per_submission() {
 
 #[test]
 fn test_submission_count_increments_per_submission_not_per_user() {
-    // Same user, two quests → 2 submissions total but 1 unique active user.
     let env = make_env();
     set_time(&env, 1_000);
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
 
-    let qid1 = register_quest(&client, &env, "q001", &creator, 100);
-    let qid2 = register_quest(&client, &env, "q002", &creator, 200);
+    let qid1 = symbol_short!("q001");
+    let qid2 = symbol_short!("q002");
+    register_quest(&client, &env, &qid1, &creator, 100);
+    register_quest(&client, &env, &qid2, &creator, 200);
     submit(&client, &env, &qid1, &user);
     submit(&client, &env, &qid2, &user);
 
@@ -332,7 +338,7 @@ fn test_platform_rewards_claimed_increments_on_single_claim() {
     let creator = Address::generate(&env);
     let submitter = Address::generate(&env);
 
-    full_lifecycle(&client, &env, "q001", &creator, &submitter, 500);
+    full_lifecycle(&client, &env, &symbol_short!("q001"), &creator, &submitter, 500);
 
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 1);
 }
@@ -346,8 +352,8 @@ fn test_platform_rewards_claimed_increments_on_multiple_claims() {
     let u1 = Address::generate(&env);
     let u2 = Address::generate(&env);
 
-    full_lifecycle(&client, &env, "q001", &creator, &u1, 300);
-    full_lifecycle(&client, &env, "q002", &creator, &u2, 700);
+    full_lifecycle(&client, &env, &symbol_short!("q001"), &creator, &u1, 300);
+    full_lifecycle(&client, &env, &symbol_short!("q002"), &creator, &u2, 700);
 
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 2);
 }
@@ -361,8 +367,8 @@ fn test_creator_claims_paid_increments_after_each_claim() {
     let u1 = Address::generate(&env);
     let u2 = Address::generate(&env);
 
-    full_lifecycle(&client, &env, "q001", &creator, &u1, 400);
-    full_lifecycle(&client, &env, "q002", &creator, &u2, 600);
+    full_lifecycle(&client, &env, &symbol_short!("q001"), &creator, &u1, 400);
+    full_lifecycle(&client, &env, &symbol_short!("q002"), &creator, &u2, 600);
 
     let c = client.get_creator_stats(&creator);
     assert_eq!(c.total_claims_paid, 2);
@@ -376,9 +382,9 @@ fn test_submission_without_claim_does_not_increment_rewards_claimed() {
     let creator = Address::generate(&env);
     let submitter = Address::generate(&env);
 
-    let qid = register_quest(&client, &env, "q001", &creator, 500);
+    let qid = symbol_short!("q001");
+    register_quest(&client, &env, &qid, &creator, 500);
     submit(&client, &env, &qid, &submitter);
-    // No approve or claim
 
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 0);
 }
@@ -396,14 +402,14 @@ fn test_creator_stats_are_isolated_between_creators() {
     let cb = Address::generate(&env);
     let submitter = Address::generate(&env);
 
-    // creator_a: 2 quests
-    register_quest(&client, &env, "a001", &ca, 1_000);
-    register_quest(&client, &env, "a002", &ca, 2_000);
-    // creator_b: 1 quest
-    register_quest(&client, &env, "b001", &cb, 500);
+    let qa1 = symbol_short!("a001");
+    let qa2 = symbol_short!("a002");
+    let qb1 = symbol_short!("b001");
+    register_quest(&client, &env, &qa1, &ca, 1_000);
+    register_quest(&client, &env, &qa2, &ca, 2_000);
+    register_quest(&client, &env, &qb1, &cb, 500);
 
-    // submit to creator_a's quest only
-    submit(&client, &env, &symbol_short!("a001"), &submitter);
+    submit(&client, &env, &qa1, &submitter);
 
     let ca_stats = client.get_creator_stats(&ca);
     let cb_stats = client.get_creator_stats(&cb);
@@ -425,8 +431,8 @@ fn test_platform_aggregates_across_all_creators() {
     let ca = Address::generate(&env);
     let cb = Address::generate(&env);
 
-    register_quest(&client, &env, "a001", &ca, 1_000);
-    register_quest(&client, &env, "b001", &cb, 2_000);
+    register_quest(&client, &env, &symbol_short!("a001"), &ca, 1_000);
+    register_quest(&client, &env, &symbol_short!("b001"), &cb, 2_000);
 
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 2);
@@ -443,12 +449,11 @@ fn test_creator_claims_paid_isolated_from_other_creator_claims() {
     let u1 = Address::generate(&env);
     let u2 = Address::generate(&env);
 
-    full_lifecycle(&client, &env, "a001", &ca, &u1, 300);
-    full_lifecycle(&client, &env, "b001", &cb, &u2, 700);
+    full_lifecycle(&client, &env, &symbol_short!("a001"), &ca, &u1, 300);
+    full_lifecycle(&client, &env, &symbol_short!("b001"), &cb, &u2, 700);
 
     assert_eq!(client.get_creator_stats(&ca).total_claims_paid, 1);
     assert_eq!(client.get_creator_stats(&cb).total_claims_paid, 1);
-    // Platform sees both
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 2);
 }
 
@@ -468,16 +473,19 @@ fn test_full_platform_lifecycle_all_counters_consistent() {
     let u2 = Address::generate(&env);
     let u3 = Address::generate(&env);
 
-    register_quest(&client, &env, "a001", &ca, 100);
-    register_quest(&client, &env, "a002", &ca, 200);
-    register_quest(&client, &env, "b001", &cb, 300);
-    register_quest(&client, &env, "b002", &cb, 400);
+    let qa1 = symbol_short!("a001");
+    let qa2 = symbol_short!("a002");
+    let qb1 = symbol_short!("b001");
+    let qb2 = symbol_short!("b002");
+    register_quest(&client, &env, &qa1, &ca, 100);
+    register_quest(&client, &env, &qa2, &ca, 200);
+    register_quest(&client, &env, &qb1, &cb, 300);
+    register_quest(&client, &env, &qb2, &cb, 400);
 
-    // u1 submits twice; u2 and u3 each submit once
-    submit(&client, &env, &symbol_short!("a001"), &u1);
-    submit(&client, &env, &symbol_short!("a002"), &u2);
-    submit(&client, &env, &symbol_short!("b001"), &u1); // second submission by u1
-    submit(&client, &env, &symbol_short!("b002"), &u3);
+    submit(&client, &env, &qa1, &u1);
+    submit(&client, &env, &qa2, &u2);
+    submit(&client, &env, &qb1, &u1);
+    submit(&client, &env, &qb2, &u3);
 
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 4);
@@ -498,7 +506,7 @@ fn test_minimum_reward_amount_tracked_correctly() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 1);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 1);
 
     assert_eq!(client.get_platform_stats().total_rewards_distributed, 1);
 }
@@ -510,9 +518,9 @@ fn test_large_reward_amount_tracked_without_overflow() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    // Use MAX_REWARD_AMOUNT (the validation ceiling) to test overflow safety
-    let big: i128 = 1_000_000_000_000_000_i128; // validation::MAX_REWARD_AMOUNT
-    register_quest(&client, &env, "q001", &creator, big);
+    // MAX_REWARD_AMOUNT validation ceiling
+    let big: i128 = 1_000_000_000_000_000_i128;
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, big);
 
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_rewards_distributed, big as u128);
@@ -529,7 +537,7 @@ fn test_admin_can_reset_platform_stats_to_zero() {
     let (client, admin) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 500);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 500);
     assert_eq!(client.get_platform_stats().total_quests_created, 1);
 
     client.reset_platform_stats(&admin);
@@ -560,11 +568,10 @@ fn test_stats_accumulate_correctly_after_reset() {
     let (client, admin) = setup(&env);
     let creator = Address::generate(&env);
 
-    register_quest(&client, &env, "q001", &creator, 500);
+    register_quest(&client, &env, &symbol_short!("q001"), &creator, 500);
     client.reset_platform_stats(&admin);
 
-    // A quest created after reset should restart from 1
-    register_quest(&client, &env, "q002", &creator, 250);
+    register_quest(&client, &env, &symbol_short!("q002"), &creator, 250);
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 1, "counter must restart after reset");
     assert_eq!(stats.total_rewards_distributed, 250);
@@ -576,18 +583,15 @@ fn test_stats_accumulate_correctly_after_reset() {
 
 #[test]
 fn test_get_platform_stats_requires_no_auth() {
-    // Intentionally not calling mock_all_auths globally for this test.
     let env = Env::default();
     set_time(&env, 1_000);
     let cid = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(&env, &cid);
 
-    // initialize still requires auth
     env.mock_all_auths();
     let admin = Address::generate(&env);
     client.initialize(&admin);
 
-    // get_platform_stats must not require auth — call without mock
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 0);
 }

@@ -138,6 +138,14 @@ pub fn register_quest_with_category_and_grace_period(
     storage::inc_platform_quests_created(env);
     storage::add_platform_rewards_distributed(env, reward_amount as u128);
 
+    // Update per-creator stats
+    let mut creator_stats = storage::get_creator_stats(env, creator);
+    creator_stats.quests_created = creator_stats.quests_created.saturating_add(1);
+    creator_stats.total_rewards_posted = creator_stats
+        .total_rewards_posted
+        .saturating_add(reward_amount);
+    storage::set_creator_stats(env, creator, &creator_stats);
+
     events::quest_registered(
         env,
         id.clone(),
