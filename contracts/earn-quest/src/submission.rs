@@ -1,7 +1,7 @@
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
-use crate::types::{BatchApprovalInput, Commitment, Submission, SubmissionStatus};
+use crate::types::{BatchApprovalInput, Commitment, Submission, SubmissionStatus, UserCore};
 use crate::validation;
 use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
@@ -164,7 +164,33 @@ pub fn submit_proof(
         timestamp: env.ledger().timestamp(),
     };
 
+    // Track active users: only count first-ever submission by this address.
+    // We mark the user as "seen" by initialising their stats record so a
+    // second submit_proof call for the same address won't double-count.
+    let is_first_submission = !storage::has_user_stats(env, submitter);
+    if is_first_submission {
+        // Write a default stats record to mark this user as known.
+        storage::set_user_stats(
+            env,
+            submitter,
+            &UserCore {
+                xp: 0,
+                level: 1,
+                quests_completed: 0,
+            },
+        );
+    }
     storage::set_submission(env, quest_id, submitter, &submission);
+
+    // Platform & creator stats counters
+    storage::inc_platform_submissions(env);
+    if is_first_submission {
+        storage::inc_platform_active_users(env);
+    }
+    let mut creator_stats = storage::get_creator_stats(env, &quest.creator);
+    creator_stats.total_submissions_received =
+        creator_stats.total_submissions_received.saturating_add(1);
+    storage::set_creator_stats(env, &quest.creator, &creator_stats);
 
     // EMIT EVENT: ProofSubmitted
     events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());

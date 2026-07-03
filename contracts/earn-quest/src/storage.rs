@@ -1291,6 +1291,18 @@ pub fn inc_platform_rewards_claimed(env: &Env) {
         .set(&DataKey::PlatformRewardsClaimed, &v.saturating_add(1));
 }
 
+/// Increment only the active-users counter.
+pub fn inc_platform_active_users(env: &Env) {
+    let v: u64 = env
+        .storage()
+        .instance()
+        .get(&DataKey::PlatformActiveUsers)
+        .unwrap_or(0);
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformActiveUsers, &v.saturating_add(1));
+}
+
 /// Add to the rewards-distributed counter.
 pub fn add_platform_rewards_distributed(env: &Env, amount: u128) {
     let v: u128 = env

@@ -227,10 +227,6 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let _available = b
-        .total_deposited
-        .saturating_sub(b.total_paid_out)
-        .saturating_sub(b.total_refunded);
     let available = available_balance(&b);
     let depositor = meta.depositor.clone();
     let token = meta.token.clone();

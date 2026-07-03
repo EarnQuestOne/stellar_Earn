@@ -16,7 +16,7 @@
 #![cfg(test)]
 
 use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
-use soroban_sdk::{symbol_short, Address, BytesN, Env};
+use soroban_sdk::{symbol_short, token, Address, BytesN, Env};
 
 use crate::{EarnQuestContract, EarnQuestContractClient};
 
@@ -52,7 +52,9 @@ fn setup(env: &Env) -> (EarnQuestContractClient<'_>, Address) {
 }
 
 fn mock_token(env: &Env) -> Address {
-    Address::generate(env)
+    let admin = Address::generate(env);
+    let token_obj = env.register_stellar_asset_contract_v2(admin.clone());
+    token_obj.address()
 }
 
 fn register_quest(
@@ -89,10 +91,15 @@ fn full_lifecycle(
     reward_amount: i128,
 ) -> soroban_sdk::Symbol {
     let quest_id = symbol_short!(quest_sym);
-    let token = mock_token(env);
+    let token_admin = Address::generate(env);
+    let token_obj = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token_addr = token_obj.address();
+    let token_client = token::StellarAssetClient::new(env, &token_addr);
     let verifier = Address::generate(env);
     let deadline = env.ledger().timestamp().saturating_add(86_400);
-    client.register_quest(&quest_id, creator, &token, &reward_amount, &verifier, &deadline);
+    client.register_quest(&quest_id, creator, &token_addr, &reward_amount, &verifier, &deadline);
+    // Fund the contract so it can pay out the reward
+    token_client.mint(&client.address, &reward_amount);
     let proof: BytesN<32> = BytesN::from_array(env, &[2u8; 32]);
     client.submit_proof(&quest_id, submitter, &proof);
     client.approve_submission(&quest_id, submitter, &verifier);
@@ -503,7 +510,8 @@ fn test_large_reward_amount_tracked_without_overflow() {
     let (client, _) = setup(&env);
     let creator = Address::generate(&env);
 
-    let big: i128 = i128::MAX / 4;
+    // Use MAX_REWARD_AMOUNT (the validation ceiling) to test overflow safety
+    let big: i128 = 1_000_000_000_000_000_i128; // validation::MAX_REWARD_AMOUNT
     register_quest(&client, &env, "q001", &creator, big);
 
     let stats = client.get_platform_stats();

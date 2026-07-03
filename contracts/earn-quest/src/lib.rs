@@ -553,11 +553,18 @@ impl EarnQuestContract {
             &env,
             quest_id.clone(),
             submitter.clone(),
-            quest.reward_asset,
+            quest.reward_asset.clone(),
             amount,
         );
 
         reputation::award_xp(&env, &submitter, 100)?;
+
+        // Update platform and creator stats
+        storage::inc_platform_rewards_claimed(&env);
+        let creator = quest.creator.clone();
+        let mut creator_stats = storage::get_creator_stats(&env, &creator);
+        creator_stats.total_claims_paid = creator_stats.total_claims_paid.saturating_add(1);
+        storage::set_creator_stats(&env, &creator, &creator_stats);
 
         security::nonreentrant_exit(&env);
         Ok(())
