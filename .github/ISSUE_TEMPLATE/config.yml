@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Security vulnerability disclosure
-    url: https://github.com/EarnQuestOne/stellar_Earn/security/advisories/new
-    about: Report a security vulnerability privately. Do NOT open a public issue for security bugs.
-  - name: General discussion / questions
-    url: https://github.com/EarnQuestOne/stellar_Earn/discussions
-    about: Ask questions or start a broader conversation about the project.
