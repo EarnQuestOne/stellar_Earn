@@ -37,7 +37,7 @@ export function middleware(request: NextRequest) {
         if (header.key === 'Content-Security-Policy') {
           const value = header.value.replace(
             /'unsafe-inline'/g,
-            `'nonce-${nonce}'`
+            `'nonce-${nonce}'`,
           );
           response.headers.set(headerKey, value);
         } else {
