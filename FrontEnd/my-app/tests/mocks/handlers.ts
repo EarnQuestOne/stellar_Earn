@@ -81,7 +81,7 @@ const profileFixture = {
       id: 'ach-1',
       name: 'First Quest',
       description: 'Complete your first quest',
-      icon: '🎯',
+      icon: 'target',
       earnedAt: '2025-06-16T10:00:00Z',
       rarity: 'common',
     },
