@@ -32,7 +32,7 @@ import type {
 import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
 
 // Re-export legacy dashboard types for backward compat
-export type {
+import type {
   UserStats,
   Quest,
   Submission,
@@ -40,7 +40,15 @@ export type {
   Badge,
   DashboardData,
 } from '../types/dashboard';
-import type { EarningsData, Badge, DashboardData } from '../types/dashboard';
+
+export type {
+  UserStats,
+  Quest,
+  Submission,
+  EarningsData,
+  Badge,
+  DashboardData,
+};
 
 const dashboardDelay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
