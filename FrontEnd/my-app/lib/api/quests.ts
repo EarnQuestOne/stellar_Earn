@@ -63,7 +63,9 @@ function deserializeQuest(data: any): QuestResponse {
     } else if (rawStatus === 'archived' || rawStatus === 'expired') {
       status = 'Expired';
     } else {
-      const capitalized = data.status.charAt(0).toUpperCase() + data.status.slice(1).toLowerCase();
+      const capitalized =
+        data.status.charAt(0).toUpperCase() +
+        data.status.slice(1).toLowerCase();
       if (['Active', 'Paused', 'Completed', 'Expired'].includes(capitalized)) {
         status = capitalized as QuestStatus;
       }
@@ -84,21 +86,32 @@ function deserializeQuest(data: any): QuestResponse {
     deadline: data.deadline || null,
     status,
     totalClaims: data.totalClaims != null ? Number(data.totalClaims) : 0,
-    totalSubmissions: data.totalSubmissions != null ? Number(data.totalSubmissions) : 0,
-    approvedSubmissions: data.approvedSubmissions != null ? Number(data.approvedSubmissions) : 0,
-    rejectedSubmissions: data.rejectedSubmissions != null ? Number(data.rejectedSubmissions) : 0,
-    maxParticipants: data.maxParticipants != null ? Number(data.maxParticipants) : undefined,
-    currentParticipants: data.currentParticipants != null ? Number(data.currentParticipants) : undefined,
+    totalSubmissions:
+      data.totalSubmissions != null ? Number(data.totalSubmissions) : 0,
+    approvedSubmissions:
+      data.approvedSubmissions != null ? Number(data.approvedSubmissions) : 0,
+    rejectedSubmissions:
+      data.rejectedSubmissions != null ? Number(data.rejectedSubmissions) : 0,
+    maxParticipants:
+      data.maxParticipants != null ? Number(data.maxParticipants) : undefined,
+    currentParticipants:
+      data.currentParticipants != null
+        ? Number(data.currentParticipants)
+        : undefined,
     requirements: Array.isArray(data.requirements) ? data.requirements : [],
     tags: Array.isArray(data.tags) ? data.tags : [],
-    creator: data.creator ? {
-      id: data.creator.id,
-      name: data.creator.name,
-      avatarUrl: data.creator.avatarUrl || undefined,
-    } : data.createdBy ? {
-      id: data.createdBy,
-      name: 'StellarEarn Creator',
-    } : undefined,
+    creator: data.creator
+      ? {
+          id: data.creator.id,
+          name: data.creator.name,
+          avatarUrl: data.creator.avatarUrl || undefined,
+        }
+      : data.createdBy
+        ? {
+            id: data.createdBy,
+            name: 'StellarEarn Creator',
+          }
+        : undefined,
     skills: Array.isArray(data.skills) ? data.skills : [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
@@ -106,7 +119,8 @@ function deserializeQuest(data: any): QuestResponse {
 }
 
 function deserializePaginatedQuests(response: any): PaginatedQuestsResponse {
-  if (!response) throw new Error('Cannot deserialize null or undefined paginated response');
+  if (!response)
+    throw new Error('Cannot deserialize null or undefined paginated response');
 
   // Handle both backend wrapped response format and direct mock format
   const rawData = response.data;
@@ -229,9 +243,13 @@ export async function getQuestById(
       );
 
       // Handle both wrapped { data: QuestResponseDto } and unwrapped QuestResponseDto
-      const rawQuest = response && response.data && !Array.isArray(response.data) && response.data.id
-        ? response.data
-        : response;
+      const rawQuest =
+        response &&
+        response.data &&
+        !Array.isArray(response.data) &&
+        response.data.id
+          ? response.data
+          : response;
 
       return deserializeQuest(rawQuest);
     },
@@ -249,9 +267,10 @@ export async function createQuest(
   const result = await post<any>('/quests', payload);
   cacheManager.clear();
 
-  const rawQuest = result && result.data && !Array.isArray(result.data) && result.data.id
-    ? result.data
-    : result;
+  const rawQuest =
+    result && result.data && !Array.isArray(result.data) && result.data.id
+      ? result.data
+      : result;
 
   return deserializeQuest(rawQuest);
 }
@@ -267,9 +286,10 @@ export async function updateQuest(
   const result = await patch<any>(`/quests/${id}`, payload);
   cacheManager.invalidate(`quest-${id}`);
 
-  const rawQuest = result && result.data && !Array.isArray(result.data) && result.data.id
-    ? result.data
-    : result;
+  const rawQuest =
+    result && result.data && !Array.isArray(result.data) && result.data.id
+      ? result.data
+      : result;
 
   return deserializeQuest(rawQuest);
 }

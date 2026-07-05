@@ -37,23 +37,22 @@ afterEach(() => {
 
 describe('Quests API Integration Tests', () => {
   it('should fetch quests successfully with mock data', async () => {
-    const response = (await getQuests()) as any;
+    const response = await getQuests();
 
     expect(response).toBeDefined();
-    expect(response.data).toHaveLength(1);
-    expect(response.data[0].id).toBe('quest-1');
-    expect(response.data[0].title).toBe('Test Quest 1');
-    expect(response.meta.total).toBe(1);
+    expect(response.quests).toHaveLength(1);
+    expect(response.quests[0].id).toBe('quest-1');
+    expect(response.quests[0].title).toBe('Test Quest 1');
+    expect(response.total).toBe(1);
   });
 
   it('should fetch a single quest by ID successfully', async () => {
-    const response = (await getQuestById('quest-123')) as any;
+    const response = await getQuestById('quest-123');
 
     expect(response).toBeDefined();
-    expect(response.data).toBeDefined();
-    expect(response.data.id).toBe('quest-123');
-    expect(response.data.title).toBe('Test Quest quest-123');
-    expect(response.data.rewardAmount).toBe(50);
+    expect(response.id).toBe('quest-123');
+    expect(response.title).toBe('Test Quest quest-123');
+    expect(response.rewardAmount).toBe(50);
   });
 
   it('should reuse fresh cached quest listings without another request', async () => {
@@ -65,12 +64,12 @@ describe('Quests API Integration Tests', () => {
       })
     );
 
-    const first = (await getQuests({ limit: 10 })) as any;
-    const second = (await getQuests({ limit: 10 })) as any;
+    const first = await getQuests({ limit: 10 });
+    const second = await getQuests({ limit: 10 });
 
     expect(requestCount).toBe(1);
-    expect(first.data[0].id).toBe('quest-1');
-    expect(second.data[0].id).toBe('quest-1');
+    expect(first.quests[0].id).toBe('quest-1');
+    expect(second.quests[0].id).toBe('quest-1');
   });
 
   it('should return stale quest listings while revalidating in the background', async () => {
@@ -85,20 +84,20 @@ describe('Quests API Integration Tests', () => {
       })
     );
 
-    const fresh = (await getQuests()) as any;
+    const fresh = await getQuests();
     now = 3 * 60 * 1000 + 1;
-    const stale = (await getQuests(undefined, undefined, undefined, {
+    const stale = await getQuests(undefined, undefined, undefined, {
       onRevalidate,
-    })) as any;
+    });
 
-    expect(stale.data[0].id).toBe(fresh.data[0].id);
-    expect(stale.data[0].id).toBe('quest-1');
+    expect(stale.quests[0].id).toBe(fresh.quests[0].id);
+    expect(stale.quests[0].id).toBe('quest-1');
 
     await vi.waitFor(() => {
       expect(requestCount).toBe(2);
       expect(onRevalidate).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: [expect.objectContaining({ id: 'quest-2' })],
+          quests: [expect.objectContaining({ id: 'quest-2' })],
         })
       );
     });
@@ -115,12 +114,12 @@ describe('Quests API Integration Tests', () => {
       })
     );
 
-    const first = (await getQuests()) as any;
+    const first = await getQuests();
     now = 13 * 60 * 1000 + 1;
-    const second = (await getQuests()) as any;
+    const second = await getQuests();
 
     expect(requestCount).toBe(2);
-    expect(first.data[0].id).toBe('quest-1');
-    expect(second.data[0].id).toBe('quest-2');
+    expect(first.quests[0].id).toBe('quest-1');
+    expect(second.quests[0].id).toBe('quest-2');
   });
 });
