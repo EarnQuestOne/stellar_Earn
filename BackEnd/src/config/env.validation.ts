@@ -85,7 +85,51 @@ const ENV_SCHEMA: Record<string, EnvVarSchema> = {
     type: 'string',
     required: false,
     default: 'info',
-    allowedValues: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
+    allowedValues: [
+      'error',
+      'warn',
+      'info',
+      'http',
+      'verbose',
+      'debug',
+      'silly',
+    ],
+  },
+
+  // Resource Limits
+  RESOURCE_MAX_HEAP_MB: {
+    type: 'number',
+    required: false,
+    default: 512,
+    min: 64,
+    max: 32768,
+  },
+  RESOURCE_MAX_RSS_MB: {
+    type: 'number',
+    required: false,
+    default: 768,
+    min: 64,
+    max: 65536,
+  },
+  RESOURCE_HEAP_WARN_PERCENT: {
+    type: 'number',
+    required: false,
+    default: 75,
+    min: 1,
+    max: 99,
+  },
+  RESOURCE_HEAP_CRITICAL_PERCENT: {
+    type: 'number',
+    required: false,
+    default: 90,
+    min: 1,
+    max: 100,
+  },
+  RESOURCE_MONITOR_INTERVAL_MS: {
+    type: 'number',
+    required: false,
+    default: 30000,
+    min: 1000,
   },
 };
 

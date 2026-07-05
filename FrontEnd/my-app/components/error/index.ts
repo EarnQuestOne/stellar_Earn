@@ -20,3 +20,5 @@ export {
 } from './APIBootstrapErrorBoundary';
 export { ErrorMessage } from './ErrorMessage';
 export { BootstrapErrorFallback } from './BootstrapErrorFallback';
+export { OfflineFallback } from './OfflineFallback';
+export { ApiUnreachableFallback } from './ApiUnreachableFallback';

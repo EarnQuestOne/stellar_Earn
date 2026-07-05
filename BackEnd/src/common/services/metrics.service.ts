@@ -207,8 +207,24 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     );
     this.registerGauge('nodejs_heap_used_bytes', 'Node.js heap used in bytes');
     this.registerGauge(
+      'nodejs_heap_total_bytes',
+      'Node.js heap total allocated in bytes',
+    );
+    this.registerGauge(
+      'nodejs_external_bytes',
+      'Node.js external memory in bytes',
+    );
+    this.registerGauge(
       'process_uptime_seconds',
       'Application uptime in seconds',
+    );
+    this.registerGauge(
+      'nodejs_cpu_user_microseconds',
+      'Cumulative user-mode CPU time in microseconds',
+    );
+    this.registerGauge(
+      'nodejs_cpu_system_microseconds',
+      'Cumulative system-mode CPU time in microseconds',
     );
     this.registerCounter(
       'auth_attempts_total',
@@ -259,9 +275,14 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private startSystemCollection(): void {
     const collect = () => {
       const mem = process.memoryUsage();
+      const cpu = process.cpuUsage();
       this.setGauge('process_memory_rss_bytes', mem.rss);
       this.setGauge('nodejs_heap_used_bytes', mem.heapUsed);
+      this.setGauge('nodejs_heap_total_bytes', mem.heapTotal);
+      this.setGauge('nodejs_external_bytes', mem.external);
       this.setGauge('process_uptime_seconds', Math.floor(process.uptime()));
+      this.setGauge('nodejs_cpu_user_microseconds', cpu.user);
+      this.setGauge('nodejs_cpu_system_microseconds', cpu.system);
     };
 
     collect();

@@ -50,7 +50,7 @@ pub fn register_quest(
     verifier: &Address,
     deadline: u64,
 ) -> Result<(), Error> {
-    register_quest_with_category(
+    register_quest_with_category_and_grace_period(
         env,
         id,
         creator,
@@ -58,6 +58,7 @@ pub fn register_quest(
         reward_amount,
         verifier,
         deadline,
+        None,
         0,
     )
 }
@@ -71,6 +72,32 @@ pub fn register_quest_with_category(
     reward_amount: i128,
     verifier: &Address,
     deadline: u64,
+    category: u32,
+) -> Result<(), Error> {
+    register_quest_with_category_and_grace_period(
+        env,
+        id,
+        creator,
+        reward_asset,
+        reward_amount,
+        verifier,
+        deadline,
+        None,
+        category,
+    )
+}
+
+/// Registers a new quest with an explicit numeric category and optional grace period.
+#[allow(clippy::too_many_arguments)]
+pub fn register_quest_with_category_and_grace_period(
+    env: &Env,
+    id: &Symbol,
+    creator: &Address,
+    reward_asset: &Address,
+    reward_amount: i128,
+    verifier: &Address,
+    deadline: u64,
+    grace_period_seconds: Option<u64>,
     category: u32,
 ) -> Result<(), Error> {
     validation::validate_symbol_length(id)?;
@@ -99,6 +126,7 @@ pub fn register_quest_with_category(
         reward_amount,
         verifier: verifier.clone(),
         deadline,
+        grace_period_seconds,
         category,
         status: QuestStatus::Active,
         total_claims: 0,
@@ -193,7 +221,7 @@ pub fn register_quests_batch(
 
     for i in 0u32..len {
         let q = quests.get(i).ok_or(Error::IndexOutOfBounds)?;
-        register_quest(
+        register_quest_with_category_and_grace_period(
             env,
             &q.id,
             creator,
@@ -201,6 +229,8 @@ pub fn register_quests_batch(
             q.reward_amount,
             &q.verifier,
             q.deadline,
+            q.grace_period_seconds,
+            0,
         )?;
     }
 

@@ -116,7 +116,7 @@ export function Modal({
                 <button
                   ref={closeButtonRef}
                   onClick={onClose}
-                  className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                  className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
                   aria-label="Close modal"
                 >
                   <svg
@@ -191,7 +191,7 @@ export function SubmissionSuccessModal({
         </p>
         <button
           onClick={onClose}
-          className="w-full rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+          className="w-full rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
           aria-label="Close success message"
         >
           Done

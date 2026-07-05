@@ -1,0 +1,32 @@
+name: Backend Module Changelog
+
+on:
+  pull_request:
+    paths:
+      - "BackEnd/src/modules/**"
+      - "scripts/backend-changelog.js"
+      - ".github/workflows/backend-changelog.yml"
+
+jobs:
+  changelog-discipline:
+    name: Module changelog discipline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Need the PR base commit available for the diff range.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check backend module changelog discipline
+        env:
+          CHANGELOG_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGELOG_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGELOG_PR_TITLE: ${{ github.event.pull_request.title }}
+          CHANGELOG_PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/backend-changelog.js check

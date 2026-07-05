@@ -67,7 +67,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white border-2 border-white dark:border-zinc-900">
+          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-2xs font-bold text-white border-2 border-white dark:border-zinc-900">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

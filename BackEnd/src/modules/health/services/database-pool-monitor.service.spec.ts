@@ -27,7 +27,12 @@ function buildDataSourceMock(overrides: PoolOverrides = {}) {
       extra:
         overrides.extra !== undefined
           ? overrides.extra
-          : { max: 10, min: 0, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 },
+          : {
+              max: 10,
+              min: 0,
+              connectionTimeoutMillis: 10000,
+              idleTimeoutMillis: 30000,
+            },
     },
   } as any;
 }
@@ -154,7 +159,12 @@ describe('DatabasePoolMonitorService', () => {
 
     it('should return 0 when max is 0', async () => {
       const { service: svc } = await buildModule({
-        extra: { max: 0, min: 0, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 },
+        extra: {
+          max: 0,
+          min: 0,
+          connectionTimeoutMillis: 10000,
+          idleTimeoutMillis: 30000,
+        },
       });
       const utilization = svc.getUtilizationPercentage();
       expect(utilization).toBe(0);
@@ -287,14 +297,21 @@ describe('DatabasePoolMonitorService', () => {
 
   describe('exhaustion detection', () => {
     it('should detect pool exhaustion when max connections reached and waiting requests exist', async () => {
-      const { service: svc, metricsService: metrics, loggerService: logger } =
-        await buildModule({ pool: { totalCount: 10, idleCount: 0, waitingCount: 5 } });
+      const {
+        service: svc,
+        metricsService: metrics,
+        loggerService: logger,
+      } = await buildModule({
+        pool: { totalCount: 10, idleCount: 0, waitingCount: 5 },
+      });
 
       svc.onModuleInit();
       svc['collectPoolMetrics']();
       svc['checkExhaustionConditions']();
 
-      expect(metrics.incrementCounter).toHaveBeenCalledWith('db_pool_exhaustion_total');
+      expect(metrics.incrementCounter).toHaveBeenCalledWith(
+        'db_pool_exhaustion_total',
+      );
       expect(logger.error).toHaveBeenCalledWith(
         'Database pool exhaustion detected',
         'DatabasePoolMonitorService',
@@ -307,8 +324,9 @@ describe('DatabasePoolMonitorService', () => {
     });
 
     it('should not alert on exhaustion within cooldown period', async () => {
-      const { service: svc, loggerService: logger } =
-        await buildModule({ pool: { totalCount: 10, idleCount: 0, waitingCount: 5 } });
+      const { service: svc, loggerService: logger } = await buildModule({
+        pool: { totalCount: 10, idleCount: 0, waitingCount: 5 },
+      });
 
       svc.onModuleInit();
       svc['collectPoolMetrics']();
@@ -323,8 +341,9 @@ describe('DatabasePoolMonitorService', () => {
 
   describe('high utilization detection', () => {
     it('should alert when utilization exceeds 90%', async () => {
-      const { service: svc, loggerService: logger } =
-        await buildModule({ pool: { totalCount: 9, idleCount: 0, waitingCount: 0 } });
+      const { service: svc, loggerService: logger } = await buildModule({
+        pool: { totalCount: 9, idleCount: 0, waitingCount: 0 },
+      });
 
       svc.onModuleInit();
       svc['collectPoolMetrics']();
@@ -342,8 +361,9 @@ describe('DatabasePoolMonitorService', () => {
 
   describe('waiting queue detection', () => {
     it('should log warning when waiting queue is elevated', async () => {
-      const { service: svc, loggerService: logger } =
-        await buildModule({ pool: { totalCount: 5, idleCount: 2, waitingCount: 6 } });
+      const { service: svc, loggerService: logger } = await buildModule({
+        pool: { totalCount: 5, idleCount: 2, waitingCount: 6 },
+      });
 
       svc.onModuleInit();
       svc['collectPoolMetrics']();
@@ -364,7 +384,9 @@ describe('DatabasePoolMonitorService', () => {
     });
 
     it('should log warning when collection fails', async () => {
-      const { service: svc, loggerService: logger } = await buildModule({ driverNull: true });
+      const { service: svc, loggerService: logger } = await buildModule({
+        driverNull: true,
+      });
       svc.onModuleInit();
       svc['collectPoolMetrics']();
       expect(logger.warn).toHaveBeenCalledWith(

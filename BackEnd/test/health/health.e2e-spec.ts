@@ -12,6 +12,7 @@ import { DatabaseHealthService } from '#src/modules/health/services/database-hea
 import { CacheHealthService } from '#src/modules/health/services/cache-health.service';
 import { ExternalHealthService } from '#src/modules/health/services/external-health.service';
 import { HealthCheckResult } from '#src/modules/health/types/health.types';
+import { MetricsService } from '#src/common/services/metrics.service';
 
 const mockDatabaseHealth = {
   check: jest.fn(),
@@ -23,6 +24,11 @@ const mockCacheHealth = {
 
 const mockExternalHealth = {
   check: jest.fn(),
+  checkStellar: jest.fn(),
+};
+
+const mockMetricsService = {
+  getPrometheusOutput: jest.fn().mockReturnValue(''),
 };
 
 describe('Health (e2e)', () => {
@@ -36,6 +42,7 @@ describe('Health (e2e)', () => {
         { provide: DatabaseHealthService, useValue: mockDatabaseHealth },
         { provide: CacheHealthService, useValue: mockCacheHealth },
         { provide: ExternalHealthService, useValue: mockExternalHealth },
+        { provide: MetricsService, useValue: mockMetricsService },
       ],
     }).compile();
 
@@ -61,7 +68,7 @@ describe('Health (e2e)', () => {
   describe('GET /health/live', () => {
     it('returns 200 with basic app status', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/live')
+        .get('/api/health/live')
         .expect(200);
 
       expect(res.body.status).toBe('ok');
@@ -78,7 +85,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(okResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(200);
 
       expect(res.body.status).toBe('ok');
@@ -101,7 +108,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(degradedResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(200);
 
       expect(res.body.status).toBe('degraded');
@@ -120,7 +127,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(okResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(503);
 
       expect(res.body.status).toBe('down');
@@ -139,7 +146,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(downResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(503);
 
       expect(res.body.status).toBe('down');
@@ -156,7 +163,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(downResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(503);
 
       expect(res.body.status).toBe('down');
@@ -170,7 +177,7 @@ describe('Health (e2e)', () => {
       mockCacheHealth.check.mockResolvedValue(okResult);
 
       await request(app.getHttpServer())
-        .get('/api/v1/health/ready')
+        .get('/api/health/ready')
         .expect(200);
 
       // Both should have been called
@@ -178,6 +185,70 @@ describe('Health (e2e)', () => {
       expect(mockCacheHealth.check).toHaveBeenCalledTimes(1);
       // They are called without waiting for each other (Promise.all)
       // This is implicit - we'd need to test timing to be sure
+    });
+  });
+
+  describe('GET /health/stellar', () => {
+    it('returns 200 with stellar health when the Horizon endpoint is reachable', async () => {
+      const stellarResult: HealthCheckResult = { status: 'ok', latency: 40 };
+      mockExternalHealth.checkStellar.mockResolvedValue(stellarResult);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/health/stellar')
+        .expect(200);
+
+      expect(res.body.status).toBe('ok');
+      expect(res.body.service.status).toBe('ok');
+      expect(res.body.service.latency).toBe(40);
+    });
+
+    it('returns 503 when Stellar Horizon is unreachable', async () => {
+      const stellarResult: HealthCheckResult = {
+        status: 'down',
+        latency: 5000,
+        error: 'Horizon unavailable',
+      };
+      mockExternalHealth.checkStellar.mockResolvedValue(stellarResult);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/health/stellar')
+        .expect(503);
+
+      expect(res.body.status).toBe('down');
+      expect(res.body.service.status).toBe('down');
+      expect(res.body.service.error).toBe('Horizon unavailable');
+    });
+  });
+
+  describe('GET /health/redis', () => {
+    it('returns 200 with redis health when Redis is reachable', async () => {
+      const okResult: HealthCheckResult = { status: 'ok', latency: 25 };
+      mockCacheHealth.check.mockResolvedValue(okResult);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/health/redis')
+        .expect(200);
+
+      expect(res.body.status).toBe('ok');
+      expect(res.body.service.status).toBe('ok');
+      expect(res.body.service.latency).toBe(25);
+    });
+
+    it('returns 503 when Redis is unreachable', async () => {
+      const downResult: HealthCheckResult = {
+        status: 'down',
+        latency: 3000,
+        error: 'Redis connection failed',
+      };
+      mockCacheHealth.check.mockResolvedValue(downResult);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/health/redis')
+        .expect(503);
+
+      expect(res.body.status).toBe('down');
+      expect(res.body.service.status).toBe('down');
+      expect(res.body.service.error).toBe('Redis connection failed');
     });
   });
 
@@ -189,7 +260,7 @@ describe('Health (e2e)', () => {
       mockExternalHealth.check.mockResolvedValue(okResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/deep')
+        .get('/api/health/deep')
         .expect(200);
 
       expect(res.body.status).toBe('ok');
@@ -211,7 +282,7 @@ describe('Health (e2e)', () => {
       mockExternalHealth.check.mockResolvedValue(degradedResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/deep')
+        .get('/api/health/deep')
         .expect(200);
 
       expect(res.body.status).toBe('degraded');
@@ -232,7 +303,7 @@ describe('Health (e2e)', () => {
       mockExternalHealth.check.mockResolvedValue(downResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/deep')
+        .get('/api/health/deep')
         .expect(503);
 
       expect(res.body.status).toBe('down');
@@ -252,7 +323,7 @@ describe('Health (e2e)', () => {
       mockExternalHealth.check.mockResolvedValue(okResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/deep')
+        .get('/api/health/deep')
         .expect(503);
 
       expect(res.body.status).toBe('down');
@@ -271,7 +342,7 @@ describe('Health (e2e)', () => {
       mockExternalHealth.check.mockResolvedValue(okResult);
 
       const res = await request(app.getHttpServer())
-        .get('/api/v1/health/deep')
+        .get('/api/health/deep')
         .expect(200);
 
       expect(res.body.services.cache.error).toBeUndefined();

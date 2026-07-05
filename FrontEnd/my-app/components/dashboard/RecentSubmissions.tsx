@@ -89,11 +89,11 @@ function SubmissionRow({ submission }: SubmissionRowProps) {
     <tr className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
       <td className="py-3 pr-4">
         <div className="flex flex-col">
-          <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate max-w-[200px]">
+          <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate max-w-200">
             {questTitle}
           </span>
           {submission.rejectionReason && (
-            <span className="text-xs text-red-500 truncate max-w-[200px]">
+            <span className="text-xs text-red-500 truncate max-w-200">
               {submission.rejectionReason}
             </span>
           )}

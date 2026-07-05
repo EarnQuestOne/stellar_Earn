@@ -100,10 +100,10 @@ export function SessionManager() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-4 right-4 z-[100] flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-medium shadow-lg dark:border-[#2A3338] dark:bg-[#161E22]"
+            className="fixed bottom-4 right-4 z-dropdown flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-medium shadow-lg dark:border-dark-border dark:bg-dark-surface-elevated"
           >
-            <RefreshCw className="h-3 w-3 animate-spin text-[#33C5E0]" />
-            <span className="text-zinc-500 dark:text-[#92A5A8]">
+            <RefreshCw className="h-3 w-3 animate-spin text-secondary" />
+            <span className="text-zinc-500 dark:text-dark-muted">
               Refreshing session...
             </span>
           </motion.div>
@@ -114,29 +114,29 @@ export function SessionManager() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 backdrop-blur-sm"
           >
-            <div className="w-[90vw] max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-[#2A3338] dark:bg-[#161E22]">
+            <div className="w-[90vw] max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-dark-border dark:bg-dark-surface-elevated">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="mb-2 text-lg font-bold text-zinc-900 dark:text-white">
                 Session Expired
               </h3>
-              <p className="mb-6 text-sm text-zinc-500 dark:text-[#92A5A8]">
+              <p className="mb-6 text-sm text-zinc-500 dark:text-dark-muted">
                 Your session has expired. Please sign in again to continue.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleLogout}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-[#2A3338] dark:hover:bg-white/5"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-dark-border dark:hover:bg-white/5"
                 >
                   <LogOut className="h-4 w-4" />
                   Dismiss
                 </button>
                 <button
                   onClick={handleReconnect}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#33C5E0] py-2 text-sm font-bold text-black hover:bg-[#33C5E0]/90"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-2 text-sm font-bold text-black hover:bg-secondary/90"
                 >
                   <Wallet className="h-4 w-4" />
                   Connect Wallet
@@ -151,23 +151,23 @@ export function SessionManager() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 backdrop-blur-sm"
           >
-            <div className="w-[90vw] max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-[#2A3338] dark:bg-[#161E22]">
+            <div className="w-[90vw] max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-dark-border dark:bg-dark-surface-elevated">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="mb-2 text-lg font-bold text-zinc-900 dark:text-white">
                 Session Expiring
               </h3>
-              <p className="mb-6 text-sm text-zinc-500 dark:text-[#92A5A8]">
+              <p className="mb-6 text-sm text-zinc-500 dark:text-dark-muted">
                 Your session is about to expire. Would you like to stay logged
                 in?
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleLogout}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-[#2A3338] dark:hover:bg-white/5"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-dark-border dark:hover:bg-white/5"
                 >
                   <LogOut className="h-4 w-4" />
                   Logout
@@ -177,7 +177,7 @@ export function SessionManager() {
                     refreshProfile();
                     setShowWarning(false);
                   }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#33C5E0] py-2 text-sm font-bold text-black hover:bg-[#33C5E0]/90"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-2 text-sm font-bold text-black hover:bg-secondary/90"
                 >
                   Stay Logged In
                 </button>

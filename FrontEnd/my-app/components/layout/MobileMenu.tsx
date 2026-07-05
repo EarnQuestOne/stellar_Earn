@@ -48,7 +48,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       >
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#089ec3] text-sm font-bold text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
               S
             </span>
             <span className="font-semibold text-zinc-800 dark:text-zinc-100">
@@ -57,7 +57,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
           </div>
           <button
             aria-label="Close mobile menu"
-            className="rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800"
             onClick={onClose}
             type="button"
           >
@@ -79,9 +79,9 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             return (
               <Link
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
+                className={`flex items-center rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   active
-                    ? 'bg-[#089ec3] text-white'
+                    ? 'bg-primary text-white'
                     : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
                 }`}
                 href={item.href}

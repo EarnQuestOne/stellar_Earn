@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from './StatusBadge';
 import { StatusTimeline } from './StatusTimeline';
 import type { Submission } from '@/lib/types/submission';
 import { FocusTrap } from '@/components/a11y/FocusTrap';
 import { formatDate } from '@/lib/utils/date';
+import { useQuestSocket } from '@/lib/hooks/useQuestSocket';
 
 interface SubmissionDetailProps {
   submission: Submission | null;
@@ -20,6 +21,35 @@ export function SubmissionDetail({
 }: SubmissionDetailProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  const [localSubmission, setLocalSubmission] = useState<Submission | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (submission) {
+      setLocalSubmission(submission);
+    } else {
+      setLocalSubmission(null);
+    }
+  }, [submission]);
+
+  useQuestSocket({
+    questId: localSubmission?.questId,
+    onSubmissionUpdated: (event) => {
+      if (event.submissionId === localSubmission?.id) {
+        setLocalSubmission((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            status: event.status,
+            rejectionReason: event.rejectionReason ?? prev.rejectionReason,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+      }
+    },
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -54,7 +84,7 @@ export function SubmissionDetail({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !submission) return null;
+  if (!isOpen || !localSubmission) return null;
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // backdrop button covers the container; close when clicked
@@ -117,10 +147,10 @@ export function SubmissionDetail({
               </h3>
               <div className="space-y-2">
                 <h4 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                  {submission.quest?.title}
+                  {localSubmission.quest?.title}
                 </h4>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {submission.quest?.description}
+                  {localSubmission.quest?.description}
                 </p>
                 <div className="flex items-center gap-4 pt-2">
                   <div>
@@ -128,17 +158,17 @@ export function SubmissionDetail({
                       Reward:
                     </span>
                     <span className="ml-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {submission.quest?.rewardAmount}{' '}
-                      {submission.quest?.rewardAsset}
+                      {localSubmission.quest?.rewardAmount}{' '}
+                      {localSubmission.quest?.rewardAsset}
                     </span>
                   </div>
-                  {submission.quest?.deadline && (
+                  {localSubmission.quest?.deadline && (
                     <div>
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">
                         Deadline:
                       </span>
                       <span className="ml-2 text-sm text-zinc-900 dark:text-zinc-50">
-                        {formatDate(submission.quest!.deadline)}
+                        {formatDate(localSubmission.quest.deadline)}
                       </span>
                     </div>
                   )}
@@ -151,11 +181,11 @@ export function SubmissionDetail({
               <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-2">
                 Status
               </h3>
-              <StatusBadge status={submission.status} />
+              <StatusBadge status={localSubmission.status} />
             </div>
 
             {/* Timeline */}
-            <StatusTimeline submission={submission} />
+            <StatusTimeline submission={localSubmission} />
 
             {/* Submission Details */}
             <div>
@@ -168,7 +198,7 @@ export function SubmissionDetail({
                     Submitted:
                   </span>
                   <span className="ml-2 text-zinc-900 dark:text-zinc-50">
-                    {formatDate(submission.createdAt)}
+                    {formatDate(localSubmission.createdAt)}
                   </span>
                 </div>
                 <div>
@@ -176,7 +206,7 @@ export function SubmissionDetail({
                     Last Updated:
                   </span>
                   <span className="ml-2 text-zinc-900 dark:text-zinc-50">
-                    {formatDate(submission.updatedAt)}
+                    {formatDate(localSubmission.updatedAt)}
                   </span>
                 </div>
               </div>
@@ -188,18 +218,18 @@ export function SubmissionDetail({
                 Proof
               </h3>
               <pre className="overflow-x-auto rounded-lg bg-zinc-100 p-4 text-xs text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-                {JSON.stringify(submission.proof, null, 2)}
+                {JSON.stringify(localSubmission.proof, null, 2)}
               </pre>
             </div>
 
             {/* Rejection Reason */}
-            {submission.status === 'Rejected' && (
+            {localSubmission.status === 'Rejected' && (
               <div className="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
                 <h3 className="text-sm font-semibold text-red-900 dark:text-red-400 mb-1">
                   Rejection Reason
                 </h3>
                 <p className="text-sm text-red-800 dark:text-red-300">
-                  {submission.rejectionReason ||
+                  {localSubmission.rejectionReason ||
                     'No reason provided for rejection.'}
                 </p>
               </div>
@@ -213,11 +243,14 @@ export function SubmissionDetail({
               >
                 Close
               </button>
-              {submission.status === 'Approved' && (
+              {localSubmission.status === 'Approved' && (
                 <button
                   onClick={() => {
                     // TODO: Implement claim reward functionality
-                    console.log('Claim reward for submission:', submission.id);
+                    console.log(
+                      'Claim reward for submission:',
+                      localSubmission.id
+                    );
                   }}
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
                 >

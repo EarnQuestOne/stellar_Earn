@@ -7,8 +7,13 @@ import {
   Param,
   Query,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
 import { PostmortemService } from './postmortems.service';
 import {
   CreatePostmortemDto,
@@ -19,6 +24,8 @@ import {
 } from './dto/postmortem.dto';
 
 @ApiTags('Postmortems')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
 @Controller('postmortems')
 export class PostmortemController {
   constructor(private postmortemService: PostmortemService) {}

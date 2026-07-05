@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import { PooledHttpClientService } from '../http-client/http-client.service';
 
 interface DependencyInfo {
   name: string;
@@ -25,7 +25,10 @@ export class DependencyFreshnessService {
   private readonly logger = new Logger(DependencyFreshnessService.name);
   private readonly githubApiUrl = 'https://api.github.com';
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpClient: PooledHttpClientService,
+  ) {}
 
   /**
    * Check dependency freshness and create a GitHub issue with the report
@@ -141,7 +144,8 @@ export class DependencyFreshnessService {
     const issueBody = this.formatReportAsMarkdown(report);
 
     try {
-      const response = await axios.post(
+      const client = this.httpClient.create('long');
+      const response = await client.post(
         `${this.githubApiUrl}/repos/${repositoryOwner}/${repositoryName}/issues`,
         {
           title: issueTitle,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EmailService } from './email.service';
 import { EmailController } from './email.controller';
@@ -7,7 +7,7 @@ import { JobsModule } from '../jobs/jobs.module';
 import emailConfig from '../../config/email.config';
 
 @Module({
-  imports: [ConfigModule.forFeature(emailConfig), JobsModule],
+  imports: [ConfigModule.forFeature(emailConfig), forwardRef(() => JobsModule)],
   controllers: [EmailController],
   providers: [EmailService, EmailTemplateEngine],
   exports: [EmailService],
