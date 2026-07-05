@@ -30,15 +30,11 @@ export function middleware(request: NextRequest) {
       ? intlResponse
       : NextResponse.next();
 
-  // Fix: Properly handle cspHeaders structure and replace key based on environment
   cspHeaders.forEach((config) => {
     if (config.headers && Array.isArray(config.headers)) {
       config.headers.forEach((header) => {
         if (header.key === 'Content-Security-Policy') {
-          const value = header.value.replace(
-            /'unsafe-inline'/g,
-            `'nonce-${nonce}'`,
-          );
+          const value = header.value.replace(/'unsafe-inline'/g, `'nonce-${nonce}'`);
           response.headers.set(headerKey, value);
         } else {
           response.headers.set(header.key, header.value);
