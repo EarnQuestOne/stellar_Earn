@@ -1,0 +1,71 @@
+name: "✨ Soroban Contract Testnet Canary Deployment Pipeline"
+
+on:
+  push:
+    branches:
+      - release/v*
+    paths:
+      - 'contracts/**'
+
+jobs:
+  canary_promotion:
+    name: "Execute Canary Lifecycle Gateways"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code Repository"
+        uses: actions/checkout@v4
+
+      - name: "Set Up Rust Core Environment"
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: "Build Soroban Production Artifacts"
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+
+      - name: "Stage 1: Launch 10% Canary Weight Profile"
+        id: stage_1_deploy
+        run: |
+          echo "Deploying canary wasm instance to Stellar Testnet..."
+          # Deploy using soroban-cli toolsets
+          CANARY_ADDRESS=$(soroban contract deploy --wasm target/wasm32-unknown-unknown/release/splitter_v3.wasm --source-account TESTNET_SECRET --network testnet)
+          echo "CANARY_ADDR=$CANARY_ADDRESS" >> $GITHUB_ENV
+          
+          echo "Configuring traffic split router to direct 10% load allocations..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"contractId": "'$CANARY_ADDRESS'", "weight": 10}' \
+            https://testnet.stellarsplit.com/api/v1/routing/canary-split
+
+      - name: "Stage 2: Health Verification Soak Interval Loops"
+        run: |
+          echo "Beginning 30-minute automated health-check monitoring loops..."
+          # Poll testnet diagnostic metrics to ensure compliance parameters pass clean
+          for i in {1..6}; do
+            echo "Evaluating transaction payload error ratios (Interval $i/6)..."
+            ERROR_RATE=$(curl -s "https://testnet.stellarsplit.com/api/v1/metrics/errors?contractId=${{ env.CANARY_ADDR }}")
+            
+            if (( $(echo "$ERROR_RATE > 1.0" | bc -l) )); then
+              echo "🚨 Critical: Error threshold exceeded boundary parameters ($ERROR_RATE%). Triggering immediate safety rollback."
+              exit 1
+            fi
+            sleep 300 # 5 Minute intervals
+          done
+
+      - name: "Stage 3: Automated Pipeline Recovery Rollback"
+        if: failure()
+        run: |
+          echo "⚠️ Automated canary pipeline check failure intercepted. Reverting configurations..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"weight": 0}' \
+            https://testnet.stellarsplit.com/api/v1/routing/canary-split
+          echo "Rollback sequence completed. Network routing traffic stabilized at stable standard baseline releases."
+
+      - name: "Stage 4: Full Promotion Authorization Release"
+        if: success()
+        run: |
+          echo "✅ Canary soak evaluations passed successfully. Promoting contract release to 100% traffic weight limits..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"contractId": "'${{ env.CANARY_ADDR }}'", "weight": 100}' \
+            https://testnet.stellarsplit.com/api/v1/routing/canary-split

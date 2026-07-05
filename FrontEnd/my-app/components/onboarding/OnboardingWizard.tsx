@@ -113,7 +113,7 @@ export function OnboardingWizard({ forceOpen = false }: OnboardingWizardProps) {
             />
           ) : null}
 
-          <div className="pointer-events-none fixed bottom-5 right-5 z-[60] w-full max-w-md px-4">
+          <div className="pointer-events-none fixed bottom-5 right-5 z-onboarding w-full max-w-md px-4">
             <div className="pointer-events-auto">
               <OnboardingStep
                 title={currentStep.title}

@@ -64,20 +64,21 @@ describe('StartupReadinessService', () => {
 
   describe('checkEnvironmentVariables', () => {
     it('should return ok when all required keys are present', async () => {
-    process.env.DATABASE_URL = 'postgres://localhost/test';
-    process.env.JWT_SECRET = 'test-secret';
-    process.env.REDIS_URL = 'redis://localhost:6379';
-    process.env.STELLAR_NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
+      process.env.DATABASE_URL = 'postgres://localhost/test';
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.REDIS_URL = 'redis://localhost:6379';
+      process.env.STELLAR_NETWORK_PASSPHRASE =
+        'Test SDF Network ; September 2015';
 
-    const result = await service['checkEnvironmentVariables']();
+      const result = await service['checkEnvironmentVariables']();
 
-    expect(result.component).toBe('Environment Variables (Keys)');
-    expect(result.status).toBe('ok');
-    expect(result.details?.requiredKeys).toBe(2);
+      expect(result.component).toBe('Environment Variables (Keys)');
+      expect(result.status).toBe('ok');
+      expect(result.details?.requiredKeys).toBe(2);
 
-    delete process.env.REDIS_URL;
-    delete process.env.STELLAR_NETWORK_PASSPHRASE;
-  });
+      delete process.env.REDIS_URL;
+      delete process.env.STELLAR_NETWORK_PASSPHRASE;
+    });
 
     it('should return down when required keys are missing', async () => {
       delete process.env.DATABASE_URL;
@@ -199,7 +200,8 @@ describe('StartupReadinessService', () => {
       process.env.DATABASE_URL = 'postgres://localhost/test';
       process.env.JWT_SECRET = 'test-secret';
       process.env.REDIS_URL = 'redis://localhost:6379';
-      process.env.STELLAR_NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
+      process.env.STELLAR_NETWORK_PASSPHRASE =
+        'Test SDF Network ; September 2015';
 
       const report = await service.runStartupReadinessCheck();
 

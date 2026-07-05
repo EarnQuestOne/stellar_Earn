@@ -135,7 +135,7 @@ function SubmissionsContent() {
           </div>
           <button
             onClick={() => setIsSubmissionFormOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
           >
             <svg
               className="h-5 w-5"

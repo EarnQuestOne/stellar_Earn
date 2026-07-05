@@ -284,7 +284,7 @@ fn test_validate_quest_not_expired_valid() {
         li.timestamp = 1000;
     });
 
-    let result = validation::validate_quest_not_expired(&env, 5000);
+    let result = validation::validate_quest_not_expired(&env, 5000, validation::MIN_EXPIRY_BUFFER);
     assert!(result.is_ok());
 }
 
@@ -295,7 +295,7 @@ fn test_validate_quest_expired_rejected() {
         li.timestamp = 6000;
     });
 
-    let result = validation::validate_quest_not_expired(&env, 5000);
+    let result = validation::validate_quest_not_expired(&env, 5000, validation::MIN_EXPIRY_BUFFER);
     assert!(result.is_err());
 }
 

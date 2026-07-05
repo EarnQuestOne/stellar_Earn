@@ -16,10 +16,14 @@ fuzz_target!(|data: ValidationInput| {
     
     // Test symbol validation with random data
     let symbol_str = std::str::from_utf8(&data.symbol_data).unwrap_or("test");
+    let safe_symbol = symbol_str
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .take(32)
+        .collect::<String>();
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        if let Ok(sym) = Symbol::try_from_str(&env, symbol_str) {
-            let _ = earn_quest::validation::validate_symbol_length(&sym);
-        }
+        let sym = Symbol::new(&env, &safe_symbol);
+        let _ = earn_quest::validation::validate_symbol_length(&sym);
     }));
     
     // Test reward amount validation

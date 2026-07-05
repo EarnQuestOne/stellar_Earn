@@ -2,7 +2,7 @@
 
 use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
-use soroban_sdk::{testutils::Address as _, Env, Address, Symbol};
+use soroban_sdk::{testutils::Address as _, Address, Env, Symbol};
 use earn_quest::EarnQuestContractClient;
 
 #[derive(Arbitrary, Debug)]
@@ -14,10 +14,10 @@ struct QuestInput {
 
 fuzz_target!(|data: QuestInput| {
     let env = Env::default();
-    let admin = Address::random(&env);
-    let creator = Address::random(&env);
-    let verifier = Address::random(&env);
-    let reward_asset = Address::random(&env);
+    let admin = Address::generate(&env);
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let reward_asset = Address::generate(&env);
     
     // Initialize contract
     env.mock_all_auths();
@@ -33,7 +33,12 @@ fuzz_target!(|data: QuestInput| {
     // Create quest ID from fuzz data
     let quest_id_bytes = data.quest_id;
     let quest_id_str = std::str::from_utf8(&quest_id_bytes).unwrap_or("test");
-    let quest_id = Symbol::new(&env, quest_id_str);
+    let safe_id = quest_id_str
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .take(32)
+        .collect::<String>();
+    let quest_id = Symbol::new(&env, &safe_id);
     
     // Calculate deadline (current time + offset)
     let current_time = env.ledger().timestamp();

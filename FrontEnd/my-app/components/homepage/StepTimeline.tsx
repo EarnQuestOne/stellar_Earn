@@ -94,9 +94,9 @@ export function StepTimeline() {
             >
               {/* Step number badge — sits above the card on the connecting line */}
               <div className="mb-4 flex justify-center">
-                <div className="relative flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-cyan-500 bg-[#0a1628] shadow-[0_0_16px_rgba(34,211,238,0.35)]">
+                <div className="relative flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-cyan-500 bg-dark-surface-hero-alt shadow-glow-step">
                   <Icon className="h-6 w-6 text-cyan-400" strokeWidth={1.75} />
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-2xs font-bold text-white">
                     {step.number}
                   </span>
                 </div>

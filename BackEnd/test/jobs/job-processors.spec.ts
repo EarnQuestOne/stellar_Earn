@@ -7,8 +7,20 @@ import { WebhookProcessor } from 'src/modules/jobs/processors/webhook.processor'
 import { AnalyticsProcessor } from 'src/modules/jobs/processors/analytics.processor';
 import { QuestProcessor } from 'src/modules/jobs/processors/quest.processor';
 import { JobLogService } from 'src/modules/jobs/services/job-log.service';
-import { PayoutProcessPayload, EmailSendPayload } from 'src/modules/jobs/job.types';
+import {
+  PayoutProcessPayload,
+  EmailSendPayload,
+} from 'src/modules/jobs/job.types';
 import { Job } from 'bullmq';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataExport } from 'src/modules/users/entities/data-export.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Quest } from 'src/modules/quests/entities/quest.entity';
+import { Submission } from 'src/modules/submissions/entities/submission.entity';
+import { Payout } from 'src/modules/payouts/entities/payout.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AnalyticsAggregationService } from 'src/modules/analytics/services/aggregation.service';
+import { AnalyticsReportService } from 'src/modules/analytics/services/report.service';
 
 describe('Job Processors', () => {
   let module: TestingModule;
@@ -33,6 +45,84 @@ describe('Job Processors', () => {
             recordJobStart: jest.fn(),
             recordJobCompletion: jest.fn(),
             recordJobFailure: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(DataExport),
+          useValue: {
+            update: jest.fn().mockResolvedValue({}),
+          },
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            findOne: jest.fn().mockResolvedValue({
+              id: 'user-456',
+              stellarAddress: 'GB...',
+              username: 'testuser',
+              email: 'test@example.com',
+            }),
+          },
+        },
+        {
+          provide: getRepositoryToken(Quest),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'quest-123',
+                title: 'Test Quest',
+                createdBy: 'user-456',
+              },
+            ]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Submission),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'sub-789',
+                questId: 'quest-123',
+                userId: 'user-456',
+                status: 'APPROVED',
+              },
+            ]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Payout),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'payout-1',
+                amount: 10,
+                stellarAddress: 'GB...',
+              },
+            ]),
+          },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
+          },
+        },
+        {
+          provide: AnalyticsAggregationService,
+          useValue: {
+            runBatchAggregation: jest
+              .fn()
+              .mockResolvedValue({ processed: 10, skipped: 2 }),
+            aggregateQuestData: jest.fn().mockResolvedValue(5),
+            aggregateUserData: jest.fn().mockResolvedValue(5),
+          },
+        },
+        {
+          provide: AnalyticsReportService,
+          useValue: {
+            generateReport: jest
+              .fn()
+              .mockResolvedValue({ id: 'report-1', status: 'COMPLETED' }),
           },
         },
         PayoutProcessor,
@@ -313,7 +403,7 @@ describe('Job Processors', () => {
       const result = await analyticsProcessor.processAggregation(mockJob);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('aggregatedMetrics');
+      expect(result.data).toHaveProperty('processed');
     });
 
     it('should collect metrics successfully', async () => {

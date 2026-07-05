@@ -30,7 +30,7 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
             onClick={() => handleFilterChange(option.value)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filters.type === option.value
-                ? 'bg-[#089ec3] text-white'
+                ? 'bg-primary text-white'
                 : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600'
             }`}
             role="tab"

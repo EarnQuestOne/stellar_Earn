@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpClientModule } from '../../common/http-client/http-client.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JobsService } from './jobs.service';
 import { JobsController } from './jobs.controller';
@@ -30,6 +31,8 @@ import { StellarModule } from '../stellar/stellar.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { DependencyFreshnessService } from '../../common/services/dependency-freshness.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+import { User } from '../users/entities/user.entity';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -43,10 +46,13 @@ import { EventStore } from '../../events/entities/event-store.entity';
       Quest,
       Submission,
       EventStore,
+      User,
     ]),
     EventEmitterModule,
+    HttpClientModule,
     StellarModule,
     AnalyticsModule,
+    forwardRef(() => EmailModule),
   ],
   providers: [
     JobsService,

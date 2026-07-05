@@ -37,7 +37,6 @@ struct StateMachineInput {
 
 fuzz_target!(|data: StateMachineInput| {
     let env = Env::default();
-    env.mock_all_auths();
 
     // ── Setup actors ─────────────────────────────────────────────────────────
     let admin = Address::generate(&env);
@@ -90,10 +89,10 @@ fuzz_target!(|data: StateMachineInput| {
                 let _ = client.try_claim_reward(&quest_id, &submitter, &claim_amount);
             }
             QuestOp::PauseQuest => {
-                let _ = client.try_pause_quest(&quest_id, &admin);
+                let _ = client.try_pause_quest(&admin, &quest_id);
             }
             QuestOp::ResumeQuest => {
-                let _ = client.try_resume_quest(&quest_id, &admin);
+                let _ = client.try_resume_quest(&admin, &quest_id);
             }
             QuestOp::CancelQuest => {
                 let _ = client.try_cancel_quest(&quest_id, &creator);
@@ -105,7 +104,7 @@ fuzz_target!(|data: StateMachineInput| {
                 let _ = client.try_open_dispute(&quest_id, &submitter, &arbitrator);
             }
             QuestOp::ResolveDispute => {
-                let _ = client.try_resolve_dispute(&quest_id, &submitter, &arbitrator);
+                let _ = client.try_resolve_dispute(&quest_id, &submitter, &arbitrator, &false, &0_u32);
             }
         }));
     }

@@ -301,8 +301,8 @@ export class StartupReadinessService implements OnModuleInit {
         return client;
       }
     } catch (_e) {
-  // Ignore errors
-}
+      // Ignore errors
+    }
 
     return null;
   }

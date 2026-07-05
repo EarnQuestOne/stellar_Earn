@@ -1,4 +1,4 @@
-﻿import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -11,6 +11,7 @@ import { RefreshToken } from '#src/modules/auth/entities/refresh-token.entity';
 import { Quest } from '#src/modules/quests/entities/quest.entity';
 import { Submission } from '#src/modules/submissions/entities/submission.entity';
 import { JwtService } from '@nestjs/jwt';
+import { LoggerModule } from '#src/common/logger/logger.module';
 
 describe('Auth-Users Integration', () => {
   let module: TestingModule;
@@ -23,6 +24,10 @@ describe('Auth-Users Integration', () => {
         ConfigModule.forRoot({
           isGlobal: true,
           envFilePath: '.env.test',
+        }),
+        LoggerModule.forRoot({
+          enableInterceptor: false,
+          enableErrorFilter: false,
         }),
         EventEmitterModule.forRoot(),
         TypeOrmModule.forRoot({

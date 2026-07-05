@@ -136,7 +136,7 @@ export function GlobalSearch({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-10 text-sm text-zinc-900 placeholder-zinc-500 focus:border-[#089ec3] focus:outline-none focus:ring-2 focus:ring-[#089ec3]/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
+          className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-10 text-sm text-zinc-900 placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
           aria-label="Global search"
           aria-controls="search-results"
           aria-activedescendant={
@@ -184,7 +184,7 @@ export function GlobalSearch({
                 </span>
                 <button
                   onClick={clearRecent}
-                  className="text-xs text-[#089ec3] hover:underline"
+                  className="text-xs text-primary hover:underline"
                   aria-label="Clear recent searches"
                 >
                   Clear

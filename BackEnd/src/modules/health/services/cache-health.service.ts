@@ -9,7 +9,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { HealthCheckResult } from '../types/health.types';
 
-const CACHE_TIMEOUT_MS = 3000;
+const CACHE_TIMEOUT_MS = 5000;
 const CACHE_DEGRADED_THRESHOLD_MS = 200;
 
 @Injectable()
@@ -44,10 +44,9 @@ export class CacheHealthService implements OnModuleInit, OnModuleDestroy {
       if (!client) {
         const latency = Date.now() - startTime;
         return {
-          status: 'degraded',
+          status: 'down',
           latency,
-          error:
-            'Cache is not configured (using memory store or Redis unavailable)',
+          error: 'Redis is not available',
         };
       }
 
@@ -63,7 +62,7 @@ export class CacheHealthService implements OnModuleInit, OnModuleDestroy {
           `Cache health check timed out after ${CACHE_TIMEOUT_MS}ms`,
         );
         return {
-          status: 'degraded',
+          status: 'down',
           latency,
           error: `Health check timed out after ${CACHE_TIMEOUT_MS}ms`,
         };

@@ -59,7 +59,7 @@ export function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className="block w-full rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-10 text-sm placeholder-zinc-500 focus:border-[#089ec3] focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-400"
+        className="block w-full rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-10 text-sm placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-400"
         aria-label="Search quests"
       />
       {query && (

@@ -30,7 +30,7 @@ export function Pagination({
         <button
           onClick={onLoadMore}
           disabled={isLoading}
-          className="rounded-lg bg-[#089ec3] px-6 py-2 text-sm font-medium text-white hover:bg-[#089ec3] focus:outline-none focus:ring-2 focus:ring-[#089ec3] disabled:opacity-50 disabled:cursor-not-allowed dark:bg-[#089ec3] dark:hover:bg-[#089ec3]"
+          className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary dark:hover:bg-primary"
         >
           {isLoading ? 'Loading...' : 'Load More'}
         </button>
@@ -61,7 +61,7 @@ export function Pagination({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#089ec3] disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 dark:hover:bg-zinc-800"
           aria-label="Previous page"
         >
           Previous
@@ -71,7 +71,7 @@ export function Pagination({
           <>
             <button
               onClick={() => onPageChange(1)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               1
             </button>
@@ -86,9 +86,9 @@ export function Pagination({
             key={page}
             onClick={() => onPageChange(page)}
             disabled={isLoading}
-            className={`rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#089ec3] disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
               page === currentPage
-                ? 'bg-[#089ec3] text-white dark:bg-[#089ec3]'
+                ? 'bg-primary text-white dark:bg-primary'
                 : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
             }`}
             aria-label={`Page ${page}`}
@@ -105,7 +105,7 @@ export function Pagination({
             )}
             <button
               onClick={() => onPageChange(totalPages)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               {totalPages}
             </button>
@@ -115,7 +115,7 @@ export function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || isLoading}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#089ec3] disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 dark:hover:bg-zinc-800"
           aria-label="Next page"
         >
           Next

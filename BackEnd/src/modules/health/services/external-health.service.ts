@@ -2,17 +2,9 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { HealthCheckResult, ServiceStatus } from '../types/health.types';
+import { PooledHttpClientService } from '../../../common/http-client/http-client.service';
 
-const EXTERNAL_TIMEOUT_MS = 5000;
 const EXTERNAL_DEGRADED_THRESHOLD_MS = 1000;
-
-// Soroban RPC method for getInfo (lightweight, doesn't require contract)
-const STELLAR_RPC_GET_INFO = {
-  jsonrpc: '2.0',
-  id: 1,
-  method: 'getNetwork',
-  params: [],
-};
 
 // SendGrid API endpoint to verify API key (simple GET)
 const SENDGRID_API_BASE = 'https://api.sendgrid.com/v3';
@@ -20,15 +12,21 @@ const SENDGRID_API_BASE = 'https://api.sendgrid.com/v3';
 @Injectable()
 export class ExternalHealthService implements OnModuleInit {
   private readonly logger = new Logger(ExternalHealthService.name);
-  private stellarRpcUrl: string;
+  private stellarHorizonUrl: string;
   private sendgridApiKey: string | undefined;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpClient: PooledHttpClientService,
+  ) {}
 
   onModuleInit(): void {
-    // Read directly from environment variables for independence from feature modules
-    this.stellarRpcUrl =
-      process.env.SOROBAN_RPC_URL || 'https://soroban-testnet.stellar.org';
+    this.stellarHorizonUrl =
+      this.configService.get<string>('STELLAR_HORIZON_URL') ||
+      this.configService.get<string>('HORIZON_URL') ||
+      process.env.STELLAR_HORIZON_URL ||
+      process.env.HORIZON_URL ||
+      'https://horizon-testnet.stellar.org';
     this.sendgridApiKey = process.env.SENDGRID_API_KEY;
   }
 
@@ -82,15 +80,14 @@ export class ExternalHealthService implements OnModuleInit {
     };
   }
 
-  private async checkStellar(): Promise<HealthCheckResult> {
+  async checkStellar(): Promise<HealthCheckResult> {
     const startTime = Date.now();
 
     try {
-      const response = await axios.post(
-        this.stellarRpcUrl,
-        STELLAR_RPC_GET_INFO,
+      const client = this.httpClient.create('short');
+      const response = await client.get(
+        `${this.stellarHorizonUrl}/ledgers?order=desc&limit=1`,
         {
-          timeout: EXTERNAL_TIMEOUT_MS,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -103,12 +100,12 @@ export class ExternalHealthService implements OnModuleInit {
         return {
           status: 'down',
           latency,
-          error: `Stellar RPC returned status ${response.status}`,
+          error: `Stellar Horizon returned status ${response.status}`,
         };
       }
 
       if (latency > EXTERNAL_DEGRADED_THRESHOLD_MS) {
-        this.logger.warn(`Stellar RPC health check slow: ${latency}ms`);
+        this.logger.warn(`Stellar Horizon health check slow: ${latency}ms`);
         return {
           status: 'degraded',
           latency,
@@ -120,7 +117,7 @@ export class ExternalHealthService implements OnModuleInit {
     } catch (error) {
       const latency = Date.now() - startTime;
       const errorMessage = this.getErrorMessage(error);
-      this.logger.error(`Stellar RPC health check failed: ${errorMessage}`);
+      this.logger.error(`Stellar Horizon health check failed: ${errorMessage}`);
 
       return {
         status: 'down',
@@ -144,8 +141,8 @@ export class ExternalHealthService implements OnModuleInit {
     }
 
     try {
-      const response = await axios.get(`${SENDGRID_API_BASE}/user/credits`, {
-        timeout: EXTERNAL_TIMEOUT_MS,
+      const client = this.httpClient.create('short');
+      const response = await client.get(`${SENDGRID_API_BASE}/user/credits`, {
         headers: {
           Authorization: `Bearer ${this.sendgridApiKey}`,
         },

@@ -124,7 +124,7 @@ export function WalletConnectionModal() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative z-50 w-[92vw] max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-[#2A3338] dark:bg-[#161E22] sm:p-8"
+              className="relative z-50 w-[92vw] max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-dark-border dark:bg-dark-surface-elevated sm:p-8"
             >
               <button
                 onClick={closeModal}
@@ -150,7 +150,7 @@ export function WalletConnectionModal() {
                       <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                         Connect Wallet
                       </h2>
-                      <p className="mt-2 text-sm text-zinc-500 dark:text-[#92A5A8]">
+                      <p className="mt-2 text-sm text-zinc-500 dark:text-dark-muted">
                         Choose your preferred wallet to continue to StellarEarn
                       </p>
                     </div>
@@ -182,22 +182,22 @@ export function WalletConnectionModal() {
                           onClick={() => setActiveSelection(wallet.id)}
                           className={`group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border p-4 transition-all duration-300 ${
                             activeSelection === wallet.id
-                              ? 'border-[#33C5E0] bg-[#33C5E0]/5 shadow-[0_0_20px_rgba(51,197,224,0.1)] dark:bg-[#33C5E0]/10'
-                              : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50 dark:border-[#2A3338] dark:bg-white/5 dark:hover:border-[#33C5E0]/30 dark:hover:bg-white/[0.08]'
+                              ? 'border-secondary bg-secondary/5 shadow-glow-md dark:bg-secondary/10'
+                              : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50 dark:border-dark-border dark:bg-white/5 dark:hover:border-secondary/30 dark:hover:bg-white/[0.08]'
                           }`}
                         >
                           {activeSelection === wallet.id && (
                             <motion.div
                               layoutId="active-bg"
-                              className="absolute inset-0 z-0 bg-gradient-to-r from-[#33C5E0]/5 to-transparent dark:from-[#33C5E0]/10"
+                              className="absolute inset-0 z-0 bg-gradient-to-r from-secondary/5 to-transparent dark:from-secondary/10"
                             />
                           )}
 
                           <div
                             className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
                               activeSelection === wallet.id
-                                ? 'border-[#33C5E0] bg-[#33C5E0]'
-                                : 'border-zinc-300 group-hover:border-zinc-400 dark:border-[#2d3b4f] dark:group-hover:border-[#33C5E0]/50'
+                                ? 'border-secondary bg-secondary'
+                                : 'border-zinc-300 group-hover:border-zinc-400 dark:border-dark-border-accent dark:group-hover:border-secondary/50'
                             }`}
                           >
                             {activeSelection === wallet.id && (
@@ -220,8 +220,8 @@ export function WalletConnectionModal() {
                           <div
                             className={`relative z-10 transition-colors duration-300 ${
                               activeSelection === wallet.id
-                                ? 'text-[#33C5E0]'
-                                : 'text-zinc-400 dark:text-[#5D6B6E]'
+                                ? 'text-secondary'
+                                : 'text-zinc-400 dark:text-dark-muted-dimmer'
                             }`}
                           >
                             <Wallet className="h-5 w-5" />
@@ -233,7 +233,7 @@ export function WalletConnectionModal() {
                     <button
                       onClick={handleConnectClick}
                       disabled={!activeSelection || isConnecting}
-                      className="group relative w-full overflow-hidden rounded-2xl bg-[#33C5E0] py-4 font-bold text-black transition-all hover:bg-[#33C5E0]/90 hover:shadow-[0_0_25px_rgba(51,197,224,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="group relative w-full overflow-hidden rounded-2xl bg-secondary py-4 font-bold text-black transition-all hover:bg-secondary/90 hover:shadow-glow-xl disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <div className="relative z-10 flex items-center justify-center gap-2">
                         {isConnecting ? (

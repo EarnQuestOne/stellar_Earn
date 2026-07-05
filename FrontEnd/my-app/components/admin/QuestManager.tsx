@@ -20,6 +20,7 @@ interface QuestManagerProps {
   onBulkOperation: (
     action: 'activate' | 'pause' | 'complete' | 'cancel' | 'delete'
   ) => Promise<{ success: boolean }>;
+  onEdit?: (quest: Quest) => void;
 }
 
 type SortField = 'title' | 'status' | 'reward' | 'deadline' | 'participants';
@@ -45,12 +46,15 @@ export function QuestManager({
   onStatusChange,
   onDelete,
   onBulkOperation,
+  onEdit,
 }: QuestManagerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<QuestStatus | 'all'>('all');
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [showBulkMenu, setShowBulkMenu] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredAndSortedQuests = useMemo(() => {
     let result = [...quests];
@@ -115,6 +119,14 @@ export function QuestManager({
     return <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>;
   };
 
+  const handleDeleteConfirmed = async () => {
+    if (!confirmDeleteId) return;
+    setIsDeleting(true);
+    await onDelete(confirmDeleteId);
+    setIsDeleting(false);
+    setConfirmDeleteId(null);
+  };
+
   const allSelected =
     quests.length > 0 && selectedQuests.size === quests.length;
   const someSelected = selectedQuests.size > 0;
@@ -163,13 +175,15 @@ export function QuestManager({
           </select>
         </div>
 
-        <Link
-          href="/admin/quests/new"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        >
-          <span>+</span>
-          New Quest
-        </Link>
+        {!onEdit && (
+          <Link
+            href="/admin/quests/new"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            <span>+</span>
+            New Quest
+          </Link>
+        )}
       </div>
 
       {/* Bulk Actions */}
@@ -380,14 +394,23 @@ export function QuestManager({
                   </td>
                   <td className="py-4 pr-4">
                     <div className="flex gap-2">
-                      <Link
-                        href={`/admin/quests/${quest.id}/edit`}
-                        className="rounded px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                      >
-                        Edit
-                      </Link>
+                      {onEdit ? (
+                        <button
+                          onClick={() => onEdit(quest)}
+                          className="rounded px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/admin/quests/${quest.id}/edit`}
+                          className="rounded px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                        >
+                          Edit
+                        </Link>
+                      )}
                       <button
-                        onClick={() => onDelete(quest.id)}
+                        onClick={() => setConfirmDeleteId(quest.id)}
                         className="rounded px-2 py-1 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         Delete
@@ -405,6 +428,49 @@ export function QuestManager({
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Showing {filteredAndSortedQuests.length} of {quests.length} quests
       </p>
+
+      {/* Delete Confirmation Dialog */}
+      {confirmDeleteId && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setConfirmDeleteId(null)}
+            aria-hidden="true"
+          />
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <h3
+              id="delete-confirm-title"
+              className="text-base font-semibold text-zinc-900 dark:text-zinc-50"
+            >
+              Delete Quest
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              This action cannot be undone. The quest and all its data will be
+              permanently removed.
+            </p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirmed}
+                disabled={isDeleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

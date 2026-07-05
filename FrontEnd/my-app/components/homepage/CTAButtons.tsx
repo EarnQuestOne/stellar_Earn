@@ -11,7 +11,7 @@ export default function CTAButtons() {
     >
       <Link
         href="/quests"
-        className="flex items-center gap-2 rounded-lg bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:bg-cyan-400 hover:shadow-[0_0_28px_rgba(34,211,238,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        className="flex items-center gap-2 rounded-lg bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-glow-cta transition-all hover:bg-cyan-400 hover:shadow-glow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
         aria-label="Explore all available quests"
       >
         Explore Quests
