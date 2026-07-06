@@ -117,7 +117,7 @@ function EditQuestContent({ questId }: EditQuestContentProps) {
             Quests
           </Link>
           <span>/</span>
-          <span className="text-zinc-900 dark:text-zinc-50 truncate max-w-[200px]">
+          <span className="text-zinc-900 dark:text-zinc-50 truncate max-w-200">
             {quest.title}
           </span>
         </nav>

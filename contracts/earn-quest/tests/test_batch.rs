@@ -51,6 +51,7 @@ fn make_quest_input(
         reward_amount,
         verifier: verifier.clone(),
         deadline,
+        grace_period_seconds: None,
     }
 }
 

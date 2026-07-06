@@ -15,7 +15,7 @@ export function LanguageSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] dark:text-zinc-300 dark:hover:bg-zinc-800"
+        className="inline-flex items-center gap-2 rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-zinc-300 dark:hover:bg-zinc-800"
         aria-label="Change language"
       >
         <Globe className="h-5 w-5" />
@@ -35,7 +35,7 @@ export function LanguageSwitcher() {
               }}
               className={`block w-full px-4 py-2 text-left text-sm ${
                 currentLocale === locale
-                  ? 'bg-[#089ec3]/10 text-[#089ec3]'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
               }`}
             >

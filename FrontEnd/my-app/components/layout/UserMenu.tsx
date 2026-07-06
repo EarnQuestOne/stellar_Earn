@@ -74,11 +74,11 @@ export function UserMenu({ username = 'john.doe' }: UserMenuProps) {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="Open user menu"
-        className="flex items-center gap-3 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+        className="flex items-center gap-3 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
         onClick={() => setIsOpen((prev) => !prev)}
         type="button"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#089ec3] text-xs font-semibold text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
           {initials}
         </span>
         <span className="hidden md:block">{username}</span>

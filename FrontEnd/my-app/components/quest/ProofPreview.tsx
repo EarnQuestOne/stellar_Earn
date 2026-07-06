@@ -172,7 +172,7 @@ export function ProofPreview({
   return (
     <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-        <span className="text-[#089ec3]">{proofTypeIcon}</span>
+        <span className="text-primary">{proofTypeIcon}</span>
         <span>Proof Type: {proofTypeLabel}</span>
       </div>
 
@@ -186,7 +186,7 @@ export function ProofPreview({
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 break-all text-[#089ec3] hover:underline"
+              className="inline-flex items-center gap-1 break-all text-primary hover:underline"
             >
               {link}
               <svg

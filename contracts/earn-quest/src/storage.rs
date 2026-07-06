@@ -110,6 +110,12 @@ pub enum DataKey {
     PushedPrice(Address),
     /// Configurable price-feed staleness TTL in seconds. 0 disables the breaker.
     PriceFeedTtl,
+    /// Ledger timestamp of the most recent contract unpause
+    LastUnpauseTimestamp,
+    /// Minimum seconds that must elapse after unpause before the contract can be paused again
+    PauseCooldownSeconds,
+    /// Default grace period (in seconds) applied when checking quest expiry
+    DefaultQuestGracePeriodSeconds,
 }
 
 //================================================================================
@@ -921,6 +927,32 @@ pub fn clear_unpause_approvals(env: &Env) {
         .remove(&DataKey::ScheduledUnpauseTime);
 }
 
+/// Default minimum seconds between unpause and the next pause (1 hour).
+const DEFAULT_PAUSE_COOLDOWN_SECONDS: u64 = 3600;
+
+pub fn set_last_unpause_timestamp(env: &Env, ts: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::LastUnpauseTimestamp, &ts);
+}
+
+pub fn get_last_unpause_timestamp(env: &Env) -> Option<u64> {
+    env.storage().instance().get(&DataKey::LastUnpauseTimestamp)
+}
+
+pub fn set_pause_cooldown_seconds(env: &Env, seconds: u64) {
+    env.storage()
+        .instance()
+        .set(&DataKey::PauseCooldownSeconds, &seconds);
+}
+
+pub fn get_pause_cooldown_seconds(env: &Env) -> u64 {
+    env.storage()
+        .instance()
+        .get(&DataKey::PauseCooldownSeconds)
+        .unwrap_or(DEFAULT_PAUSE_COOLDOWN_SECONDS)
+}
+
 fn inc_unpause_approval_count(env: &Env) {
     let mut cur: u32 = env
         .storage()
@@ -1099,6 +1131,20 @@ pub fn set_config(env: &Env, config: &Vec<(String, String)>) {
     env.storage()
         .instance()
         .set(&DataKey::ContractConfig, config);
+}
+
+pub fn get_default_grace_period(env: &Env) -> u64 {
+    env.storage()
+        .instance()
+        .get(&DataKey::DefaultQuestGracePeriodSeconds)
+        .unwrap_or(validation::MIN_EXPIRY_BUFFER)
+}
+
+pub fn set_quest_grace_period(env: &Env, grace_period_seconds: u64) {
+    env.storage().instance().set(
+        &DataKey::DefaultQuestGracePeriodSeconds,
+        &grace_period_seconds,
+    );
 }
 
 //================================================================================
@@ -1523,6 +1569,12 @@ mod layout_tests {
     ];
 
     const EXPECTED_VARIANT_COUNT: usize = 48;
+        "LastUnpauseTimestamp",
+        "PauseCooldownSeconds",
+        "DefaultQuestGracePeriodSeconds",
+    ];
+
+    const EXPECTED_VARIANT_COUNT: usize = 49;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
@@ -1579,6 +1631,9 @@ mod layout_tests {
         keys.push_back(DataKey::QuestCategory(1));
         keys.push_back(DataKey::PushedPrice(addr.clone()));
         keys.push_back(DataKey::PriceFeedTtl);
+        keys.push_back(DataKey::LastUnpauseTimestamp);
+        keys.push_back(DataKey::PauseCooldownSeconds);
+        keys.push_back(DataKey::DefaultQuestGracePeriodSeconds);
         keys
     }
 
