@@ -1,9 +1,8 @@
 use crate::errors::Error;
 use crate::types::{
     BadgeType, Commitment, CreatorStats, EscrowBalances, EscrowInfo, EscrowMeta, OracleConfig,
-    PushedPrice, PlatformStats, PriceData, Quest, QuestMetadata, QuestMetadataCore,
-    QuestMetadataExtended, QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore,
-    VerifierStake,
+    PlatformStats, PushedPrice, Quest, QuestMetadata, QuestMetadataCore, QuestMetadataExtended,
+    QuestStatus, Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
 };
 
 use crate::validation;
@@ -16,7 +15,17 @@ use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 ///
 /// **Upgrade safety:** never rename or reuse variants. Add new variants only at the end.
 /// See `docs/STORAGE_LAYOUT.md` for the full layout map and naming conventions.
-#[contracttype]
+///
+/// `export = false` keeps this internal storage-key enum out of the contract's
+/// public spec (`ScSpecUdtUnionV0` is capped at 50 cases because stellar-xdr
+/// hard-codes it as `cases<50>`; with 51 variants the `contracttype` macro
+/// panics with `LengthExceedsMax` at expansion time). Since these keys are
+/// never passed into or returned from a public entry point, we only need
+/// `TryFromVal`/`IntoVal` for cross-contract storage usage; we do not need
+/// to publish the union shape in the WASM custom-section spec. Re-check
+/// stellar-xdr's `cases<50>` cap when bumping the SDK; later protocol
+/// versions may revisit the limit.
+#[contracttype(export = false)]
 pub enum DataKey {
     /// Stores individual Quest data, keyed by quest ID (Symbol)
     Quest(Symbol),
@@ -1566,15 +1575,12 @@ mod layout_tests {
         "QuestCategory",
         "PushedPrice",
         "PriceFeedTtl",
-    ];
-
-    const EXPECTED_VARIANT_COUNT: usize = 48;
         "LastUnpauseTimestamp",
         "PauseCooldownSeconds",
         "DefaultQuestGracePeriodSeconds",
     ];
 
-    const EXPECTED_VARIANT_COUNT: usize = 49;
+    const EXPECTED_VARIANT_COUNT: usize = 51;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
