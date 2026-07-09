@@ -66,6 +66,7 @@ export interface AdminUser {
   id: string;
   stellarAddress: string;
   username: string;
+  email?: string;
   role: 'admin' | 'super_admin';
   permissions: string[];
 }

@@ -12,6 +12,7 @@ export default function ProfilePage() {
 
   return (
     <UserProfile
+      address={address}
       onRefetch={refetch}
       onUpdateProfile={updateProfileData}
       onFollow={follow}

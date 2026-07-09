@@ -16,6 +16,7 @@ import { EditProfileModal } from './EditProfileModal';
 import { useStore } from '@/lib/store';
 
 interface UserProfileProps {
+  address: string;
   onRefetch: () => Promise<void>;
   onUpdateProfile: (data: EditProfileData) => Promise<void>;
   onFollow: () => Promise<void>;
