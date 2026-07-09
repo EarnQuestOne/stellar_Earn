@@ -21,6 +21,8 @@ pub struct Quest {
     pub verifier: Address,
     /// Unix timestamp when the quest expires.
     pub deadline: u64,
+    /// Optional per-quest expiry grace period in seconds.
+    pub grace_period_seconds: Option<u64>,
     /// Numeric category used for on-chain filtering.
     pub category: u32,
     /// Current status of the quest.
@@ -373,6 +375,7 @@ pub struct BatchQuestInput {
     pub reward_amount: i128,
     pub verifier: Address,
     pub deadline: u64,
+    pub grace_period_seconds: Option<u64>,
 }
 
 /// Batch input for approving multiple submissions.

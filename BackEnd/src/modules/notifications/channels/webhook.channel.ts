@@ -5,12 +5,14 @@ import {
   DeliveryResult,
 } from './notification-channel.interface';
 import { Notification } from '../entities/notification.entity';
-import axios from 'axios';
+import { PooledHttpClientService } from '../../../common/http-client/http-client.service';
 
 @Injectable()
 export class WebhookChannel implements NotificationChannel {
   private readonly logger = new Logger(WebhookChannel.name);
   readonly type = ChannelType.WEBHOOK;
+
+  constructor(private readonly httpClient: PooledHttpClientService) {}
 
   async send(
     notification: Notification,
@@ -30,7 +32,8 @@ export class WebhookChannel implements NotificationChannel {
         `Sending webhook notification to ${recipient.webhookUrl}`,
       );
 
-      const response = await axios.post(recipient.webhookUrl, {
+      const client = this.httpClient.create('medium');
+      const response = await client.post(recipient.webhookUrl, {
         id: notification.id,
         type: notification.type,
         title: notification.title,

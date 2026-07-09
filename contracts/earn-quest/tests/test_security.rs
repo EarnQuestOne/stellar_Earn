@@ -1,15 +1,36 @@
 #![cfg(test)]
 
+use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
+use soroban_sdk::{symbol_short, Address, Env};
 
 extern crate earn_quest;
+use earn_quest::errors::Error;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 fn setup_contract(env: &Env) -> (Address, EarnQuestContractClient<'_>) {
     let contract_id = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &contract_id);
     (contract_id, client)
+}
+
+fn set_ledger_timestamp(env: &Env, ts: u64) {
+    env.ledger().set(LedgerInfo {
+        protocol_version: 20,
+        sequence_number: 1,
+        timestamp: ts,
+        network_id: Default::default(),
+        base_reserve: 10,
+        min_temp_entry_ttl: 100,
+        min_persistent_entry_ttl: 100,
+        max_entry_ttl: 1_000_000,
+    });
+}
+
+fn unpause_contract(client: &EarnQuestContractClient, admin1: &Address, admin2: &Address) {
+    client.emergency_approve_unpause(admin1);
+    client.emergency_approve_unpause(admin2);
+    client.emergency_unpause(admin1);
 }
 
 #[test]
@@ -170,6 +191,7 @@ fn test_approvals_cleared_after_unpause() {
 
     client.set_unpause_threshold(&admin1, &2u32);
     client.set_unpause_timelock(&admin1, &0u64);
+    client.set_pause_cooldown_seconds(&admin1, &0u64);
 
     // Round 1
     client.emergency_pause(&admin1);
@@ -188,4 +210,91 @@ fn test_approvals_cleared_after_unpause() {
     client.emergency_approve_unpause(&admin1);
     client.emergency_approve_unpause(&admin2);
     client.emergency_unpause(&admin1);
+}
+
+#[test]
+fn test_re_pause_within_cooldown_returns_pause_cooldown_error() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client) = setup_contract(&env);
+    let admin1 = Address::generate(&env);
+    let admin2 = Address::generate(&env);
+
+    client.initialize(&admin1);
+    client.add_admin(&admin1, &admin2);
+    client.set_unpause_threshold(&admin1, &2u32);
+    client.set_unpause_timelock(&admin1, &0u64);
+
+    set_ledger_timestamp(&env, 1_000);
+    client.emergency_pause(&admin1);
+    unpause_contract(&client, &admin1, &admin2);
+
+    let result = client.try_emergency_pause(&admin1);
+    assert!(matches!(result, Err(Ok(Error::PauseCooldown))));
+}
+
+#[test]
+fn test_re_pause_after_cooldown_succeeds() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client) = setup_contract(&env);
+    let admin1 = Address::generate(&env);
+    let admin2 = Address::generate(&env);
+
+    client.initialize(&admin1);
+    client.add_admin(&admin1, &admin2);
+    client.set_unpause_threshold(&admin1, &2u32);
+    client.set_unpause_timelock(&admin1, &0u64);
+
+    set_ledger_timestamp(&env, 1_000);
+    client.emergency_pause(&admin1);
+    unpause_contract(&client, &admin1, &admin2);
+
+    set_ledger_timestamp(&env, 1_000 + 3600);
+    client.emergency_pause(&admin1);
+}
+
+#[test]
+fn test_superadmin_can_set_pause_cooldown() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client) = setup_contract(&env);
+    let admin1 = Address::generate(&env);
+    let admin2 = Address::generate(&env);
+
+    client.initialize(&admin1);
+    client.add_admin(&admin1, &admin2);
+    client.set_unpause_threshold(&admin1, &2u32);
+    client.set_unpause_timelock(&admin1, &0u64);
+    client.set_pause_cooldown_seconds(&admin1, &60u64);
+
+    set_ledger_timestamp(&env, 5_000);
+    client.emergency_pause(&admin1);
+    unpause_contract(&client, &admin1, &admin2);
+
+    set_ledger_timestamp(&env, 5_000 + 30);
+    let too_soon = client.try_emergency_pause(&admin1);
+    assert!(matches!(too_soon, Err(Ok(Error::PauseCooldown))));
+
+    set_ledger_timestamp(&env, 5_000 + 60);
+    client.emergency_pause(&admin1);
+}
+
+#[test]
+fn test_non_superadmin_cannot_set_pause_cooldown() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (_, client) = setup_contract(&env);
+    let admin1 = Address::generate(&env);
+    let admin2 = Address::generate(&env);
+
+    client.initialize(&admin1);
+    client.add_admin(&admin1, &admin2);
+
+    let result = client.try_set_pause_cooldown_seconds(&admin2, &60u64);
+    assert!(matches!(result, Err(Ok(Error::Unauthorized))));
 }

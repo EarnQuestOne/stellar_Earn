@@ -7,7 +7,7 @@ import { StepTimeline } from './StepTimeline';
 export function HowItWorks() {
   return (
     <section
-      className="bg-[#071020] px-4 py-20 sm:py-28"
+      className="bg-dark-surface-hero px-4 py-20 sm:py-28"
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-7xl">
@@ -53,7 +53,7 @@ export function HowItWorks() {
               <button
                 type="button"
                 aria-label="Watch the StellarEarn tutorial video"
-                className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-700/60 text-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.2)] transition-transform hover:scale-105 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-700/60 text-cyan-400 shadow-glow-hero transition-transform hover:scale-105 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
                 {/* Play icon */}
                 <svg

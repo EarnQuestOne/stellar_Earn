@@ -201,7 +201,7 @@ export function FileUpload({
         type="button"
         className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
           isDragging
-            ? 'border-[#089ec3] bg-[#089ec3]/5'
+            ? 'border-primary bg-primary/5'
             : displayError
               ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/10'
               : selectedFile
@@ -286,9 +286,7 @@ export function FileUpload({
               />
             </svg>
             <p className="mb-1 text-sm text-zinc-600 dark:text-zinc-400">
-              <span className="font-medium text-[#089ec3]">
-                Click to upload
-              </span>{' '}
+              <span className="font-medium text-primary">Click to upload</span>{' '}
               or drag and drop
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-500">

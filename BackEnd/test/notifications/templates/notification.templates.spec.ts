@@ -45,7 +45,7 @@ describe('Notification templates (typed + engine rendering)', () => {
 
       const result = renderQuestUpdateTemplate(engine, data);
 
-      expect(result.subject).toContain('Notification');
+      expect(result.subject).toContain('Quest approved');
       expect(result.html).toContain('Alice');
       expect(result.html).toContain('Stellar Basics');
       expect(result.html).toContain('approved');

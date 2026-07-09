@@ -370,3 +370,11 @@ Please see the main repository [CONTRIBUTING.md](../../CONTRIBUTING.md) for guid
 ## License
 
 MIT - See [LICENSE](../../LICENSE) for details
+
+# Linting Architecture & Code Quality Guardrails
+
+We use ESLint Flat Config standards to analyze our files under high performance thresholds.
+
+## Config Interoperability Layers
+
+Because `eslint-config-next` depends on the deprecated configuration format, we resolve imports through the `@eslint/eslintrc` interoperability wrapper (`FlatCompat`). This converts legacy `.eslintrc` structures into compliant `.js` module paths during runtime compilation, ensuring that local executions and CI pipelines check code quality rules accurately.

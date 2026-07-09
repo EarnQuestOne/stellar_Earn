@@ -16,17 +16,19 @@ What lives **here** instead is the context Swagger can't express on its own: wha
  
 | Page | What it covers |
 | --- | --- |
+| [API Versioning Policy](./API_VERSIONING_POLICY.md) | SemVer rules for API consumers — version pinning, breaking vs non-breaking changes, deprecation headers, and migration. |
 | [Module API Reference](./module-apis.md) | Every backend module — its responsibility, its HTTP surface (base path, key routes, auth), and the events it emits or consumes. |
 | [Data Flow & Diagrams](./data-flow.md) | System context, the request pipeline, the quest → verification → payout lifecycle, the event-driven backbone, and trace correlation. Rendered as Mermaid. |
 | [Type Ownership Guidelines](./type-ownership-guidelines.md) | How DTOs, domain models, and view models map across layers — defining type ownership and boundaries. |
 | [Reliability Roadmap](./RELIABILITY_ROADMAP.md) | Milestones for green CI, test quality targets, and performance SLOs. |
+| [JWT Key Rotation](./jwt-key-rotation.md) | RS256 key management via env vars and zero-downtime rotation procedure. |
  
 ## Platform-wide conventions
  
 These apply to every module and are assumed (not repeated) on each page below.
  
 - **Global prefix.** Every HTTP route is served under `/api`. Route base paths in the reference (e.g. `quests`) resolve to `/api/<version>/quests`.
-- **Versioning.** Custom versioning is enabled (`v1` default). A version is selected by path (`/api/v1/...`, `/api/v2/...`) and/or the `X-API-Version` header.
+- **Versioning.** Custom versioning is enabled (`v1` default). Pin a version by path (`/api/v1/...`) and/or the `X-API-Version` header. Responses include `X-API-Version`; deprecated versions also return `Deprecation`, `Sunset`, `Link`, and `Warning` headers. See the [API Versioning Policy](./API_VERSIONING_POLICY.md) for SemVer rules and consumer guidance.
 - **Auth.** Bearer JWT (`Authorization: Bearer <token>`), issued by the Auth module. Protected routes use `JwtAuthGuard`; privileged routes add `RolesGuard` with `@Roles(...)`.
 - **Roles.** `ADMIN`, `MODERATOR`, `VERIFIER`, `USER` (see `src/common/enums`).
 - **Validation.** A global pipe chain runs on every request: sanitization → custom validation → `class-validator` (`whitelist: true`, `forbidNonWhitelisted: true`, `transform: true`). Unknown properties are rejected.

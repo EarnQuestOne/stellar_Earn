@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\" && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint . --cache --cache-location .next/cache/eslint/",
     "typecheck": "tsc --noEmit",
     "validate:path-aliases": "node scripts/validate-path-aliases.js",
     "test": "vitest run",
@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
+    "@eslint/eslintrc": "^3.1.0",
     "@next/bundle-analyzer": "^15.0.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",

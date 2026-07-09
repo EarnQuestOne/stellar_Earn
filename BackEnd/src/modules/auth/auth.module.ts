@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { getJwtPrivateKey } from '../../common/utils/jwt-keys';
 
 @Module({
   imports: [
@@ -19,12 +20,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const privateKey = configService.get<string>('JWT_PRIVATE_KEY');
-        if (!privateKey) {
-          throw new Error(
-            'JWT_PRIVATE_KEY is not defined in environment variables',
-          );
-        }
+        const privateKey = getJwtPrivateKey(configService);
         return {
           privateKey,
           signOptions: {

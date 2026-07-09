@@ -2,8 +2,8 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { HealthCheckResult, ServiceStatus } from '../types/health.types';
+import { PooledHttpClientService } from '../../../common/http-client/http-client.service';
 
-const EXTERNAL_TIMEOUT_MS = 5000;
 const EXTERNAL_DEGRADED_THRESHOLD_MS = 1000;
 
 // SendGrid API endpoint to verify API key (simple GET)
@@ -15,7 +15,10 @@ export class ExternalHealthService implements OnModuleInit {
   private stellarHorizonUrl: string;
   private sendgridApiKey: string | undefined;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpClient: PooledHttpClientService,
+  ) {}
 
   onModuleInit(): void {
     this.stellarHorizonUrl =
@@ -81,10 +84,10 @@ export class ExternalHealthService implements OnModuleInit {
     const startTime = Date.now();
 
     try {
-      const response = await axios.get(
+      const client = this.httpClient.create('short');
+      const response = await client.get(
         `${this.stellarHorizonUrl}/ledgers?order=desc&limit=1`,
         {
-          timeout: EXTERNAL_TIMEOUT_MS,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -138,8 +141,8 @@ export class ExternalHealthService implements OnModuleInit {
     }
 
     try {
-      const response = await axios.get(`${SENDGRID_API_BASE}/user/credits`, {
-        timeout: EXTERNAL_TIMEOUT_MS,
+      const client = this.httpClient.create('short');
+      const response = await client.get(`${SENDGRID_API_BASE}/user/credits`, {
         headers: {
           Authorization: `Bearer ${this.sendgridApiKey}`,
         },
