@@ -92,9 +92,11 @@ export class HealthController {
   })
   @ApiResponse({ status: 200, description: 'Stellar Horizon is healthy' })
   @ApiResponse({ status: 503, description: 'Stellar Horizon is unreachable' })
-  async stellar(
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ status: ServiceStatus; timestamp: string; service: ServiceHealth }> {
+  async stellar(@Res({ passthrough: true }) res: Response): Promise<{
+    status: ServiceStatus;
+    timestamp: string;
+    service: ServiceHealth;
+  }> {
     const result = await this.externalHealth.checkStellar();
     res.status(result.status === 'down' ? 503 : 200);
 
@@ -114,9 +116,11 @@ export class HealthController {
   })
   @ApiResponse({ status: 200, description: 'Redis is healthy' })
   @ApiResponse({ status: 503, description: 'Redis is unreachable' })
-  async redis(
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ status: ServiceStatus; timestamp: string; service: ServiceHealth }> {
+  async redis(@Res({ passthrough: true }) res: Response): Promise<{
+    status: ServiceStatus;
+    timestamp: string;
+    service: ServiceHealth;
+  }> {
     const result = await this.cacheHealth.check();
     res.status(result.status === 'down' ? 503 : 200);
 
@@ -284,10 +288,7 @@ export class HealthController {
   ): ServiceStatus {
     const [databaseResult, cacheResult, externalResult] = results;
 
-    if (
-      databaseResult?.status === 'down' ||
-      cacheResult?.status === 'down'
-    ) {
+    if (databaseResult?.status === 'down' || cacheResult?.status === 'down') {
       return 'down';
     }
 

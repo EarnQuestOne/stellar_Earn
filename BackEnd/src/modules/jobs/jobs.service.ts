@@ -13,6 +13,7 @@ import {
 } from './job-retry-policy';
 import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
+import { PayoutProcessor } from './processors/payout.processor';
 import {
   TracingService,
   TraceContext,
@@ -48,6 +49,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly tracing: TracingService,
     private readonly dataExportProcessor?: DataExportProcessor,
+    private readonly payoutProcessor?: PayoutProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -76,12 +78,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     );
     this.queues[QUEUES.EMAIL] = new Queue(QUEUES.EMAIL, redisConnection());
     this.queues[QUEUES.EXPORTS] = new Queue(QUEUES.EXPORTS, redisConnection());
+    // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
+    //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
+    this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
     this.createWorker(QUEUES.CLEANUP, this.handleCleanup.bind(this));
     this.createWorker(QUEUES.SCHEDULED, this.handleScheduled.bind(this));
     this.createWorker(QUEUES.EMAIL, this.handleEmail.bind(this));
+
     if (
       this.dataExportProcessor &&
       typeof this.dataExportProcessor.processExport === 'function'
@@ -89,6 +95,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.EXPORTS,
         this.dataExportProcessor.processExport.bind(this.dataExportProcessor),
+      );
+    }
+
+    // ── Wire the PayoutProcessor to the PAYOUTS queue ─────────────────────
+    // This ensures each payout job is processed through the idempotency-aware
+    // PayoutProcessor regardless of how it was enqueued.
+    if (
+      this.payoutProcessor &&
+      typeof this.payoutProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.PAYOUTS,
+        this.payoutProcessor.process.bind(this.payoutProcessor),
       );
     }
   }

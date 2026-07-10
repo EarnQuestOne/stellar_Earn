@@ -82,7 +82,7 @@ class AssignRoleDto {
 // ── Helper ────────────────────────────────────────────────────────────────────
 
 const bodyMeta = (metatype: any) =>
-  ({ type: 'body', metatype, data: '' } as any);
+  ({ type: 'body', metatype, data: '' }) as any;
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ describe('CustomValidationPipe — strict DTO whitelisting', () => {
         username: 'alice',
         email: 'alice@example.com',
         __proto__: { admin: true }, // common prototype-pollution attempt (stripped by JSON.parse but we test the pipe)
-        isAdmin: true,              // plain unknown field
+        isAdmin: true, // plain unknown field
       };
 
       await expect(
@@ -239,7 +239,10 @@ describe('CustomValidationPipe — strict DTO whitelisting', () => {
     });
 
     it('should return the raw value when no metatype is provided', async () => {
-      const result = await pipe.transform({ any: 'thing' }, bodyMeta(undefined));
+      const result = await pipe.transform(
+        { any: 'thing' },
+        bodyMeta(undefined),
+      );
       expect(result).toEqual({ any: 'thing' });
     });
   });

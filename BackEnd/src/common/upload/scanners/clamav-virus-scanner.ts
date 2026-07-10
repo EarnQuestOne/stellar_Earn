@@ -45,8 +45,15 @@ export class ClamAvVirusScanner implements VirusScanner {
 
       socket.on('connect', () => {
         socket.write('zINSTREAM\0');
-        for (let offset = 0; offset < buffer.length; offset += this.options.chunkSize) {
-          const slice = buffer.subarray(offset, offset + this.options.chunkSize);
+        for (
+          let offset = 0;
+          offset < buffer.length;
+          offset += this.options.chunkSize
+        ) {
+          const slice = buffer.subarray(
+            offset,
+            offset + this.options.chunkSize,
+          );
           const size = Buffer.alloc(4);
           size.writeUInt32BE(slice.length, 0);
           socket.write(size);

@@ -103,7 +103,10 @@ export class WebhooksService {
             traceId: currentTraceId(),
           };
         } catch (error) {
-          this.logger.error(`Failed to process webhook ${event.id}:`, error.stack);
+          this.logger.error(
+            `Failed to process webhook ${event.id}:`,
+            error.stack,
+          );
           return {
             success: false,
             eventId: event.id,
