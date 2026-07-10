@@ -21,13 +21,11 @@ describe('VirusScanService', () => {
     };
     const service = new VirusScanService(scanner, makeConfig(false));
 
-    await expect(service.assertBufferClean(Buffer.from('ok'))).resolves.toEqual(
-      {
-        clean: true,
-        virus: null,
-        scanner: 'fake',
-      },
-    );
+    await expect(service.assertBufferClean(Buffer.from('ok'))).resolves.toEqual({
+      clean: true,
+      virus: null,
+      scanner: 'fake',
+    });
   });
 
   it('rejects an infected buffer', async () => {
@@ -41,9 +39,9 @@ describe('VirusScanService', () => {
     };
     const service = new VirusScanService(scanner, makeConfig(false));
 
-    await expect(
-      service.assertBufferClean(Buffer.from('bad')),
-    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    await expect(service.assertBufferClean(Buffer.from('bad'))).rejects.toBeInstanceOf(
+      UnprocessableEntityException,
+    );
   });
 
   it('fails open when the scanner errors and fail-closed is off', async () => {
@@ -65,8 +63,8 @@ describe('VirusScanService', () => {
     };
     const service = new VirusScanService(scanner, makeConfig(true));
 
-    await expect(
-      service.assertBufferClean(Buffer.from('x')),
-    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    await expect(service.assertBufferClean(Buffer.from('x'))).rejects.toBeInstanceOf(
+      UnprocessableEntityException,
+    );
   });
 });

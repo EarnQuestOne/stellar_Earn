@@ -7,7 +7,6 @@ import { WebhookProcessor } from 'src/modules/jobs/processors/webhook.processor'
 import { AnalyticsProcessor } from 'src/modules/jobs/processors/analytics.processor';
 import { QuestProcessor } from 'src/modules/jobs/processors/quest.processor';
 import { JobLogService } from 'src/modules/jobs/services/job-log.service';
-import { JobIdempotencyService } from 'src/modules/jobs/services/job-idempotency.service';
 import {
   PayoutProcessPayload,
   EmailSendPayload,
@@ -124,23 +123,6 @@ describe('Job Processors', () => {
             generateReport: jest
               .fn()
               .mockResolvedValue({ id: 'report-1', status: 'COMPLETED' }),
-          },
-        },
-        // Default mock for JobIdempotencyService: always allow processing
-        {
-          provide: JobIdempotencyService,
-          useValue: {
-            buildPayoutJobKey: jest
-              .fn()
-              .mockImplementation(
-                (payoutId: string, jobType: string) =>
-                  `payout-job:${payoutId}:${jobType}`,
-              ),
-            checkAndLock: jest
-              .fn()
-              .mockResolvedValue({ alreadyProcessed: false, locked: false }),
-            complete: jest.fn().mockResolvedValue(undefined),
-            release: jest.fn().mockResolvedValue(undefined),
           },
         },
         PayoutProcessor,

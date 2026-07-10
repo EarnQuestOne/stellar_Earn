@@ -68,9 +68,7 @@ describe('versioning.config', () => {
 
   describe('isVersionDeprecated', () => {
     it('returns false for the current active version', () => {
-      expect(isVersionDeprecated(API_VERSION_CONFIG.defaultVersion)).toBe(
-        false,
-      );
+      expect(isVersionDeprecated(API_VERSION_CONFIG.defaultVersion)).toBe(false);
     });
   });
 

@@ -29,10 +29,7 @@ export function workerConcurrencyEnvKey(queue: string): string {
 }
 
 function clampConcurrency(value: number): number {
-  return Math.min(
-    MAX_WORKER_CONCURRENCY,
-    Math.max(MIN_WORKER_CONCURRENCY, value),
-  );
+  return Math.min(MAX_WORKER_CONCURRENCY, Math.max(MIN_WORKER_CONCURRENCY, value));
 }
 
 /**

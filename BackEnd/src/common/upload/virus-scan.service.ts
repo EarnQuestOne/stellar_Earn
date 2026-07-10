@@ -47,11 +47,7 @@ export class VirusScanService {
         );
       }
       this.logger.warn(`Virus scan failed (fail-open): ${message}`);
-      return {
-        clean: true,
-        virus: null,
-        scanner: `${this.scanner.name}:degraded`,
-      };
+      return { clean: true, virus: null, scanner: `${this.scanner.name}:degraded` };
     }
 
     if (!result.clean) {

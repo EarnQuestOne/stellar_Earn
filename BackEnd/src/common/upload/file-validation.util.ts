@@ -92,10 +92,7 @@ export const validateUploadedFile = (
     );
   }
 
-  if (
-    options.verifyMagicBytes &&
-    !hasMatchingMagicBytes(file.buffer, file.mimetype)
-  ) {
+  if (options.verifyMagicBytes && !hasMatchingMagicBytes(file.buffer, file.mimetype)) {
     throw new UnsupportedMediaTypeException(
       `File content does not match its declared type "${file.mimetype}"`,
     );

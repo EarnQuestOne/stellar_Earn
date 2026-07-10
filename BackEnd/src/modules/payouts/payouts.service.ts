@@ -163,9 +163,7 @@ export class PayoutsService {
 
           if (!settlement.isFinal) {
             payout.status = PayoutStatus.PROCESSING;
-            payout.nextRetryAt = new Date(
-              Date.now() + this.settlementRetryDelayMs,
-            );
+            payout.nextRetryAt = new Date(Date.now() + this.settlementRetryDelayMs);
             await this.payoutRepository.save(payout);
             this.logger.log(
               `Payout ${payoutId} submitted and waiting for settlement finality (${settlement.confirmations}/${settlement.requiredConfirmations} confirmations)`,
@@ -183,9 +181,7 @@ export class PayoutsService {
             payout.status = PayoutStatus.PROCESSING;
             payout.failureReason =
               error.message || 'Settlement confirmation failed';
-            payout.nextRetryAt = new Date(
-              Date.now() + this.settlementRetryDelayMs,
-            );
+            payout.nextRetryAt = new Date(Date.now() + this.settlementRetryDelayMs);
             await this.payoutRepository.save(payout);
             this.logger.warn(
               `Payout ${payout.id} transaction submitted but settlement confirmation is unavailable; retry scheduled`,
@@ -195,11 +191,7 @@ export class PayoutsService {
 
           this.eventEmitter.emit(
             'payout.failed',
-            new PayoutFailedEvent(
-              payout.id,
-              payout.stellarAddress,
-              error.message,
-            ),
+            new PayoutFailedEvent(payout.id, payout.stellarAddress, error.message),
           );
           await this.handlePayoutFailure(payout, error);
         }
