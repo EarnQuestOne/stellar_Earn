@@ -6,6 +6,12 @@ import {
 } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { QUEUES, DEFAULT_JOB_OPTIONS } from './jobs.constants';
+import {
+  getRetryPolicy,
+  policyToBullMQOptions,
+  isNonRetryableError,
+} from './job-retry-policy';
+import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import {
   TracingService,
@@ -36,7 +42,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private queues: Record<string, Queue> = {};
   private workers: Worker[] = [];
   private emailProcessor:
-    ((messageId: string, dto: any) => Promise<void>) | null = null;
+    | ((messageId: string, dto: any) => Promise<void>)
+    | null = null;
 
   constructor(
     private readonly tracing: TracingService,
@@ -168,19 +175,49 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return this.queues[name];
   }
 
-  async addJob(name: string, data: any, opts: any = {}) {
+  /**
+   * Add a job to a named queue.
+   *
+   * When `jobType` is provided, its per-type retry policy is resolved and
+   * merged into the options **before** any caller-supplied overrides.  This
+   * means callers can still fine-tune individual jobs while benefiting from
+   * sensible defaults automatically.
+   *
+   * Precedence (highest → lowest):
+   *   caller opts  >  per-type policy  >  DEFAULT_JOB_OPTIONS
+   *
+   * Tracing context is automatically attached to job data and a span is
+   * created for the enqueue operation.
+   */
+  async addJob(
+    name: string,
+    data: any,
+    opts: Record<string, any> = {},
+    jobType?: JobType,
+  ) {
     const queue = this.getQueue(name);
     if (!queue) throw new Error(`Queue ${name} not found`);
 
     const traceContext = this.tracing.getCurrentContext();
-    const tracedData = this.attachTraceContext(data, traceContext);
-    const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...opts };
+    const tracedData = this.attachTraceContext(
+      jobType ? { ...data, __jobType: jobType } : data,
+      traceContext,
+    );
+
+    const policyOpts = jobType
+      ? policyToBullMQOptions(getRetryPolicy(jobType))
+      : DEFAULT_JOB_OPTIONS;
+
+    const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...policyOpts, ...opts };
 
     return this.tracing.trace(
       'jobs.queue.enqueue',
       async (span) => {
         span.attributes['queue.name'] = name;
         span.attributes['job.name'] = `${name}-job`;
+        if (jobType) {
+          span.attributes['job.type'] = jobType;
+        }
         if (traceContext) {
           span.attributes['trace.id'] = traceContext.traceId;
           span.attributes['trace.parent_span_id'] = traceContext.spanId;
@@ -227,6 +264,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return { queue: name, active, delayed, failed, completed, waiting };
   }
 
+  /**
+   * Creates a BullMQ Worker for the given queue.
+   *
+   * The worker's `failed` handler checks whether the error is classified as
+   * non-retryable for the job type stored in `job.data.__jobType`.  When it
+   * is, OR when `attemptsMade` has reached the configured maximum, the job is
+   * forwarded to the dead-letter queue immediately.
+   */
   private createWorker(name: string, processor: (job: Job) => Promise<any>) {
     const worker = new Worker(
       name,
@@ -265,17 +310,38 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     worker.on('failed', (job, err) => {
       void (async () => {
         if (!job) return;
-        const attempts = job.attemptsMade ?? 0;
-        const maxAttempts =
-          (job.opts && (job.opts as any).attempts) ||
-          DEFAULT_JOB_OPTIONS.attempts;
-        if (attempts >= maxAttempts) {
+
+        const jobType: JobType | undefined = job.data?.__jobType as
+          | JobType
+          | undefined;
+
+        // Determine max attempts: prefer per-type policy, fall back to job opts
+        const maxAttempts: number = jobType
+          ? getRetryPolicy(jobType).attempts
+          : ((job.opts as any)?.attempts ?? DEFAULT_JOB_OPTIONS.attempts);
+
+        const attemptsExhausted = (job.attemptsMade ?? 0) >= maxAttempts;
+        const notRetryable =
+          jobType && err?.message
+            ? isNonRetryableError(jobType, err.message)
+            : false;
+
+        if (attemptsExhausted || notRetryable) {
+          const reason = notRetryable
+            ? 'non-retryable error'
+            : 'attempts exhausted';
+
+          this.logger.warn(
+            `Job ${job.id} (${name}) forwarded to DLQ: ${reason} – ${err?.message}`,
+          );
+
           await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
             failedJob: {
               id: job.id,
               name: job.name,
               data: job.data,
               failedReason: err?.message ?? String(err),
+              reason,
             },
           } as any);
         }
