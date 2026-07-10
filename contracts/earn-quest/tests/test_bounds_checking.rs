@@ -37,9 +37,10 @@ fn test_batch_quest_registration_valid_bounds() {
         quests.push_back(BatchQuestInput {
             id: quest_id,
             reward_asset: token.clone(),
-            reward_amount: 1000,
+            reward_amount: 500,
             verifier: verifier.clone(),
             deadline,
+            grace_period_seconds: None,
         });
     }
 
@@ -202,6 +203,7 @@ fn test_single_item_batch_operations() {
         reward_amount: 1000,
         verifier: verifier.clone(),
         deadline,
+        grace_period_seconds: None,
     });
 
     client.register_quests_batch(&creator, &quests);

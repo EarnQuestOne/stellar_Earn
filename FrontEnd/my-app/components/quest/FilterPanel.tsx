@@ -95,9 +95,9 @@ export function FilterPanel({
             onClick={() => onCategoryChange(undefined)}
             aria-pressed={!selectedCategory}
             aria-label="Show all categories"
-            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               !selectedCategory
-                ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                ? 'border-primary bg-primary text-white'
                 : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
             }`}
           >
@@ -113,9 +113,9 @@ export function FilterPanel({
                 }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${category} category${isSelected ? ' (active)' : ''}`}
-                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                   isSelected
-                    ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                    ? 'border-primary bg-primary text-white'
                     : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
                 }`}
               >
@@ -140,9 +140,9 @@ export function FilterPanel({
             onClick={() => onDifficultyChange(undefined)}
             aria-pressed={!selectedDifficulty}
             aria-label="Show all difficulty levels"
-            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               !selectedDifficulty
-                ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                ? 'border-primary bg-primary text-white'
                 : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
             }`}
           >
@@ -158,9 +158,9 @@ export function FilterPanel({
                 }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${option.label} difficulty${isSelected ? ' (active)' : ''}`}
-                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                   isSelected
-                    ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                    ? 'border-primary bg-primary text-white'
                     : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
                 }`}
               >

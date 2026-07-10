@@ -483,6 +483,21 @@ it('should complete within acceptable time', async () => {
 });
 ```
 
+### Load Testing with k6
+
+Load tests verify system behavior and SLOs under expected concurrency. We use [k6](https://k6.io/) for our performance tests, with scripts located in `BackEnd/load-tests/`.
+
+To run the quest submissions load test locally:
+
+1. Install k6 (refer to the [official installation guide](https://k6.io/docs/get-started/installation/)).
+2. Ensure your backend server is running locally (`npm run start:dev`).
+3. Obtain a valid JWT token for an authenticated user.
+4. Execute the k6 test script with your environment variables:
+
+```bash
+k6 run load-tests/quest-submissions.k6.ts -e BASE_URL=http://localhost:3000 -e JWT_TOKEN=<your-token>
+```
+
 ## Mocking External APIs
 
 ```typescript

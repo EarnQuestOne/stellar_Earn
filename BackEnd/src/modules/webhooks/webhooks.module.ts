@@ -10,6 +10,7 @@ import { MultiSigTransaction } from '../stellar/multisig/entities/multisig-trans
 import { MultiSigWallet } from '../stellar/multisig/entities/multisig-wallet.entity';
 import { MultiSigModule } from '../stellar/multisig/multisig.module';
 import { TraceModule } from '../trace/trace.module';
+import { BulkheadService } from '../../common/services/bulkhead.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TraceModule } from '../trace/trace.module';
     GithubHandler,
     ApiHandler,
     MultiSigWebhookHandler,
+    BulkheadService,
   ],
   exports: [WebhooksService],
 })

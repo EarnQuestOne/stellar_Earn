@@ -42,7 +42,7 @@ export function TransactionModal({
               aria-label="Processing transaction"
             >
               <div
-                className="h-20 w-20 rounded-full border-4 border-zinc-100 border-t-[#089ec3] animate-spin"
+                className="h-20 w-20 rounded-full border-4 border-zinc-100 border-t-primary animate-spin"
                 aria-hidden="true"
               />
               <div
@@ -50,7 +50,7 @@ export function TransactionModal({
                 aria-hidden="true"
               >
                 <svg
-                  className="h-8 w-8 text-[#089ec3]"
+                  className="h-8 w-8 text-primary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -123,7 +123,7 @@ export function TransactionModal({
                     navigator.clipboard.writeText(result.transactionHash)
                   }
                   aria-label="Copy transaction hash to clipboard"
-                  className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] rounded"
+                  className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded"
                 >
                   <svg
                     className="h-4 w-4"

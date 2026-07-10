@@ -11,16 +11,15 @@ export interface ApiVersionConfig {
   headerFallbackNames: string[];
 }
 
+/** Current API release in SemVer notation (maps to major version 1). */
+export const API_SEMVER = '1.0.0';
+
+export const API_VERSION_POLICY_PATH = 'docs/backend/API_VERSIONING_POLICY.md';
+
 export const API_VERSION_CONFIG: ApiVersionConfig = {
   defaultVersion: '1',
-  supportedVersions: ['1', '2'],
-  deprecatedVersions: {
-    '1': {
-      sunset: '2026-12-31',
-      sunsetLink: 'https://docs.stellarearn.io/api-versioning',
-      reason: 'V1 is in maintenance mode and will be removed after 2026-12-31.',
-    },
-  },
+  supportedVersions: ['1'],
+  deprecatedVersions: {},
   headerName: 'x-api-version',
   headerFallbackNames: ['accept-version', 'api-version'],
 };
@@ -77,3 +76,11 @@ export const isVersionDeprecated = (version: string): boolean =>
 
 export const getVersionDeprecationInfo = (version: string) =>
   API_VERSION_CONFIG.deprecatedVersions[version];
+
+/** Maps an integer API major version to its SemVer release string. */
+export const getApiSemver = (version: string): string => {
+  if (version === API_VERSION_CONFIG.defaultVersion) {
+    return API_SEMVER;
+  }
+  return `${version}.0.0`;
+};

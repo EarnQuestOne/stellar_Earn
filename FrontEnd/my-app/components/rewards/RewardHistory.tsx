@@ -100,7 +100,7 @@ export function RewardHistory({ claims }: RewardHistoryProps) {
                             claim.transactionHash &&
                             navigator.clipboard.writeText(claim.transactionHash)
                           }
-                          className="text-zinc-400 hover:text-[#089ec3] transition-colors"
+                          className="text-zinc-400 hover:text-primary transition-colors"
                           title="Copy Hash"
                         >
                           <svg

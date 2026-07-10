@@ -29,7 +29,16 @@ import { QUEUES } from 'src/modules/jobs/jobs.constants';
  * the service logic without a real Redis connection.
  */
 function buildService() {
-  const service = new JobsService();
+  const mockTracing = {
+    getCurrentContext: jest.fn().mockReturnValue(null),
+    attachTraceContext: jest.fn((data: any) => data),
+    trace: jest.fn(async (_name: string, fn: (span: any) => Promise<any>) =>
+      fn({ attributes: {} }),
+    ),
+    runInContext: jest.fn(async (_ctx: any, fn: () => Promise<any>) => fn()),
+  } as any;
+
+  const service = new JobsService(mockTracing);
 
   // Capture all queue.add() calls so we can assert on the merged options
   const addCalls: Array<{ queue: string; data: any; opts: any }> = [];

@@ -15,6 +15,7 @@ const TOPIC_BADGE_TYPE_UPDATED: Symbol = symbol_short!("btype_upd");
 const TOPIC_BADGE_TYPE_REMOVED: Symbol = symbol_short!("btype_rm");
 const TOPIC_EMERGENCY_PAUSED: Symbol = symbol_short!("epause");
 const TOPIC_EMERGENCY_UNPAUSED: Symbol = symbol_short!("eunpause");
+const TOPIC_PAUSE_COOLDOWN_VIOLATION: Symbol = symbol_short!("pcool_vio");
 const TOPIC_EMERGENCY_WITHDRAW: Symbol = symbol_short!("ewdraw");
 const TOPIC_UNPAUSE_APPROVED: Symbol = symbol_short!("uappr");
 const TOPIC_TIMELOCK_SCHEDULED: Symbol = symbol_short!("tl_sched");
@@ -97,6 +98,13 @@ pub fn emergency_unpaused(env: &Env, by: Address) {
     let topics = (TOPIC_EMERGENCY_UNPAUSED, by.clone());
     // Data: admin info
     let data = (by,);
+    env.events().publish(topics, data);
+}
+
+/// Emit when a re-pause is attempted before the cooldown period has elapsed.
+pub fn pause_cooldown_violation(env: &Env, caller: Address, last_unpause: u64, attempted_at: u64) {
+    let topics = (TOPIC_PAUSE_COOLDOWN_VIOLATION, caller.clone());
+    let data = (last_unpause, attempted_at);
     env.events().publish(topics, data);
 }
 

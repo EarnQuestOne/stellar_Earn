@@ -25,6 +25,7 @@ import type {
   CreateQuestRequest,
   UpdateQuestRequest,
   QuestQueryParams,
+  QuestStatus,
 } from '@/lib/types/api.types';
 
 const QUEST_LIST_TTL_MS = 3 * 60 * 1000;
@@ -40,6 +41,146 @@ export type {
   PaginationParams,
   PaginatedResponse,
 } from '@/lib/types/quest';
+
+// ---------------------------------------------------------------------------
+// Serialization / Deserialization helpers
+// ---------------------------------------------------------------------------
+
+function deserializeQuest(data: any): QuestResponse {
+  if (!data) throw new Error('Cannot deserialize null or undefined quest data');
+
+  // Normalize status from backend representation ('active' | 'draft' | 'completed' | 'archived')
+  // to frontend representation ('Active' | 'Paused' | 'Completed' | 'Expired')
+  let status: QuestStatus = 'Active';
+  if (data.status) {
+    const rawStatus = String(data.status).toLowerCase();
+    if (rawStatus === 'active') {
+      status = 'Active';
+    } else if (rawStatus === 'draft' || rawStatus === 'paused') {
+      status = 'Paused';
+    } else if (rawStatus === 'completed') {
+      status = 'Completed';
+    } else if (rawStatus === 'archived' || rawStatus === 'expired') {
+      status = 'Expired';
+    } else {
+      const capitalized =
+        data.status.charAt(0).toUpperCase() +
+        data.status.slice(1).toLowerCase();
+      if (['Active', 'Paused', 'Completed', 'Expired'].includes(capitalized)) {
+        status = capitalized as QuestStatus;
+      }
+    }
+  }
+
+  return {
+    id: data.id,
+    contractQuestId: data.contractQuestId || data.contractTaskId || '0',
+    title: data.title,
+    description: data.description,
+    category: data.category || 'General',
+    difficulty: data.difficulty || undefined,
+    rewardAsset: data.rewardAsset || 'XLM',
+    rewardAmount: data.rewardAmount,
+    xpReward: data.xpReward != null ? Number(data.xpReward) : undefined,
+    verifierAddress: data.verifierAddress || data.createdBy || '',
+    deadline: data.deadline || null,
+    status,
+    totalClaims: data.totalClaims != null ? Number(data.totalClaims) : 0,
+    totalSubmissions:
+      data.totalSubmissions != null ? Number(data.totalSubmissions) : 0,
+    approvedSubmissions:
+      data.approvedSubmissions != null ? Number(data.approvedSubmissions) : 0,
+    rejectedSubmissions:
+      data.rejectedSubmissions != null ? Number(data.rejectedSubmissions) : 0,
+    maxParticipants:
+      data.maxParticipants != null ? Number(data.maxParticipants) : undefined,
+    currentParticipants:
+      data.currentParticipants != null
+        ? Number(data.currentParticipants)
+        : undefined,
+    requirements: Array.isArray(data.requirements) ? data.requirements : [],
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    creator: data.creator
+      ? {
+          id: data.creator.id,
+          name: data.creator.name,
+          avatarUrl: data.creator.avatarUrl || undefined,
+        }
+      : data.createdBy
+        ? {
+            id: data.createdBy,
+            name: 'StellarEarn Creator',
+          }
+        : undefined,
+    skills: Array.isArray(data.skills) ? data.skills : [],
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+  };
+}
+
+function deserializePaginatedQuests(response: any): PaginatedQuestsResponse {
+  if (!response)
+    throw new Error('Cannot deserialize null or undefined paginated response');
+
+  // Handle both backend wrapped response format and direct mock format
+  const rawData = response.data;
+
+  let questsList: any[] = [];
+  let total = 0;
+  let page = 1;
+  let limit = 10;
+  let totalPages = 1;
+
+  if (rawData && typeof rawData === 'object') {
+    if (Array.isArray(rawData.data)) {
+      questsList = rawData.data;
+      limit = rawData.limit ?? 10;
+      total = rawData.total ?? questsList.length;
+      page = rawData.page ?? 1;
+      totalPages = rawData.totalPages ?? 1;
+    } else if (Array.isArray(rawData.quests)) {
+      questsList = rawData.quests;
+      total = rawData.total ?? questsList.length;
+      page = rawData.page ?? 1;
+      limit = rawData.limit ?? 10;
+      totalPages = rawData.totalPages ?? 1;
+    } else if (Array.isArray(response.quests)) {
+      questsList = response.quests;
+      total = response.total ?? questsList.length;
+      page = response.page ?? 1;
+      limit = response.limit ?? 10;
+      totalPages = response.totalPages ?? 1;
+    } else if (Array.isArray(response.data)) {
+      questsList = response.data;
+      total = response.total ?? questsList.length;
+      page = response.page ?? 1;
+      limit = response.limit ?? 10;
+      totalPages = response.totalPages ?? 1;
+    }
+  } else {
+    if (Array.isArray(response.quests)) {
+      questsList = response.quests;
+      total = response.total ?? questsList.length;
+      page = response.page ?? 1;
+      limit = response.limit ?? 10;
+      totalPages = response.totalPages ?? 1;
+    } else if (Array.isArray(response.data)) {
+      questsList = response.data;
+      total = response.total ?? questsList.length;
+      page = response.page ?? 1;
+      limit = response.limit ?? 10;
+      totalPages = response.totalPages ?? 1;
+    }
+  }
+
+  return {
+    quests: questsList.map(deserializeQuest),
+    total,
+    page,
+    limit,
+    totalPages,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // List quests
@@ -62,14 +203,16 @@ export async function getQuests(
 
   return cacheManager.getStaleWhileRevalidate(
     cacheKey,
-    () =>
-      withRetry(() =>
-        get<PaginatedQuestsResponse>('/quests', {
+    async () => {
+      const response = await withRetry(() =>
+        get<any>('/quests', {
           params,
           signal: cancelToken?.signal,
           timeout,
         })
-      ),
+      );
+      return deserializePaginatedQuests(response);
+    },
     {
       ttl: QUEST_LIST_TTL_MS,
       staleTtl: QUEST_LIST_STALE_TTL_MS,
@@ -92,12 +235,24 @@ export async function getQuestById(
 ): Promise<QuestResponse> {
   return cacheManager.get(
     `quest-${id}`,
-    () =>
-      withRetry(() =>
-        get<QuestResponse>(`/quests/${id}`, {
+    async () => {
+      const response = await withRetry(() =>
+        get<any>(`/quests/${id}`, {
           signal: cancelToken?.signal,
         })
-      ),
+      );
+
+      // Handle both wrapped { data: QuestResponseDto } and unwrapped QuestResponseDto
+      const rawQuest =
+        response &&
+        response.data &&
+        !Array.isArray(response.data) &&
+        response.data.id
+          ? response.data
+          : response;
+
+      return deserializeQuest(rawQuest);
+    },
     60_000
   );
 }
@@ -109,10 +264,15 @@ export async function getQuestById(
 export async function createQuest(
   payload: CreateQuestRequest
 ): Promise<QuestResponse> {
-  const result = await post<QuestResponse>('/quests', payload);
-  // Invalidate list cache (no simple key, so just clear all quest entries)
+  const result = await post<any>('/quests', payload);
   cacheManager.clear();
-  return result;
+
+  const rawQuest =
+    result && result.data && !Array.isArray(result.data) && result.data.id
+      ? result.data
+      : result;
+
+  return deserializeQuest(rawQuest);
 }
 
 // ---------------------------------------------------------------------------
@@ -123,9 +283,15 @@ export async function updateQuest(
   id: string,
   payload: UpdateQuestRequest
 ): Promise<QuestResponse> {
-  const result = await patch<QuestResponse>(`/quests/${id}`, payload);
+  const result = await patch<any>(`/quests/${id}`, payload);
   cacheManager.invalidate(`quest-${id}`);
-  return result;
+
+  const rawQuest =
+    result && result.data && !Array.isArray(result.data) && result.data.id
+      ? result.data
+      : result;
+
+  return deserializeQuest(rawQuest);
 }
 
 // ---------------------------------------------------------------------------

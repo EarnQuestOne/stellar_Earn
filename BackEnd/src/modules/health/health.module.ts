@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
+import { HttpClientModule } from '../../common/http-client/http-client.module';
 import { HealthController } from './health.controller';
 import { DatabaseHealthService } from './services/database-health.service';
 import { CacheHealthService } from './services/cache-health.service';
@@ -10,7 +11,7 @@ import { DatabasePoolMonitorService } from './services/database-pool-monitor.ser
 import { MetricsService } from '../../common/services/metrics.service';
 
 @Module({
-  imports: [TypeOrmModule, ConfigModule, CacheModule],
+  imports: [TypeOrmModule, ConfigModule, CacheModule, HttpClientModule],
   controllers: [HealthController],
   providers: [
     DatabaseHealthService,

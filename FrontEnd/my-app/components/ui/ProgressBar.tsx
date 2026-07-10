@@ -44,10 +44,10 @@ export function ProgressBar({
         aria-valuetext={indeterminate ? 'In progress' : `${percent}%`}
       >
         {indeterminate ? (
-          <div className="animate-progress-indeterminate h-full w-1/2 rounded-full bg-[#089ec3]" />
+          <div className="animate-progress-indeterminate h-full w-1/2 rounded-full bg-primary" />
         ) : (
           <div
-            className="h-full rounded-full bg-[#089ec3] transition-all duration-300"
+            className="h-full rounded-full bg-primary transition-all duration-300"
             style={{ width: `${percent}%` }}
           />
         )}

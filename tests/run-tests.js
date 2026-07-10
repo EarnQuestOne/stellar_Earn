@@ -9,6 +9,9 @@ const {
 } = require("./lint-staged-config.test");
 const { runAll: runPreCommitHookTests } = require("./pre-commit-hook.test");
 const { runAll: runReleasePackageTests } = require("./contract-release-package.test");
+const {
+  runAll: runBackendChangelogTests,
+} = require("./backend-changelog.test");
 
 try {
   runOrphanedScriptTests();
@@ -16,6 +19,7 @@ try {
   runLintStagedConfigTests();
   runPreCommitHookTests();
   runReleasePackageTests();
+  runBackendChangelogTests();
   console.log("All tests passed");
   process.exit(0);
 } catch (e) {

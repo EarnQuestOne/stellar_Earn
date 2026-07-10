@@ -141,7 +141,7 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+              className="absolute top-4 right-4 rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
               aria-label="Close modal"
             >
               <svg

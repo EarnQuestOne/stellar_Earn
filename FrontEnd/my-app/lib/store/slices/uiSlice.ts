@@ -5,6 +5,8 @@ export interface UISlice {
   sidebarOpen: boolean;
   modal: string | null;
   isOnline: boolean;
+  /** Whether the backend API base URL is currently reachable. */
+  isApiReachable: boolean;
   hasRetryableError: boolean;
   retryFunction: (() => Promise<void>) | null;
 
@@ -13,6 +15,7 @@ export interface UISlice {
   openModal: (modal: string) => void;
   closeModal: () => void;
   setOnlineStatus: (isOnline: boolean) => void;
+  setApiReachable: (reachable: boolean) => void;
   setRetryableError: (hasError: boolean, retryFn?: () => Promise<void>) => void;
   clearRetryableError: () => void;
 }
@@ -22,6 +25,7 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
   sidebarOpen: false,
   modal: null,
   isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  isApiReachable: true,
   hasRetryableError: false,
   retryFunction: null,
 
@@ -33,6 +37,8 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
   closeModal: () => set({ modal: null }),
 
   setOnlineStatus: (isOnline) => set({ isOnline }),
+
+  setApiReachable: (isApiReachable) => set({ isApiReachable }),
 
   setRetryableError: (hasError, retryFn) =>
     set({
