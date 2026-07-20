@@ -65,7 +65,7 @@ export class AuthService {
         if (user) {
           return {
             id: user.id,
-            stellarAddress: user.stellarAddress,
+            stellarAddress: user.stellarAddress ?? '',
             role: user.role as string,
           };
         }
@@ -79,7 +79,7 @@ export class AuthService {
     if (user) {
       return {
         id: user.id,
-        stellarAddress: user.stellarAddress,
+        stellarAddress: user.stellarAddress ?? '',
         role: user.role as string,
       };
     }
@@ -223,7 +223,7 @@ export class AuthService {
 
     const authUser: AuthUser = {
       id: user.id,
-      stellarAddress: user.stellarAddress,
+      stellarAddress: user.stellarAddress ?? '',
       role: user.role as string,
     };
 
@@ -295,7 +295,7 @@ export class AuthService {
       ...tokens,
       user: {
         id: user.id,
-        stellarAddress: user.stellarAddress,
+        stellarAddress: user.stellarAddress ?? '',
         role: user.role as string,
       },
     };
