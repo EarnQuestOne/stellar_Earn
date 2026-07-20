@@ -81,6 +81,19 @@ export class UsersService {
     return this.findByAddress('dummy');
   }
 
+  async findByGithubId(_githubId: string): Promise<User | null> {
+    return null;
+  }
+
+  async findByEmail(_email: string): Promise<User | null> {
+    return null;
+  }
+
+  async create(dto: Partial<User>): Promise<User> {
+    const user = this.usersRepository.create(dto as any);
+    return this.usersRepository.save(user);
+  }
+
   /**
    * Atomically updates user XP/level in one DB transaction.
    * Used by cross-service reputation workflows to guarantee consistency.
