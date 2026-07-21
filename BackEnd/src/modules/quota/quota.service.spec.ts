@@ -43,6 +43,8 @@ const makeQb = () => {
     'update',
     'set',
     'where',
+    'setParameter',
+    'setParameters',
   ]) {
     qb[m] = jest.fn().mockReturnValue(qb);
   }
@@ -445,6 +447,52 @@ describe('QuotaService', () => {
       await expect(
         service.enforcePayoutQuota('TENANT_A', 200),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('uses bound parameters and does not interpolate amount into SQL string with adversarial/boundary values', async () => {
+      configRepo.findOne.mockResolvedValue(
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
+      );
+      mockManager.findOne.mockResolvedValue(
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 100 }),
+      );
+
+      const adversarialAmount = '1 OR 1=1' as unknown as number;
+      await service.enforcePayoutQuota('TENANT_A', adversarialAmount);
+
+      const qb = mockManager.createQueryBuilder.mock.results.find(
+        (r) => r.value.update.mock?.calls?.length > 0,
+      )?.value;
+
+      expect(qb).toBeDefined();
+      expect(qb.set).toHaveBeenCalledTimes(1);
+
+      const setArg = qb.set.mock.calls[0][0];
+      expect(typeof setArg.payoutAmount).toBe('function');
+      const sqlSnippet = setArg.payoutAmount();
+
+      expect(sqlSnippet).toBe('"payoutAmount" + :amount');
+      expect(sqlSnippet).not.toContain('1 OR 1=1');
+      expect(qb.setParameter).toHaveBeenCalledWith('amount', adversarialAmount);
+    });
+
+    it('handles numeric boundary amount values safely with bound parameters', async () => {
+      configRepo.findOne.mockResolvedValue(
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
+      );
+      mockManager.findOne.mockResolvedValue(
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 100 }),
+      );
+
+      const boundaryAmount = 0.00000001;
+      await service.enforcePayoutQuota('TENANT_A', boundaryAmount);
+
+      const qb = mockManager.createQueryBuilder.mock.results.find(
+        (r) => r.value.update.mock?.calls?.length > 0,
+      )?.value;
+
+      expect(qb).toBeDefined();
+      expect(qb.setParameter).toHaveBeenCalledWith('amount', boundaryAmount);
     });
   });
 });
