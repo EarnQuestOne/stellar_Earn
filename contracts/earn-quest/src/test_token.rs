@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use crate::{EarnQuestContract, EarnQuestContractClient};
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{Address, Env, String};
@@ -39,10 +40,27 @@ fn test_transfer() {
     let user2 = Address::generate(&env);
 
     client.mint(&admin, &user1, &1000);
-    client.transfer(&user1, &user2, &400);
+    client.transfer(&user1, &user2, &400).unwrap();
 
     assert_eq!(client.balance(&user1), 600);
     assert_eq!(client.balance(&user2), 400);
+}
+
+#[test]
+fn test_transfer_insufficient_balance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let user1 = Address::generate(&env);
+    let user2 = Address::generate(&env);
+
+    client.mint(&admin, &user1, &100);
+
+    let result = client.try_transfer(&user1, &user2, &400);
+    assert!(matches!(result, Err(Ok(Error::InsufficientBalance))));
+
+    // Balances are unchanged after the failed transfer.
+    assert_eq!(client.balance(&user1), 100);
+    assert_eq!(client.balance(&user2), 0);
 }
 
 #[test]
@@ -58,11 +76,51 @@ fn test_allowance_and_transfer_from() {
 
     assert_eq!(client.allowance(&owner, &spender), 500);
 
-    client.transfer_from(&spender, &owner, &to, &300);
+    client.transfer_from(&spender, &owner, &to, &300).unwrap();
 
     assert_eq!(client.balance(&owner), 700);
     assert_eq!(client.balance(&to), 300);
     assert_eq!(client.allowance(&owner, &spender), 200);
+}
+
+#[test]
+fn test_transfer_from_insufficient_allowance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let owner = Address::generate(&env);
+    let spender = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    client.mint(&admin, &owner, &1000);
+    client.approve(&owner, &spender, &100, &200);
+
+    let result = client.try_transfer_from(&spender, &owner, &to, &300);
+    assert!(matches!(result, Err(Ok(Error::InsufficientAllowance))));
+
+    // Allowance and balances are unchanged after the failed transfer.
+    assert_eq!(client.allowance(&owner, &spender), 100);
+    assert_eq!(client.balance(&owner), 1000);
+    assert_eq!(client.balance(&to), 0);
+}
+
+#[test]
+fn test_transfer_from_insufficient_balance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let owner = Address::generate(&env);
+    let spender = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    client.mint(&admin, &owner, &100);
+    client.approve(&owner, &spender, &500, &200);
+
+    let result = client.try_transfer_from(&spender, &owner, &to, &300);
+    assert!(matches!(result, Err(Ok(Error::InsufficientBalance))));
+
+    // The allowance was already spent down before the balance check failed;
+    // only the balance transfer itself is rolled back.
+    assert_eq!(client.balance(&owner), 100);
+    assert_eq!(client.balance(&to), 0);
 }
 
 #[test]
@@ -72,9 +130,56 @@ fn test_burn() {
     let user = Address::generate(&env);
 
     client.mint(&admin, &user, &1000);
-    client.burn(&user, &300);
+    client.burn(&user, &300).unwrap();
 
     assert_eq!(client.balance(&user), 700);
+}
+
+#[test]
+fn test_burn_insufficient_balance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let user = Address::generate(&env);
+
+    client.mint(&admin, &user, &100);
+
+    let result = client.try_burn(&user, &300);
+    assert!(matches!(result, Err(Ok(Error::InsufficientBalance))));
+
+    assert_eq!(client.balance(&user), 100);
+}
+
+#[test]
+fn test_burn_from_insufficient_allowance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let owner = Address::generate(&env);
+    let spender = Address::generate(&env);
+
+    client.mint(&admin, &owner, &1000);
+    client.approve(&owner, &spender, &100, &200);
+
+    let result = client.try_burn_from(&spender, &owner, &300);
+    assert!(matches!(result, Err(Ok(Error::InsufficientAllowance))));
+
+    assert_eq!(client.allowance(&owner, &spender), 100);
+    assert_eq!(client.balance(&owner), 1000);
+}
+
+#[test]
+fn test_burn_from_insufficient_balance_returns_error() {
+    let env = Env::default();
+    let (client, admin) = setup(&env);
+    let owner = Address::generate(&env);
+    let spender = Address::generate(&env);
+
+    client.mint(&admin, &owner, &100);
+    client.approve(&owner, &spender, &500, &200);
+
+    let result = client.try_burn_from(&spender, &owner, &300);
+    assert!(matches!(result, Err(Ok(Error::InsufficientBalance))));
+
+    assert_eq!(client.balance(&owner), 100);
 }
 
 #[test]

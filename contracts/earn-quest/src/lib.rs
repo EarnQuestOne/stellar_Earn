@@ -1378,19 +1378,25 @@ impl EarnQuestContract {
         token::balance(env, id)
     }
 
-    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) -> Result<(), Error> {
         token::transfer(env, from, to, amount)
     }
 
-    pub fn transfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
+    pub fn transfer_from(
+        env: Env,
+        spender: Address,
+        from: Address,
+        to: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
         token::transfer_from(env, spender, from, to, amount)
     }
 
-    pub fn burn(env: Env, from: Address, amount: i128) {
+    pub fn burn(env: Env, from: Address, amount: i128) -> Result<(), Error> {
         token::burn(env, from, amount)
     }
 
-    pub fn burn_from(env: Env, spender: Address, from: Address, amount: i128) {
+    pub fn burn_from(env: Env, spender: Address, from: Address, amount: i128) -> Result<(), Error> {
         token::burn_from(env, spender, from, amount)
     }
 
