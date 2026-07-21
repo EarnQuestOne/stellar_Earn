@@ -159,6 +159,10 @@ impl Oracle {
         let mut weighted_sum = U256::from_u32(env, 0);
         let mut total_weight = 0u32;
         let mut confidence_sum = 0u32;
+        // Derive decimals from the first contributing price source so the
+        // aggregated result reflects the actual precision of the feed rather
+        // than a hardcoded constant.
+        let aggregated_decimals = valid_prices.get(0).unwrap().0.decimals;
 
         for i in 0u32..valid_prices.len() {
             let (price_data, weight) = valid_prices.get(i).unwrap();
@@ -180,7 +184,7 @@ impl Oracle {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
             weighted_price,
-            decimals: 7, // Standard Stellar decimals
+            decimals: aggregated_decimals,
             sources_used: valid_prices.len(),
             total_sources,
             confidence_score: avg_confidence,

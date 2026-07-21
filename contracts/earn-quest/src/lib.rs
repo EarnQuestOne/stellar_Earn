@@ -1316,11 +1316,15 @@ impl EarnQuestContract {
 
         let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
 
-        // Convert amount using price (assuming 7 decimals)
+        // Build the divisor from the actual decimal count reported by the
+        // oracle feed so any reward token (6-, 7-, 8-, 18-decimal, …) is
+        // handled correctly instead of silently assuming 7 decimals.
+        let divisor = U256::from_u128(&env, 10u128.pow(price.decimals));
+
         let amount_u256 = U256::from_u128(&env, amount as u128);
         let converted_amount = amount_u256
             .mul(&price.weighted_price)
-            .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
+            .div(&divisor);
 
         // Convert back to i128 safely
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
