@@ -170,9 +170,8 @@ export class QuotaService {
       await manager
         .createQueryBuilder()
         .update(QuotaUsage)
-        .set({ payoutAmount: () => '"payoutAmount" + :amount' })
+        .set({ payoutAmount: () => `"payoutAmount" + ${amount}` })
         .where('id = :id', { id: usage.id })
-        .setParameter('amount', amount)
         .execute();
     });
   }
