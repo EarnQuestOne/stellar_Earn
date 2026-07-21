@@ -11,6 +11,7 @@ import { SkipToContent } from '@/components/a11y/SkipToContent';
 import PerformanceMonitor from '@/components/ui/PerformanceMonitor';
 import { EnvValidator } from '@/components/providers/EnvValidator';
 import { SWRegister } from '@/components/SWRegister';
+import { createPageMetadata, getLocale } from '@/lib/seo';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -22,11 +23,33 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'StellarEarn - Quest-Based Earning Platform',
-  description:
-    'Complete quests, earn rewards, and build your on-chain reputation with Stellar',
+const homeMetadata = {
+  en: {
+    title: 'Complete Quests and Earn Stellar Rewards',
+    description:
+      'Discover community quests, earn Stellar rewards, and build your on-chain reputation with StellarEarn.',
+  },
+  es: {
+    title: 'Completa misiones y gana recompensas Stellar',
+    description:
+      'Descubre misiones de la comunidad, gana recompensas Stellar y construye tu reputación on-chain con StellarEarn.',
+  },
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = getLocale(localeParam);
+
+  return createPageMetadata({
+    ...homeMetadata[locale],
+    locale,
+    pathname: '/',
+  });
+}
 
 export default async function RootLayout({
   children,

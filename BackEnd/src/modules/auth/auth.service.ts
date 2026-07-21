@@ -19,6 +19,7 @@ import {
   isChallengeExpired,
   extractTimestampFromChallenge,
 } from './utils/signature';
+import type { JwtPayload } from './strategies/jwt.strategy';
 
 export interface AuthUser {
   id: string;
@@ -47,12 +48,19 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
 
-  validate(payload: any): AuthUser {
-    return {
-      id: 'dummy-id',
-      stellarAddress: payload?.stellarAddress || 'G...ABC',
-      role: 'USER',
-    };
+  /**
+   * Resolve the identity encoded in a verified JWT payload. Called by
+   * `JwtStrategy` once the token's signature has already been checked, so
+   * `payload` is trustworthy — but role/identity are still re-resolved from
+   * the database here rather than trusted as-is, so a stale or forged claim
+   * embedded in an older token can never grant access it shouldn't have.
+   */
+  async validate(payload: JwtPayload): Promise<AuthUser> {
+    const identifier = payload?.sub || payload?.stellarAddress;
+    if (!identifier) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+    return this.validateUser(identifier);
   }
 
   async validateUser(idOrAddress: string): Promise<AuthUser> {

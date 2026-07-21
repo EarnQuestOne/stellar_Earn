@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `AuthService.validate()` no longer returns a hardcoded stub identity for every request; it now resolves the real user (and their current role) from the verified JWT payload via `validateUser`, and `JwtStrategy` passes the full decoded payload instead of just the Stellar address. Closes #1888.
+
 ### Added
 
 - `POST /auth/challenge` endpoint that issues a time-boxed (5 min), single-use Stellar authentication challenge for a given address using `generateChallengeMessage` from `utils/signature`.

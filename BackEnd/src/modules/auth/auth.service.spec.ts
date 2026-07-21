@@ -65,7 +65,13 @@ describe('AuthService', () => {
           useValue: mockRefreshTokenRepository,
         },
       ],
-    }).compile();
+    })
+      .useMocker((token) => {
+        if (token === JwtService) return jwtService;
+        if (token === ConfigService) return configService;
+        return undefined;
+      })
+      .compile();
 
     service = module.get<AuthService>(AuthService);
     usersService = module.get<UsersService>(UsersService);
@@ -342,6 +348,82 @@ describe('AuthService', () => {
         stellarAddress,
         role: Role.USER,
       });
+    });
+  });
+
+  describe('validate (JWT payload → identity)', () => {
+    it('should resolve the real identity/role for the user encoded in the payload, not a stub', async () => {
+      const user = createMockUser({
+        id: 'user-a-id',
+        role: Role.ADMIN,
+      });
+      jest.spyOn(usersService, 'findById').mockResolvedValue(user);
+
+      const result = await service.validate({
+        sub: user.id,
+        stellarAddress: user.stellarAddress,
+        role: 'USER', // stale/forged claim in the token — must be ignored
+      });
+
+      expect(result).toEqual({
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        role: user.role,
+      });
+      expect(result.role).toBe(Role.ADMIN);
+    });
+
+    it('should never resolve two different users to the same identity', async () => {
+      const userA = createMockUser({ id: 'user-a-id', role: Role.USER });
+      const userB = createMockUser({
+        id: 'user-b-id',
+        role: Role.ADMIN,
+        stellarAddress: generateRandomStellarAddress(),
+      });
+
+      jest
+        .spyOn(usersService, 'findById')
+        .mockImplementation(async (id: string) =>
+          id === userA.id ? userA : id === userB.id ? userB : null,
+        );
+
+      const resultA = await service.validate({
+        sub: userA.id,
+        stellarAddress: userA.stellarAddress,
+        role: userA.role,
+      });
+      const resultB = await service.validate({
+        sub: userB.id,
+        stellarAddress: userB.stellarAddress,
+        role: userB.role,
+      });
+
+      expect(resultA.id).toBe(userA.id);
+      expect(resultA.role).toBe(Role.USER);
+      expect(resultB.id).toBe(userB.id);
+      expect(resultB.role).toBe(Role.ADMIN);
+      expect(resultA.id).not.toBe(resultB.id);
+      expect(resultA.role).not.toBe(resultB.role);
+    });
+
+    it('should fall back to the stellarAddress claim when sub is absent', async () => {
+      const user = createMockUser();
+      jest.spyOn(usersService, 'findByAddress').mockResolvedValue(user);
+
+      const result = await service.validate({
+        stellarAddress: user.stellarAddress,
+      } as any);
+
+      expect(usersService.findByAddress).toHaveBeenCalledWith(
+        user.stellarAddress,
+      );
+      expect(result.id).toBe(user.id);
+    });
+
+    it('should throw UnauthorizedException when the payload has no identifiable subject', async () => {
+      await expect(service.validate({} as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

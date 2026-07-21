@@ -72,7 +72,7 @@ export class JwtStrategy extends Strategy {
         },
       },
       async (payload: JwtPayload) => {
-        return this.authService.validate(payload.stellarAddress);
+        return this.authService.validate(payload);
       },
     );
   }
