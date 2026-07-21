@@ -2,6 +2,7 @@
 target/
 **/target/
 Cargo.lock
+!contracts/earn-quest/Cargo.lock
 **/*.rs.bk
 
 # WASM artifacts
@@ -68,6 +69,7 @@ coverage/
 
 # Rust
 Cargo.lock
+!contracts/earn-quest/Cargo.lock
 **/target/
 **/*.rs.bk
 

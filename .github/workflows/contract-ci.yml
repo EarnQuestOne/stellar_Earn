@@ -54,19 +54,19 @@ jobs:
             ${{ runner.os }}-cargo-target-
 
       - name: Build workspace
-        run: cargo build --release
+        run: cargo build --locked --release
 
       - name: Run tests
-        run: cargo test
+        run: cargo test --locked
 
       - name: Run gas regression check
-        run: cargo test test_gas_regression -- --nocapture
+        run: cargo test --locked test_gas_regression -- --nocapture
 
       - name: Format check
-        run: cargo fmt --all -- --check
+        run: cargo fmt --locked --all -- --check
 
       - name: Clippy lint
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
 
       - name: License check
         run: |
@@ -74,7 +74,7 @@ jobs:
           make license-check
 
       - name: Build WASM
-        run: cargo build --release --target wasm32-unknown-unknown
+        run: cargo build --locked --release --target wasm32-unknown-unknown
 
   contract-ci-gate:
     name: Contract CI Gate
