@@ -35,7 +35,6 @@ const makeUsage = (overrides: Partial<QuotaUsage> = {}): QuotaUsage => ({
 /** Returns a fully chainable query builder mock. */
 const makeQb = () => {
   const qb: Record<string, jest.Mock> = {} as Record<string, jest.Mock>;
-  const self = () => qb;
   for (const m of [
     'insert',
     'into',
