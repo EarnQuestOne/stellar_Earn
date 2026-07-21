@@ -102,8 +102,8 @@ pub fn deposit(
         }
     };
 
-    balances.total_deposited += amount;
-    balances.deposit_count += 1;
+    balances.total_deposited = balances.total_deposited.checked_add(amount).ok_or(Error::ArithmeticOverflow)?;
+    balances.deposit_count = balances.deposit_count.checked_add(1).ok_or(Error::ArithmeticOverflow)?;
     storage::set_escrow_balances(env, quest_id, &balances);
 
     let available = available_balance(&balances);
@@ -182,7 +182,7 @@ pub fn record_payout(
         return Err(Error::InsufficientEscrow);
     }
 
-    b.total_paid_out += amount;
+    b.total_paid_out = b.total_paid_out.checked_add(amount).ok_or(Error::ArithmeticOverflow)?;
     storage::set_escrow_balances(env, quest_id, &b);
 
     let remaining = available_balance(&b);
@@ -217,7 +217,7 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     // re-entrant call during the transfer below cannot trigger a second
     // refund (it would see is_active=false). On transfer failure the
     // transaction reverts and the storage write is rolled back atomically.
-    b.total_refunded += available;
+    b.total_refunded = b.total_refunded.checked_add(available).ok_or(Error::ArithmeticOverflow)?;
     b.is_active = false;
     storage::set_escrow_balances(env, quest_id, &b);
 
@@ -483,8 +483,8 @@ pub fn slash_verifier_stake(
         return Err(Error::VerifierStakeInactive);
     }
 
-    let slash_amount = (stake.amount * slash_bps as u128) / 10_000;
-    let remainder = stake.amount - slash_amount;
+    let slash_amount = (stake.amount.checked_mul(slash_bps as u128).ok_or(Error::ArithmeticOverflow)?) / 10_000;
+    let remainder = stake.amount.checked_sub(slash_amount).ok_or(Error::ArithmeticUnderflow)?;
 
     stake.amount = 0;
     stake.is_active = false;

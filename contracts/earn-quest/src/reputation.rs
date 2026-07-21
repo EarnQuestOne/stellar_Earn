@@ -27,8 +27,8 @@ const LEVEL_5_XP: u64 = 1500;
 pub fn award_xp(env: &Env, user: &Address, xp_amount: u64) -> Result<UserCore, Error> {
     let mut stats = storage::get_user_stats_or_default(env, user);
 
-    stats.xp += xp_amount;
-    stats.quests_completed += 1;
+    stats.xp = stats.xp.checked_add(xp_amount).ok_or(Error::ArithmeticOverflow)?;
+    stats.quests_completed = stats.quests_completed.checked_add(1).ok_or(Error::ArithmeticOverflow)?;
 
     let new_level = calculate_level(stats.xp);
     let level_up = new_level > stats.level;

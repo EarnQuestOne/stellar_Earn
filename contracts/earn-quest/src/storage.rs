@@ -472,7 +472,7 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
 /// * Type-safe increment operation
 pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     let mut quest = get_quest(env, id)?;
-    quest.total_claims += 1;
+    quest.total_claims = quest.total_claims.checked_add(1).ok_or(Error::ArithmeticOverflow)?;
     set_quest(env, id, &quest);
     Ok(())
 }
@@ -538,7 +538,7 @@ pub fn update_submission_status(
 /// * Prevents overflow (saturating add)
 pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserCore, Error> {
     let mut stats = get_user_stats(env, user)?;
-    stats.xp = stats.xp.saturating_add(xp_delta);
+    stats.xp = stats.xp.checked_add(xp_delta).ok_or(Error::ArithmeticOverflow)?;
 
     stats.level = match stats.xp {
         x if x >= 1500 => 5,
