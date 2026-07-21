@@ -1,8 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { WebhooksController } from './webhooks.controller';
 import { WebhooksService, WebhookResponse } from './webhooks.service';
 import { TraceService } from '../trace/trace.service';
+import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 
 /**
  * Unit tests for WebhooksController.
@@ -32,6 +37,9 @@ describe('WebhooksController', () => {
   beforeEach(async () => {
     const mockWebhooksService: Partial<jest.Mocked<WebhooksService>> = {
       processWebhook: jest.fn(),
+      listFailedWebhooks: jest.fn(),
+      getFailedWebhook: jest.fn(),
+      retryFailedWebhook: jest.fn(),
     };
 
     const mockTraceService: Partial<jest.Mocked<TraceService>> = {
@@ -313,6 +321,70 @@ describe('WebhooksController', () => {
       expect(webhooksService.processWebhook).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'unknown' }),
       );
+    });
+  });
+
+  // ─── Admin: failed webhook inspection & retry ───────────────────────────
+
+  describe('GET /webhooks/admin/failed', () => {
+    it('should list failed webhooks without a status filter', async () => {
+      webhooksService.listFailedWebhooks.mockResolvedValue([]);
+
+      await controller.listFailedWebhooks();
+
+      expect(webhooksService.listFailedWebhooks).toHaveBeenCalledWith(
+        undefined,
+      );
+    });
+
+    it('should forward a status filter to the service', async () => {
+      webhooksService.listFailedWebhooks.mockResolvedValue([]);
+
+      await controller.listFailedWebhooks(FailedWebhookStatus.DEAD_LETTER);
+
+      expect(webhooksService.listFailedWebhooks).toHaveBeenCalledWith(
+        FailedWebhookStatus.DEAD_LETTER,
+      );
+    });
+  });
+
+  describe('GET /webhooks/admin/failed/:eventId', () => {
+    it('should return the failed webhook record when found', async () => {
+      const record = { id: 'r-1', eventId: 'evt-1' } as any;
+      webhooksService.getFailedWebhook.mockResolvedValue(record);
+
+      const result = await controller.getFailedWebhook('evt-1');
+
+      expect(result).toBe(record);
+    });
+
+    it('should throw NotFoundException when no record exists for the event', async () => {
+      webhooksService.getFailedWebhook.mockResolvedValue(null);
+
+      await expect(controller.getFailedWebhook('missing-evt')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('POST /webhooks/admin/failed/:eventId/retry', () => {
+    it('should return success=true when the retry succeeds', async () => {
+      webhooksService.retryFailedWebhook.mockResolvedValue(true);
+
+      const result = await controller.retryFailedWebhook('evt-1');
+
+      expect(result).toEqual({ success: true, eventId: 'evt-1' });
+      expect(webhooksService.retryFailedWebhook).toHaveBeenCalledWith(
+        'evt-1',
+      );
+    });
+
+    it('should return success=false when the retry fails or is exhausted', async () => {
+      webhooksService.retryFailedWebhook.mockResolvedValue(false);
+
+      const result = await controller.retryFailedWebhook('evt-1');
+
+      expect(result).toEqual({ success: false, eventId: 'evt-1' });
     });
   });
 

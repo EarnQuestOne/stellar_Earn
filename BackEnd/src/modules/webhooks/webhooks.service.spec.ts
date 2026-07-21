@@ -1,10 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { WebhooksService, WebhookEvent } from './webhooks.service';
 import { GithubHandler } from './handlers/github.handler';
 import { ApiHandler } from './handlers/api.handler';
 import { BulkheadService } from '../../common/services/bulkhead.service';
 import { generateWebhookSignature } from './utils/signature';
+import {
+  FailedWebhookEvent,
+  FailedWebhookStatus,
+} from './entities/failed-webhook-event.entity';
 
 /**
  * Unit tests for WebhooksService.
@@ -14,19 +20,52 @@ import { generateWebhookSignature } from './utils/signature';
  *    and API providers, plus malformed signature formats)
  *  - Malformed payload handling
  *  - Generic handler source allowlist behavior
- *  - Retry stub behavior
+ *  - Persisting failed webhooks (retryable vs. non-retryable)
+ *  - Retry lifecycle: success, exhaustion/dead-letter, continued failure
  */
 describe('WebhooksService', () => {
   let service: WebhooksService;
   let githubHandler: GithubHandler;
   let apiHandler: ApiHandler;
+  let repo: jest.Mocked<Repository<FailedWebhookEvent>>;
 
   const GITHUB_SECRET = 'github-test-secret-value';
   const API_SECRET = 'api-test-secret-value';
 
+  const buildRecord = (
+    overrides: Partial<FailedWebhookEvent> = {},
+  ): FailedWebhookEvent =>
+    ({
+      id: 'record-uuid-1',
+      eventId: 'evt-1',
+      type: 'push',
+      source: 'github',
+      payload: { repository: { full_name: 'org/repo' } },
+      signature: null,
+      failureReason: 'Failed to process webhook: downstream failure',
+      errorHistory: [],
+      attempts: 1,
+      maxAttempts: 5,
+      status: FailedWebhookStatus.PENDING,
+      nextRetryAt: new Date(Date.now() - 1000),
+      lastAttemptAt: new Date(),
+      resolvedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      canRetry: FailedWebhookEvent.prototype.canRetry,
+      ...overrides,
+    }) as FailedWebhookEvent;
+
   beforeEach(async () => {
     const mockConfigService: Partial<ConfigService> = {
       get: jest.fn((_key: string, defaultValue?: unknown) => defaultValue),
+    };
+
+    const mockRepo = {
+      findOne: jest.fn().mockResolvedValue(null),
+      create: jest.fn((data: Partial<FailedWebhookEvent>) => data),
+      save: jest.fn((data: FailedWebhookEvent) => Promise.resolve(data)),
+      find: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -36,12 +75,14 @@ describe('WebhooksService', () => {
         ApiHandler,
         BulkheadService,
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: getRepositoryToken(FailedWebhookEvent), useValue: mockRepo },
       ],
     }).compile();
 
     service = module.get(WebhooksService);
     githubHandler = module.get(GithubHandler);
     apiHandler = module.get(ApiHandler);
+    repo = module.get(getRepositoryToken(FailedWebhookEvent));
   });
 
   afterEach(() => {
@@ -238,13 +279,241 @@ describe('WebhooksService', () => {
     });
   });
 
-  describe('Retry Stub Behavior', () => {
-    it('should resolve true using the default retry count', async () => {
+  describe('Persisting failed webhooks', () => {
+    it('should persist a retryable failure as PENDING with a scheduled retry', async () => {
+      const event = buildEvent();
+      jest
+        .spyOn(githubHandler, 'handleEvent')
+        .mockRejectedValueOnce(new Error('downstream failure'));
+
+      await service.processWebhook(event);
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventId: 'evt-1',
+          source: 'github',
+          status: FailedWebhookStatus.PENDING,
+          attempts: 1,
+          maxAttempts: 5,
+        }),
+      );
+      const saved = repo.save.mock.calls[0][0] as FailedWebhookEvent;
+      expect(saved.nextRetryAt).not.toBeNull();
+    });
+
+    it('should persist a non-retryable failure (invalid signature) directly as DEAD_LETTER', async () => {
+      const event = buildEvent({
+        secret: GITHUB_SECRET,
+        signature: `sha256=${'0'.repeat(64)}`,
+      });
+
+      await service.processWebhook(event);
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: FailedWebhookStatus.DEAD_LETTER,
+          attempts: 0,
+          nextRetryAt: null,
+        }),
+      );
+    });
+
+    it('should persist an unsupported-source failure directly as DEAD_LETTER', async () => {
+      const event = buildEvent({ source: 'unknown-service' });
+
+      await service.processWebhook(event);
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: FailedWebhookStatus.DEAD_LETTER }),
+      );
+    });
+
+    it('should never persist the webhook secret on the failure record', async () => {
+      const event = buildEvent({ secret: GITHUB_SECRET });
+      jest
+        .spyOn(githubHandler, 'handleEvent')
+        .mockRejectedValueOnce(new Error('downstream failure'));
+
+      await service.processWebhook(event);
+
+      const saved = repo.save.mock.calls[0][0] as Record<string, unknown>;
+      expect(saved).not.toHaveProperty('secret');
+    });
+
+    it('should not persist anything on success', async () => {
+      const event = buildEvent();
+
+      await service.processWebhook(event);
+
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should resolve a previously tracked failure once the same event succeeds', async () => {
+      const existing = buildRecord({ status: FailedWebhookStatus.PENDING });
+      repo.findOne.mockResolvedValueOnce(existing);
+
+      const event = buildEvent();
+      await service.processWebhook(event);
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: FailedWebhookStatus.SUCCEEDED,
+          nextRetryAt: null,
+        }),
+      );
+    });
+  });
+
+  describe('Retry lifecycle', () => {
+    it('should return false when no failed record exists for the event', async () => {
+      repo.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.retryFailedWebhook('unknown-evt')).resolves.toBe(
+        false,
+      );
+    });
+
+    it('should return true immediately for an already-resolved event', async () => {
+      repo.findOne.mockResolvedValueOnce(
+        buildRecord({ status: FailedWebhookStatus.SUCCEEDED }),
+      );
+
       await expect(service.retryFailedWebhook('evt-1')).resolves.toBe(true);
     });
 
-    it('should resolve true regardless of a custom maxRetries override', async () => {
-      await expect(service.retryFailedWebhook('evt-1', 5)).resolves.toBe(true);
+    it('should succeed and mark the record SUCCEEDED when reprocessing works', async () => {
+      const record = buildRecord({ attempts: 1, maxAttempts: 5 });
+      repo.findOne.mockResolvedValueOnce(record);
+      jest.spyOn(githubHandler, 'handleEvent').mockResolvedValueOnce({});
+
+      const result = await service.retryFailedWebhook('evt-1');
+
+      expect(result).toBe(true);
+      const finalSave = repo.save.mock.calls.at(-1)?.[0] as FailedWebhookEvent;
+      expect(finalSave.status).toBe(FailedWebhookStatus.SUCCEEDED);
+      expect(finalSave.attempts).toBe(2);
+      expect(finalSave.resolvedAt).not.toBeNull();
+    });
+
+    it('should resolve the secret fresh from environment config for the retry, not from storage', async () => {
+      const original = process.env.GITHUB_WEBHOOK_SECRET;
+      process.env.GITHUB_WEBHOOK_SECRET = GITHUB_SECRET;
+
+      try {
+        const record = buildRecord({ attempts: 1, maxAttempts: 5 });
+        repo.findOne.mockResolvedValueOnce(record);
+        const handleEventSpy = jest
+          .spyOn(githubHandler, 'handleEvent')
+          .mockResolvedValueOnce({});
+
+        await service.retryFailedWebhook('evt-1');
+
+        expect(handleEventSpy).toHaveBeenCalledTimes(1);
+        expect(handleEventSpy.mock.calls[0][0].secret).toBe(GITHUB_SECRET);
+      } finally {
+        process.env.GITHUB_WEBHOOK_SECRET = original;
+      }
+    });
+
+    it('should move to DEAD_LETTER without dispatching once attempts reach maxAttempts', async () => {
+      const record = buildRecord({ attempts: 5, maxAttempts: 5 });
+      repo.findOne.mockResolvedValueOnce(record);
+      const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
+
+      const result = await service.retryFailedWebhook('evt-1', 5);
+
+      expect(result).toBe(false);
+      expect(handleEventSpy).not.toHaveBeenCalled();
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: FailedWebhookStatus.DEAD_LETTER,
+          nextRetryAt: null,
+        }),
+      );
+    });
+
+    it('should refuse to retry a record already in DEAD_LETTER', async () => {
+      const record = buildRecord({ status: FailedWebhookStatus.DEAD_LETTER });
+      repo.findOne.mockResolvedValueOnce(record);
+      const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
+
+      await expect(service.retryFailedWebhook('evt-1')).resolves.toBe(false);
+      expect(handleEventSpy).not.toHaveBeenCalled();
+    });
+
+    it('should stay PENDING with a new backoff window when a retry attempt fails again but attempts remain', async () => {
+      const record = buildRecord({ attempts: 1, maxAttempts: 5 });
+      repo.findOne.mockResolvedValueOnce(record);
+      jest
+        .spyOn(githubHandler, 'handleEvent')
+        .mockRejectedValueOnce(new Error('still failing'));
+
+      const result = await service.retryFailedWebhook('evt-1');
+
+      expect(result).toBe(false);
+      const finalSave = repo.save.mock.calls.at(-1)?.[0] as FailedWebhookEvent;
+      expect(finalSave.status).toBe(FailedWebhookStatus.PENDING);
+      expect(finalSave.attempts).toBe(2);
+      expect(finalSave.nextRetryAt).not.toBeNull();
+    });
+
+    it('should dead-letter on the final allowed attempt even if it fails with a retryable error', async () => {
+      const record = buildRecord({ attempts: 4, maxAttempts: 5 });
+      repo.findOne.mockResolvedValueOnce(record);
+      jest
+        .spyOn(githubHandler, 'handleEvent')
+        .mockRejectedValueOnce(new Error('still failing'));
+
+      const result = await service.retryFailedWebhook('evt-1');
+
+      expect(result).toBe(false);
+      const finalSave = repo.save.mock.calls.at(-1)?.[0] as FailedWebhookEvent;
+      expect(finalSave.status).toBe(FailedWebhookStatus.DEAD_LETTER);
+      expect(finalSave.attempts).toBe(5);
+    });
+
+    it('should honor a custom maxRetries override for this retry call', async () => {
+      const record = buildRecord({ attempts: 2, maxAttempts: 5 });
+      repo.findOne.mockResolvedValueOnce(record);
+      const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
+
+      const result = await service.retryFailedWebhook('evt-1', 2);
+
+      expect(result).toBe(false);
+      expect(handleEventSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Listing and inspecting failed webhooks', () => {
+    it('should list failed webhooks via the repository', async () => {
+      const records = [buildRecord()];
+      repo.find.mockResolvedValueOnce(records);
+
+      const result = await service.listFailedWebhooks();
+
+      expect(result).toBe(records);
+      expect(repo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('should filter by status when listing failed webhooks', async () => {
+      repo.find.mockResolvedValueOnce([]);
+
+      await service.listFailedWebhooks(FailedWebhookStatus.DEAD_LETTER);
+
+      expect(repo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: FailedWebhookStatus.DEAD_LETTER },
+        }),
+      );
+    });
+
+    it('should fetch a single failed webhook by event ID', async () => {
+      const record = buildRecord();
+      repo.findOne.mockResolvedValueOnce(record);
+
+      await expect(service.getFailedWebhook('evt-1')).resolves.toBe(record);
     });
   });
 });
