@@ -35,7 +35,6 @@ pub use crate::types::{
 };
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, U256, Vec};
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec, U256};
 
 #[contract]
 pub struct EarnQuestContract;
@@ -705,7 +704,6 @@ impl EarnQuestContract {
         quest_id: Symbol,
         initiator: Address,
     ) -> Result<(), Error> {
-    pub fn withdraw_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         dispute::withdraw_dispute(&env, quest_id, initiator)
     }
@@ -812,13 +810,6 @@ impl EarnQuestContract {
         quest_id: Symbol,
         creator: Address,
     ) -> Result<i128, Error> {
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `creator` - The address of the quest creator.
-    pub fn withdraw_unclaimed(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
         creator.require_auth();
@@ -875,17 +866,6 @@ impl EarnQuestContract {
     }
 
     /// Returns the submission details for a specific user and quest.
-    pub fn get_submission(env: Env, quest_id: Symbol, submitter: Address) -> Result<Submission, Error> {
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `submitter` - The address of the user.
-    ///
-    /// # Returns
-    ///
-    /// A `Result<Submission, Error>` containing the submission details.
     pub fn get_submission(
         env: Env,
         quest_id: Symbol,
@@ -1084,20 +1064,11 @@ impl EarnQuestContract {
             return Ok(amount);
         }
 
-        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?;
+        let price = Self::get_price(env.clone(), from_asset.clone(), to_asset.clone(), 300)?;
         let amount_u256 = U256::from_u128(&env, amount as u128);
         let converted_amount = amount_u256
             .mul(&price.weighted_price)
             .div(&U256::from_u32(&env, 10_000_000));
-        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
-
-        // Convert amount using price (assuming 7 decimals)
-        let amount_u256 = U256::from_u128(&env, amount as u128);
-        let converted_amount = amount_u256
-            .mul(&price.weighted_price)
-            .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
-
-        // Convert back to i128 safely
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
         Ok(converted_value)
     }
