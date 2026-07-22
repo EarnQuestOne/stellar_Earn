@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use crate::storage::DataKey;
 use soroban_sdk::{Address, Env, String};
 
@@ -38,42 +39,50 @@ pub fn balance(e: Env, id: Address) -> i128 {
     read_balance(&e, id)
 }
 
-pub fn transfer(e: Env, from: Address, to: Address, amount: i128) {
+pub fn transfer(e: Env, from: Address, to: Address, amount: i128) -> Result<(), Error> {
     from.require_auth();
-    do_transfer(&e, from, to, amount);
+    do_transfer(&e, from, to, amount)
 }
 
-pub fn transfer_from(e: Env, spender: Address, from: Address, to: Address, amount: i128) {
+pub fn transfer_from(
+    e: Env,
+    spender: Address,
+    from: Address,
+    to: Address,
+    amount: i128,
+) -> Result<(), Error> {
     spender.require_auth();
     let allowance = read_allowance(&e, from.clone(), spender.clone());
     if allowance < amount {
-        panic!("insufficient allowance");
+        return Err(Error::InsufficientAllowance);
     }
     write_allowance(&e, from.clone(), spender, allowance - amount);
-    do_transfer(&e, from, to, amount);
+    do_transfer(&e, from, to, amount)
 }
 
-pub fn burn(e: Env, from: Address, amount: i128) {
+pub fn burn(e: Env, from: Address, amount: i128) -> Result<(), Error> {
     from.require_auth();
     let balance = read_balance(&e, from.clone());
     if balance < amount {
-        panic!("insufficient balance");
+        return Err(Error::InsufficientBalance);
     }
     write_balance(&e, from, balance - amount);
+    Ok(())
 }
 
-pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
+pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) -> Result<(), Error> {
     spender.require_auth();
     let allowance = read_allowance(&e, from.clone(), spender.clone());
     if allowance < amount {
-        panic!("insufficient allowance");
+        return Err(Error::InsufficientAllowance);
     }
     write_allowance(&e, from.clone(), spender, allowance - amount);
     let balance = read_balance(&e, from.clone());
     if balance < amount {
-        panic!("insufficient balance");
+        return Err(Error::InsufficientBalance);
     }
     write_balance(&e, from, balance - amount);
+    Ok(())
 }
 
 pub fn decimals(e: Env) -> u32 {
@@ -97,14 +106,15 @@ pub fn symbol(e: Env) -> String {
         .unwrap_or(String::from_str(&e, "EQT"))
 }
 
-fn do_transfer(e: &Env, from: Address, to: Address, amount: i128) {
+fn do_transfer(e: &Env, from: Address, to: Address, amount: i128) -> Result<(), Error> {
     let balance_from = read_balance(e, from.clone());
     if balance_from < amount {
-        panic!("insufficient balance");
+        return Err(Error::InsufficientBalance);
     }
     write_balance(e, from, balance_from - amount);
     let balance_to = read_balance(e, to.clone());
     write_balance(e, to, balance_to + amount);
+    Ok(())
 }
 
 pub fn mint(e: Env, to: Address, amount: i128) {
