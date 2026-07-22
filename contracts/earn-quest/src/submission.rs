@@ -1,4 +1,4 @@
-use crate::errors::Error;
+﻿use crate::errors::Error;
 use crate::events;
 use crate::storage;
 use crate::types::{BatchApprovalInput, Commitment, Submission, SubmissionStatus};
@@ -298,9 +298,7 @@ pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
     Ok(())
 }
 
-//================================================================================
 // Batch approval (gas-optimized)
-//================================================================================
 
 /// Approve multiple submissions in a single transaction (gas-optimized).
 ///

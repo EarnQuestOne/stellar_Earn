@@ -1,4 +1,4 @@
-#![allow(unused)]
+﻿#![allow(unused)]
 use crate::types::Badge;
 use soroban_sdk::{symbol_short, Address, BytesN, Env, String, Symbol};
 
@@ -32,8 +32,8 @@ const TOPIC_ESCROW_REFUNDED: Symbol = symbol_short!("esc_ref");
 const TOPIC_COMMITMENT_SUBMITTED: Symbol = symbol_short!("com_sub");
 const TOPIC_SUBMISSION_REVEALED: Symbol = symbol_short!("sub_rev");
 
-// ═══════════════════════════════════════════════════════════════
 // Enhanced Event Emission with Indexing for Subgraph/Indexer Integration
+// 
 // ═══════════════════════════════════════════════════════════════
 //
 // Event Schema:
@@ -46,7 +46,6 @@ const TOPIC_SUBMISSION_REVEALED: Symbol = symbol_short!("sub_rev");
 //   - PayoutCompleted: recipient, reward_asset (indexed for payment tracking)
 //   - ReputationChanged: user (indexed for user activity)
 //   - QuestCompleted: quest_id (indexed for completion tracking)
-// ═══════════════════════════════════════════════════════════════
 
 /// Emit when a new quest is created (indexed: creator, reward_asset).
 ///

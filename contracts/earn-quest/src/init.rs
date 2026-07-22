@@ -18,11 +18,14 @@ pub fn initialize(env: &Env, config: InitConfig) {
     storage::set_admin(env, &config.admin);
     storage::set_version(env, config.version);
     storage::set_config(env, &config.config_params);
+    let _ = reputation::seed_default_badge_types(env, &config.admin);
     reputation::seed_default_badge_types(env, &config.admin).expect("seed default badge types");
     storage::mark_initialized(env);
 }
 
 pub fn upgrade_authorize(env: &Env, caller: &Address) -> bool {
-    let admin = storage::get_admin(env);
-    caller == &admin
+    match storage::get_admin(env) {
+        Ok(admin) => caller == &admin,
+        Err(_) => false,
+    }
 }

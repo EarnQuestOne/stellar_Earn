@@ -348,9 +348,7 @@ fn validate_string_len(value: &soroban_sdk::String, max: u32) -> Result<(), Erro
     Ok(())
 }
 
-//================================================================================
 // Query Functions
-//================================================================================
 
 /// Retrieves a list of quests filtered by their current status.
 ///
