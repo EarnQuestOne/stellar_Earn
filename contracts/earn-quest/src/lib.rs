@@ -64,7 +64,6 @@ impl EarnQuestContract {
         storage::grant_role(&env, &admin, &Role::StatsAdmin);
         storage::grant_role(&env, &admin, &Role::BadgeAdmin);
         let _ = reputation::seed_default_badge_types(&env, &admin);
-        reputation::seed_default_badge_types(&env, &admin).expect("seed default badge types");
         storage::mark_initialized(&env);
     }
 
