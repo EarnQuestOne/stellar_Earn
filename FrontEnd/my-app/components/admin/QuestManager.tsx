@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Quest, QuestStatus } from '@/lib/types/admin';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-interface QuestManagerProps {
+export interface QuestManagerProps {
   quests: Quest[];
   isLoading: boolean;
   selectedQuests: Set<string>;
