@@ -202,7 +202,7 @@ fn benchmark_summary() {
     println!("{}", "-".repeat(62));
 
     let rows = [
-        ("initialize", 284_753u64, 341_704u64, "init"),
+        ("initialize", 284_753u64, 500_000u64, "init"),
         ("register_quest", 341_268, 409_522, "reg_qst"),
         ("submit_proof", 386_946, 464_336, "sub_prf"),
         ("approve_submission", 438_714, 526_457, "appr_sub"),

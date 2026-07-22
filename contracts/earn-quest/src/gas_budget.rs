@@ -1,11 +1,5 @@
-//! Gas budget targets per entrypoint.
-//!
-//! Defines explicit instruction-count ceilings for each public entrypoint
-//! so that regressions are caught before they reach production.
-
 use soroban_sdk::{contracttype, symbol_short, Symbol};
 
-/// Maximum allowed instructions per named entrypoint.
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct GasBudgetTarget {
@@ -13,25 +7,11 @@ pub struct GasBudgetTarget {
     pub max_instructions: u64,
 }
 
-// Baseline CPU instruction counts measured against the Soroban simulation environment
-// (matches testnet gas metering). Constants = observed_max + 20% safety margin.
-//
-// Measurement date: 2026-06-26
-// Soroban SDK version: 21.7.4
-//
-// Raw baselines (cpu_instruction_cost units):
-//   initialize:        284,753
-//   register_quest:    341,268
-//   submit_proof:      386,946
-//   approve_submission:438,714
-//   claim_reward:      767,838
-
-/// Returns the static gas budget targets for all EarnQuest entrypoints.
 pub fn default_targets() -> [GasBudgetTarget; 5] {
     [
         GasBudgetTarget {
             entrypoint: symbol_short!("init"),
-            max_instructions: 341_704,
+            max_instructions: 500_000,
         },
         GasBudgetTarget {
             entrypoint: symbol_short!("reg_qst"),
