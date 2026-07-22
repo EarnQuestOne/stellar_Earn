@@ -1,8 +1,6 @@
-use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec, U256};
+﻿use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec, U256};
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Quest
-// ─────────────────────────────────────────────────────────────────────────────
 // Quest is already lean (8 fields, no Vec).  No split needed.
 
 /// Represents a quest on the StellarEarn platform.
@@ -43,9 +41,7 @@ pub enum QuestStatus {
     Cancelled,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Submission
-// ─────────────────────────────────────────────────────────────────────────────
 // Submission is lean (5 fields, fixed-size BytesN<32>).  No split needed.
 
 /// Represents a user's submission for a quest.
@@ -78,9 +74,7 @@ pub enum SubmissionStatus {
     Paid,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // UserStats  →  UserCore  +  UserBadges
-// ─────────────────────────────────────────────────────────────────────────────
 //
 // BEFORE (single entry, always loaded):
 //   UserStats { xp: u64, level: u32, quests_completed: u32, badges: Vec<Badge> }
@@ -192,9 +186,7 @@ pub struct BadgeType {
 /// Backward-compatible alias: existing code that references `UserStats` still
 /// compiles.  The `badges` field has moved to `UserBadges`.
 pub type UserStats = UserCore;
-// ─────────────────────────────────────────────────────────────────────────────
 // EscrowInfo  →  EscrowBalances  +  EscrowMeta
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Hot-path escrow data: loaded on every deposit, payout, and balance check.
 #[contracttype]
@@ -248,9 +240,7 @@ pub struct EscrowInfo {
     pub deposit_count: u32,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // QuestMetadata
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Hot-path metadata: title, description, category — shown in quest listings.
 #[contracttype]
@@ -322,9 +312,7 @@ pub enum Role {
     BadgeAdmin = 5,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Statistics
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Platform-wide statistics.
 #[contracttype]
@@ -358,9 +346,7 @@ pub struct CreatorStats {
     pub reputation_score: u32,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Batch Inputs
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Batch input for quest registration.
 #[contracttype]
@@ -383,9 +369,7 @@ pub struct BatchApprovalInput {
     pub submissions: Vec<Address>,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Oracle Types
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Price data returned by an oracle.
 #[contracttype]

@@ -1,4 +1,4 @@
-//! Test suite for the 2-of-2 SuperAdmin clawback feature.
+﻿//! Test suite for the 2-of-2 SuperAdmin clawback feature.
 //!
 //! Tests:
 //!   1. Non-SuperAdmin cannot initiate a clawback
@@ -14,7 +14,7 @@
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{symbol_short, Address, Env};
 
-use earn_quest::{EarnQuestContract, EarnQuestContractClient};
+use crate::{EarnQuestContract, EarnQuestContractClient};
 
 fn make_env() -> Env {
     let env = Env::default();
@@ -33,7 +33,7 @@ fn setup(env: &Env) -> (EarnQuestContractClient, Address, Address) {
     client.initialize(&admin1);
     // Grant SuperAdmin role to the second admin via add_admin + grant_role
     client.add_admin(&admin1, &admin2);
-    client.grant_role(&admin1, &admin2, &earn_quest::Role::SuperAdmin);
+    client.grant_role(&admin1, &admin2, &crate::Role::SuperAdmin);
 
     (client, admin1, admin2)
 }
@@ -42,9 +42,7 @@ fn mock_asset(env: &Env) -> Address {
     Address::generate(env)
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 1. Non-SuperAdmin cannot initiate
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_non_superadmin_cannot_initiate() {
@@ -60,9 +58,7 @@ fn test_non_superadmin_cannot_initiate() {
     assert!(result.is_err());
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 2. First SuperAdmin can initiate
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_superadmin_can_initiate() {
@@ -77,9 +73,7 @@ fn test_superadmin_can_initiate() {
     // No panic means success
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 3. Same admin cannot execute their own initiation
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_initiator_cannot_execute() {
@@ -96,9 +90,7 @@ fn test_initiator_cannot_execute() {
     assert!(result.is_err());
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 4. Initiating twice by the same admin is rejected
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_double_initiate_rejected() {
@@ -115,9 +107,7 @@ fn test_double_initiate_rejected() {
     assert!(result.is_err());
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 5. Execute fails when no pending clawback exists
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_execute_without_initiation_fails() {
@@ -131,9 +121,7 @@ fn test_execute_without_initiation_fails() {
     assert!(result.is_err());
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 6. Non-SuperAdmin cannot execute
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_non_superadmin_cannot_execute() {
@@ -151,10 +139,8 @@ fn test_non_superadmin_cannot_execute() {
     assert!(result.is_err());
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 // 7. Happy path: second admin executes, pending record cleared
 //    (token transfer is mocked via mock_all_auths + built-in contract token)
-// ──────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_happy_path_two_admins() {

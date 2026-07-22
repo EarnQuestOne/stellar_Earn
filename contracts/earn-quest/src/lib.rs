@@ -33,7 +33,6 @@ pub use crate::types::{
     UserStats, Commitment, VerifierStake,
 };
 
-
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, U256, Vec};
 
 #[contract]
@@ -63,7 +62,7 @@ impl EarnQuestContract {
         storage::grant_role(&env, &admin, &Role::OracleAdmin);
         storage::grant_role(&env, &admin, &Role::StatsAdmin);
         storage::grant_role(&env, &admin, &Role::BadgeAdmin);
-        reputation::seed_default_badge_types(&env, &admin);
+        let _ = reputation::seed_default_badge_types(&env, &admin);
         storage::mark_initialized(&env);
     }
 
@@ -104,14 +103,15 @@ impl EarnQuestContract {
     ///
     /// # Returns
     ///
-    /// The `Address` of the current contract administrator.
+    /// The `Address` of the current contract administrator, or an `Error::NotInitialized`
+    /// if the contract has not been initialized.
     ///
     /// # Example
     ///
     /// ```rust
-    /// let admin = client.get_admin();
+    /// let admin = client.try_get_admin()?;
     /// ```
-    pub fn get_admin(env: Env) -> Address {
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
         storage::get_admin(&env)
     }
 
@@ -533,41 +533,11 @@ impl EarnQuestContract {
     }
 
     /// Returns the core statistics for a user (XP, level, quests completed).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `user` - The address of the user.
-    ///
-    /// # Returns
-    ///
-    /// A `UserCore` struct containing the user's statistics.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let stats = client.get_user_stats(&user);
-    /// ```
     pub fn get_user_stats(env: Env, user: Address) -> UserCore {
         reputation::get_user_stats(&env, &user)
     }
 
     /// Returns the collection of badges earned by a user.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `user` - The address of the user.
-    ///
-    /// # Returns
-    ///
-    /// A `UserBadges` struct containing the user's badges.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let badges = client.get_user_badges(&user);
-    /// ```
     pub fn get_user_badges(env: Env, user: Address) -> UserBadges {
         storage::get_user_badges(&env, &user)
     }
@@ -634,17 +604,6 @@ impl EarnQuestContract {
     // ── Dispute Resolution ──
 
     /// Opens a dispute for a rejected submission (Submitter only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest in dispute.
-    /// * `initiator` - The address of the user initiating the dispute.
-    /// * `arbitrator` - The address of the designated arbitrator.
-    ///
-    /// # Returns
-    ///
-    /// The created `Dispute` record.
     pub fn open_dispute(
         env: Env,
         quest_id: Symbol,
@@ -656,15 +615,6 @@ impl EarnQuestContract {
     }
 
     /// Resolves an open dispute (Arbitrator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `initiator` - The address of the dispute initiator.
-    /// * `arbitrator` - The address of the arbitrator resolving the dispute.
-    /// * `upheld` - Whether the dispute is upheld (verifier was wrong); triggers stake slash.
-    /// * `slash_bps` - Basis points (0–10_000) to slash from verifier stake if upheld.
     pub fn resolve_dispute(
         env: Env,
         quest_id: Symbol,
@@ -677,15 +627,7 @@ impl EarnQuestContract {
         dispute::resolve_dispute(&env, quest_id, initiator, arbitrator, upheld, slash_bps)
     }
 
-
     /// Withdraws a pending dispute (Initiator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `initiator` - The address of the initiator.
-
     pub fn appeal_dispute(
         env: Env,
         quest_id: Symbol,
@@ -697,7 +639,6 @@ impl EarnQuestContract {
     }
 
     /// Withdraw a pending dispute (only by initiator).
-
     pub fn withdraw_dispute(
         env: Env,
         quest_id: Symbol,
@@ -708,83 +649,26 @@ impl EarnQuestContract {
     }
 
     /// Returns the details of a specific dispute.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `initiator` - The address of the dispute initiator.
-    ///
-    /// # Returns
-    ///
-    /// A `Result<Dispute, Error>` containing the dispute details.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let dispute = client.get_dispute(&quest_id, &user)?;
-    /// ```
     pub fn get_dispute(env: Env, quest_id: Symbol, initiator: Address) -> Result<Dispute, Error> {
         dispute::get_dispute(&env, quest_id, initiator)
     }
 
     /// Pauses all contract activities (Pauser only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `caller` - The address of the account performing the action.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Error>` indicating success or failure.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// client.emergency_pause(&pauser)?;
-    /// ```
     pub fn emergency_pause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_pause(&env, &caller)
     }
 
     /// Approves unpausing the contract (Admin only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `caller` - The address of the account performing the action.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Error>` indicating success or failure.
     pub fn emergency_approve_unpause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_approve_unpause(&env, &caller)
     }
 
     /// Unpauses the contract after sufficient approvals (Admin only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `caller` - The address of the account performing the action.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Error>` indicating success or failure.
     pub fn emergency_unpause(env: Env, caller: Address) -> Result<(), Error> {
         security::emergency_unpause(&env, &caller)
     }
 
     /// Emergency withdrawal of funds (SuperAdmin only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `caller` - The address of the caller.
-    /// * `asset` - The address of the token to withdraw.
-    /// * `to` - The address receiving the tokens.
-    /// * `amount` - The amount to withdraw.
     pub fn emergency_withdraw(
         env: Env,
         caller: Address,
@@ -800,14 +684,6 @@ impl EarnQuestContract {
     }
 
     /// Deposits tokens into the escrow for a quest (Creator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `depositor` - The address of the depositor.
-    /// * `token` - The address of the token being deposited.
-    /// * `amount` - The amount to deposit.
     pub fn deposit_escrow(
         env: Env,
         quest_id: Symbol,
@@ -824,18 +700,6 @@ impl EarnQuestContract {
     }
 
     /// Deposits a verifier stake for a quest (Verifier only).
-    ///
-    /// The verifier must hold an active stake before approving submissions.
-    /// Stake is slashed proportionally if a dispute resolves against them,
-    /// and returned in full if the quest completes without dispute.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `verifier` - The verifier depositing the stake.
-    /// * `token` - Token address (must match quest reward_asset).
-    /// * `amount` - Amount to stake.
     pub fn deposit_verifier_stake(
         env: Env,
         quest_id: Symbol,
@@ -852,8 +716,6 @@ impl EarnQuestContract {
     }
 
     /// Returns a verifier's stake for a completed quest (Creator or Admin).
-    ///
-    /// Call this once a quest reaches a terminal state with no outstanding disputes.
     pub fn return_verifier_stake(
         env: Env,
         quest_id: Symbol,
@@ -863,7 +725,6 @@ impl EarnQuestContract {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
         caller.require_auth();
-        // Only quest creator or admin may trigger the return
         let quest = crate::storage::get_quest(&env, &quest_id)?;
         if caller != quest.creator {
             admin::require_admin(&env, &caller)?;
@@ -874,16 +735,6 @@ impl EarnQuestContract {
     }
 
     /// Cancels a quest and refunds remaining escrow (Creator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest to cancel.
-    /// * `creator` - The address of the quest creator.
-    ///
-    /// # Returns
-    ///
-    /// The amount refunded to the creator.
     pub fn cancel_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
@@ -894,12 +745,6 @@ impl EarnQuestContract {
     }
 
     /// Withdraws unclaimed rewards from an active or completed quest (Creator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `creator` - The address of the quest creator.
     pub fn withdraw_unclaimed(
         env: Env,
         quest_id: Symbol,
@@ -914,12 +759,6 @@ impl EarnQuestContract {
     }
 
     /// Expires a quest and refunds the remaining escrow balance (Creator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `creator` - The address of the quest creator.
     pub fn expire_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
@@ -930,17 +769,6 @@ impl EarnQuestContract {
     }
 
     /// Updates the metadata for an existing quest (Creator only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `updater` - The address of the user updating (must be creator).
-    /// * `metadata` - The new metadata content.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Error>` indicating success or failure.
     pub fn update_quest_metadata(
         env: Env,
         quest_id: Symbol,
@@ -953,35 +781,11 @@ impl EarnQuestContract {
     }
 
     /// Returns the metadata for a specific quest.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    ///
-    /// # Returns
-    ///
-    /// A `Result<QuestMetadata, Error>` containing the quest metadata.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let metadata = client.get_quest_metadata(&quest_id)?;
-    /// ```
     pub fn get_quest_metadata(env: Env, quest_id: Symbol) -> Result<QuestMetadata, Error> {
         storage::get_quest_metadata(&env, &quest_id)
     }
 
     /// Checks if a quest has associated metadata.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    ///
-    /// # Returns
-    ///
-    /// `true` if metadata exists, `false` otherwise.
     pub fn has_quest_metadata(env: Env, quest_id: Symbol) -> bool {
         storage::has_quest_metadata(&env, &quest_id)
     }
@@ -997,30 +801,11 @@ impl EarnQuestContract {
     }
 
     /// Returns the details of a quest by its symbol ID.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    ///
-    /// # Returns
-    ///
-    /// A `Result<Quest, Error>` containing the quest details.
     pub fn get_quest(env: Env, quest_id: Symbol) -> Result<Quest, Error> {
         storage::get_quest(&env, &quest_id)
     }
 
     /// Returns the submission details for a specific user and quest.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `quest_id` - The symbol of the quest.
-    /// * `submitter` - The address of the user.
-    ///
-    /// # Returns
-    ///
-    /// A `Result<Submission, Error>` containing the submission details.
     pub fn get_submission(env: Env, quest_id: Symbol, submitter: Address) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
     }
@@ -1035,18 +820,9 @@ impl EarnQuestContract {
         security::set_unpause_timelock(&env, &caller, seconds)
     }
 
-    //================================================================================
     // Quest Query Functions
-    //================================================================================
 
     /// Returns a list of quests filtered by status.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `status` - The status to filter by.
-    /// * `offset` - Pagination offset.
-    /// * `limit` - Pagination limit.
     pub fn get_quests_by_status(
         env: Env,
         status: QuestStatus,
@@ -1057,13 +833,6 @@ impl EarnQuestContract {
     }
 
     /// Returns a list of quests created by a specific address.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `creator` - The address of the creator.
-    /// * `offset` - Pagination offset.
-    /// * `limit` - Pagination limit.
     pub fn get_quests_by_creator(
         env: Env,
         creator: Address,
@@ -1074,29 +843,11 @@ impl EarnQuestContract {
     }
 
     /// Returns a list of currently active quests.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `offset` - Pagination offset.
-    /// * `limit` - Pagination limit.
-    ///
-    /// # Returns
-    ///
-    /// A `Vec<Quest>` of active quests.
     pub fn get_active_quests(env: Env, offset: u32, limit: u32) -> Vec<Quest> {
         quest::get_active_quests(&env, offset, limit)
     }
 
     /// Returns a list of quests within a specific reward range.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `min_reward` - Minimum reward amount.
-    /// * `max_reward` - Maximum reward amount.
-    /// * `offset` - Pagination offset.
-    /// * `limit` - Pagination limit.
     pub fn get_quests_by_reward_range(
         env: Env,
         min_reward: i128,
@@ -1107,9 +858,7 @@ impl EarnQuestContract {
         quest::get_quests_by_reward_range(&env, min_reward, max_reward, offset, limit)
     }
 
-    //================================================================================
     // Platform & Creator Stats
-    //================================================================================
 
     /// Returns aggregated platform-wide statistics.
     pub fn get_platform_stats(env: Env) -> PlatformStats {
@@ -1137,9 +886,7 @@ impl EarnQuestContract {
         Ok(())
     }
 
-    //================================================================================
     // Oracle Management Functions
-    //================================================================================
 
     /// Adds a new price oracle configuration (OracleAdmin only).
     pub fn add_oracle(
@@ -1149,10 +896,8 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
         oracle::Oracle::validate_config(&oracle_config)?;
         storage::add_oracle_config(&env, &oracle_config)?;
-        
         Ok(())
     }
 
@@ -1164,9 +909,7 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
         storage::remove_oracle_config(&env, &oracle_address)?;
-        
         Ok(())
     }
 
@@ -1178,21 +921,12 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::OracleAdmin)?;
-        
         oracle::Oracle::validate_config(&oracle_config)?;
         storage::update_oracle_config(&env, &oracle_config)?;
-        
         Ok(())
     }
 
     /// Returns the aggregated price from all active oracles.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `base_asset` - The base asset address.
-    /// * `quote_asset` - The quote asset address.
-    /// * `max_age_seconds` - Maximum allowed age of the price data.
     pub fn get_price(
         env: Env,
         base_asset: Address,
@@ -1205,19 +939,10 @@ impl EarnQuestContract {
             quote_asset,
             max_age_seconds,
         };
-        
         oracle::Oracle::get_aggregated_price(&env, &oracle_configs, &request)
     }
 
     /// Returns the price from a specific oracle.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `oracle_address` - The address of the oracle contract.
-    /// * `base_asset` - The base asset address.
-    /// * `quote_asset` - The quote asset address.
-    /// * `max_age_seconds` - Maximum allowed age of the price data.
     pub fn get_price_from_oracle(
         env: Env,
         oracle_address: Address,
@@ -1231,7 +956,6 @@ impl EarnQuestContract {
             quote_asset,
             max_age_seconds,
         };
-        
         oracle::Oracle::get_price(&env, &oracle_config, &request)
     }
 
@@ -1246,13 +970,6 @@ impl EarnQuestContract {
     }
 
     /// Converts a reward amount from one asset to another using oracle prices.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `from_asset` - The source asset address.
-    /// * `to_asset` - The target asset address.
-    /// * `amount` - The amount to convert.
     pub fn convert_reward_amount(
         env: Env,
         from_asset: Address,
@@ -1263,28 +980,16 @@ impl EarnQuestContract {
             return Ok(amount);
         }
 
-        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
-        
-        // Convert amount using price (assuming 7 decimals)
+        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?;
         let amount_u256 = U256::from_u128(&env, amount as u128);
         let converted_amount = amount_u256
             .mul(&price.weighted_price)
-            .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
-        
-        // Convert back to i128 safely
+            .div(&U256::from_u32(&env, 10_000_000));
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
         Ok(converted_value)
     }
 
     /// Validates a reward amount against an oracle price to prevent manipulation.
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `reward_asset` - The asset used for rewards.
-    /// * `reward_amount` - The reward amount to validate.
-    /// * `reference_asset` - The reference asset (e.g., USD stablecoin).
-    /// * `max_deviation_percent` - Maximum allowed deviation from the oracle price.
     pub fn validate_reward_with_oracle(
         env: Env,
         reward_asset: Address,
@@ -1293,21 +998,13 @@ impl EarnQuestContract {
         _max_deviation_percent: u32,
     ) -> Result<(), Error> {
         let price = Self::get_price(env, reward_asset, reference_asset, 300)?;
-        
-        // Check if price confidence is sufficient
         if price.confidence_score < 80 {
             return Err(Error::LowOracleConfidence);
         }
-        
-        // Additional validation logic could be added here
-        // For example, checking against historical prices, volatility limits, etc.
-        
         Ok(())
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
     // Token Interface (SEP-41)
-    // ─────────────────────────────────────────────────────────────────────────────
 
     pub fn allowance(env: Env, from: Address, spender: Address) -> i128 {
         token::allowance(env, from, spender)
@@ -1361,17 +1058,9 @@ impl EarnQuestContract {
         Ok(())
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
     // Min Creator Level & Whitelist
-    // ─────────────────────────────────────────────────────────────────────────────
 
     /// Sets the minimum creator level required to create quests (SuperAdmin only).
-    ///
-    /// # Arguments
-    ///
-    /// * `env` - The environment.
-    /// * `caller` - The address of the caller (must be SuperAdmin).
-    /// * `level` - The minimum level required. Set to 0 to disable.
     pub fn set_min_creator_level(env: Env, caller: Address, level: u32) -> Result<(), Error> {
         admin::set_min_creator_level(&env, &caller, level)
     }
@@ -1382,8 +1071,6 @@ impl EarnQuestContract {
     }
 
     /// Adds an address to the creator whitelist (SuperAdmin only).
-    ///
-    /// Whitelisted addresses bypass the minimum creator level requirement.
     pub fn add_creator_whitelist(env: Env, caller: Address, address: Address) -> Result<(), Error> {
         admin::add_creator_whitelist(&env, &caller, &address)
     }

@@ -2,9 +2,7 @@ use crate::errors::Error;
 use crate::types::{QuestStatus, SubmissionStatus};
 use soroban_sdk::Env;
 
-//================================================================================
 // Constants — Validation Limits
-//================================================================================
 
 /// Minimum reward amount (must be > 0, enforced separately; this is the floor for range check)
 pub const MIN_REWARD_AMOUNT: i128 = 1;
@@ -42,9 +40,7 @@ pub const MAX_DEADLINE_DURATION: u64 = 86400 * 365; // 1 year
 /// Minimum expiry buffer in seconds (absorbs normal validator clock drift)
 pub const MIN_EXPIRY_BUFFER: u64 = 10; // 10 seconds
 
-//================================================================================
 // Address Validation
-//================================================================================
 
 /// Validates that an address is not the zero/default address.
 ///
@@ -68,9 +64,7 @@ pub fn validate_addresses_distinct(
     Ok(())
 }
 
-//================================================================================
 // Amount Range Validation
-//================================================================================
 
 /// Validates a reward amount is within acceptable bounds.
 ///
@@ -91,9 +85,7 @@ pub fn validate_reward_amount(amount: i128) -> Result<(), Error> {
     Ok(())
 }
 
-//================================================================================
 // Deadline Validation
-//================================================================================
 
 /// Validates that a deadline timestamp is in the future **and** within the
 /// allowed relative window `[MIN_DEADLINE_DURATION, MAX_DEADLINE_DURATION]`
@@ -170,9 +162,7 @@ pub fn is_quest_expired(env: &Env, deadline: u64) -> bool {
     current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER)
 }
 
-//================================================================================
 // String / Symbol Length Validation
-//================================================================================
 
 /// Validates that a symbol (quest ID) length does not exceed the maximum.
 ///
@@ -207,9 +197,7 @@ fn symbol_len(sym: &soroban_sdk::Symbol) -> u32 {
     MAX_SYMBOL_LENGTH // Symbols that exist are always valid
 }
 
-//================================================================================
 // Array / Vec Length Validation
-//================================================================================
 
 /// Validates that a vector length does not exceed a maximum bound.
 ///
@@ -242,9 +230,7 @@ pub fn validate_badge_count(current_count: u32) -> Result<(), Error> {
     Ok(())
 }
 
-//================================================================================
 // Status Transition Validation
-//================================================================================
 
 /// Validates a quest status transition is allowed.
 ///
@@ -344,9 +330,7 @@ pub fn validate_quest_claims_limit(total_claims: u32) -> Result<(), Error> {
     Ok(())
 }
 
-//================================================================================
 // Batch validation
-//================================================================================
 
 /// Validates that the quest registration batch size is within limits.
 pub fn validate_batch_quest_size(length: u32) -> Result<(), Error> {

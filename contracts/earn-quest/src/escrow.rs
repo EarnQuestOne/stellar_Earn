@@ -1,4 +1,4 @@
-//! Escrow module — manages per-quest token deposits, payouts, and refunds.
+﻿//! Escrow module — manages per-quest token deposits, payouts, and refunds.
 //!
 //! Uses split storage (EscrowBalances hot-path + EscrowMeta cold-path) to
 //! minimise gas on the frequent deposit/payout/validate path.
@@ -28,9 +28,7 @@ fn require_active_escrow(balances: &EscrowBalances) -> Result<(), Error> {
     Ok(())
 }
 
-// ═══════════════════════════════════════════════════════════════
 // DEPOSIT: Creator locks tokens for a quest
-// ═══════════════════════════════════════════════════════════════
 
 /// Deposits tokens into a quest's escrow account.
 ///
@@ -127,9 +125,7 @@ pub fn deposit(
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // VALIDATE: Check if enough escrow exists for a payout (hot path)
-// ═══════════════════════════════════════════════════════════════
 
 /// Returns Ok if the quest's escrow can cover the given amount.
 /// Only reads EscrowBalances (hot-path entry) — no Address deserialization.
@@ -144,9 +140,7 @@ pub fn validate_sufficient(env: &Env, quest_id: &Symbol, amount: i128) -> Result
     Ok(())
 }
 
-// ═══════════════════════════════════════════════════════════════
 // RECORD PAYOUT: Update hot-path balances after a reward transfer
-// ═══════════════════════════════════════════════════════════════
 
 /// Records a payout from a quest's escrow.
 ///
@@ -198,9 +192,7 @@ pub fn record_payout(
     Ok(())
 }
 
-// ═══════════════════════════════════════════════════════════════
 // REFUND: Return remaining tokens to creator (cold path)
-// ═══════════════════════════════════════════════════════════════
 
 /// Refund all remaining escrow balance to the depositor.
 /// Loads EscrowMeta (cold path) only here, where the depositor address is needed.
@@ -240,9 +232,7 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     Ok(available)
 }
 
-// ═══════════════════════════════════════════════════════════════
 // CANCEL / EXPIRE / WITHDRAW
-// ═══════════════════════════════════════════════════════════════
 
 /// Cancels a quest and refunds any remaining escrow balance to the creator.
 ///
@@ -365,9 +355,7 @@ pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, caller: &Address) -> Res
     refund_remaining(env, quest_id)
 }
 
-// ═══════════════════════════════════════════════════════════════
 // QUERIES
-// ═══════════════════════════════════════════════════════════════
 
 /// Get available balance — reads only EscrowBalances (hot path).
 pub fn get_balance(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
@@ -380,9 +368,7 @@ pub fn get_info(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
     storage::get_escrow(env, quest_id)
 }
 
-// ═══════════════════════════════════════════════════════════════
 // VERIFIER STAKE: Deposit stake before verifying; return if no dispute
-// ═══════════════════════════════════════════════════════════════
 
 /// Deposits a verifier stake for a quest.
 ///
