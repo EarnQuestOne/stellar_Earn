@@ -13,7 +13,6 @@ use soroban_sdk::testutils::Address as _;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{symbol_short, Address, Env};
 
-use crate::{EarnQuestContract, EarnQuestContractClient};
 use crate::{EarnQuestContract, EarnQuestContractClient, Role};
 
 fn make_env() -> Env {
