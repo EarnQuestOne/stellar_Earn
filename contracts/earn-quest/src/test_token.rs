@@ -40,7 +40,7 @@ fn test_transfer() {
     let user2 = Address::generate(&env);
 
     client.mint(&admin, &user1, &1000);
-    client.transfer(&user1, &user2, &400).unwrap();
+    client.transfer(&user1, &user2, &400);
 
     assert_eq!(client.balance(&user1), 600);
     assert_eq!(client.balance(&user2), 400);
@@ -76,7 +76,7 @@ fn test_allowance_and_transfer_from() {
 
     assert_eq!(client.allowance(&owner, &spender), 500);
 
-    client.transfer_from(&spender, &owner, &to, &300).unwrap();
+    client.transfer_from(&spender, &owner, &to, &300);
 
     assert_eq!(client.balance(&owner), 700);
     assert_eq!(client.balance(&to), 300);
@@ -130,7 +130,7 @@ fn test_burn() {
     let user = Address::generate(&env);
 
     client.mint(&admin, &user, &1000);
-    client.burn(&user, &300).unwrap();
+    client.burn(&user, &300);
 
     assert_eq!(client.balance(&user), 700);
 }
