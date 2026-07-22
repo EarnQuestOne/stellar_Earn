@@ -71,6 +71,12 @@ Cargo.lock
 **/target/
 **/*.rs.bk
 
+# Pin contract dependency versions for reproducible builds (see
+# https://github.com/EarnQuestOne/stellar_Earn/pull/1961 — a fresh
+# dependency resolution can otherwise pick an internally-inconsistent
+# soroban-env-host build).
+!contracts/earn-quest/Cargo.lock
+
 # OS
 Thumbs.db
 .DS_Store
