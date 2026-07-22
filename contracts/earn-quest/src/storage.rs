@@ -1043,11 +1043,11 @@ pub fn mark_initialized(env: &Env) {
     env.storage().instance().set(&DataKey::Initialized, &true);
 }
 
-pub fn get_admin(env: &Env) -> Address {
+pub fn get_admin(env: &Env) -> Result<Address, Error> {
     env.storage()
         .instance()
         .get(&DataKey::ContractAdmin)
-        .expect("Contract not initialized")
+        .ok_or(Error::NotInitialized)
 }
 
 pub fn set_contract_admin(env: &Env, address: &Address) {

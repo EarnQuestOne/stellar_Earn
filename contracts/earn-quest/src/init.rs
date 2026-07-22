@@ -21,6 +21,8 @@ pub fn initialize(env: &Env, config: InitConfig) {
 }
 
 pub fn upgrade_authorize(env: &Env, caller: &Address) -> bool {
-    let admin = storage::get_admin(env);
-    caller == &admin
+    match storage::get_admin(env) {
+        Ok(admin) => caller == &admin,
+        Err(_) => false,
+    }
 }

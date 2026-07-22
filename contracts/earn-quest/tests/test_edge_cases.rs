@@ -71,7 +71,7 @@ fn register_quest(
 fn test_initialize_sets_admin_and_roles() {
     let (_env, client, admin, _token) = setup();
 
-    assert_eq!(client.get_admin(), admin);
+    assert_eq!(client.try_get_admin().unwrap(), admin);
     assert!(client.is_admin(&admin));
 }
 
