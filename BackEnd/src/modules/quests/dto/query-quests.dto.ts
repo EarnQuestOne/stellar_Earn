@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { CursorPaginationDto } from '../../../common/dto/pagination.dto';
 
 export enum QuestStatus {

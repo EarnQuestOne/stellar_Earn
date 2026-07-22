@@ -39,7 +39,8 @@ export class TwoFactorController {
   @Get('status')
   @ApiOperation({
     summary: 'Get 2FA status',
-    description: 'Returns whether TOTP-based 2FA is currently enabled for the authenticated user.',
+    description:
+      'Returns whether TOTP-based 2FA is currently enabled for the authenticated user.',
   })
   @ApiResponse({
     status: 200,

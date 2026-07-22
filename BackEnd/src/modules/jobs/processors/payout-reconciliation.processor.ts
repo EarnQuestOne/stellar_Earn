@@ -80,7 +80,10 @@ export class PayoutReconciliationProcessor {
             continue;
           }
 
-          if (onChainStatus.successful && payout.status !== PayoutStatus.COMPLETED) {
+          if (
+            onChainStatus.successful &&
+            payout.status !== PayoutStatus.COMPLETED
+          ) {
             // On-chain says success but DB still shows processing
             discrepancies.push(
               `Payout ${payout.id}: on-chain succeeded but DB status=${payout.status}`,
@@ -98,7 +101,10 @@ export class PayoutReconciliationProcessor {
             this.logger.log(
               `Reconciliation healed payout ${payout.id} → COMPLETED`,
             );
-          } else if (!onChainStatus.successful && payout.status === PayoutStatus.PROCESSING) {
+          } else if (
+            !onChainStatus.successful &&
+            payout.status === PayoutStatus.PROCESSING
+          ) {
             // On-chain says failed but DB shows processing
             discrepancies.push(
               `Payout ${payout.id}: on-chain failed but DB status=${payout.status}`,

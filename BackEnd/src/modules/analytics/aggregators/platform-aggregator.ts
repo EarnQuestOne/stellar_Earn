@@ -5,7 +5,11 @@ import { Quest, QuestStatus } from '../entities/quest.entity';
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
 import { User as AnalyticsUser } from '../entities/user.entity';
-import { BaseAnalyticsAggregator, AggregationOptions, AggregationResult } from './base-aggregator';
+import {
+  BaseAnalyticsAggregator,
+  AggregationOptions,
+  AggregationResult,
+} from './base-aggregator';
 import { SnapshotType } from '../entities/analytics-snapshot.entity';
 import { AnalyticsSnapshot } from '../entities/analytics-snapshot.entity';
 
@@ -55,7 +59,9 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Aggregate platform metrics for a specific time period
    */
-  async aggregatePlatformMetrics(options: AggregationOptions): Promise<AggregationResult[]> {
+  async aggregatePlatformMetrics(
+    options: AggregationOptions,
+  ): Promise<AggregationResult[]> {
     const dateRanges = this.generateDateRanges(
       options.startDate,
       options.endDate,
@@ -94,7 +100,9 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate platform metrics for a time period
    */
-  private async calculatePlatformMetrics(options: AggregationOptions): Promise<PlatformMetrics> {
+  private async calculatePlatformMetrics(
+    options: AggregationOptions,
+  ): Promise<PlatformMetrics> {
     const conditions = this.getCommonConditions(options);
 
     // Get user statistics
@@ -110,13 +118,14 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
     ]);
 
     // Get submission statistics
-    const [totalSubmissions, newSubmissions, approvedSubmissions] = await Promise.all([
-      this.submissionRepository.count(),
-      this.submissionRepository.count({ where: conditions }),
-      this.submissionRepository.count({
-        where: { status: SubmissionStatus.APPROVED },
-      }),
-    ]);
+    const [totalSubmissions, newSubmissions, approvedSubmissions] =
+      await Promise.all([
+        this.submissionRepository.count(),
+        this.submissionRepository.count({ where: conditions }),
+        this.submissionRepository.count({
+          where: { status: SubmissionStatus.APPROVED },
+        }),
+      ]);
 
     // Get payout statistics
     const [totalPayouts, newPayouts] = await Promise.all([
@@ -134,10 +143,13 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
     const activeUsers = await this.getActiveUsersCount(options);
 
     // Calculate derived metrics
-    const approvalRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
+    const approvalRate =
+      totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
     const completionRate = await this.calculateCompletionRate(options);
-    const averageApprovalTime = await this.calculateAverageApprovalTime(options);
-    const averageCompletionTime = await this.calculateAverageCompletionTime(options);
+    const averageApprovalTime =
+      await this.calculateAverageApprovalTime(options);
+    const averageCompletionTime =
+      await this.calculateAverageCompletionTime(options);
 
     return {
       totalUsers,
@@ -162,7 +174,9 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Get count of active users (users who made submissions)
    */
-  private async getActiveUsersCount(options: AggregationOptions): Promise<number> {
+  private async getActiveUsersCount(
+    options: AggregationOptions,
+  ): Promise<number> {
     const result = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
@@ -212,7 +226,9 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate overall completion rate
    */
-  private async calculateCompletionRate(options: AggregationOptions): Promise<number> {
+  private async calculateCompletionRate(
+    _options: AggregationOptions,
+  ): Promise<number> {
     const [totalQuests, completedQuests] = await Promise.all([
       this.questRepository.count(),
       this.questRepository.count({
@@ -226,14 +242,15 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate average approval time across all submissions
    */
-  private async calculateAverageApprovalTime(options: AggregationOptions): Promise<number> {
+  private async calculateAverageApprovalTime(
+    options: AggregationOptions,
+  ): Promise<number> {
     const submissions = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select([
-        'submission.submittedAt',
-        'submission.reviewedAt',
-      ])
-      .where('submission.status = :status', { status: SubmissionStatus.APPROVED })
+      .select(['submission.submittedAt', 'submission.reviewedAt'])
+      .where('submission.status = :status', {
+        status: SubmissionStatus.APPROVED,
+      })
       .andWhere('submission.submittedAt BETWEEN :start AND :end', {
         start: options.startDate,
         end: options.endDate,
@@ -256,13 +273,12 @@ export class PlatformAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate average completion time across all quests
    */
-  private async calculateAverageCompletionTime(options: AggregationOptions): Promise<number> {
+  private async calculateAverageCompletionTime(
+    options: AggregationOptions,
+  ): Promise<number> {
     const quests = await this.questRepository
       .createQueryBuilder('quest')
-      .select([
-        'quest.createdAt',
-        'quest.updatedAt',
-      ])
+      .select(['quest.createdAt', 'quest.updatedAt'])
       .where('quest.status = :status', { status: QuestStatus.COMPLETED })
       .andWhere('quest.createdAt BETWEEN :start AND :end', {
         start: options.startDate,

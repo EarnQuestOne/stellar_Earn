@@ -20,7 +20,8 @@ describe('API Response Schema Validation', () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
       .send({
-        stellarAddress: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+        stellarAddress:
+          'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
         signature: 'test_signature',
       });
 
@@ -141,8 +142,9 @@ describe('API Response Schema Validation', () => {
 
   describe('Webhooks Module', () => {
     it('POST /webhooks/health should return valid response schema', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/webhooks/health');
+      const response = await request(app.getHttpServer()).post(
+        '/webhooks/health',
+      );
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('status');
@@ -219,8 +221,9 @@ describe('API Response Schema Validation', () => {
     });
 
     it('GET /jobs/queue/stats should return valid response schema', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/jobs/queue/stats');
+      const response = await request(app.getHttpServer()).get(
+        '/jobs/queue/stats',
+      );
 
       if (response.status === 200) {
         expect(response.body).toHaveProperty('data');
@@ -281,8 +284,7 @@ describe('API Response Schema Validation', () => {
             .get(endpoint.path)
             .query(endpoint.query || {});
         } else {
-          response = await request(app.getHttpServer())
-            .post(endpoint.path);
+          response = await request(app.getHttpServer()).post(endpoint.path);
         }
 
         if (response.status === 200 || response.status === 201) {

@@ -80,7 +80,11 @@ describe('CacheService', () => {
 
       await service.set('test_key', testValue, 3600);
 
-      expect(cacheManager.set).toHaveBeenCalledWith('test_key', testValue, 3600);
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        'test_key',
+        testValue,
+        3600,
+      );
     });
 
     it('should set value with default TTL', async () => {
@@ -88,7 +92,11 @@ describe('CacheService', () => {
 
       await service.set('test_key', testValue);
 
-      expect(cacheManager.set).toHaveBeenCalledWith('test_key', testValue, undefined);
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        'test_key',
+        testValue,
+        undefined,
+      );
     });
   });
 
@@ -113,7 +121,11 @@ describe('CacheService', () => {
 
       expect(result).toEqual(testValue);
       expect(factory).toHaveBeenCalled();
-      expect(cacheManager.set).toHaveBeenCalledWith('test_key', testValue, 3600);
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        'test_key',
+        testValue,
+        3600,
+      );
     });
   });
 

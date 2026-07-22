@@ -1,0 +1,37 @@
+name: Frontend CI Cache (Vitest)
+
+on:
+  pull_request:
+    paths:
+      - "FrontEnd/**"
+
+jobs:
+  frontend-test-cache:
+    name: Test with Vitest cache
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FrontEnd/my-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: FrontEnd/my-app/package-lock.json
+
+      - name: Cache Vitest transform cache
+        uses: actions/cache@v4
+        with:
+          path: FrontEnd/my-app/node_modules/.vitest
+          key: ${{ runner.os }}-vitest-${{ hashFiles('FrontEnd/my-app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vitest-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test

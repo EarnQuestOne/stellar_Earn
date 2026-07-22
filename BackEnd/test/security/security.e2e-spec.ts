@@ -14,7 +14,7 @@ describe('Security Hardening (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // Apply security configurations
     app.useGlobalPipes(
       new SanitizationPipe(),
@@ -24,9 +24,9 @@ describe('Security Hardening (e2e)', () => {
         transform: true,
       }),
     );
-    
+
     app.useGlobalFilters(new SecurityExceptionFilter());
-    
+
     await app.init();
   });
 
@@ -40,9 +40,15 @@ describe('Security Hardening (e2e)', () => {
         .get('/api/health') // Assuming there's a health endpoint
         .expect(404) // or whatever the actual response is
         .expect((res) => {
-          expect(res.headers).toHaveProperty('x-content-type-options', 'nosniff');
+          expect(res.headers).toHaveProperty(
+            'x-content-type-options',
+            'nosniff',
+          );
           expect(res.headers).toHaveProperty('x-frame-options', 'DENY');
-          expect(res.headers).toHaveProperty('x-xss-protection', '1; mode=block');
+          expect(res.headers).toHaveProperty(
+            'x-xss-protection',
+            '1; mode=block',
+          );
           expect(res.headers).not.toHaveProperty('x-powered-by');
         });
     });
@@ -96,7 +102,7 @@ describe('Security Hardening (e2e)', () => {
   describe('Input Sanitization', () => {
     it('should sanitize XSS attempts in query parameters', () => {
       const maliciousInput = '<script>alert("xss")</script>';
-      
+
       return request(app.getHttpServer())
         .get(`/api/test?input=${encodeURIComponent(maliciousInput)}`)
         .expect(404) // or whatever the response is
@@ -108,7 +114,7 @@ describe('Security Hardening (e2e)', () => {
 
     it('should sanitize SQL injection attempts', () => {
       const sqlInjection = "1'; DROP TABLE users; --";
-      
+
       return request(app.getHttpServer())
         .post('/api/test')
         .send({ input: sqlInjection })
@@ -123,7 +129,7 @@ describe('Security Hardening (e2e)', () => {
         __proto__: { polluted: true },
         constructor: { polluted: true },
       };
-      
+
       return request(app.getHttpServer())
         .post('/api/test')
         .send(payload)
@@ -136,7 +142,7 @@ describe('Security Hardening (e2e)', () => {
 
     it('should sanitize dangerous JavaScript protocols', () => {
       const dangerousInput = 'javascript:alert(1)';
-      
+
       return request(app.getHttpServer())
         .post('/api/test')
         .send({ input: dangerousInput })
@@ -153,11 +159,11 @@ describe('Security Hardening (e2e)', () => {
       const requests = Array(20)
         .fill(null)
         .map(() => request(app.getHttpServer()).get('/api/health'));
-      
+
       const responses = await Promise.all(requests);
-      
+
       // Some should be rate limited (429)
-      const rateLimited = responses.filter(res => res.status === 429);
+      const rateLimited = responses.filter((res) => res.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
   });
@@ -237,15 +243,15 @@ describe('Security Hardening (e2e)', () => {
       // This test would verify that suspicious activities are logged
       // In a real test, you'd check log output or use a mock logger
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       await request(app.getHttpServer())
         .get('/api/health')
         .set('User-Agent', 'sqlmap/1.0') // Suspicious user agent
         .expect(404);
-      
+
       // In a real implementation, you'd verify the log was called
       // expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('suspicious'));
-      
+
       consoleSpy.mockRestore();
     });
   });

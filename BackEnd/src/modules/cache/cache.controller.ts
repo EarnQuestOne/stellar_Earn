@@ -52,7 +52,7 @@ export class CacheController {
   @Delete('reset-stats')
   @ApiOperation({ summary: 'Reset cache statistics' })
   @ApiResponse({ status: 200, description: 'Cache statistics reset' })
-  async resetStats() {
+  resetStats() {
     this.cacheService.resetStats();
     return { message: 'Cache statistics reset successfully' };
   }

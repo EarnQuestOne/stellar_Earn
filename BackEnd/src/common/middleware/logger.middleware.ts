@@ -1,7 +1,11 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { AppLoggerService } from '../logger/logger.service';
-import { sanitizeHeaders, sanitizeUrl, sanitizeBody } from '../logger/sanitize.util';
+import {
+  sanitizeHeaders,
+  sanitizeUrl,
+  sanitizeBody,
+} from '../logger/sanitize.util';
 import { randomUUID } from 'crypto';
 
 export interface RequestWithCorrelationId extends Request {
@@ -14,11 +18,11 @@ export class LoggerMiddleware implements NestMiddleware {
   constructor(private readonly logger: AppLoggerService) {}
 
   use(req: RequestWithCorrelationId, res: Response, next: NextFunction): void {
-    const correlationId = 
+    const correlationId =
       (req.headers['x-correlation-id'] as string) ||
       (req.headers['x-request-id'] as string) ||
       randomUUID();
-///hhhh
+    ///hhhh
     req.correlationId = correlationId;
     req.requestStartTime = process.hrtime.bigint();
 
@@ -47,17 +51,12 @@ export class LoggerMiddleware implements NestMiddleware {
         });
 
         res.on('error', (error: Error) => {
-          this.logger.error(
-            'Response error',
-            error.stack,
-            'HTTP',
-            {
-              correlationId,
-              method: req.method,
-              url: sanitizeUrl(req.originalUrl),
-              error: error.message,
-            },
-          );
+          this.logger.error('Response error', error.stack, 'HTTP', {
+            correlationId,
+            method: req.method,
+            url: sanitizeUrl(req.originalUrl),
+            error: error.message,
+          });
         });
 
         next();
@@ -67,7 +66,7 @@ export class LoggerMiddleware implements NestMiddleware {
 
   private logRequest(req: RequestWithCorrelationId): void {
     const shouldLogBody = this.shouldLogRequestBody(req);
-    
+
     const logData: Record<string, unknown> = {
       correlationId: req.correlationId,
       method: req.method,
@@ -84,7 +83,7 @@ export class LoggerMiddleware implements NestMiddleware {
     }
 
     if (process.env.LOG_HEADERS === 'true') {
-      logData.headers = sanitizeHeaders(req.headers as Record<string, string>);
+      logData.headers = sanitizeHeaders(req.headers);
     }
 
     this.logger.http('Incoming request', logData);
@@ -114,9 +113,14 @@ export class LoggerMiddleware implements NestMiddleware {
     }
 
     const logLevel = this.getLogLevelForStatus(res.statusCode);
-    
+
     if (logLevel === 'error') {
-      this.logger.error('Request completed with error', undefined, 'HTTP', logData);
+      this.logger.error(
+        'Request completed with error',
+        undefined,
+        'HTTP',
+        logData,
+      );
     } else if (logLevel === 'warn') {
       this.logger.warn('Request completed with warning', 'HTTP', logData);
     } else {
@@ -141,7 +145,7 @@ export class LoggerMiddleware implements NestMiddleware {
       'application/x-www-form-urlencoded',
       'text/plain',
     ];
-    
+
     return loggableContentTypes.some((type) => contentType.includes(type));
   }
 
@@ -149,7 +153,7 @@ export class LoggerMiddleware implements NestMiddleware {
     if (process.env.LOG_RESPONSE_BODY !== 'true') {
       return false;
     }
-    
+
     const contentType = res.get('content-type') || '';
     return contentType.includes('application/json');
   }

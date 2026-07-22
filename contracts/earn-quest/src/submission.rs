@@ -33,7 +33,10 @@ pub fn commit_submission(
     // Validate quest is active
     validation::validate_quest_is_active(&quest.status)?;
     // Validate quest has not expired
-    validation::validate_quest_not_expired(env, quest.deadline)?;
+    let grace_period_seconds = quest
+        .grace_period_seconds
+        .unwrap_or(storage::get_default_grace_period(env));
+    validation::validate_quest_not_expired(env, quest.deadline, grace_period_seconds)?;
 
     // Check for existing submission to prevent double submission
     if storage::has_submission(env, quest_id, submitter) {
@@ -147,7 +150,10 @@ pub fn submit_proof(
     // Validate quest is active
     validation::validate_quest_is_active(&quest.status)?;
     // Validate quest has not expired
-    validation::validate_quest_not_expired(env, quest.deadline)?;
+    let grace_period_seconds = quest
+        .grace_period_seconds
+        .unwrap_or(storage::get_default_grace_period(env));
+    validation::validate_quest_not_expired(env, quest.deadline, grace_period_seconds)?;
     // Validate submitter address
     validation::validate_badge_count(0)?; // Example: badge count check for submitter
 
@@ -259,10 +265,7 @@ pub fn validate_claim_data(
     }
 
     // Validate status transition: Approved/PartiallyPaid -> Paid or PartiallyPaid
-    validation::validate_submission_status_transition(
-        &submission.status,
-        &SubmissionStatus::Paid,
-    )?;
+    validation::validate_submission_status_transition(&submission.status, &SubmissionStatus::Paid)?;
 
     // Validate quest claims limit
     validation::validate_quest_claims_limit(quest.total_claims)?;
@@ -270,15 +273,12 @@ pub fn validate_claim_data(
     Ok(())
 }
 
-/// Validate and process a reward claim for a submission.
-///
-/// Validates:
-/// - Submission is not already paid (AlreadyClaimed)
-/// - Submission status transition (Approved -> Paid) is valid
-/// - Quest claims have not exceeded the limit
 /// Validates a reward claim for a specific quest and submitter.
 ///
-/// This function loads the necessary data from storage and then calls `validate_claim_data`.
+/// Loads quest and submission from storage, then checks:
+/// - Submission is not already paid (`AlreadyClaimed`)
+/// - Submission status transition (Approved -> Paid) is valid
+/// - Quest claims have not exceeded the limit
 ///
 /// # Arguments
 ///
@@ -290,6 +290,7 @@ pub fn validate_claim_data(
 ///
 /// * `Ok(())` if the claim is valid.
 /// * `Err(Error)` if the quest or submission is not found, or if validation fails.
+#[allow(dead_code)]
 pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<(), Error> {
     let quest = storage::get_quest(env, quest_id)?;
     let submission = storage::get_submission(env, quest_id, submitter)?;
@@ -381,7 +382,8 @@ pub fn approve_submissions_batch(
                 if !escrow.is_active {
                     return Err(Error::EscrowInactive);
                 }
-                let available = escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+                let available =
+                    escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
                 if available < quest.reward_amount {
                     return Err(Error::InsufficientEscrow);
                 }

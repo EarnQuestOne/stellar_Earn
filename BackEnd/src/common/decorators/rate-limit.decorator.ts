@@ -8,8 +8,9 @@ export interface RateLimitOptions {
   blockDurationSeconds?: number;
 }
 
-export const RateLimit = (options: RateLimitOptions = {}):
-  MethodDecorator & ClassDecorator => {
+export const RateLimit = (
+  options: RateLimitOptions = {},
+): MethodDecorator & ClassDecorator => {
   const { name = 'default', limit, ttlSeconds, blockDurationSeconds } = options;
 
   const throttlerOptions: Record<string, Record<string, number>> = {
@@ -31,6 +32,7 @@ export const RateLimit = (options: RateLimitOptions = {}):
   return applyDecorators(Throttle(throttlerOptions));
 };
 
-export const SkipRateLimit = (name = 'default'):
-  | MethodDecorator
-  | ClassDecorator => applyDecorators(SkipThrottle({ [name]: true }));
+export const SkipRateLimit = (
+  name = 'default',
+): MethodDecorator | ClassDecorator =>
+  applyDecorators(SkipThrottle({ [name]: true }));

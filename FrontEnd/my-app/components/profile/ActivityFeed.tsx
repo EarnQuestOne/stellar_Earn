@@ -49,23 +49,35 @@ export function ActivityFeed({ activities, isLoading }: ActivityFeedProps) {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'quest_completed':    return '✅';
-      case 'quest_created':      return '➕';
-      case 'submission_approved': return '✅';
-      case 'level_up':           return '🏆';
-      case 'badge_earned':       return '🏅';
-      default:                   return '📰';
+      case 'quest_completed':
+        return '✅';
+      case 'quest_created':
+        return '➕';
+      case 'submission_approved':
+        return '✅';
+      case 'level_up':
+        return '🏆';
+      case 'badge_earned':
+        return '🏅';
+      default:
+        return '📰';
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'quest_completed':    return 'text-green-400';
-      case 'quest_created':      return 'text-blue-400';
-      case 'submission_approved': return 'text-green-400';
-      case 'level_up':           return 'text-yellow-400';
-      case 'badge_earned':       return 'text-purple-400';
-      default:                   return 'text-zinc-400';
+      case 'quest_completed':
+        return 'text-green-400';
+      case 'quest_created':
+        return 'text-blue-400';
+      case 'submission_approved':
+        return 'text-green-400';
+      case 'level_up':
+        return 'text-yellow-400';
+      case 'badge_earned':
+        return 'text-purple-400';
+      default:
+        return 'text-zinc-400';
     }
   };
 

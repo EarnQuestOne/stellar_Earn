@@ -21,7 +21,7 @@ export class TransactionUtils {
     private readonly rpcServer: rpc.Server,
     private readonly horizonServer: Horizon.Server,
     private readonly config: TransactionConfig,
-  ) { }
+  ) {}
 
   async buildAndSubmit(
     signer: Keypair,
@@ -101,10 +101,10 @@ export class TransactionUtils {
     let attempts = 0;
     while (attempts < retryAttempts) {
       const tx = await this.rpcServer.getTransaction(hash);
-      if (tx.status === 'SUCCESS') {
+      if (tx.status === rpc.Api.GetTransactionStatus.SUCCESS) {
         return tx;
       }
-      if (tx.status === 'FAILED') {
+      if (tx.status === rpc.Api.GetTransactionStatus.FAILED) {
         throw new Error(
           `Transaction failed on-chain: ${JSON.stringify(tx.resultXdr)}`,
         );

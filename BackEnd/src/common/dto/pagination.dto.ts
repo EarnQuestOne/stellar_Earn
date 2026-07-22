@@ -4,8 +4,10 @@ import { Type } from 'class-transformer';
 
 export class CursorPaginationDto {
   @ApiPropertyOptional({
-    description: 'Cursor for pagination (opaque string — pass the nextCursor value from the previous response)',
-    example: 'eyJpZCI6ImFiYzEyMyIsImNyZWF0ZWRBdCI6IjIwMjYtMDEtMjNUMTI6MzQ6NTYuMDAwWiJ9',
+    description:
+      'Cursor for pagination (opaque string — pass the nextCursor value from the previous response)',
+    example:
+      'eyJpZCI6ImFiYzEyMyIsImNyZWF0ZWRBdCI6IjIwMjYtMDEtMjNUMTI6MzQ6NTYuMDAwWiJ9',
   })
   @IsOptional()
   @IsString()
@@ -45,7 +47,8 @@ export class PaginatedResponseDto<T> {
   @ApiProperty({
     description:
       'Opaque cursor to pass as `cursor` in the next request. Null when there are no more pages.',
-    example: 'eyJpZCI6ImFiYzEyMyIsImNyZWF0ZWRBdCI6IjIwMjYtMDEtMjNUMTI6MzQ6NTYuMDAwWiJ9',
+    example:
+      'eyJpZCI6ImFiYzEyMyIsImNyZWF0ZWRBdCI6IjIwMjYtMDEtMjNUMTI6MzQ6NTYuMDAwWiJ9',
     nullable: true,
   })
   nextCursor: string | null;
@@ -57,7 +60,8 @@ export class PaginatedResponseDto<T> {
   hasMore: boolean;
 
   @ApiPropertyOptional({
-    description: 'Total number of records matching the query (may be omitted for performance)',
+    description:
+      'Total number of records matching the query (may be omitted for performance)',
     example: 142,
   })
   total?: number;

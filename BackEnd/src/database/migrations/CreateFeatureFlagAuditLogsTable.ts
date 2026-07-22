@@ -25,7 +25,16 @@ export class CreateFeatureFlagAuditLogsTable1700000000001 implements MigrationIn
           {
             name: 'action',
             type: 'enum',
-            enum: ['CREATED', 'UPDATED', 'DELETED', 'ACTIVATED', 'DEACTIVATED', 'ROLLOUT_CHANGED', 'USER_LIST_CHANGED', 'SEGMENT_CHANGED'],
+            enum: [
+              'CREATED',
+              'UPDATED',
+              'DELETED',
+              'ACTIVATED',
+              'DEACTIVATED',
+              'ROLLOUT_CHANGED',
+              'USER_LIST_CHANGED',
+              'SEGMENT_CHANGED',
+            ],
           },
           {
             name: 'previousValue',
@@ -102,10 +111,22 @@ export class CreateFeatureFlagAuditLogsTable1700000000001 implements MigrationIn
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('feature_flag_audit_logs', 'IDX_feature_flag_audit_logs_createdAt');
-    await queryRunner.dropIndex('feature_flag_audit_logs', 'IDX_feature_flag_audit_logs_performedBy');
-    await queryRunner.dropIndex('feature_flag_audit_logs', 'IDX_feature_flag_audit_logs_flagKey');
-    await queryRunner.dropIndex('feature_flag_audit_logs', 'IDX_feature_flag_audit_logs_flagId');
+    await queryRunner.dropIndex(
+      'feature_flag_audit_logs',
+      'IDX_feature_flag_audit_logs_createdAt',
+    );
+    await queryRunner.dropIndex(
+      'feature_flag_audit_logs',
+      'IDX_feature_flag_audit_logs_performedBy',
+    );
+    await queryRunner.dropIndex(
+      'feature_flag_audit_logs',
+      'IDX_feature_flag_audit_logs_flagKey',
+    );
+    await queryRunner.dropIndex(
+      'feature_flag_audit_logs',
+      'IDX_feature_flag_audit_logs_flagId',
+    );
     await queryRunner.dropTable('feature_flag_audit_logs');
   }
 }

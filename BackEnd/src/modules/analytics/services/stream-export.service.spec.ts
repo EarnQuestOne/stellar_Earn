@@ -48,7 +48,10 @@ describe('StreamExportService', () => {
 
       await service.streamAsCSV(mockResponse, mockData, 'quests', columns);
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv; charset=utf-8');
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/csv; charset=utf-8',
+      );
       expect(mockResponse.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         'attachment; filename="quests.csv"',
@@ -76,13 +79,20 @@ describe('StreamExportService', () => {
 
       await service.streamAsJSONLines(mockResponse, mockData, 'quests');
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'application/x-ndjson; charset=utf-8');
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/x-ndjson; charset=utf-8',
+      );
       expect(mockResponse.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         'attachment; filename="quests.jsonl"',
       );
-      expect(mockResponse.write).toHaveBeenCalledWith('{"id":"1","title":"Quest 1"}\n');
-      expect(mockResponse.write).toHaveBeenCalledWith('{"id":"2","title":"Quest 2"}\n');
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        '{"id":"1","title":"Quest 1"}\n',
+      );
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        '{"id":"2","title":"Quest 2"}\n',
+      );
       expect(mockResponse.end).toHaveBeenCalled();
     });
   });
@@ -99,8 +109,13 @@ describe('StreamExportService', () => {
 
       await service.streamAsJSON(mockResponse, mockData, 'quests');
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
-      expect(mockResponse.write).toHaveBeenCalledWith(JSON.stringify(mockData, null, 2));
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json; charset=utf-8',
+      );
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        JSON.stringify(mockData, null, 2),
+      );
       expect(mockResponse.end).toHaveBeenCalled();
     });
 
@@ -118,11 +133,18 @@ describe('StreamExportService', () => {
 
       await service.streamAsJSON(mockResponse, mockGenerator(), 'quests');
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json; charset=utf-8',
+      );
       expect(mockResponse.write).toHaveBeenCalledWith('[\n');
-      expect(mockResponse.write).toHaveBeenCalledWith(JSON.stringify({ id: '1' }, null, 2));
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        JSON.stringify({ id: '1' }, null, 2),
+      );
       expect(mockResponse.write).toHaveBeenCalledWith(',\n');
-      expect(mockResponse.write).toHaveBeenCalledWith(JSON.stringify({ id: '2' }, null, 2));
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        JSON.stringify({ id: '2' }, null, 2),
+      );
       expect(mockResponse.write).toHaveBeenCalledWith('\n]');
       expect(mockResponse.end).toHaveBeenCalled();
     });

@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FeatureFlagsService } from '../feature-flags.service';
 import { FEATURE_FLAG_KEY } from '../decorators/feature-flag.decorator';
@@ -24,16 +30,24 @@ export class FeatureFlagGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const userId = request.user?.id;
-    const userContext = request.user ? {
-      role: request.user.role,
-      level: request.user.level,
-      xp: request.user.xp,
-    } : undefined;
+    const userContext = request.user
+      ? {
+          role: request.user.role,
+          level: request.user.level,
+          xp: request.user.xp,
+        }
+      : undefined;
 
-    const isEnabled = await this.featureFlagsService.isEnabled(flagKey, userId, userContext);
+    const isEnabled = await this.featureFlagsService.isEnabled(
+      flagKey,
+      userId,
+      userContext,
+    );
 
     if (!isEnabled) {
-      this.logger.warn(`Feature flag "${flagKey}" is disabled for user ${userId}`);
+      this.logger.warn(
+        `Feature flag "${flagKey}" is disabled for user ${userId}`,
+      );
       throw new ForbiddenException(`This feature is currently not available`);
     }
 

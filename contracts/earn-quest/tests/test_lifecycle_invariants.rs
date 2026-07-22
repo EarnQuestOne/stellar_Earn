@@ -66,7 +66,12 @@ fn setup() -> Ctx<'static> {
     env.ledger().with_mut(|l| l.timestamp = 1_000);
     client.initialize(&admin);
 
-    Ctx { env, client, admin, token }
+    Ctx {
+        env,
+        client,
+        admin,
+        token,
+    }
 }
 
 /// Register a quest with a 1-day deadline; return (quest_id, creator, verifier).
@@ -127,7 +132,9 @@ fn expired_quest_rejects_submission() {
     let (qid, creator, _verifier) = register_quest(&ctx, symbol_short!("Q3"));
 
     // Advance time past deadline + expiry buffer (10 s)
-    ctx.env.ledger().with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
+    ctx.env
+        .ledger()
+        .with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
     ctx.client.expire_quest(&qid, &creator);
 
     let submitter = Address::generate(&ctx.env);
@@ -141,7 +148,9 @@ fn expired_quest_rejects_cancel() {
     let ctx = setup();
     let (qid, creator, _verifier) = register_quest(&ctx, symbol_short!("Q4"));
 
-    ctx.env.ledger().with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
+    ctx.env
+        .ledger()
+        .with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
     ctx.client.expire_quest(&qid, &creator);
 
     let result = ctx.client.try_cancel_quest(&qid, &creator);
@@ -214,7 +223,9 @@ fn approved_submission_cannot_be_approved_again() {
 
     ctx.client.approve_submission(&qid, &submitter, &verifier);
 
-    let result = ctx.client.try_approve_submission(&qid, &submitter, &verifier);
+    let result = ctx
+        .client
+        .try_approve_submission(&qid, &submitter, &verifier);
     assert!(result.is_err(), "double-approval must be rejected");
 }
 
@@ -258,7 +269,8 @@ fn cancel_quest_is_terminal_and_refunds_escrow() {
     // Deposit escrow
     let token_admin = StellarAssetClient::new(&ctx.env, &ctx.token);
     token_admin.mint(&creator, &500_i128);
-    ctx.client.deposit_escrow(&qid, &creator, &ctx.token, &500_i128);
+    ctx.client
+        .deposit_escrow(&qid, &creator, &ctx.token, &500_i128);
 
     let token_client = TokenClient::new(&ctx.env, &ctx.token);
     let balance_before = token_client.balance(&creator);
@@ -274,7 +286,10 @@ fn cancel_quest_is_terminal_and_refunds_escrow() {
 
     // Quest is now terminal — further cancellation must fail
     let result = ctx.client.try_cancel_quest(&qid, &creator);
-    assert!(result.is_err(), "cancelled quest must reject re-cancellation");
+    assert!(
+        result.is_err(),
+        "cancelled quest must reject re-cancellation"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,9 +311,14 @@ fn expire_after_deadline_succeeds() {
     let ctx = setup();
     let (qid, creator, _verifier) = register_quest(&ctx, symbol_short!("QF"));
 
-    ctx.env.ledger().with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
+    ctx.env
+        .ledger()
+        .with_mut(|l| l.timestamp = 1_000 + 86_400 + 20);
     let result = ctx.client.try_expire_quest(&qid, &creator);
-    assert!(result.is_ok(), "expiry after deadline + buffer must succeed");
+    assert!(
+        result.is_ok(),
+        "expiry after deadline + buffer must succeed"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -320,17 +340,26 @@ fn total_claims_monotonically_increases() {
 
     ctx.client.claim_reward(&qid, &s1, &500_i128);
     let claims_1 = ctx.client.get_quest(&qid).total_claims;
-    assert!(claims_1 >= claims_0, "total_claims must not decrease after first claim");
+    assert!(
+        claims_1 >= claims_0,
+        "total_claims must not decrease after first claim"
+    );
 
     ctx.client.approve_submission(&qid, &s2, &verifier);
     ctx.client.claim_reward(&qid, &s2, &500_i128);
     let claims_2 = ctx.client.get_quest(&qid).total_claims;
-    assert!(claims_2 >= claims_1, "total_claims must not decrease after second claim");
+    assert!(
+        claims_2 >= claims_1,
+        "total_claims must not decrease after second claim"
+    );
 
     ctx.client.approve_submission(&qid, &s3, &verifier);
     ctx.client.claim_reward(&qid, &s3, &500_i128);
     let claims_3 = ctx.client.get_quest(&qid).total_claims;
-    assert!(claims_3 >= claims_2, "total_claims must not decrease after third claim");
+    assert!(
+        claims_3 >= claims_2,
+        "total_claims must not decrease after third claim"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -344,7 +373,8 @@ fn escrow_balance_invariant_holds_after_payout() {
 
     let token_admin = StellarAssetClient::new(&ctx.env, &ctx.token);
     token_admin.mint(&creator, &1_000_i128);
-    ctx.client.deposit_escrow(&qid, &creator, &ctx.token, &1_000_i128);
+    ctx.client
+        .deposit_escrow(&qid, &creator, &ctx.token, &1_000_i128);
 
     let submitter = submit(&ctx, &qid);
     ctx.client.approve_submission(&qid, &submitter, &verifier);
@@ -364,7 +394,8 @@ fn escrow_balance_invariant_holds_after_cancel_refund() {
 
     let token_admin = StellarAssetClient::new(&ctx.env, &ctx.token);
     token_admin.mint(&creator, &800_i128);
-    ctx.client.deposit_escrow(&qid, &creator, &ctx.token, &800_i128);
+    ctx.client
+        .deposit_escrow(&qid, &creator, &ctx.token, &800_i128);
 
     ctx.client.cancel_quest(&qid, &creator);
 
@@ -390,7 +421,9 @@ fn paused_quest_allows_resume_and_then_submission() {
     let submitter = Address::generate(&ctx.env);
     let proof = BytesN::from_array(&ctx.env, &[10u8; 32]);
     assert!(
-        ctx.client.try_submit_proof(&qid, &submitter, &proof).is_err(),
+        ctx.client
+            .try_submit_proof(&qid, &submitter, &proof)
+            .is_err(),
         "submission must fail while paused"
     );
 

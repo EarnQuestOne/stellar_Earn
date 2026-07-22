@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { QuestsService } from './quests.service';
 import { Quest } from './entities/quest.entity';
+import * as questDto from './dto';
+import { QuestMapper } from './mappers/quest.mapper';
 import { CacheService } from '../cache/cache.service';
 import { ModerationService } from '../moderation/moderation.service';
 import { QuotaService } from '../quota/quota.service';
@@ -78,17 +80,16 @@ describe('QuestsService', () => {
       repo.create.mockReturnValue(entity);
       repo.save.mockResolvedValue(entity);
       jest
-        .spyOn(require('./dto'), 'QuestResponseDto' as any, 'get')
+        .spyOn(questDto, 'QuestResponseDto' as any, 'get')
         .mockReturnValue({ fromEntity: (e: any) => e })
         .mockRestore?.();
 
       // patch static method via prototype
-      const { QuestResponseDto } = require('./dto');
       const spy = jest
-        .spyOn(QuestResponseDto, 'fromEntity')
+        .spyOn(QuestMapper, 'toDto')
         .mockReturnValue(entity as any);
 
-      const result = await service.create(dto as any, creator);
+      await service.create(dto, creator);
       expect(repo.save).toHaveBeenCalledTimes(1);
       expect(emitter.emit).toHaveBeenCalledWith(
         'quest.created',
@@ -110,11 +111,9 @@ describe('QuestsService', () => {
       repo.create.mockReturnValue(entity);
       repo.save.mockResolvedValue(entity);
 
-      const { QuestResponseDto } = require('./dto');
+      jest.spyOn(QuestMapper, 'toDto').mockReturnValue(entity);
 
-      jest.spyOn(QuestResponseDto, 'fromEntity').mockReturnValue(entity);
-
-      const result = await service.create(dto as any, creator);
+      const result = await service.create(dto, creator);
 
       expect(result).toEqual(entity);
     });

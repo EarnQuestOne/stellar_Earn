@@ -1,0 +1,32 @@
+{
+  "pipelineId": "SC-074-TESTNET-CANARY",
+  "contractName": "splitter_v3",
+  "stages": [
+    {
+      "phase": 1,
+      "trafficWeightPercentage": 10,
+      "soakPeriodMinutes": 30,
+      "canaryValidationMetrics": {
+        "maxErrorRatePercentage": 1.0,
+        "maxPanicsAllowed": 0
+      }
+    },
+    {
+      "phase": 2,
+      "trafficWeightPercentage": 50,
+      "soakPeriodMinutes": 60,
+      "canaryValidationMetrics": {
+        "maxErrorRatePercentage": 0.5,
+        "maxPanicsAllowed": 0
+      }
+    }
+  ],
+  "rollbackTriggers": {
+    "monitoredEvents": [
+      "ContractPaused",
+      "UnauthorizedAccessPanic",
+      "SufficientBalanceLoss"
+    ],
+    "autoReversion": true
+  }
+}

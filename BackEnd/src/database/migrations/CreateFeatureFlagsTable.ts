@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 export class CreateFeatureFlagsTable1700000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -31,7 +31,13 @@ export class CreateFeatureFlagsTable1700000000000 implements MigrationInterface 
           {
             name: 'rolloutStrategy',
             type: 'enum',
-            enum: ['BOOLEAN', 'PERCENTAGE', 'USER_WHITELIST', 'USER_BLACKLIST', 'SEGMENT_BASED'],
+            enum: [
+              'BOOLEAN',
+              'PERCENTAGE',
+              'USER_WHITELIST',
+              'USER_BLACKLIST',
+              'SEGMENT_BASED',
+            ],
             default: "'BOOLEAN'",
           },
           {

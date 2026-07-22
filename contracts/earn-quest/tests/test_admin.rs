@@ -174,10 +174,10 @@ fn test_admin_can_grant_badge() {
     let user = Address::generate(&env);
 
     client.initialize(&admin);
-    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user, &Badge::Rookie);
 
     let badges = client.get_user_badges(&user);
-    assert!(badges.badges.contains(&Badge::rookie(&env)));
+    assert!(badges.badges.contains(&Badge::Rookie));
 }
 
 #[test]
@@ -192,7 +192,7 @@ fn test_non_admin_cannot_grant_badge() {
     let user = Address::generate(&env);
 
     client.initialize(&admin);
-    client.grant_badge(&non_admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&non_admin, &user, &Badge::Rookie);
 }
 
 #[test]
@@ -209,10 +209,10 @@ fn test_second_admin_can_grant_badge() {
     client.add_admin(&admin1, &admin2);
 
     // Second admin grants badge
-    client.grant_badge(&admin2, &user, &Badge::explorer(&env));
+    client.grant_badge(&admin2, &user, &Badge::Explorer);
 
     let badges = client.get_user_badges(&user);
-    assert!(badges.badges.contains(&Badge::explorer(&env)));
+    assert!(badges.badges.contains(&Badge::Explorer));
 }
 
 #[test]
@@ -231,7 +231,7 @@ fn test_removed_admin_cannot_grant_badge() {
     client.remove_admin(&admin1, &admin2);
 
     // Removed admin tries to grant badge
-    client.grant_badge(&admin2, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin2, &user, &Badge::Rookie);
 }
 
 //================================================================================

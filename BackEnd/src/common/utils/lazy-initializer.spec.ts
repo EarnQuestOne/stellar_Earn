@@ -4,10 +4,10 @@ import { LazyInitializer } from './lazy-initializer';
 describe('LazyInitializer', () => {
   it('should not call the factory function upon instantiation', () => {
     const factory = vi.fn(() => ({ data: 'test' }));
-    
+
     // Act: Create the wrapper
     new LazyInitializer(factory);
-    
+
     // Assert: Factory was never called
     expect(factory).not.toHaveBeenCalled();
   });
@@ -24,7 +24,7 @@ describe('LazyInitializer', () => {
 
     // Assert: Factory called exactly once
     expect(factory).toHaveBeenCalledTimes(1);
-    
+
     // Assert: Every call returned the exact same instance
     expect(instance1).toBe(mockService);
     expect(instance2).toBe(mockService);

@@ -20,13 +20,9 @@ const SPAM_PATTERNS = [
   /(?:http[s]?:\/\/){2,}/,
 ];
 
-const PROFANITY_PATTERNS = [
-  /\b(?:fuck|shit|bitch|asshole)\b/i,
-];
+const PROFANITY_PATTERNS = [/\b(?:fuck|shit|bitch|asshole)\b/i];
 
-const PROMO_PATTERNS = [
-  /\b(?:buy now|discount|promo code|affiliate)\b/i,
-];
+const PROMO_PATTERNS = [/\b(?:buy now|discount|promo code|affiliate)\b/i];
 
 @Injectable()
 export class ContentClassifierService {

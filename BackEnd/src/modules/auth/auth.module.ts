@@ -6,7 +6,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { getJwtPrivateKey } from '../../common/utils/jwt-keys';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -15,29 +19,27 @@ import { RefreshToken } from './entities/refresh-token.entity';
       session: false,
     }),
     JwtModule.registerAsync({
-       imports: [ConfigModule],
-       useFactory: async (configService: ConfigService) => {
-         const privateKey = configService.get<string>('JWT_PRIVATE_KEY');
-         if (!privateKey) {
-           throw new Error('JWT_PRIVATE_KEY is not defined in environment variables');
-         }
-         return {
-           privateKey,
-           signOptions: {
-             expiresIn: configService.get<string>(
-               'JWT_ACCESS_TOKEN_EXPIRATION',
-               '15m',
-             ),
-             algorithm: 'RS256',
-           },
-         } as any;
-       },
-       inject: [ConfigService],
-     }),
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const privateKey = getJwtPrivateKey(configService);
+        return {
+          privateKey,
+          signOptions: {
+            expiresIn: configService.get<string>(
+              'JWT_ACCESS_TOKEN_EXPIRATION',
+              '15m',
+            ),
+            algorithm: 'RS256',
+          },
+        } as any;
+      },
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forFeature([RefreshToken]),
+    UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

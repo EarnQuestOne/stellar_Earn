@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, Min, Max, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+  IsEnum,
+} from 'class-validator';
 import { SignerRole } from '../entities/multisig-signer.entity';
 
 export class CreateMultiSigWalletDto {

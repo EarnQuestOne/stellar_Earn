@@ -11,7 +11,9 @@ export class KeywordFilterService {
   private readonly blocklist: Set<string>;
 
   constructor(private readonly configService: ConfigService) {
-    const mod = this.configService.get<{ blockedKeywords?: string[] }>('moderation');
+    const mod = this.configService.get<{ blockedKeywords?: string[] }>(
+      'moderation',
+    );
     const fromConfig = mod?.blockedKeywords || [];
     const defaults = ['child porn', 'cp ', 'terrorist', 'kill yourself', 'kys'];
     this.blocklist = new Set(

@@ -69,11 +69,7 @@ export class ModerationService {
     const cls = this.classifier.classify(combined);
     const external = await this.externalApi.scoreText(combined);
 
-    let score = Math.max(
-      kw.blocked ? 1 : 0,
-      cls.score,
-      external?.score ?? 0,
-    );
+    let score = Math.max(kw.blocked ? 1 : 0, cls.score, external?.score ?? 0);
 
     if (kw.hits.length) {
       score = Math.max(score, 0.95);
@@ -90,7 +86,7 @@ export class ModerationService {
     return {
       score,
       keywordHits: kw.hits,
-      labels: labels as Record<string, number>,
+      labels: labels,
       imageFlags: [],
       shouldBlock: this.blockOnHigh() && score >= high,
       shouldManualReview: score >= med && score < high,
@@ -135,9 +131,10 @@ export class ModerationService {
     userId: string,
     proof: unknown,
   ): Promise<ModerationItem> {
-    const text = typeof proof === 'object' && proof !== null
-      ? JSON.stringify(proof).slice(0, 50000)
-      : String(proof ?? '');
+    const text =
+      typeof proof === 'object' && proof !== null
+        ? JSON.stringify(proof).slice(0, 50000)
+        : String((proof as string | number | boolean | null | undefined) ?? '');
 
     const urls = this.imageModeration.extractUrlsFromProof(proof);
     const imageFlags = await this.imageModeration.moderateUrls(urls);
@@ -148,7 +145,10 @@ export class ModerationService {
       imageFlags.length > 0 ? 0.75 : 0,
     );
 
-    if (scan.shouldBlock || imageFlags.some((f) => f.reason === 'blocked_host')) {
+    if (
+      scan.shouldBlock ||
+      imageFlags.some((f) => f.reason === 'blocked_host')
+    ) {
       throw new BadRequestException({
         message: 'Submission content violates platform moderation rules',
         code: 'MODERATION_BLOCKED',
@@ -158,7 +158,9 @@ export class ModerationService {
     }
 
     const needsManual =
-      scan.shouldManualReview || imageFlags.length > 0 || combinedScore >= this.mediumThreshold();
+      scan.shouldManualReview ||
+      imageFlags.length > 0 ||
+      combinedScore >= this.mediumThreshold();
 
     const item = this.itemRepo.create({
       targetType: ModerationTargetType.SUBMISSION,
@@ -238,7 +240,9 @@ export class ModerationService {
       throw new NotFoundException('Moderation item not found');
     }
     if (item.userId !== userId) {
-      throw new ForbiddenException('You can only appeal your own moderation cases');
+      throw new ForbiddenException(
+        'You can only appeal your own moderation cases',
+      );
     }
 
     const appeal = this.appealRepo.create({

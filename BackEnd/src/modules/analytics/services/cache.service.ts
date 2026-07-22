@@ -89,12 +89,12 @@ export class CacheService {
    * Returns hit/miss counters.
    * If `keyPrefix` is provided, also returns all tracked keys matching that prefix.
    */
-  async getStats(keyPrefix?: string): Promise<{
+  getStats(keyPrefix?: string): {
     hits: number;
     misses: number;
     trackedKeys: number;
     keys?: string[];
-  }> {
+  } {
     const base = {
       hits: this.stats.hits,
       misses: this.stats.misses,

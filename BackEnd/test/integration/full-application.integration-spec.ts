@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from '#src/common/logger/logger.module';
+import { JwtService } from '@nestjs/jwt';
 
 // Import all major modules
 import { AuthModule } from '#src/modules/auth/auth.module';
@@ -15,7 +17,7 @@ import { NotificationsModule } from '#src/modules/notifications/notifications.mo
 
 // Import services
 import { AuthService } from '#src/modules/auth/auth.service';
-import { UsersService } from '#src/modules/users/user.service';
+import { UsersService } from '#src/modules/users/users.service';
 import { QuestsService } from '#src/modules/quests/quests.service';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
 import { PayoutsService } from '#src/modules/payouts/payouts.service';
@@ -26,6 +28,7 @@ import { User } from '#src/modules/users/entities/user.entity';
 import { Quest } from '#src/modules/quests/entities/quest.entity';
 import { Submission } from '#src/modules/submissions/entities/submission.entity';
 import { Payout } from '#src/modules/payouts/entities/payout.entity';
+import { DataSource } from 'typeorm';
 import { RefreshToken } from '#src/modules/auth/entities/refresh-token.entity';
 
 describe('Full Application Integration', () => {
@@ -35,7 +38,7 @@ describe('Full Application Integration', () => {
   let questsService: QuestsService;
   let submissionsService: SubmissionsService;
   let payoutsService: PayoutsService;
-  let stellarService: StellarService;
+  let _stellarService: StellarService;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -46,6 +49,10 @@ describe('Full Application Integration', () => {
         }),
         EventEmitterModule.forRoot(),
         ScheduleModule.forRoot(),
+        LoggerModule.forRoot({
+          enableInterceptor: false,
+          enableErrorFilter: false,
+        }),
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST || 'localhost',
@@ -54,6 +61,7 @@ describe('Full Application Integration', () => {
           password: process.env.DB_PASSWORD || 'password',
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           entities: [User, Quest, Submission, Payout, RefreshToken],
+          autoLoadEntities: true,
           synchronize: true,
           dropSchema: true,
         }),
@@ -66,14 +74,36 @@ describe('Full Application Integration', () => {
         StellarModule,
         NotificationsModule,
       ],
-    }).compile();
+    })
+      .overrideProvider(JwtService)
+      .useValue({
+        sign: jest.fn().mockReturnValue('test-access-token'),
+        verify: jest.fn(),
+        signAsync: jest.fn().mockResolvedValue('test-access-token'),
+        verifyAsync: jest
+          .fn()
+          .mockResolvedValue({ stellarAddress: 'test', sub: 'test' }),
+        decode: jest.fn(),
+      })
+      .overrideProvider(StellarService)
+      .useValue({
+        approveSubmission: jest
+          .fn()
+          .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
+        sendPayment: jest
+          .fn()
+          .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
+        getContractId: jest.fn().mockReturnValue('mock-contract-id'),
+        getServer: jest.fn(),
+      })
+      .compile();
 
     authService = module.get<AuthService>(AuthService);
     usersService = module.get<UsersService>(UsersService);
     questsService = module.get<QuestsService>(QuestsService);
     submissionsService = module.get<SubmissionsService>(SubmissionsService);
     payoutsService = module.get<PayoutsService>(PayoutsService);
-    stellarService = module.get<StellarService>(StellarService);
+    _stellarService = module.get<StellarService>(StellarService);
   });
 
   afterAll(async () => {
@@ -81,96 +111,98 @@ describe('Full Application Integration', () => {
   });
 
   beforeEach(async () => {
-    // Clean up all data between tests
-    const repositories = [
-      'UserRepository',
-      'QuestRepository',
-      'SubmissionRepository',
-      'PayoutRepository',
-      'RefreshTokenRepository',
-    ];
-
-    for (const repoName of repositories) {
+    // Clean up all data between tests (child tables first, then parent)
+    const tables = ['refresh_token', 'payout', 'submissions', 'quest', 'user'];
+    for (const table of tables) {
       try {
-        const repo = module.get(repoName);
-        await repo.clear();
-      } catch (error) {
-        // Repository might not exist in this test setup, continue
+        await module.get('UserRepository').query(`DELETE FROM "${table}"`);
+      } catch {
+        // Table might not exist in this test setup, continue
       }
     }
   });
 
   describe('Complete User Journey', () => {
     it('should handle full user journey from registration to payout', async () => {
-      const stellarAddress = 'GBFULLJOURNEY123456789012345678901234567890123456789012345678901234567890';
+      const stellarAddress = 'GAFULLJOURNEY';
 
       // Step 1: User Registration & Authentication
-      const authResult = await authService.verifySignatureAndLogin(
-        stellarAddress,
-        'journey_signature',
-        'journey_message'
-      );
+      authService.login(stellarAddress);
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({ stellarAddress });
 
-      expect(authResult.accessToken).toBeDefined();
-      expect(authResult.user.stellarAddress).toBe(stellarAddress);
-
-      const user = authResult.user;
+      expect(user.stellarAddress).toBe(stellarAddress);
 
       // Step 2: Update User Profile
-      const updatedUser = await usersService.updateProfile(user.id, {
+      const updatedUser = await usersService.update(user.id, {
+        ...user,
         displayName: 'Journey Tester',
         bio: 'Testing the complete user journey',
-      });
+      } as User);
 
       expect(updatedUser.displayName).toBe('Journey Tester');
 
       // Step 3: Create a Quest
-      const quest = await questsService.create({
-        title: 'Complete Journey Quest',
-        description: 'Test the entire application flow',
-        rewardAmount: 200,
-        maxParticipants: 1,
-        requirements: 'Complete all steps successfully',
-        category: 'integration',
-        difficulty: 'expert' as const,
-        status: 'active' as const,
-      });
-
-      expect(quest.status).toBe('active');
-
-      // Step 4: Submit Work to Quest
-      const submission = await submissionsService.create({
-        questId: quest.id,
-        userId: user.id,
-        content: 'I have completed the full journey test',
-        proofOfWork: 'journey_complete_proof',
-      });
-
-      expect(submission.status).toBe('pending');
-
-      // Step 5: Approve Submission
-      const approvedSubmission = await submissionsService.updateStatus(
-        submission.id,
-        'approved'
+      const quest = await questsService.create(
+        {
+          title: 'Complete Journey Quest',
+          description: 'Test the entire application flow',
+          rewardAmount: 200,
+          maxCompletions: 1,
+          status: 'ACTIVE',
+          contractTaskId: 'task-001',
+          rewardAsset: 'XLM',
+          verifierType: 'manual',
+          verifierConfig: {},
+          createdBy: stellarAddress,
+        },
+        stellarAddress,
       );
 
-      expect(approvedSubmission.status).toBe('approved');
+      expect(quest.status).toBe('ACTIVE');
+
+      // Step 4: Submit Work to Quest
+      const submission = await submissionsService.createSubmission(
+        quest.id,
+        {
+          fileName: 'journey_complete_proof',
+          fileContent: 'I have completed the full journey test',
+        },
+        user.id,
+      );
+
+      expect(submission.status).toBe('PENDING');
+
+      // Step 5: Approve Submission
+      const approvedSubmission = await submissionsService.approveSubmission(
+        submission.id,
+        { notes: 'Approved via integration test' },
+        user.id,
+      );
+
+      expect(approvedSubmission.status).toBe('APPROVED');
 
       // Step 6: Process Payout
-      const payout = await payoutsService.create({
-        userId: user.id,
+      const payout = await payoutsService.createPayout({
+        stellarAddress,
         amount: quest.rewardAmount,
-        currency: 'XLM',
-        reason: `Reward for completing quest: ${quest.title}`,
-        status: 'pending' as const,
+        asset: 'XLM',
+        questId: quest.id,
+        transactionHash: 'tx-hash-journey',
       });
 
       expect(payout.amount).toBe(quest.rewardAmount);
 
       // Step 7: Complete Payout Process
-      const completedPayout = await payoutsService.updateStatus(payout.id, 'approved');
+      await module
+        .get(DataSource)
+        .query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
+          payout.id,
+        ]);
+      await payoutsService.processPayout(payout.id);
+      const completedPayout = await payoutsService.getPayoutById(payout.id);
 
-      expect(completedPayout.status).toBe('approved');
+      expect(completedPayout.status).toBe('completed');
 
       // Step 8: Verify Final State
       const finalUser = await usersService.findById(user.id);
@@ -178,72 +210,82 @@ describe('Full Application Integration', () => {
       expect(finalUser.stellarAddress).toBe(stellarAddress);
 
       // Verify quest completion
-      const finalQuest = await questsService.findById(quest.id);
+      const finalQuest = await questsService.findOne(quest.id);
       expect(finalQuest).toBeDefined();
 
       // Verify submission approval
-      const finalSubmission = await submissionsService.findById(submission.id);
-      expect(finalSubmission.status).toBe('approved');
+      const finalSubmission = await submissionsService.findOne(submission.id);
+      expect(finalSubmission.status).toBe('APPROVED');
 
       // Verify payout completion
-      const finalPayout = await payoutsService.findById(payout.id);
-      expect(finalPayout.status).toBe('approved');
+      const finalPayout = await payoutsService.getPayoutById(payout.id);
+      expect(finalPayout.status).toBe('completed');
     });
 
     it('should handle concurrent users completing quests', async () => {
       // Create multiple users
       const users = [];
       for (let i = 0; i < 3; i++) {
-        const authResult = await authService.verifySignatureAndLogin(
-          `GBMULTI${i}123456789012345678901234567890123456789012345678901234567890`,
-          `sig${i}`,
-          `msg${i}`
-        );
-        users.push(authResult.user);
+        const stellarAddress = `GAMULTI${i}`;
+        authService.login(stellarAddress);
+        const userRepository = module.get('UserRepository');
+        const user = await userRepository.save({ stellarAddress });
+        users.push(user);
       }
 
       expect(users).toHaveLength(3);
 
       // Create a quest that allows multiple participants
-      const quest = await questsService.create({
-        title: 'Concurrent Quest',
-        description: 'Test concurrent quest completions',
-        rewardAmount: 50,
-        maxParticipants: 5,
-        requirements: 'Complete concurrently',
-        category: 'concurrency',
-        difficulty: 'medium' as const,
-        status: 'active' as const,
-      });
+      const quest = await questsService.create(
+        {
+          title: 'Concurrent Quest',
+          description: 'Test concurrent quest completions',
+          rewardAmount: 50,
+          maxCompletions: 5,
+          status: 'ACTIVE',
+          contractTaskId: 'task-002',
+          rewardAsset: 'XLM',
+          verifierType: 'manual',
+          verifierConfig: {},
+          createdBy: users[0].stellarAddress,
+        },
+        users[0].stellarAddress,
+      );
 
       // All users submit to the quest
       const submissions = [];
       for (const user of users) {
-        const submission = await submissionsService.create({
-          questId: quest.id,
-          userId: user.id,
-          content: `Concurrent submission by ${user.stellarAddress}`,
-          proofOfWork: `proof_${user.id}`,
-        });
+        const submission = await submissionsService.createSubmission(
+          quest.id,
+          {
+            fileName: `proof_${user.id}`,
+            fileContent: `Concurrent submission by ${user.stellarAddress}`,
+          },
+          user.id,
+        );
         submissions.push(submission);
       }
 
       expect(submissions).toHaveLength(3);
 
-      // Approve all submissions
+      // Approve all submissions (quest creator is the verifier)
       for (const submission of submissions) {
-        await submissionsService.updateStatus(submission.id, 'approved');
+        await submissionsService.approveSubmission(
+          submission.id,
+          {},
+          users[0].id,
+        );
       }
 
       // Create payouts for all users
       const payouts = [];
       for (const user of users) {
-        const payout = await payoutsService.create({
-          userId: user.id,
+        const payout = await payoutsService.createPayout({
+          stellarAddress: user.stellarAddress,
           amount: quest.rewardAmount,
-          currency: 'XLM',
-          reason: 'Concurrent quest reward',
-          status: 'pending' as const,
+          asset: 'XLM',
+          questId: quest.id,
+          transactionHash: 'tx-hash-concurrent-' + user.id,
         });
         payouts.push(payout);
       }
@@ -251,63 +293,75 @@ describe('Full Application Integration', () => {
       expect(payouts).toHaveLength(3);
 
       // Process all payouts
+      const ds = module.get(DataSource);
       for (const payout of payouts) {
-        await payoutsService.updateStatus(payout.id, 'approved');
+        await ds.query(
+          `UPDATE payouts SET status = 'processing' WHERE id = $1`,
+          [payout.id],
+        );
+        await payoutsService.processPayout(payout.id);
       }
 
       // Verify all payouts were processed
       for (const payout of payouts) {
-        const finalPayout = await payoutsService.findById(payout.id);
-        expect(finalPayout.status).toBe('approved');
+        const finalPayout = await payoutsService.getPayoutById(payout.id);
+        expect(finalPayout.status).toBe('completed');
       }
     });
   });
 
   describe('Cross-Module Event Propagation', () => {
     it('should propagate events across all integrated modules', async () => {
-      const stellarAddress = 'GBEVENTS123456789012345678901234567890123456789012345678901234567890';
+      const stellarAddress = 'GAEVENTS';
 
       // Authenticate user
-      const authResult = await authService.verifySignatureAndLogin(
-        stellarAddress,
-        'events_sig',
-        'events_msg'
-      );
-
-      const user = authResult.user;
+      authService.login(stellarAddress);
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({ stellarAddress });
 
       // Create quest
-      const quest = await questsService.create({
-        title: 'Events Quest',
-        description: 'Test event propagation',
-        rewardAmount: 25,
-        maxParticipants: 1,
-        requirements: 'Trigger events',
-        category: 'events',
-        difficulty: 'easy' as const,
-        status: 'active' as const,
-      });
+      const quest = await questsService.create(
+        {
+          title: 'Events Quest',
+          description: 'Test event propagation',
+          rewardAmount: 25,
+          maxCompletions: 1,
+          status: 'ACTIVE',
+          contractTaskId: 'task-003',
+          rewardAsset: 'XLM',
+          verifierType: 'manual',
+          verifierConfig: {},
+          createdBy: stellarAddress,
+        },
+        stellarAddress,
+      );
 
       // Submit and approve (this should trigger various events)
-      const submission = await submissionsService.create({
-        questId: quest.id,
-        userId: user.id,
-        content: 'Event test submission',
-        proofOfWork: 'event_proof',
-      });
+      const submission = await submissionsService.createSubmission(
+        quest.id,
+        {
+          fileName: 'event_proof',
+          fileContent: 'Event test submission',
+        },
+        user.id,
+      );
 
-      await submissionsService.updateStatus(submission.id, 'approved');
+      await submissionsService.approveSubmission(submission.id, {}, user.id);
 
       // Create and process payout
-      const payout = await payoutsService.create({
-        userId: user.id,
+      const payout = await payoutsService.createPayout({
+        stellarAddress,
         amount: quest.rewardAmount,
-        currency: 'XLM',
-        reason: 'Event propagation test',
-        status: 'pending' as const,
+        asset: 'XLM',
+        questId: quest.id,
+        transactionHash: 'tx-hash-events',
       });
 
-      await payoutsService.updateStatus(payout.id, 'approved');
+      const ds = module.get(DataSource);
+      await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
+        payout.id,
+      ]);
+      await payoutsService.processPayout(payout.id);
 
       // Verify the complete flow worked without errors
       // In a real application, event listeners would handle notifications, analytics, etc.
@@ -319,50 +373,58 @@ describe('Full Application Integration', () => {
   describe('Data Consistency Across Modules', () => {
     it('should maintain referential integrity across all modules', async () => {
       // Create user
-      const user = await usersService.create({
-        stellarAddress: 'GBCONSISTENCY123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GACONSISTENCY',
       });
 
       // Create quest
-      const quest = await questsService.create({
-        title: 'Consistency Quest',
-        description: 'Test data consistency',
-        rewardAmount: 10,
-        maxParticipants: 1,
-        requirements: 'Maintain consistency',
-        category: 'consistency',
-        difficulty: 'easy' as const,
-        status: 'active' as const,
-      });
+      const quest = await questsService.create(
+        {
+          title: 'Consistency Quest',
+          description: 'Test data consistency',
+          rewardAmount: 10,
+          maxCompletions: 1,
+          status: 'ACTIVE',
+          contractTaskId: 'task-004',
+          rewardAsset: 'XLM',
+          verifierType: 'manual',
+          verifierConfig: {},
+          createdBy: user.stellarAddress,
+        },
+        user.stellarAddress,
+      );
 
       // Create submission linking user and quest
-      const submission = await submissionsService.create({
-        questId: quest.id,
-        userId: user.id,
-        content: 'Consistency test',
-        proofOfWork: 'consistency_proof',
-      });
+      const submission = await submissionsService.createSubmission(
+        quest.id,
+        {
+          fileName: 'consistency_proof',
+          fileContent: 'Consistency test',
+        },
+        user.id,
+      );
 
       // Create payout linking to user
-      const payout = await payoutsService.create({
-        userId: user.id,
+      const payout = await payoutsService.createPayout({
+        stellarAddress: user.stellarAddress,
         amount: quest.rewardAmount,
-        currency: 'XLM',
-        reason: 'Consistency payout',
-        status: 'pending' as const,
+        asset: 'XLM',
+        questId: quest.id,
+        transactionHash: 'tx-hash-consistency',
       });
 
       // Verify all relationships are maintained
       expect(submission.userId).toBe(user.id);
       expect(submission.questId).toBe(quest.id);
-      expect(payout.userId).toBe(user.id);
+      expect(payout.stellarAddress).toBe(user.stellarAddress);
 
       // Verify we can query across relationships
-      const foundSubmission = await submissionsService.findById(submission.id);
+      const foundSubmission = await submissionsService.findOne(submission.id);
       expect(foundSubmission.userId).toBe(user.id);
 
-      const foundPayout = await payoutsService.findById(payout.id);
-      expect(foundPayout.userId).toBe(user.id);
+      const foundPayout = await payoutsService.getPayoutById(payout.id);
+      expect(foundPayout.stellarAddress).toBe(user.stellarAddress);
     });
   });
 });

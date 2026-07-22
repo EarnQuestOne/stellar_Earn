@@ -7,6 +7,12 @@ import {
 } from 'typeorm';
 
 @Entity('event_store')
+@Index('IDX_EVENT_STORE_SOURCE_ID', ['sourceId'], { unique: true })
+@Index('IDX_EVENT_STORE_SOURCE_CONTRACT_LEDGER', [
+  'source',
+  'contractId',
+  'ledger',
+])
 export class EventStore {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -14,6 +20,22 @@ export class EventStore {
   @Column()
   @Index()
   eventName: string;
+
+  @Column({ default: 'application' })
+  @Index()
+  source: string;
+
+  @Column({ nullable: true, type: 'varchar', length: 128 })
+  sourceId: string | null;
+
+  @Column({ nullable: true, type: 'varchar', length: 128 })
+  contractId: string | null;
+
+  @Column({ nullable: true, type: 'varchar', length: 128 })
+  transactionHash: string | null;
+
+  @Column({ nullable: true, type: 'int' })
+  ledger: number | null;
 
   @Column({ type: 'jsonb' })
   payload: any;

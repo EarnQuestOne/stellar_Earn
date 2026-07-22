@@ -4,7 +4,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as redisStore from 'cache-manager-redis-store';
 import { CacheService } from './cache.service';
 import { CacheAnalyticsService } from './cache-analytics.service';
-import { CacheAsideStrategy, WriteThroughStrategy, CacheWarmingStrategy } from './cache-strategies';
+import {
+  CacheAsideStrategy,
+  WriteThroughStrategy,
+  CacheWarmingStrategy,
+} from './cache-strategies';
 
 @Global()
 @Module({
@@ -12,7 +16,7 @@ import { CacheAsideStrategy, WriteThroughStrategy, CacheWarmingStrategy } from '
     NestCacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         store: redisStore,
         host: config.get('cache.host'),
         port: config.get('cache.port'),

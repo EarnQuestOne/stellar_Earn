@@ -41,7 +41,7 @@ fn set_time(env: &Env, ts: u64) {
     });
 }
 
-fn setup(env: &Env) -> (EarnQuestContractClient, Address) {
+fn setup(env: &Env) -> (EarnQuestContractClient<'_>, Address) {
     let cid = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &cid);
     let admin = Address::generate(env);

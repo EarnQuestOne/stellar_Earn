@@ -66,7 +66,9 @@ export class EventStoreService {
   }
 
   async markAsFailed(eventId: string, error: string): Promise<void> {
-    const event = await this.eventStoreRepository.findOne({ where: { id: eventId } });
+    const event = await this.eventStoreRepository.findOne({
+      where: { id: eventId },
+    });
     if (event) {
       const metadata = event.metadata || {};
       const retryCount = (metadata.retryCount as number) || 0;
@@ -79,7 +81,9 @@ export class EventStoreService {
           failedAt: new Date().toISOString(),
         },
       });
-      this.logger.warn(`Event marked as failed: ${eventId} (retryCount: ${retryCount + 1}), error: ${error}`);
+      this.logger.warn(
+        `Event marked as failed: ${eventId} (retryCount: ${retryCount + 1}), error: ${error}`,
+      );
     }
   }
 
@@ -89,8 +93,8 @@ export class EventStoreService {
       order: { timestamp: 'DESC' },
     });
     return events
-      .filter(e => e.metadata?.failed === true)
-      .map(e => ({
+      .filter((e) => e.metadata?.failed === true)
+      .map((e) => ({
         id: e.id,
         type: e.eventName,
         payload: e.payload,

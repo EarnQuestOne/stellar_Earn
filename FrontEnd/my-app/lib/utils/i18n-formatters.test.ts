@@ -67,7 +67,10 @@ describe('formatDate', () => {
   describe('style: short', () => {
     it('formats correctly for en-US', () => {
       // Intl may produce "05/30/2026" or similar — test structure not exact chars
-      const result = formatDate(FIXED_DATE, { style: 'short', locale: 'en-US' });
+      const result = formatDate(FIXED_DATE, {
+        style: 'short',
+        locale: 'en-US',
+      });
       expect(result).toMatch(/\d/); // at minimum contains digits
     });
 
@@ -81,13 +84,19 @@ describe('formatDate', () => {
 
   describe('style: medium', () => {
     it('contains the month name for en-US', () => {
-      const result = formatDate(FIXED_DATE, { style: 'medium', locale: 'en-US' });
+      const result = formatDate(FIXED_DATE, {
+        style: 'medium',
+        locale: 'en-US',
+      });
       expect(result).toContain('May');
       expect(result).toContain('2026');
     });
 
     it('contains the month name for fr-FR', () => {
-      const result = formatDate(FIXED_DATE, { style: 'medium', locale: 'fr-FR' });
+      const result = formatDate(FIXED_DATE, {
+        style: 'medium',
+        locale: 'fr-FR',
+      });
       expect(result).toContain('2026');
     });
   });
@@ -135,26 +144,38 @@ describe('formatDate', () => {
     });
 
     it('returns "now" or "this second" for the current instant', () => {
-      const result = formatDate(FIXED_DATE, { style: 'relative', locale: 'en-US' });
+      const result = formatDate(FIXED_DATE, {
+        style: 'relative',
+        locale: 'en-US',
+      });
       // Intl.RelativeTimeFormat numeric:'auto' returns "now" for 0 seconds
       expect(result).toBeTruthy();
     });
 
     it('returns a past relative string for yesterday', () => {
       const yesterday = new Date(FIXED_MS - 86_400_000);
-      const result = formatDate(yesterday, { style: 'relative', locale: 'en-US' });
+      const result = formatDate(yesterday, {
+        style: 'relative',
+        locale: 'en-US',
+      });
       expect(result).toMatch(/yesterday|1 day ago/i);
     });
 
     it('returns a future relative string for tomorrow', () => {
       const tomorrow = new Date(FIXED_MS + 86_400_000);
-      const result = formatDate(tomorrow, { style: 'relative', locale: 'en-US' });
+      const result = formatDate(tomorrow, {
+        style: 'relative',
+        locale: 'en-US',
+      });
       expect(result).toMatch(/tomorrow|in 1 day/i);
     });
 
     it('uses weeks for 14 days away', () => {
       const twoWeeks = new Date(FIXED_MS + 14 * 86_400_000);
-      const result = formatDate(twoWeeks, { style: 'relative', locale: 'en-US' });
+      const result = formatDate(twoWeeks, {
+        style: 'relative',
+        locale: 'en-US',
+      });
       expect(result).toMatch(/week/i);
     });
   });
@@ -216,7 +237,9 @@ describe('formatDeadline', () => {
 describe('formatReward', () => {
   describe('type: points', () => {
     it('formats 1200 as "1,200 pts" for en-US', () => {
-      expect(formatReward(1200, { type: 'points', locale: 'en-US' })).toBe('1,200 pts');
+      expect(formatReward(1200, { type: 'points', locale: 'en-US' })).toBe(
+        '1,200 pts'
+      );
     });
 
     it('formats 1 as "1 pt" (singular) for en-US', () => {
@@ -224,7 +247,9 @@ describe('formatReward', () => {
     });
 
     it('formats 0 as "0 pts" (plural) for en-US', () => {
-      expect(formatReward(0, { type: 'points', locale: 'en-US' })).toBe('0 pts');
+      expect(formatReward(0, { type: 'points', locale: 'en-US' })).toBe(
+        '0 pts'
+      );
     });
 
     it('respects custom label', () => {
@@ -245,12 +270,21 @@ describe('formatReward', () => {
 
   describe('type: currency', () => {
     it('formats USD correctly for en-US', () => {
-      expect(formatReward(5.5, { type: 'currency', currency: 'USD', locale: 'en-US' }))
-        .toBe('$5.50');
+      expect(
+        formatReward(5.5, {
+          type: 'currency',
+          currency: 'USD',
+          locale: 'en-US',
+        })
+      ).toBe('$5.50');
     });
 
     it('formats EUR correctly for de-DE', () => {
-      const result = formatReward(5.5, { type: 'currency', currency: 'EUR', locale: 'de-DE' });
+      const result = formatReward(5.5, {
+        type: 'currency',
+        currency: 'EUR',
+        locale: 'de-DE',
+      });
       expect(result).toContain('5,50');
       expect(result).toContain('€');
     });
@@ -356,14 +390,20 @@ describe('formatReward', () => {
 
 describe('formatRewardRange', () => {
   it('formats a points range correctly', () => {
-    const result = formatRewardRange(100, 500, { type: 'points', locale: 'en-US' });
+    const result = formatRewardRange(100, 500, {
+      type: 'points',
+      locale: 'en-US',
+    });
     expect(result).toMatch(/100/);
     expect(result).toMatch(/500 pts/);
     expect(result).toContain('–');
   });
 
   it('formats equal min and max', () => {
-    const result = formatRewardRange(200, 200, { type: 'points', locale: 'en-US' });
+    const result = formatRewardRange(200, 200, {
+      type: 'points',
+      locale: 'en-US',
+    });
     expect(result).toContain('200');
   });
 
@@ -398,7 +438,10 @@ describe('formatRewardRange', () => {
 
 describe('formatCompactReward', () => {
   it('formats 1,200,000 points as "1.2M pts" for en-US', () => {
-    const result = formatCompactReward(1_200_000, { type: 'points', locale: 'en-US' });
+    const result = formatCompactReward(1_200_000, {
+      type: 'points',
+      locale: 'en-US',
+    });
     expect(result).toMatch(/1\.2M pts|1,2M pts/);
   });
 
@@ -412,7 +455,10 @@ describe('formatCompactReward', () => {
   });
 
   it('formats 0.5 as a compact percentage', () => {
-    const result = formatCompactReward(0.5, { type: 'percentage', locale: 'en-US' });
+    const result = formatCompactReward(0.5, {
+      type: 'percentage',
+      locale: 'en-US',
+    });
     expect(result).toContain('%');
   });
 

@@ -9,7 +9,6 @@ import {
   ForbiddenException,
   NotFoundException,
   ConflictException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppLoggerService } from '../logger/logger.service';
@@ -21,7 +20,7 @@ interface RequestWithCorrelationId extends Request {
   user?: { id?: string; email?: string; role?: string };
 }
 
-type ErrorCategory = 
+type ErrorCategory =
   | 'validation'
   | 'authentication'
   | 'authorization'
@@ -56,7 +55,11 @@ export class ErrorLoggerFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     const errorDetails = this.categorizeError(exception);
-    const errorContext = this.buildErrorContext(request, exception, errorDetails);
+    const errorContext = this.buildErrorContext(
+      request,
+      exception,
+      errorDetails,
+    );
     const stack = exception instanceof Error ? exception.stack : undefined;
 
     this.logError(exception, errorContext, errorDetails);
@@ -66,7 +69,7 @@ export class ErrorLoggerFilter implements ExceptionFilter {
       request.correlationId,
       stack,
     );
-    
+
     response.status(errorDetails.statusCode).json(responseBody);
   }
 
@@ -150,9 +153,11 @@ export class ErrorLoggerFilter implements ExceptionFilter {
     }
 
     if (exception instanceof Error) {
-      if (exception.message.includes('ECONNREFUSED') ||
-          exception.message.includes('ETIMEDOUT') ||
-          exception.message.includes('ENOTFOUND')) {
+      if (
+        exception.message.includes('ECONNREFUSED') ||
+        exception.message.includes('ETIMEDOUT') ||
+        exception.message.includes('ENOTFOUND')
+      ) {
         return {
           category: 'external_service',
           statusCode: HttpStatus.SERVICE_UNAVAILABLE,
@@ -204,7 +209,7 @@ export class ErrorLoggerFilter implements ExceptionFilter {
 
     if (exception instanceof Error) {
       context.errorMessage = exception.message;
-      
+
       if (exception instanceof HttpException) {
         const response = exception.getResponse();
         if (typeof response === 'object') {
@@ -263,8 +268,8 @@ export class ErrorLoggerFilter implements ExceptionFilter {
     const response: Record<string, unknown> = {
       statusCode: errorDetails.statusCode,
       error: this.getErrorTitle(errorDetails.statusCode),
-      message: errorDetails.isOperational 
-        ? errorDetails.message 
+      message: errorDetails.isOperational
+        ? errorDetails.message
         : 'An unexpected error occurred',
       timestamp: new Date().toISOString(),
     };

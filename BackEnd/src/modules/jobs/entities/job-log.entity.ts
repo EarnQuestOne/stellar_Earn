@@ -154,7 +154,7 @@ export class JobLogRetry {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'varchar' })
   jobLogId: string;
 
   @ManyToOne('JobLog', 'retries', { onDelete: 'CASCADE' })

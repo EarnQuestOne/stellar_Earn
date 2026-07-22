@@ -5,7 +5,6 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '#src/app.module';
 import { Keypair } from 'stellar-sdk';
@@ -14,8 +13,6 @@ import {
   sleep,
   createE2ETestContext,
   retryWithBackoff,
-  waitFor,
-  DEFAULT_RETRY_CONFIG,
 } from '../e2e-helpers';
 
 describe('Authentication E2E - Fixed (e2e)', () => {
@@ -23,7 +20,6 @@ describe('Authentication E2E - Fixed (e2e)', () => {
   let ctx: any; // E2E test context
   let testKeypair: Keypair;
   let stellarAddress: string;
-  let accessToken: string;
   let refreshToken: string;
 
   beforeAll(async () => {
@@ -138,12 +134,11 @@ describe('Authentication E2E - Fixed (e2e)', () => {
 
     beforeEach(async () => {
       // Get a fresh challenge with retry
-      const response = await retryWithBackoff(
-        () =>
-          ctx
-            .request('post', '/auth/challenge')
-            .send({ stellarAddress })
-            .expect(200),
+      const response = await retryWithBackoff(() =>
+        ctx
+          .request('post', '/auth/challenge')
+          .send({ stellarAddress })
+          .expect(200),
       );
 
       challenge = response.body.challenge;
@@ -182,7 +177,6 @@ describe('Authentication E2E - Fixed (e2e)', () => {
       expect(response.body.accessToken.length).toBeGreaterThan(0);
 
       // Save tokens for later tests
-      accessToken = response.body.accessToken;
       refreshToken = response.body.refreshToken;
     });
 
@@ -257,24 +251,22 @@ describe('Authentication E2E - Fixed (e2e)', () => {
 
     beforeEach(async () => {
       // Get valid tokens first
-      const challengeRes = await retryWithBackoff(
-        () =>
-          ctx
-            .request('post', '/auth/challenge')
-            .send({ stellarAddress })
-            .expect(200),
+      const challengeRes = await retryWithBackoff(() =>
+        ctx
+          .request('post', '/auth/challenge')
+          .send({ stellarAddress })
+          .expect(200),
       );
 
       const challenge = challengeRes.body.challenge;
       const messageBuffer = Buffer.from(challenge, 'utf8');
       const signature = testKeypair.sign(messageBuffer).toString('base64');
 
-      const loginRes = await retryWithBackoff(
-        () =>
-          ctx
-            .request('post', '/auth/login')
-            .send({ stellarAddress, signature, challenge })
-            .expect(200),
+      const loginRes = await retryWithBackoff(() =>
+        ctx
+          .request('post', '/auth/login')
+          .send({ stellarAddress, signature, challenge })
+          .expect(200),
       );
 
       validRefreshToken = loginRes.body.refreshToken;
@@ -309,12 +301,11 @@ describe('Authentication E2E - Fixed (e2e)', () => {
 
     it('should invalidate old refresh token after refresh', async () => {
       // Get new tokens
-      const refreshRes = await retryWithBackoff(
-        () =>
-          ctx
-            .request('post', '/auth/refresh')
-            .send({ refreshToken: validRefreshToken })
-            .expect(200),
+      const refreshRes = await retryWithBackoff(() =>
+        ctx
+          .request('post', '/auth/refresh')
+          .send({ refreshToken: validRefreshToken })
+          .expect(200),
       );
 
       const newRefreshToken = refreshRes.body.refreshToken;
@@ -346,7 +337,9 @@ describe('Authentication E2E - Fixed (e2e)', () => {
 
   describe('Concurrent Auth Operations', () => {
     it('should handle concurrent challenge requests', async () => {
-      const addresses = Array.from({ length: 5 }, () => Keypair.random().publicKey());
+      const addresses = Array.from({ length: 5 }, () =>
+        Keypair.random().publicKey(),
+      );
 
       const results = await Promise.all(
         addresses.map((addr) =>

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Server, Socket } from 'socket.io';
 import { WsSubscription, WsChannel } from './entities/ws-subscription.entity';
 import { WsMessage } from './entities/ws-message.entity';
@@ -140,9 +140,7 @@ export class WebsocketService {
       await this.subscriptionRepo.save(sub);
     }
 
-    this.logger.debug(
-      `Client ${socketId} subscribed to ${roomName}`,
-    );
+    this.logger.debug(`Client ${socketId} subscribed to ${roomName}`);
 
     return { success: true, message: `Subscribed to ${channel}` };
   }
@@ -174,9 +172,7 @@ export class WebsocketService {
       await this.subscriptionRepo.save(existing);
     }
 
-    this.logger.debug(
-      `Client ${socketId} unsubscribed from ${roomName}`,
-    );
+    this.logger.debug(`Client ${socketId} unsubscribed from ${roomName}`);
 
     return { success: true, message: `Unsubscribed from ${channel}` };
   }
@@ -215,7 +211,13 @@ export class WebsocketService {
     channel?: WsChannel,
   ): Promise<void> {
     if (channel) {
-      await this.persistMessage(channel, event, payload, userId ?? undefined, false);
+      await this.persistMessage(
+        channel,
+        event,
+        payload,
+        userId ?? undefined,
+        false,
+      );
     }
 
     this.server?.to(`user:${userId}`).emit(event, {

@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import * as Sentry from '@sentry/node';
 
 @Catch()
@@ -16,7 +16,6 @@ export class SentryExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
-    const response = ctx.getResponse<Response>();
 
     const status =
       exception instanceof HttpException

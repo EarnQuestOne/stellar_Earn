@@ -1,5 +1,6 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ClaimRewards } from '@/components/rewards/ClaimRewards';
+import { RewardsList } from '@/components/rewards/RewardsList';
 import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 
 export default function RewardsPage() {
@@ -9,6 +10,11 @@ export default function RewardsPage() {
         <ComponentErrorBoundary componentName="ClaimRewards">
           <ClaimRewards />
         </ComponentErrorBoundary>
+        <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+          <ComponentErrorBoundary componentName="RewardsList">
+            <RewardsList />
+          </ComponentErrorBoundary>
+        </div>
       </div>
     </AppLayout>
   );

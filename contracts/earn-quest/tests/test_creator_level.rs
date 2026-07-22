@@ -38,14 +38,7 @@ fn complete_quest_and_award_xp(
     verifier: &Address,
     submitter: &Address,
 ) {
-    client.register_quest(
-        &quest_id,
-        creator,
-        token_contract,
-        &100,
-        verifier,
-        &100000,
-    );
+    client.register_quest(&quest_id, creator, token_contract, &100, verifier, &100000);
 
     let proof = BytesN::from_array(env, &[1u8; 32]);
     client.submit_proof(&quest_id, submitter, &proof);
@@ -116,7 +109,7 @@ fn test_low_level_user_cannot_create_quest_when_threshold_set() {
         &100000,
     );
     match result {
-        Err(Ok(Error::InsufficientCreatorLevel)) => {},
+        Err(Ok(Error::InsufficientCreatorLevel)) => {}
         _ => panic!("expected InsufficientCreatorLevel, got {:?}", result),
     }
 }
@@ -133,7 +126,15 @@ fn test_high_level_user_can_create_quest() {
 
     client.initialize(&admin);
 
-    level_up_user(&client, &env, &admin, &token_contract, &verifier, &creator, 2);
+    level_up_user(
+        &client,
+        &env,
+        &admin,
+        &token_contract,
+        &verifier,
+        &creator,
+        2,
+    );
 
     client.set_min_creator_level(&admin, &2);
 
@@ -208,7 +209,7 @@ fn test_whitelist_removal_reblocks_low_level_user() {
         &100000,
     );
     match result {
-        Err(Ok(Error::InsufficientCreatorLevel)) => {},
+        Err(Ok(Error::InsufficientCreatorLevel)) => {}
         _ => panic!("expected InsufficientCreatorLevel, got {:?}", result),
     }
 }
@@ -235,7 +236,7 @@ fn test_setting_level_to_zero_disables_check() {
         &100000,
     );
     match result {
-        Err(Ok(Error::InsufficientCreatorLevel)) => {},
+        Err(Ok(Error::InsufficientCreatorLevel)) => {}
         _ => panic!("expected InsufficientCreatorLevel, got {:?}", result),
     }
 
@@ -265,7 +266,7 @@ fn test_non_admin_cannot_set_min_creator_level() {
 
     let result = client.try_set_min_creator_level(&non_admin, &2);
     match result {
-        Err(Ok(Error::Unauthorized)) => {},
+        Err(Ok(Error::Unauthorized)) => {}
         _ => panic!("expected Unauthorized, got {:?}", result),
     }
 }
@@ -284,13 +285,13 @@ fn test_non_admin_cannot_manage_whitelist() {
 
     let result = client.try_add_creator_whitelist(&non_admin, &user);
     match result {
-        Err(Ok(Error::Unauthorized)) => {},
+        Err(Ok(Error::Unauthorized)) => {}
         _ => panic!("expected Unauthorized, got {:?}", result),
     }
 
     let result = client.try_remove_creator_whitelist(&non_admin, &user);
     match result {
-        Err(Ok(Error::Unauthorized)) => {},
+        Err(Ok(Error::Unauthorized)) => {}
         _ => panic!("expected Unauthorized, got {:?}", result),
     }
 }

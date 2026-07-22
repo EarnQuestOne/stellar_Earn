@@ -23,7 +23,8 @@ export enum SortOrder {
  */
 export class SearchUsersDto extends CursorPaginationDto {
   @ApiPropertyOptional({
-    description: 'Search term matched against username or Stellar address (case-insensitive)',
+    description:
+      'Search term matched against username or Stellar address (case-insensitive)',
     example: 'alice',
   })
   @IsOptional()

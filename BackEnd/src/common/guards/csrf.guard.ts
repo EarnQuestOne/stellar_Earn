@@ -69,7 +69,10 @@ export class CsrfGuard implements CanActivate {
     }
 
     const origin = request.get('origin');
-    if (origin && !this.isAllowedOrigin(origin, securityConfig.allowedOrigins)) {
+    if (
+      origin &&
+      !this.isAllowedOrigin(origin, securityConfig.allowedOrigins)
+    ) {
       this.logFailure(request, `Untrusted origin ${origin}`);
       throw new ForbiddenException('Untrusted request origin');
     }
@@ -82,9 +85,9 @@ export class CsrfGuard implements CanActivate {
 
     return Boolean(
       request.headers.cookie ||
-        request.get('origin') ||
-        request.get('referer') ||
-        (fetchSite && fetchSite !== 'same-origin' && fetchSite !== 'same-site'),
+      request.get('origin') ||
+      request.get('referer') ||
+      (fetchSite && fetchSite !== 'same-origin' && fetchSite !== 'same-site'),
     );
   }
 

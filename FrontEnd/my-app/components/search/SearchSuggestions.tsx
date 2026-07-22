@@ -26,7 +26,7 @@ export function SearchSuggestions({
             onClick={() => onSelect(suggestion)}
             className={`block w-full rounded px-2 py-1 text-left text-sm ${
               highlightedIndex === index
-                ? 'bg-[#089ec3]/10 text-[#089ec3] dark:bg-[#089ec3]/20'
+                ? 'bg-primary/10 text-primary dark:bg-primary/20'
                 : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
             }`}
           >

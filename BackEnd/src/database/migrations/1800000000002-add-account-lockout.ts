@@ -8,7 +8,7 @@ export class AddAccountLockout1800000000002 implements MigrationInterface {
       ALTER TABLE "users"
       ADD COLUMN "failedLoginAttempts" integer DEFAULT 0
     `);
-    
+
     await queryRunner.query(`
       ALTER TABLE "users"
       ADD COLUMN "lockedUntil" timestamp
@@ -20,7 +20,7 @@ export class AddAccountLockout1800000000002 implements MigrationInterface {
       ALTER TABLE "users"
       DROP COLUMN "lockedUntil"
     `);
-    
+
     await queryRunner.query(`
       ALTER TABLE "users"
       DROP COLUMN "failedLoginAttempts"

@@ -1,13 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException, InternalServerErrorException, UnauthorizedException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ErrorLoggerFilter } from '../error-logger.filter';
 import { AppLoggerService } from '../../logger/logger.service';
 import {
   assertNoStackLeakage,
   assertSafeErrorContract,
-  isOperationalError,
-  assertGenericMessage,
 } from './stack-trace-security.util';
 
 describe('ErrorLoggerFilter - Stack Trace Security', () => {
@@ -41,7 +45,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       originalUrl: '/api/test',
       method: 'GET',
       ip: '127.0.0.1',
-      user: { id: 'user-123', email: 'test@test.com' } as any,
+      user: { id: 'user-123', email: 'test@test.com' },
       correlationId: 'corr-123',
       body: {},
       query: {},
@@ -74,12 +78,12 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       // CRITICAL: No stack trace should be present
       const leakageResult = assertNoStackLeakage(responseBody);
       expect(leakageResult.isLeaking).toBe(false);
       expect(leakageResult.leakages.length).toBe(0);
-      
+
       // Response must be generic
       expect(responseBody.message).toBe('An unexpected error occurred');
       expect(responseBody.stack).toBeUndefined();
@@ -95,7 +99,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       // Should not expose Prisma error or email
       expect(responseBody.message).not.toContain('Prisma');
       expect(responseBody.message).not.toContain('Unique constraint');
@@ -114,7 +118,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const bodyStr = JSON.stringify(responseBody);
-      
+
       // No file paths
       expect(bodyStr).not.toMatch(/\.ts:\d+:\d+/);
       expect(bodyStr).not.toContain('/app/src');
@@ -131,7 +135,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const bodyStr = JSON.stringify(responseBody);
-      
+
       expect(bodyStr).not.toContain('node_modules');
       expect(bodyStr).not.toContain('typeorm');
     });
@@ -143,7 +147,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       // RequestId must be present for log correlation
       expect(responseBody.requestId).toBe('corr-123');
     });
@@ -151,12 +155,13 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
     it('Development: 500 error SHOULD contain stack trace', () => {
       process.env.NODE_ENV = 'development';
       const error = new Error('Test error');
-      error.stack = 'Error: Test error\n  at Object.<anonymous> (/app/src/test.ts:10:15)';
+      error.stack =
+        'Error: Test error\n  at Object.<anonymous> (/app/src/test.ts:10:15)';
 
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       // In development, stack IS exposed
       expect(responseBody.stack).toBeDefined();
       expect(responseBody.debug).toBeDefined();
@@ -166,15 +171,17 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
   describe('SECURITY: Stack Trace Leakage - Database Errors', () => {
     it('Production: Database error should return generic 500', () => {
       process.env.NODE_ENV = 'production';
-      
+
       // Simulate a database error
-      const error = new Error('Database error: relation "users" does not exist');
+      const error = new Error(
+        'Database error: relation "users" does not exist',
+      );
 
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const leakageResult = assertNoStackLeakage(responseBody);
-      
+
       expect(responseBody.statusCode).toBe(500);
       expect(leakageResult.isLeaking).toBe(false);
       expect(responseBody.message).toBe('An unexpected error occurred');
@@ -190,7 +197,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const bodyStr = JSON.stringify(responseBody);
-      
+
       // No constraint names, column names, or values exposed
       expect(bodyStr).not.toContain('idx_users_email');
       expect(bodyStr).not.toContain('user@test.com');
@@ -207,7 +214,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const bodyStr = JSON.stringify(responseBody);
-      
+
       expect(bodyStr).not.toContain('foreign key');
       expect(bodyStr).not.toContain('fk_submissions_quest_id');
     });
@@ -227,11 +234,11 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       // Validation errors are safe and user-facing
       expect(responseBody.statusCode).toBe(400);
       expect(responseBody.message).toBe('Validation failed');
-      
+
       // Field errors should be accessible via logger call, but not in response
       // (depends on app-exception.filter handling)
     });
@@ -239,13 +246,14 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
     it('Production: BadRequest should NOT contain stack trace', () => {
       process.env.NODE_ENV = 'production';
       const error = new BadRequestException('Invalid input');
-      error.stack = 'Error: Invalid input\n  at validate (/app/src/validate.ts:15:5)';
+      error.stack =
+        'Error: Invalid input\n  at validate (/app/src/validate.ts:15:5)';
 
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const leakageResult = assertNoStackLeakage(responseBody);
-      
+
       expect(leakageResult.isLeaking).toBe(false);
     });
   });
@@ -258,7 +266,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       expect(responseBody.statusCode).toBe(404);
       expect(responseBody.message).toBe('Quest not found');
     });
@@ -270,7 +278,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       expect(responseBody.statusCode).toBe(401);
       expect(responseBody.message).toBe('Authentication required');
     });
@@ -282,7 +290,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       expect(responseBody.statusCode).toBe(403);
       expect(responseBody.message).toBe('Access denied');
     });
@@ -294,7 +302,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       expect(responseBody.statusCode).toBe(409);
       expect(responseBody.message).toBe('Quest already exists');
     });
@@ -309,7 +317,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
       const contractCheck = assertSafeErrorContract(responseBody);
-      
+
       expect(contractCheck.isValid).toBe(true);
       expect(contractCheck.errors.length).toBe(0);
     });
@@ -321,7 +329,7 @@ describe('ErrorLoggerFilter - Stack Trace Security', () => {
       filter.catch(error, mockArgumentsHost);
 
       const responseBody = (mockResponse.json as jest.Mock).mock.calls[0][0];
-      
+
       expect(responseBody).toHaveProperty('statusCode');
       expect(responseBody).toHaveProperty('error');
       expect(responseBody).toHaveProperty('message');

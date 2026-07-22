@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * no `tokenHash` value, so the new code couldn't read them anyway and they
  * are a security liability.
  */
-export class AddRefreshTokenRotation1745524800000
-  implements MigrationInterface
-{
+export class AddRefreshTokenRotation1745524800000 implements MigrationInterface {
   name = 'AddRefreshTokenRotation1745524800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

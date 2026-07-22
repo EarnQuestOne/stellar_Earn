@@ -63,7 +63,13 @@ export default new DataSource({
     ssl: { rejectUnauthorized: false, require: true },
     max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
     min: parseInt(process.env.DB_POOL_MIN ?? '2', 10),
-    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000', 10),
-    idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
+    connectionTimeoutMillis: parseInt(
+      process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000',
+      10,
+    ),
+    idleTimeoutMillis: parseInt(
+      process.env.DB_POOL_IDLE_TIMEOUT ?? '30000',
+      10,
+    ),
   },
 });

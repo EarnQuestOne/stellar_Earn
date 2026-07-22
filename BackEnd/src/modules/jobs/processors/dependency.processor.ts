@@ -3,9 +3,13 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { DependencyFreshnessCheckPayload } from '../job.types';
 import { DependencyFreshnessService } from '../../../common/services/dependency-freshness.service';
+import { QUEUES } from '../jobs.constants';
+import { resolveWorkerConcurrency } from '../utils/worker-concurrency.util';
 
 @Injectable()
-@Processor('maintenance')
+@Processor(QUEUES.MAINTENANCE, {
+  concurrency: resolveWorkerConcurrency(QUEUES.MAINTENANCE),
+})
 export class DependencyProcessor extends WorkerHost {
   private readonly logger = new Logger(DependencyProcessor.name);
 

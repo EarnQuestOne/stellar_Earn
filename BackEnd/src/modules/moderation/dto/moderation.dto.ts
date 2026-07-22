@@ -40,7 +40,9 @@ export class CreateAppealDto {
   @IsUUID()
   moderationItemId: string;
 
-  @ApiProperty({ description: 'Why this moderation decision should be reviewed' })
+  @ApiProperty({
+    description: 'Why this moderation decision should be reviewed',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(8000)

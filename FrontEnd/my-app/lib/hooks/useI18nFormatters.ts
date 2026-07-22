@@ -1,11 +1,11 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { 
-  formatDate, 
-  formatReward, 
-  type DateFormatOptions, 
-  type RewardFormatOptions 
+import {
+  formatDate,
+  formatReward,
+  type DateFormatOptions,
+  type RewardFormatOptions,
 } from '@/lib/utils/i18n-formatters';
 
 /**
@@ -14,7 +14,7 @@ import {
  */
 export function useI18nFormatters() {
   const currentLocale = useLocale();
-  
+
   /**
    * Format a date with the current locale
    */
@@ -24,7 +24,7 @@ export function useI18nFormatters() {
   ) => {
     return formatDate(value, {
       ...options,
-      locale: currentLocale
+      locale: currentLocale,
     });
   };
 
@@ -37,13 +37,13 @@ export function useI18nFormatters() {
   ) => {
     return formatReward(value, {
       ...options,
-      locale: currentLocale
+      locale: currentLocale,
     });
   };
 
   return {
     formatDate: formatDateWithLocale,
     formatReward: formatRewardWithLocale,
-    currentLocale
+    currentLocale,
   };
 }

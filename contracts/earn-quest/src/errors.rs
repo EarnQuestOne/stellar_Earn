@@ -159,4 +159,11 @@ pub enum Error {
     ClawbackNotFound = 150,
     /// This SuperAdmin has already signed the pending clawback.
     ClawbackAlreadySigned = 151,
+
+    /// Re-pause attempted before the cooldown period elapsed since last unpause.
+    PauseCooldown = 152,
+
+    // Token Errors (SEP-41)
+    /// Spender's allowance is lower than the requested transfer/burn amount.
+    InsufficientAllowance = 153,
 }

@@ -52,7 +52,10 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
           label="Total Earned"
           value={stats.totalEarnings.toLocaleString()}
         />
-        <StatCard label="Current Streak" value={`${stats.currentStreak} days`} />
+        <StatCard
+          label="Current Streak"
+          value={`${stats.currentStreak} days`}
+        />
         <StatCard label="Followers" value={stats.followersCount} />
         <StatCard label="Following" value={stats.followingCount} />
         {joinLabel && (

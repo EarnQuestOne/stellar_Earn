@@ -1,8 +1,21 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FeatureFlag, RolloutStrategy, FlagStatus } from './entities/feature-flag.entity';
-import { FeatureFlagAuditLog, AuditAction } from './entities/feature-flag-audit.entity';
+import {
+  FeatureFlag,
+  RolloutStrategy,
+  FlagStatus,
+} from './entities/feature-flag.entity';
+import {
+  FeatureFlagAuditLog,
+  AuditAction,
+} from './entities/feature-flag-audit.entity';
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
@@ -22,7 +35,7 @@ export class FeatureFlagsService {
 
   /**
    * Check if a feature flag is enabled for a specific user
-   * 
+   *
    * @param flagKey - The key of the feature flag
    * @param userId - Optional user ID for user-based targeting
    * @param userContext - Optional user context for segment-based targeting
@@ -31,7 +44,12 @@ export class FeatureFlagsService {
   async isEnabled(
     flagKey: string,
     userId?: string,
-    userContext?: { role?: string; level?: number; xp?: number; custom?: Record<string, any> },
+    userContext?: {
+      role?: string;
+      level?: number;
+      xp?: number;
+      custom?: Record<string, any>;
+    },
   ): Promise<boolean> {
     try {
       // Check cache first
@@ -75,7 +93,10 @@ export class FeatureFlagsService {
           break;
 
         case RolloutStrategy.PERCENTAGE:
-          result = this.evaluatePercentageRollout(flag.rolloutPercentage, userId);
+          result = this.evaluatePercentageRollout(
+            flag.rolloutPercentage,
+            userId,
+          );
           break;
 
         case RolloutStrategy.USER_WHITELIST:
@@ -106,7 +127,10 @@ export class FeatureFlagsService {
    * Evaluate percentage-based rollout
    * Uses consistent hashing based on user ID to ensure consistent results
    */
-  private evaluatePercentageRollout(percentage: number, userId?: string): boolean {
+  private evaluatePercentageRollout(
+    percentage: number,
+    userId?: string,
+  ): boolean {
     if (!userId) {
       return Math.random() * 100 < percentage;
     }
@@ -122,7 +146,12 @@ export class FeatureFlagsService {
    */
   private evaluateSegmentRules(
     rules: any,
-    userContext?: { role?: string; level?: number; xp?: number; custom?: Record<string, any> },
+    userContext?: {
+      role?: string;
+      level?: number;
+      xp?: number;
+      custom?: Record<string, any>;
+    },
   ): boolean {
     if (!rules || !userContext) {
       return true;
@@ -137,10 +166,16 @@ export class FeatureFlagsService {
 
     // Check level
     if (rules.level && userContext.level !== undefined) {
-      if (rules.level.min !== undefined && userContext.level < rules.level.min) {
+      if (
+        rules.level.min !== undefined &&
+        userContext.level < rules.level.min
+      ) {
         return false;
       }
-      if (rules.level.max !== undefined && userContext.level > rules.level.max) {
+      if (
+        rules.level.max !== undefined &&
+        userContext.level > rules.level.max
+      ) {
         return false;
       }
     }
@@ -195,7 +230,9 @@ export class FeatureFlagsService {
     });
 
     if (existing) {
-      throw new BadRequestException(`Feature flag with key "${createDto.key}" already exists`);
+      throw new BadRequestException(
+        `Feature flag with key "${createDto.key}" already exists`,
+      );
     }
 
     const flag = this.featureFlagRepository.create({
@@ -252,11 +289,16 @@ export class FeatureFlagsService {
     } else if (previousValue.rolloutPercentage !== saved.rolloutPercentage) {
       action = AuditAction.ROLLOUT_CHANGED;
     } else if (
-      JSON.stringify(previousValue.whitelistedUsers) !== JSON.stringify(saved.whitelistedUsers) ||
-      JSON.stringify(previousValue.blacklistedUsers) !== JSON.stringify(saved.blacklistedUsers)
+      JSON.stringify(previousValue.whitelistedUsers) !==
+        JSON.stringify(saved.whitelistedUsers) ||
+      JSON.stringify(previousValue.blacklistedUsers) !==
+        JSON.stringify(saved.blacklistedUsers)
     ) {
       action = AuditAction.USER_LIST_CHANGED;
-    } else if (JSON.stringify(previousValue.segmentRules) !== JSON.stringify(saved.segmentRules)) {
+    } else if (
+      JSON.stringify(previousValue.segmentRules) !==
+      JSON.stringify(saved.segmentRules)
+    ) {
       action = AuditAction.SEGMENT_CHANGED;
     }
 
@@ -282,7 +324,12 @@ export class FeatureFlagsService {
   /**
    * Delete a feature flag
    */
-  async delete(id: string, performedBy: string, ipAddress?: string, reason?: string): Promise<void> {
+  async delete(
+    id: string,
+    performedBy: string,
+    ipAddress?: string,
+    reason?: string,
+  ): Promise<void> {
     const flag = await this.featureFlagRepository.findOne({ where: { id } });
 
     if (!flag) {
@@ -357,7 +404,6 @@ export class FeatureFlagsService {
    * Invalidate cache for a specific flag
    */
   private async invalidateFlagCache(flagKey: string): Promise<void> {
-    const keys = [`ff:${flagKey}`, `ff:${flagKey}:*`];
     // Note: In a real implementation, you might need to use pattern-based cache invalidation
     // This is a simplified version
     await this.cacheManager.del(`ff:${flagKey}`);

@@ -10,10 +10,10 @@ import {
 } from 'typeorm';
 
 export enum QuestStatus {
-  ACTIVE = 'Active',
-  PAUSED = 'Paused',
-  COMPLETED = 'Completed',
-  EXPIRED = 'Expired',
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  EXPIRED = 'EXPIRED',
 }
 
 /**
@@ -25,7 +25,7 @@ export class Quest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
   contractQuestId: string;
 
@@ -44,17 +44,13 @@ export class Quest {
   @Column({ type: 'bigint' })
   rewardAmount: string;
 
-  @Column()
+  @Column({ nullable: true })
   verifierAddress: string;
 
   @Column({ type: 'timestamp', nullable: true })
   deadline: Date;
 
-  @Column({
-    type: 'enum',
-    enum: QuestStatus,
-    default: QuestStatus.ACTIVE,
-  })
+  @Column({ default: 'ACTIVE' })
   @Index()
   status: QuestStatus;
 

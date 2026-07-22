@@ -16,17 +16,17 @@ export class DistributedLockService {
    * Try to acquire a lock for `key` that expires after `ttlMs` milliseconds.
    * Returns true when the lock was successfully acquired, false if already held.
    */
-  async acquireLock(key: string, ttlMs: number): Promise<boolean> {
+  acquireLock(key: string, ttlMs: number): Promise<boolean> {
     const now = Date.now();
     const existing = this.locks.get(key);
 
     if (existing && existing.expiresAt > now) {
       // Lock is still held by another holder.
-      return false;
+      return Promise.resolve(false);
     }
 
     this.locks.set(key, { expiresAt: now + ttlMs });
-    return true;
+    return Promise.resolve(true);
   }
 
   /**

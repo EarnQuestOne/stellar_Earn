@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quest, QuestStatus } from '../entities/quest.entity';
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
-import { BaseAnalyticsAggregator, AggregationOptions, AggregationResult } from './base-aggregator';
+import {
+  BaseAnalyticsAggregator,
+  AggregationOptions,
+  AggregationResult,
+} from './base-aggregator';
 import { SnapshotType } from '../entities/analytics-snapshot.entity';
 
 export interface QuestMetrics {
@@ -38,7 +42,9 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
     );
   }
 
-  async aggregateQuestMetrics(options: AggregationOptions): Promise<AggregationResult[]> {
+  async aggregateQuestMetrics(
+    options: AggregationOptions,
+  ): Promise<AggregationResult[]> {
     const dateRanges = this.generateDateRanges(
       options.startDate,
       options.endDate,
@@ -120,7 +126,9 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate quest metrics for a time period
    */
-  private async calculateQuestMetrics(options: AggregationOptions): Promise<QuestMetrics> {
+  private async calculateQuestMetrics(
+    options: AggregationOptions,
+  ): Promise<QuestMetrics> {
     const conditions = this.getCommonConditions(options);
 
     // Get quest statistics
@@ -135,22 +143,26 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
     ]);
 
     // Get submission statistics
-    const [totalSubmissions, approvedSubmissions, rejectedSubmissions] = await Promise.all([
-      this.submissionRepository.count({ where: conditions }),
-      this.submissionRepository.count({
-        where: { ...conditions, status: SubmissionStatus.APPROVED },
-      }),
-      this.submissionRepository.count({
-        where: { ...conditions, status: SubmissionStatus.REJECTED },
-      }),
-    ]);
+    const [totalSubmissions, approvedSubmissions, rejectedSubmissions] =
+      await Promise.all([
+        this.submissionRepository.count({ where: conditions }),
+        this.submissionRepository.count({
+          where: { ...conditions, status: SubmissionStatus.APPROVED },
+        }),
+        this.submissionRepository.count({
+          where: { ...conditions, status: SubmissionStatus.REJECTED },
+        }),
+      ]);
 
     // Calculate rates
-    const completionRate = totalQuests > 0 ? (completedQuests / totalQuests) * 100 : 0;
-    const approvalRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
+    const completionRate =
+      totalQuests > 0 ? (completedQuests / totalQuests) * 100 : 0;
+    const approvalRate =
+      totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
     // Calculate average completion time
-    const averageCompletionTime = await this.calculateAverageCompletionTime(options);
+    const averageCompletionTime =
+      await this.calculateAverageCompletionTime(options);
 
     // Calculate reward metrics
     const rewardMetrics = await this.calculateRewardMetrics(options);
@@ -191,21 +203,24 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
     }
 
     // Get submission statistics for this quest
-    const [totalSubmissions, approvedSubmissions, rejectedSubmissions] = await Promise.all([
-      this.submissionRepository.count({ where: conditions }),
-      this.submissionRepository.count({
-        where: { ...conditions, status: SubmissionStatus.APPROVED },
-      }),
-      this.submissionRepository.count({
-        where: { ...conditions, status: SubmissionStatus.REJECTED },
-      }),
-    ]);
+    const [totalSubmissions, approvedSubmissions, rejectedSubmissions] =
+      await Promise.all([
+        this.submissionRepository.count({ where: conditions }),
+        this.submissionRepository.count({
+          where: { ...conditions, status: SubmissionStatus.APPROVED },
+        }),
+        this.submissionRepository.count({
+          where: { ...conditions, status: SubmissionStatus.REJECTED },
+        }),
+      ]);
 
     // Calculate rates
-    const approvalRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
+    const approvalRate =
+      totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
     // Calculate average completion time for this quest
-    const averageCompletionTime = await this.calculateAverageCompletionTimeByQuest(questId, options);
+    const averageCompletionTime =
+      await this.calculateAverageCompletionTimeByQuest(questId, options);
 
     return {
       totalQuests: 1,
@@ -225,14 +240,15 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate average completion time across all quests
    */
-  private async calculateAverageCompletionTime(options: AggregationOptions): Promise<number> {
+  private async calculateAverageCompletionTime(
+    options: AggregationOptions,
+  ): Promise<number> {
     const submissions = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select([
-        'submission.submittedAt',
-        'submission.reviewedAt',
-      ])
-      .where('submission.status = :status', { status: SubmissionStatus.APPROVED })
+      .select(['submission.submittedAt', 'submission.reviewedAt'])
+      .where('submission.status = :status', {
+        status: SubmissionStatus.APPROVED,
+      })
       .andWhere('submission.submittedAt BETWEEN :start AND :end', {
         start: options.startDate,
         end: options.endDate,
@@ -261,12 +277,11 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
   ): Promise<number> {
     const submissions = await this.submissionRepository
       .createQueryBuilder('submission')
-      .select([
-        'submission.submittedAt',
-        'submission.reviewedAt',
-      ])
+      .select(['submission.submittedAt', 'submission.reviewedAt'])
       .where('submission.questId = :questId', { questId })
-      .andWhere('submission.status = :status', { status: SubmissionStatus.APPROVED })
+      .andWhere('submission.status = :status', {
+        status: SubmissionStatus.APPROVED,
+      })
       .andWhere('submission.submittedAt BETWEEN :start AND :end', {
         start: options.startDate,
         end: options.endDate,

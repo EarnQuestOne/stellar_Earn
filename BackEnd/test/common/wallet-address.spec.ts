@@ -73,9 +73,9 @@ describe('WalletAddressUtils.detectAddressType', () => {
   });
 
   it('returns UNKNOWN for a non-string value', () => {
-    expect(WalletAddressUtils.detectAddressType(null as unknown as string)).toBe(
-      StellarAddressType.UNKNOWN,
-    );
+    expect(
+      WalletAddressUtils.detectAddressType(null as unknown as string),
+    ).toBe(StellarAddressType.UNKNOWN);
   });
 });
 
@@ -96,15 +96,15 @@ describe('WalletAddressUtils.validateChecksum', () => {
   });
 
   it('returns false when the checksum byte is corrupted', () => {
-    expect(WalletAddressUtils.validateChecksum(corruptChecksum(VALID_PUBLIC_KEY))).toBe(
-      false,
-    );
+    expect(
+      WalletAddressUtils.validateChecksum(corruptChecksum(VALID_PUBLIC_KEY)),
+    ).toBe(false);
   });
 
   it('returns false for a truncated address', () => {
-    expect(WalletAddressUtils.validateChecksum(VALID_PUBLIC_KEY.slice(0, 40))).toBe(
-      false,
-    );
+    expect(
+      WalletAddressUtils.validateChecksum(VALID_PUBLIC_KEY.slice(0, 40)),
+    ).toBe(false);
   });
 
   it('returns false for an address with a wrong prefix', () => {
@@ -117,11 +117,15 @@ describe('WalletAddressUtils.validateChecksum', () => {
   });
 
   it('returns false for null', () => {
-    expect(WalletAddressUtils.validateChecksum(null as unknown as string)).toBe(false);
+    expect(WalletAddressUtils.validateChecksum(null as unknown as string)).toBe(
+      false,
+    );
   });
 
   it('returns false for a numeric value', () => {
-    expect(WalletAddressUtils.validateChecksum(12345 as unknown as string)).toBe(false);
+    expect(
+      WalletAddressUtils.validateChecksum(12345 as unknown as string),
+    ).toBe(false);
   });
 });
 
@@ -175,7 +179,9 @@ describe('WalletAddressUtils.validate', () => {
     });
 
     it('rejects an address with a corrupted checksum', () => {
-      const result = WalletAddressUtils.validate(corruptChecksum(VALID_PUBLIC_KEY));
+      const result = WalletAddressUtils.validate(
+        corruptChecksum(VALID_PUBLIC_KEY),
+      );
       assertInvalid(result, 'checksum');
     });
 
@@ -205,11 +211,15 @@ describe('WalletAddressUtils.validate', () => {
 // ---------------------------------------------------------------------------
 describe('WalletAddressUtils.validateRecipient', () => {
   it('accepts a standard public key', () => {
-    expect(WalletAddressUtils.validateRecipient(VALID_PUBLIC_KEY).isValid).toBe(true);
+    expect(WalletAddressUtils.validateRecipient(VALID_PUBLIC_KEY).isValid).toBe(
+      true,
+    );
   });
 
   it('accepts a muxed account address', () => {
-    expect(WalletAddressUtils.validateRecipient(VALID_MUXED_ADDRESS).isValid).toBe(true);
+    expect(
+      WalletAddressUtils.validateRecipient(VALID_MUXED_ADDRESS).isValid,
+    ).toBe(true);
   });
 
   it('rejects a secret key', () => {
@@ -219,7 +229,9 @@ describe('WalletAddressUtils.validateRecipient', () => {
   });
 
   it('rejects an invalid address', () => {
-    expect(WalletAddressUtils.validateRecipient('not-an-address').isValid).toBe(false);
+    expect(WalletAddressUtils.validateRecipient('not-an-address').isValid).toBe(
+      false,
+    );
   });
 });
 
@@ -227,25 +239,31 @@ describe('WalletAddressUtils.validateRecipient', () => {
 // WalletAddressUtils.validateForNetwork
 // ---------------------------------------------------------------------------
 describe('WalletAddressUtils.validateForNetwork', () => {
-  const networks: StellarNetwork[] = [StellarNetwork.TESTNET, StellarNetwork.MAINNET];
+  const networks: StellarNetwork[] = [
+    StellarNetwork.TESTNET,
+    StellarNetwork.MAINNET,
+  ];
 
   networks.forEach((network) => {
     describe(`network: ${network}`, () => {
       it('accepts a valid public key', () => {
         expect(
-          WalletAddressUtils.validateForNetwork(VALID_PUBLIC_KEY, network).isValid,
+          WalletAddressUtils.validateForNetwork(VALID_PUBLIC_KEY, network)
+            .isValid,
         ).toBe(true);
       });
 
       it('accepts a valid muxed account', () => {
         expect(
-          WalletAddressUtils.validateForNetwork(VALID_MUXED_ADDRESS, network).isValid,
+          WalletAddressUtils.validateForNetwork(VALID_MUXED_ADDRESS, network)
+            .isValid,
         ).toBe(true);
       });
 
       it('rejects a secret key', () => {
         expect(
-          WalletAddressUtils.validateForNetwork(VALID_SECRET_KEY, network).isValid,
+          WalletAddressUtils.validateForNetwork(VALID_SECRET_KEY, network)
+            .isValid,
         ).toBe(false);
       });
 
@@ -263,7 +281,9 @@ describe('WalletAddressUtils.validateForNetwork', () => {
 // ---------------------------------------------------------------------------
 describe('WalletAddressUtils.normalize', () => {
   it('returns the address unchanged when already trimmed', () => {
-    expect(WalletAddressUtils.normalize(VALID_PUBLIC_KEY)).toBe(VALID_PUBLIC_KEY);
+    expect(WalletAddressUtils.normalize(VALID_PUBLIC_KEY)).toBe(
+      VALID_PUBLIC_KEY,
+    );
   });
 
   it('strips surrounding whitespace from a valid address', () => {
@@ -273,11 +293,15 @@ describe('WalletAddressUtils.normalize', () => {
   });
 
   it('normalizes a valid muxed address', () => {
-    expect(WalletAddressUtils.normalize(VALID_MUXED_ADDRESS)).toBe(VALID_MUXED_ADDRESS);
+    expect(WalletAddressUtils.normalize(VALID_MUXED_ADDRESS)).toBe(
+      VALID_MUXED_ADDRESS,
+    );
   });
 
   it('returns null for an address with an invalid checksum', () => {
-    expect(WalletAddressUtils.normalize(corruptChecksum(VALID_PUBLIC_KEY))).toBeNull();
+    expect(
+      WalletAddressUtils.normalize(corruptChecksum(VALID_PUBLIC_KEY)),
+    ).toBeNull();
   });
 
   it('returns null for a completely invalid string', () => {
@@ -300,7 +324,10 @@ describe('IsWalletAddress decorator', () => {
 
   class RecipientDto {
     @IsWalletAddress({
-      allowedTypes: [StellarAddressType.PUBLIC_KEY, StellarAddressType.MUXED_ACCOUNT],
+      allowedTypes: [
+        StellarAddressType.PUBLIC_KEY,
+        StellarAddressType.MUXED_ACCOUNT,
+      ],
     })
     destination: string;
   }
@@ -312,7 +339,9 @@ describe('IsWalletAddress decorator', () => {
   });
 
   it('fails for an invalid address (default options)', async () => {
-    const dto = Object.assign(new DefaultDto(), { address: 'GAAAAAAAAINVALID' });
+    const dto = Object.assign(new DefaultDto(), {
+      address: 'GAAAAAAAAINVALID',
+    });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
     expect(errors[0].property).toBe('address');
@@ -333,7 +362,9 @@ describe('IsWalletAddress decorator', () => {
   });
 
   it('fails for a secret key used as a payment destination', async () => {
-    const dto = Object.assign(new RecipientDto(), { destination: VALID_SECRET_KEY });
+    const dto = Object.assign(new RecipientDto(), {
+      destination: VALID_SECRET_KEY,
+    });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
   });
@@ -360,5 +391,7 @@ function assertInvalid(
 ): void {
   expect(result.isValid).toBe(false);
   expect(result.errors).toHaveLength(1);
-  expect(result.errors[0].toLowerCase()).toContain(expectedFragment.toLowerCase());
+  expect(result.errors[0].toLowerCase()).toContain(
+    expectedFragment.toLowerCase(),
+  );
 }

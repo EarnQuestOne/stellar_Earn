@@ -93,10 +93,7 @@ describe('EmailService', () => {
       service.addToUnsubscribeList('unsub@example.com');
 
       const dto: SendEmailDto = {
-        to: [
-          { email: 'unsub@example.com' },
-          { email: 'active@example.com' },
-        ],
+        to: [{ email: 'unsub@example.com' }, { email: 'active@example.com' }],
         subject: 'Test',
         text: 'Hello',
       };
@@ -165,7 +162,9 @@ describe('EmailService', () => {
     });
 
     it('should return FAILED status when job queue fails', async () => {
-      (jobsService.addJob as jest.Mock).mockRejectedValue(new Error('Redis unavailable'));
+      (jobsService.addJob as jest.Mock).mockRejectedValue(
+        new Error('Redis unavailable'),
+      );
 
       const dto: SendEmailDto = {
         to: [{ email: 'user@example.com' }],
@@ -196,12 +195,14 @@ describe('EmailService', () => {
 
   describe('processEmailJob', () => {
     it('should use template engine when template is specified', async () => {
-      const messageId = (await service.sendEmail({
-        to: [{ email: 'user@example.com' }],
-        subject: 'Test',
-        template: EmailTemplate.WELCOME,
-        templateData: { username: 'TestUser' },
-      })).messageId;
+      const messageId = (
+        await service.sendEmail({
+          to: [{ email: 'user@example.com' }],
+          subject: 'Test',
+          template: EmailTemplate.WELCOME,
+          templateData: { username: 'TestUser' },
+        })
+      ).messageId;
 
       await service.processEmailJob(messageId, {
         to: [{ email: 'user@example.com' }],
@@ -217,11 +218,13 @@ describe('EmailService', () => {
     });
 
     it('should log warning when SendGrid is not configured', async () => {
-      const messageId = (await service.sendEmail({
-        to: [{ email: 'user@example.com' }],
-        subject: 'Test',
-        text: 'Hello',
-      })).messageId;
+      const messageId = (
+        await service.sendEmail({
+          to: [{ email: 'user@example.com' }],
+          subject: 'Test',
+          text: 'Hello',
+        })
+      ).messageId;
 
       await service.processEmailJob(messageId, {
         to: [{ email: 'user@example.com' }],
@@ -363,7 +366,11 @@ describe('EmailService', () => {
     it('should process delivered event', () => {
       const messageId = 'test-msg-id';
       service.handleWebhookEvent([
-        { event: 'delivered', email: 'user@example.com', sg_message_id: messageId },
+        {
+          event: 'delivered',
+          email: 'user@example.com',
+          sg_message_id: messageId,
+        },
       ]);
 
       // No error thrown means success
@@ -410,7 +417,13 @@ describe('EmailService', () => {
     it('should handle multiple events in a single webhook call', () => {
       service.handleWebhookEvent([
         { event: 'delivered', email: 'a@example.com', sg_message_id: 'msg-a' },
-        { event: 'bounce', email: 'b@example.com', sg_message_id: 'msg-b', bounce_classification: 'hard', reason: 'invalid' },
+        {
+          event: 'bounce',
+          email: 'b@example.com',
+          sg_message_id: 'msg-b',
+          bounce_classification: 'hard',
+          reason: 'invalid',
+        },
         { event: 'open', email: 'c@example.com', sg_message_id: 'msg-c' },
       ]);
 
@@ -453,7 +466,9 @@ describe('EmailService', () => {
     });
 
     it('should return false when removing non-existent email', () => {
-      const removed = service.removeFromUnsubscribeList('nonexistent@example.com');
+      const removed = service.removeFromUnsubscribeList(
+        'nonexistent@example.com',
+      );
       expect(removed).toBe(false);
     });
 

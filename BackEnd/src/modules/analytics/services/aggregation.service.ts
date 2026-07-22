@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AnalyticsSnapshot, SnapshotType } from '../entities/analytics-snapshot.entity';
+import {
+  AnalyticsSnapshot,
+  SnapshotType,
+} from '../entities/analytics-snapshot.entity';
 import { QuestAnalyticsAggregator } from '../aggregators/quest-aggregator';
 import { UserAnalyticsAggregator } from '../aggregators/user-aggregator';
 import { PlatformAnalyticsAggregator } from '../aggregators/platform-aggregator';
@@ -38,13 +41,19 @@ export class AnalyticsAggregationService {
     duration: number;
   }> {
     const startTime = Date.now();
-    const types = options.types || [SnapshotType.PLATFORM, SnapshotType.QUEST, SnapshotType.USER];
+    const types = options.types || [
+      SnapshotType.PLATFORM,
+      SnapshotType.QUEST,
+      SnapshotType.USER,
+    ];
 
     let processed = 0;
     let skipped = 0;
     let errors = 0;
 
-    this.logger.log(`Starting batch aggregation for types: ${types.join(', ')}`);
+    this.logger.log(
+      `Starting batch aggregation for types: ${types.join(', ')}`,
+    );
 
     for (const type of types) {
       try {
@@ -52,16 +61,23 @@ export class AnalyticsAggregationService {
         processed += result.processed;
         skipped += result.skipped;
 
-        this.logger.log(`Completed aggregation for ${type}: ${result.processed} processed, ${result.skipped} skipped`);
+        this.logger.log(
+          `Completed aggregation for ${type}: ${result.processed} processed, ${result.skipped} skipped`,
+        );
       } catch (error) {
         errors++;
-        this.logger.error(`Failed to aggregate ${type}: ${error.message}`, error.stack);
+        this.logger.error(
+          `Failed to aggregate ${type}: ${error.message}`,
+          error.stack,
+        );
       }
     }
 
     const duration = Date.now() - startTime;
 
-    this.logger.log(`Batch aggregation completed: ${processed} processed, ${skipped} skipped, ${errors} errors in ${duration}ms`);
+    this.logger.log(
+      `Batch aggregation completed: ${processed} processed, ${skipped} skipped, ${errors} errors in ${duration}ms`,
+    );
 
     return { processed, skipped, errors, duration };
   }
@@ -74,36 +90,54 @@ export class AnalyticsAggregationService {
     options: AggregationOptions,
   ): Promise<{ processed: number; skipped: number }> {
     switch (type) {
-      case SnapshotType.PLATFORM:
-        const platformResults = await this.platformAggregator.aggregatePlatformMetrics(options);
+      case SnapshotType.PLATFORM: {
+        const platformResults =
+          await this.platformAggregator.aggregatePlatformMetrics(options);
         return { processed: platformResults.length, skipped: 0 };
+      }
 
-      case SnapshotType.QUEST:
-        const questResults = await this.questAggregator.aggregateQuestMetrics(options);
+      case SnapshotType.QUEST: {
+        const questResults =
+          await this.questAggregator.aggregateQuestMetrics(options);
         return { processed: questResults.length, skipped: 0 };
+      }
 
-      case SnapshotType.USER:
-        const userResults = await this.userAggregator.aggregateUserMetrics(options);
+      case SnapshotType.USER: {
+        const userResults =
+          await this.userAggregator.aggregateUserMetrics(options);
         return { processed: userResults.length, skipped: 0 };
+      }
 
       default:
-        throw new Error(`Unsupported aggregation type: ${type}`);
+        throw new Error(`Unsupported aggregation type: ${String(type)}`);
     }
   }
 
   /**
    * Aggregate data for a specific quest
    */
-  async aggregateQuestData(questId: string, options: AggregationOptions): Promise<number> {
-    const results = await this.questAggregator.aggregateQuestMetricsById(questId, options);
+  async aggregateQuestData(
+    questId: string,
+    options: AggregationOptions,
+  ): Promise<number> {
+    const results = await this.questAggregator.aggregateQuestMetricsById(
+      questId,
+      options,
+    );
     return results.length;
   }
 
   /**
    * Aggregate data for a specific user
    */
-  async aggregateUserData(userId: string, options: AggregationOptions): Promise<number> {
-    const results = await this.userAggregator.aggregateUserMetricsById(userId, options);
+  async aggregateUserData(
+    userId: string,
+    options: AggregationOptions,
+  ): Promise<number> {
+    const results = await this.userAggregator.aggregateUserMetricsById(
+      userId,
+      options,
+    );
     return results.length;
   }
 
@@ -136,7 +170,10 @@ export class AnalyticsAggregationService {
   /**
    * Get latest snapshot for a type
    */
-  async getLatestSnapshot(type: SnapshotType, referenceId?: string): Promise<AnalyticsSnapshot | null> {
+  async getLatestSnapshot(
+    type: SnapshotType,
+    referenceId?: string,
+  ): Promise<AnalyticsSnapshot | null> {
     const query = this.snapshotRepository
       .createQueryBuilder('snapshot')
       .where('snapshot.type = :type', { type })
@@ -163,7 +200,9 @@ export class AnalyticsAggregationService {
       .where('createdAt < :cutoffDate', { cutoffDate })
       .execute();
 
-    this.logger.log(`Cleaned up ${result.affected} old snapshots older than ${olderThanDays} days`);
+    this.logger.log(
+      `Cleaned up ${result.affected} old snapshots older than ${olderThanDays} days`,
+    );
 
     return result.affected || 0;
   }
@@ -177,24 +216,29 @@ export class AnalyticsAggregationService {
     oldestSnapshot: Date | null;
     newestSnapshot: Date | null;
   }> {
-    const [totalSnapshots, snapshotsByType, oldestResult, newestResult] = await Promise.all([
-      this.snapshotRepository.count(),
-      this.getSnapshotsByType(),
-      this.snapshotRepository
-        .createQueryBuilder('snapshot')
-        .select('MIN(snapshot.date)', 'oldest')
-        .getRawOne(),
-      this.snapshotRepository
-        .createQueryBuilder('snapshot')
-        .select('MAX(snapshot.date)', 'newest')
-        .getRawOne(),
-    ]);
+    const [totalSnapshots, snapshotsByType, oldestResult, newestResult] =
+      await Promise.all([
+        this.snapshotRepository.count(),
+        this.getSnapshotsByType(),
+        this.snapshotRepository
+          .createQueryBuilder('snapshot')
+          .select('MIN(snapshot.date)', 'oldest')
+          .getRawOne(),
+        this.snapshotRepository
+          .createQueryBuilder('snapshot')
+          .select('MAX(snapshot.date)', 'newest')
+          .getRawOne(),
+      ]);
 
     return {
       totalSnapshots,
       snapshotsByType,
-      oldestSnapshot: oldestResult?.oldest ? new Date(oldestResult.oldest) : null,
-      newestSnapshot: newestResult?.newest ? new Date(newestResult.newest) : null,
+      oldestSnapshot: oldestResult?.oldest
+        ? new Date(oldestResult.oldest)
+        : null,
+      newestSnapshot: newestResult?.newest
+        ? new Date(newestResult.newest)
+        : null,
     };
   }
 
@@ -210,7 +254,7 @@ export class AnalyticsAggregationService {
       .getRawMany();
 
     const stats: Record<string, number> = {};
-    results.forEach(result => {
+    results.forEach((result) => {
       stats[result.type] = parseInt(result.count);
     });
 

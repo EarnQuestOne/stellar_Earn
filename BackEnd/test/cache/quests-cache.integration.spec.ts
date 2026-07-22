@@ -11,7 +11,7 @@ import { QuestStatus } from '#src/modules/quests/enums/quest-status.enum';
 describe('QuestsService with Caching', () => {
   let service: QuestsService;
   let questRepository: Repository<Quest>;
-  let cacheService: CacheService;
+  let _cacheService: CacheService;
   let cacheManager: any;
 
   const mockQuest = {
@@ -59,7 +59,7 @@ describe('QuestsService with Caching', () => {
 
     service = module.get<QuestsService>(QuestsService);
     questRepository = module.get<Repository<Quest>>(getRepositoryToken(Quest));
-    cacheService = module.get<CacheService>(CacheService);
+    _cacheService = module.get<CacheService>(CacheService);
   });
 
   afterEach(() => {
@@ -71,11 +71,15 @@ describe('QuestsService with Caching', () => {
       cacheManager.get.mockResolvedValueOnce(undefined);
       (questRepository.findOne as jest.Mock).mockResolvedValue(mockQuest);
 
-      const result = await service.findOne('1');
+      await service.findOne('1');
 
-      expect(cacheManager.get).toHaveBeenCalledWith(`${CACHE_KEYS.QUEST_DETAIL}:1`);
+      expect(cacheManager.get).toHaveBeenCalledWith(
+        `${CACHE_KEYS.QUEST_DETAIL}:1`,
+      );
       expect(cacheManager.set).toHaveBeenCalled();
-      expect(questRepository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(questRepository.findOne).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
 
     it('should return cached quest on second call', async () => {
@@ -105,12 +109,7 @@ describe('QuestsService with Caching', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest
-          .fn()
-          .mockResolvedValue([
-            [{ ...mockQuest }],
-            1,
-          ]),
+        getManyAndCount: jest.fn().mockResolvedValue([[{ ...mockQuest }], 1]),
       };
 
       (questRepository.createQueryBuilder as jest.Mock).mockReturnValue(
@@ -159,11 +158,7 @@ describe('QuestsService with Caching', () => {
         `${CACHE_KEYS.QUESTS}:filter_1`,
       ]);
 
-      await service.update(
-        '1',
-        { title: 'Updated Quest' },
-        'user123',
-      );
+      await service.update('1', { title: 'Updated Quest' }, 'user123');
 
       expect(cacheManager.del).toHaveBeenCalledWith(
         `${CACHE_KEYS.QUEST_DETAIL}:1`,

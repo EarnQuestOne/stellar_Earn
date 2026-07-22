@@ -15,9 +15,7 @@
 use soroban_sdk::{symbol_short, testutils::Address as _, testutils::Ledger, Address, Env};
 
 extern crate earn_quest;
-use earn_quest::validation::{
-    MAX_DEADLINE_DURATION, MIN_DEADLINE_DURATION, MIN_EXPIRY_BUFFER,
-};
+use earn_quest::validation::{MAX_DEADLINE_DURATION, MIN_DEADLINE_DURATION, MIN_EXPIRY_BUFFER};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +56,10 @@ fn test_deadline_at_min_duration_accepted() {
 
     let deadline = now + MIN_DEADLINE_DURATION;
     let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &deadline);
-    assert!(result.is_ok(), "deadline at MIN_DEADLINE_DURATION should be accepted");
+    assert!(
+        result.is_ok(),
+        "deadline at MIN_DEADLINE_DURATION should be accepted"
+    );
 }
 
 /// A deadline one second *below* MIN_DEADLINE_DURATION must be rejected.
@@ -81,7 +82,10 @@ fn test_deadline_below_min_duration_rejected() {
     // deadline is MIN_DEADLINE_DURATION - 1 seconds in the future
     let deadline = now + MIN_DEADLINE_DURATION - 1;
     let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &deadline);
-    assert!(result.is_err(), "deadline below MIN_DEADLINE_DURATION must be rejected");
+    assert!(
+        result.is_err(),
+        "deadline below MIN_DEADLINE_DURATION must be rejected"
+    );
 }
 
 /// A deadline of only 1 second in the future must be rejected.
@@ -167,7 +171,10 @@ fn test_deadline_at_max_duration_accepted() {
 
     let deadline = now + MAX_DEADLINE_DURATION;
     let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &deadline);
-    assert!(result.is_ok(), "deadline at MAX_DEADLINE_DURATION should be accepted");
+    assert!(
+        result.is_ok(),
+        "deadline at MAX_DEADLINE_DURATION should be accepted"
+    );
 }
 
 /// A deadline one second *above* MAX_DEADLINE_DURATION must be rejected.
@@ -188,7 +195,10 @@ fn test_deadline_above_max_duration_rejected() {
 
     let deadline = now + MAX_DEADLINE_DURATION + 1;
     let result = client.try_register_quest(&quest_id, &creator, &token, &100, &verifier, &deadline);
-    assert!(result.is_err(), "deadline above MAX_DEADLINE_DURATION must be rejected");
+    assert!(
+        result.is_err(),
+        "deadline above MAX_DEADLINE_DURATION must be rejected"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -370,8 +380,10 @@ fn test_batch_registration_deadline_too_soon_rejected() {
     let verifier = Address::generate(&env);
     let token = Address::generate(&env);
 
-    use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
+    use earn_quest::types::BatchQuestInput;
     use soroban_sdk::Vec;
+
+    let too_soon = now + MIN_DEADLINE_DURATION - 1;
 
     let mut batch_inputs = Vec::new(&env);
     batch_inputs.push_back(BatchQuestInput {
@@ -379,12 +391,15 @@ fn test_batch_registration_deadline_too_soon_rejected() {
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION - 1,
+        deadline: too_soon,
+        grace_period_seconds: None,
     });
 
-
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
-    assert!(result.is_err(), "batch with too-soon deadline must be rejected");
+    assert!(
+        result.is_err(),
+        "batch with too-soon deadline must be rejected"
+    );
 }
 
 /// Batch registration with a valid deadline must succeed.
@@ -401,8 +416,10 @@ fn test_batch_registration_valid_deadline_accepted() {
     let verifier = Address::generate(&env);
     let token = Address::generate(&env);
 
-    use earn_quest::types::{BatchQuestInput, Quest, QuestMetadata, MetadataDescription};
+    use earn_quest::types::BatchQuestInput;
     use soroban_sdk::Vec;
+
+    let valid_deadline = now + MIN_DEADLINE_DURATION + 1_000;
 
     let mut batch_inputs = Vec::new(&env);
     batch_inputs.push_back(BatchQuestInput {
@@ -410,9 +427,9 @@ fn test_batch_registration_valid_deadline_accepted() {
         reward_asset: token.clone(),
         reward_amount: 100,
         verifier: verifier.clone(),
-        deadline: now + MIN_DEADLINE_DURATION + 1_000,
+        deadline: valid_deadline,
+        grace_period_seconds: None,
     });
-
 
     let result = client.try_register_quests_batch(&creator, &batch_inputs);
     assert!(result.is_ok(), "batch with valid deadline must be accepted");

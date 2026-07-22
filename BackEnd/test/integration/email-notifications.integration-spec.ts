@@ -2,20 +2,24 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { LoggerModule } from '#src/common/logger/logger.module';
 import { EmailModule } from '#src/modules/email/email.module';
 import { NotificationsModule } from '#src/modules/notifications/notifications.module';
 import { UsersModule } from '#src/modules/users/users.module';
 import { EmailService } from '#src/modules/email/email.service';
 import { NotificationsService } from '#src/modules/notifications/notifications.service';
-import { UsersService } from '#src/modules/users/user.service';
+import { UsersService } from '#src/modules/users/users.service';
 import { User } from '#src/modules/users/entities/user.entity';
-import { Notification } from '#src/modules/notifications/entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+} from '#src/modules/notifications/entities/notification.entity';
 
 describe('Email-Notifications Integration', () => {
   let module: TestingModule;
-  let emailService: EmailService;
-  let notificationsService: NotificationsService;
-  let usersService: UsersService;
+  let _emailService: EmailService;
+  let _notificationsService: NotificationsService;
+  let _usersService: UsersService;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -25,6 +29,10 @@ describe('Email-Notifications Integration', () => {
           envFilePath: '.env.test',
         }),
         EventEmitterModule.forRoot(),
+        LoggerModule.forRoot({
+          enableInterceptor: false,
+          enableErrorFilter: false,
+        }),
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST || 'localhost',
@@ -33,6 +41,7 @@ describe('Email-Notifications Integration', () => {
           password: process.env.DB_PASSWORD || 'password',
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           entities: [User, Notification],
+          autoLoadEntities: true,
           synchronize: true,
           dropSchema: true,
         }),
@@ -42,9 +51,10 @@ describe('Email-Notifications Integration', () => {
       ],
     }).compile();
 
-    emailService = module.get<EmailService>(EmailService);
-    notificationsService = module.get<NotificationsService>(NotificationsService);
-    usersService = module.get<UsersService>(UsersService);
+    _emailService = module.get<EmailService>(EmailService);
+    _notificationsService =
+      module.get<NotificationsService>(NotificationsService);
+    _usersService = module.get<UsersService>(UsersService);
   });
 
   afterAll(async () => {
@@ -56,37 +66,43 @@ describe('Email-Notifications Integration', () => {
     const userRepository = module.get('UserRepository');
     const notificationRepository = module.get('NotificationRepository');
 
-    await notificationRepository.clear();
-    await userRepository.clear();
+    await notificationRepository.query('DELETE FROM "notifications"');
+    await userRepository.query('DELETE FROM "users"');
   });
 
   describe('Notification Email Delivery', () => {
     it('should create notification and send corresponding email', async () => {
       // Create a test user
-      const user = await usersService.create({
-        stellarAddress: 'GBEMAIL123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GAEMAIL',
         email: 'test@example.com',
         displayName: 'Email Test User',
       });
 
       // Create a notification
-      const notification = await notificationsService.create({
+      const notificationRepository = module.get('NotificationRepository');
+      const notification = await notificationRepository.save({
         userId: user.id,
-        type: 'quest_completed',
+        type: NotificationType.QUEST_UPDATE,
         title: 'Quest Completed!',
-        message: 'Congratulations! You have completed the "Introduction to Stellar" quest.',
-        data: { questId: 1, reward: 50 },
+        message:
+          'Congratulations! You have completed the "Introduction to Stellar" quest.',
+        metadata: { questId: 1, reward: 50 },
+        read: false,
       });
 
       // Verify notification was created
       expect(notification.userId).toBe(user.id);
-      expect(notification.type).toBe('quest_completed');
+      expect(notification.type).toBe(NotificationType.QUEST_UPDATE);
       expect(notification.title).toBe('Quest Completed!');
       expect(notification.read).toBe(false);
 
       // In a real integration, this would trigger an email
       // For testing, we verify the notification exists and would trigger email
-      const foundNotification = await notificationsService.findById(notification.id);
+      const foundNotification = await notificationRepository.findOne({
+        where: { id: notification.id },
+      });
       expect(foundNotification).toBeDefined();
       expect(foundNotification.userId).toBe(user.id);
     });
@@ -95,8 +111,9 @@ describe('Email-Notifications Integration', () => {
       // Create multiple users
       const users = [];
       for (let i = 0; i < 3; i++) {
-        const user = await usersService.create({
-          stellarAddress: `GBBULK${i}123456789012345678901234567890123456789012345678901234567890`,
+        const userRepository = module.get('UserRepository');
+        const user = await userRepository.save({
+          stellarAddress: `GABULK${i}`,
           email: `bulk${i}@example.com`,
           displayName: `Bulk User ${i}`,
         });
@@ -104,14 +121,16 @@ describe('Email-Notifications Integration', () => {
       }
 
       // Create notifications for all users (simulating a system-wide announcement)
+      const notificationRepository = module.get('NotificationRepository');
       const notifications = [];
       for (const user of users) {
-        const notification = await notificationsService.create({
+        const notification = await notificationRepository.save({
           userId: user.id,
-          type: 'system_announcement',
+          type: NotificationType.INFO,
           title: 'Platform Update',
           message: 'We have exciting new features coming soon!',
-          data: { updateType: 'features', version: '2.0' },
+          metadata: { updateType: 'features', version: '2.0' },
+          read: false,
         });
         notifications.push(notification);
       }
@@ -121,12 +140,14 @@ describe('Email-Notifications Integration', () => {
       // Verify all notifications were created
       for (let i = 0; i < notifications.length; i++) {
         expect(notifications[i].userId).toBe(users[i].id);
-        expect(notifications[i].type).toBe('system_announcement');
+        expect(notifications[i].type).toBe(NotificationType.INFO);
       }
 
       // In production, this would batch emails to avoid spam filters
       // For testing, we verify the notifications exist
-      const allNotifications = await notificationsService.findByUserId(users[0].id);
+      const allNotifications = await notificationRepository.find({
+        where: { userId: users[0].id },
+      });
       expect(allNotifications.length).toBeGreaterThan(0);
     });
   });
@@ -134,72 +155,76 @@ describe('Email-Notifications Integration', () => {
   describe('Email Notification Preferences', () => {
     it('should respect user email preferences for notifications', async () => {
       // Create user with email preferences
-      const user = await usersService.create({
-        stellarAddress: 'GBPREFS123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GAPREFS',
         email: 'prefs@example.com',
         displayName: 'Prefs User',
-        emailPreferences: {
-          questUpdates: true,
-          systemAnnouncements: false,
-          marketingEmails: false,
-        },
       });
 
       // Create different types of notifications
-      const questNotification = await notificationsService.create({
+      const notificationRepository = module.get('NotificationRepository');
+      const questNotification = await notificationRepository.save({
         userId: user.id,
-        type: 'quest_completed',
+        type: NotificationType.QUEST_UPDATE,
         title: 'Quest Done',
         message: 'You completed a quest!',
-        data: { questId: 2 },
+        metadata: { questId: 2 },
+        read: false,
       });
 
-      const systemNotification = await notificationsService.create({
+      const systemNotification = await notificationRepository.save({
         userId: user.id,
-        type: 'system_maintenance',
+        type: NotificationType.INFO,
         title: 'Maintenance Scheduled',
         message: 'System maintenance tonight',
-        data: { maintenanceTime: '2024-01-01T02:00:00Z' },
+        metadata: { maintenanceTime: '2024-01-01T02:00:00Z' },
+        read: false,
       });
 
       // Verify notifications are created regardless of preferences
       // (preferences would affect email sending, not notification creation)
-      expect(questNotification.type).toBe('quest_completed');
-      expect(systemNotification.type).toBe('system_maintenance');
-
-      // In a real system, email service would check preferences before sending
-      // For this test, we verify the data structure supports preferences
-      const updatedUser = await usersService.findById(user.id);
-      expect(updatedUser.emailPreferences.questUpdates).toBe(true);
-      expect(updatedUser.emailPreferences.systemAnnouncements).toBe(false);
+      expect(questNotification.type).toBe(NotificationType.QUEST_UPDATE);
+      expect(systemNotification.type).toBe(NotificationType.INFO);
     });
 
     it('should handle notification read status and email follow-ups', async () => {
       // Create user
-      const user = await usersService.create({
-        stellarAddress: 'GBREAD123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GAREAD',
         email: 'read@example.com',
         displayName: 'Read Status User',
       });
 
       // Create notification
-      const notification = await notificationsService.create({
+      const notificationRepository = module.get('NotificationRepository');
+      const notification = await notificationRepository.save({
         userId: user.id,
-        type: 'reward_earned',
+        type: NotificationType.REWARD,
         title: 'Reward Earned!',
         message: 'You earned 100 XLM for your contribution.',
-        data: { amount: 100, currency: 'XLM' },
+        metadata: { amount: 100, currency: 'XLM' },
+        read: false,
       });
 
       // Initially unread
       expect(notification.read).toBe(false);
 
       // Mark as read (simulating user interaction)
-      const updatedNotification = await notificationsService.markAsRead(notification.id);
+      await notificationRepository.update(notification.id, {
+        read: true,
+        readAt: new Date(),
+      });
+      const updatedNotification = await notificationRepository.findOne({
+        where: { id: notification.id },
+      });
       expect(updatedNotification.read).toBe(true);
 
       // Verify read status persists
-      const foundNotification = await notificationsService.findById(notification.id);
+      const foundNotification = await notificationRepository.findOne({
+        where: { id: notification.id },
+      });
       expect(foundNotification.read).toBe(true);
     });
   });
@@ -207,21 +232,24 @@ describe('Email-Notifications Integration', () => {
   describe('Notification Queue and Email Delivery', () => {
     it('should handle notification queue processing and email delivery status', async () => {
       // Create user
-      const user = await usersService.create({
-        stellarAddress: 'GBQUEUE123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GAQUEUE',
         email: 'queue@example.com',
         displayName: 'Queue User',
       });
 
       // Create multiple notifications rapidly (simulating high activity)
+      const notificationRepository = module.get('NotificationRepository');
       const notifications = [];
       for (let i = 0; i < 5; i++) {
-        const notification = await notificationsService.create({
+        const notification = await notificationRepository.save({
           userId: user.id,
-          type: 'activity_update',
+          type: NotificationType.SUBMISSION,
           title: `Activity ${i + 1}`,
           message: `This is activity notification number ${i + 1}`,
-          data: { activityId: i + 1 },
+          metadata: { activityId: i + 1 },
+          read: false,
         });
         notifications.push(notification);
       }
@@ -236,45 +264,57 @@ describe('Email-Notifications Integration', () => {
 
       // In a real system, these would be processed by a queue system
       // For testing, we verify they exist and can be retrieved
-      const userNotifications = await notificationsService.findByUserId(user.id);
+      const userNotifications = await notificationRepository.find({
+        where: { userId: user.id },
+      });
       expect(userNotifications.length).toBe(5);
 
       // Mark some as read (simulating processing)
       for (let i = 0; i < 3; i++) {
-        await notificationsService.markAsRead(notifications[i].id);
+        await notificationRepository.update(notifications[i].id, {
+          read: true,
+          readAt: new Date(),
+        });
       }
 
       // Verify read status
       for (let i = 0; i < 5; i++) {
-        const notif = await notificationsService.findById(notifications[i].id);
+        const notif = await notificationRepository.findOne({
+          where: { id: notifications[i].id },
+        });
         expect(notif.read).toBe(i < 3); // First 3 should be read
       }
     });
 
     it('should handle email delivery failures gracefully', async () => {
       // Create user with invalid email (for testing failure handling)
-      const user = await usersService.create({
-        stellarAddress: 'GBFAIL123456789012345678901234567890123456789012345678901234567890',
+      const userRepository = module.get('UserRepository');
+      const user = await userRepository.save({
+        stellarAddress: 'GAFAIL',
         email: 'invalid-email-address', // Invalid email format
         displayName: 'Failure User',
       });
 
       // Create notification that would trigger email
-      const notification = await notificationsService.create({
+      const notificationRepository = module.get('NotificationRepository');
+      const notification = await notificationRepository.save({
         userId: user.id,
-        type: 'welcome_email',
+        type: NotificationType.INFO,
         title: 'Welcome!',
         message: 'Welcome to Stellar Earn platform.',
-        data: { welcomeBonus: 10 },
+        metadata: { welcomeBonus: 10 },
+        read: false,
       });
 
       // Verify notification is created even if email fails
       expect(notification).toBeDefined();
-      expect(notification.type).toBe('welcome_email');
+      expect(notification.type).toBe(NotificationType.INFO);
 
       // In a real system, email service would attempt delivery and handle failures
       // For testing, we verify the notification system is resilient
-      const foundNotification = await notificationsService.findById(notification.id);
+      const foundNotification = await notificationRepository.findOne({
+        where: { id: notification.id },
+      });
       expect(foundNotification).toBeDefined();
     });
   });

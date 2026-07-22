@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum DataExportStatus {
   PENDING = 'pending',
@@ -21,7 +27,11 @@ export class DataExport {
   @Column({ default: 'json' })
   format: string;
 
-  @Column({ type: 'enum', enum: DataExportStatus, default: DataExportStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: DataExportStatus,
+    default: DataExportStatus.PENDING,
+  })
   status: DataExportStatus;
 
   @Column({ nullable: true })

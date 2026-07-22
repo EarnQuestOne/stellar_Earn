@@ -26,8 +26,12 @@ export interface SlowQueryAlert {
 @Injectable()
 export class QueryLoggerService {
   private readonly logger = new AppLoggerService();
-  private readonly slowQueryThreshold = parseInt(process.env.SLOW_QUERY_THRESHOLD || '1000');
-  private readonly criticalQueryThreshold = parseInt(process.env.CRITICAL_QUERY_THRESHOLD || '5000');
+  private readonly slowQueryThreshold = parseInt(
+    process.env.SLOW_QUERY_THRESHOLD || '1000',
+  );
+  private readonly criticalQueryThreshold = parseInt(
+    process.env.CRITICAL_QUERY_THRESHOLD || '5000',
+  );
   private readonly queryMetrics: QueryMetrics[] = [];
   private readonly maxMetricsHistory = 1000;
 
@@ -35,7 +39,12 @@ export class QueryLoggerService {
     this.logger.setContext('QueryLogger');
   }
 
-  logQuery(query: string, parameters?: any[], executionTime?: number, affectedRows?: number): void {
+  logQuery(
+    query: string,
+    parameters?: any[],
+    executionTime?: number,
+    affectedRows?: number,
+  ): void {
     const metrics: QueryMetrics = {
       query: query.trim(),
       parameters,
@@ -96,7 +105,9 @@ export class QueryLoggerService {
 
   getSlowQueries(threshold?: number): QueryMetrics[] {
     const queryThreshold = threshold || this.slowQueryThreshold;
-    return this.queryMetrics.filter(metric => metric.executionTime > queryThreshold);
+    return this.queryMetrics.filter(
+      (metric) => metric.executionTime > queryThreshold,
+    );
   }
 
   getQueryStatistics(): {
@@ -117,7 +128,10 @@ export class QueryLoggerService {
     }
 
     const totalQueries = this.queryMetrics.length;
-    const totalExecutionTime = this.queryMetrics.reduce((sum, metric) => sum + metric.executionTime, 0);
+    const totalExecutionTime = this.queryMetrics.reduce(
+      (sum, metric) => sum + metric.executionTime,
+      0,
+    );
     const averageExecutionTime = totalExecutionTime / totalQueries;
     const slowQueries = this.getSlowQueries();
     const criticalQueries = this.getSlowQueries(this.criticalQueryThreshold);
@@ -126,7 +140,8 @@ export class QueryLoggerService {
       totalQueries,
       averageExecutionTime: Math.round(averageExecutionTime * 100) / 100,
       slowQueriesCount: slowQueries.length,
-      slowQueriesPercentage: Math.round((slowQueries.length / totalQueries) * 100 * 100) / 100,
+      slowQueriesPercentage:
+        Math.round((slowQueries.length / totalQueries) * 100 * 100) / 100,
       criticalQueriesCount: criticalQueries.length,
     };
   }
@@ -138,16 +153,23 @@ export class QueryLoggerService {
 
   private addToMetrics(metrics: QueryMetrics): void {
     this.queryMetrics.push(metrics);
-    
+
     // Keep only the most recent metrics
     if (this.queryMetrics.length > this.maxMetricsHistory) {
-      this.queryMetrics.splice(0, this.queryMetrics.length - this.maxMetricsHistory);
+      this.queryMetrics.splice(
+        0,
+        this.queryMetrics.length - this.maxMetricsHistory,
+      );
     }
   }
 
   private checkSlowQuery(metrics: QueryMetrics): void {
     if (metrics.executionTime > this.slowQueryThreshold) {
-      this.logSlowQuery(metrics.executionTime, metrics.query, metrics.parameters);
+      this.logSlowQuery(
+        metrics.executionTime,
+        metrics.query,
+        metrics.parameters,
+      );
     }
   }
 

@@ -20,12 +20,14 @@ export class InAppChannel implements NotificationChannel {
 
   async send(notification: Notification): Promise<DeliveryResult> {
     try {
-      this.logger.log(`Sending in-app notification to user ${notification.userId}`);
+      this.logger.log(
+        `Sending in-app notification to user ${notification.userId}`,
+      );
       // In-app notifications are basically the records in the DB
-      // The notification is already saved by the time this is called, 
+      // The notification is already saved by the time this is called,
       // or we can handle the saving logic here if we shift it.
       // For now, let's assume the notification record exists.
-      
+
       return {
         success: true,
         channel: this.type,

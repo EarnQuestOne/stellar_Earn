@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  Matches,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsStellarAddress } from '../../../common/decorators/is-stellar-address.decorator';
 

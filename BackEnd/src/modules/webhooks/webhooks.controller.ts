@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Headers,
   HttpCode,
@@ -8,7 +9,10 @@ import {
   Logger,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
   Param,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +20,9 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import {
   WebhooksService,
@@ -25,11 +32,21 @@ import {
 import {
   WebhookResponseDto,
   WebhookHealthResponseDto,
+  FailedWebhookEventResponseDto,
+  RetryWebhookResponseDto,
 } from './dto/webhook-response.dto';
-import { ExecutionTraceService } from '../trace/execution-trace.service';
+import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
+import { TraceService } from '../trace/trace.service';
 import { TraceIdUtil } from '../trace/trace-id.util';
-import { TraceContextStorage, TraceContext } from '../trace/trace-context.storage';
+import {
+  TraceContextStorage,
+  TraceContext,
+} from '../trace/trace-context.storage';
 import { TraceStatus } from '../trace/trace.types';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
@@ -38,7 +55,7 @@ export class WebhooksController {
 
   constructor(
     private readonly webhooksService: WebhooksService,
-    private readonly traceService: ExecutionTraceService,
+    private readonly traceService: TraceService,
   ) {}
 
   /**
@@ -65,16 +82,19 @@ export class WebhooksController {
     @Headers('x-github-event') eventType: string,
     @Headers('x-github-delivery') deliveryId: string,
     @Headers('x-hub-signature-256') signature: string,
-    @Headers() headers: any,
   ): Promise<WebhookResponse> {
-    if (!eventType) throw new BadRequestException('Missing X-GitHub-Event header');
-    if (!deliveryId) throw new BadRequestException('Missing X-GitHub-Delivery header');
+    if (!eventType)
+      throw new BadRequestException('Missing X-GitHub-Event header');
+    if (!deliveryId)
+      throw new BadRequestException('Missing X-GitHub-Delivery header');
 
     const traceId = TraceIdUtil.generate(deliveryId);
     const traceCtx: TraceContext = { traceId, webhookEventId: deliveryId };
 
     return TraceContextStorage.run(traceCtx, async () => {
-      this.logger.log(`[${traceId}] Received GitHub webhook: ${eventType} (${deliveryId})`);
+      this.logger.log(
+        `[${traceId}] Received GitHub webhook: ${eventType} (${deliveryId})`,
+      );
 
       await this.traceService.createTrace({
         traceId,
@@ -97,8 +117,14 @@ export class WebhooksController {
         const response = await this.webhooksService.processWebhook(event);
 
         if (!response.success) {
-          await this.traceService.appendEvent(traceId, TraceStatus.FAILED, response.message);
-          this.logger.warn(`[${traceId}] GitHub webhook processing failed: ${response.message}`);
+          await this.traceService.appendEvent(
+            traceId,
+            TraceStatus.FAILED,
+            response.message,
+          );
+          this.logger.warn(
+            `[${traceId}] GitHub webhook processing failed: ${response.message}`,
+          );
           throw new UnauthorizedException(response.message);
         }
 
@@ -129,7 +155,10 @@ export class WebhooksController {
             { error: error.message },
           );
         }
-        this.logger.error(`[${traceId}] GitHub webhook error: ${error.message}`, error.stack);
+        this.logger.error(
+          `[${traceId}] GitHub webhook error: ${error.message}`,
+          error.stack,
+        );
         throw error;
       }
     });
@@ -149,23 +178,29 @@ export class WebhooksController {
     description: 'Verification processed',
     type: WebhookResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Invalid webhook headers or payload' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid webhook headers or payload',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleApiVerificationWebhook(
     @Body() payload: any,
     @Headers('x-event-type') eventType: string,
     @Headers('x-webhook-id') webhookId: string,
     @Headers('authorization') authHeader: string,
-    @Headers() headers: any,
   ): Promise<WebhookResponse> {
-    if (!eventType) throw new BadRequestException('Missing X-Event-Type header');
-    if (!webhookId) throw new BadRequestException('Missing X-Webhook-ID header');
+    if (!eventType)
+      throw new BadRequestException('Missing X-Event-Type header');
+    if (!webhookId)
+      throw new BadRequestException('Missing X-Webhook-ID header');
 
     const traceId = TraceIdUtil.generate(webhookId);
     const traceCtx: TraceContext = { traceId, webhookEventId: webhookId };
 
     return TraceContextStorage.run(traceCtx, async () => {
-      this.logger.log(`[${traceId}] Received API verification webhook: ${eventType} (${webhookId})`);
+      this.logger.log(
+        `[${traceId}] Received API verification webhook: ${eventType} (${webhookId})`,
+      );
 
       await this.traceService.createTrace({
         traceId,
@@ -193,8 +228,14 @@ export class WebhooksController {
         const response = await this.webhooksService.processWebhook(event);
 
         if (!response.success) {
-          await this.traceService.appendEvent(traceId, TraceStatus.FAILED, response.message);
-          this.logger.warn(`[${traceId}] API webhook processing failed: ${response.message}`);
+          await this.traceService.appendEvent(
+            traceId,
+            TraceStatus.FAILED,
+            response.message,
+          );
+          this.logger.warn(
+            `[${traceId}] API webhook processing failed: ${response.message}`,
+          );
           throw new UnauthorizedException(response.message);
         }
 
@@ -224,7 +265,10 @@ export class WebhooksController {
             { error: error.message },
           );
         }
-        this.logger.error(`[${traceId}] API webhook error: ${error.message}`, error.stack);
+        this.logger.error(
+          `[${traceId}] API webhook error: ${error.message}`,
+          error.stack,
+        );
         throw error;
       }
     });
@@ -257,7 +301,9 @@ export class WebhooksController {
     const traceCtx: TraceContext = { traceId, webhookEventId: eventId };
 
     return TraceContextStorage.run(traceCtx, async () => {
-      this.logger.log(`[${traceId}] Received generic webhook from ${service}: ${eventType}`);
+      this.logger.log(
+        `[${traceId}] Received generic webhook from ${service}: ${eventType}`,
+      );
 
       await this.traceService.createTrace({
         traceId,
@@ -280,7 +326,11 @@ export class WebhooksController {
         const response = await this.webhooksService.processWebhook(event);
 
         if (!response.success) {
-          await this.traceService.appendEvent(traceId, TraceStatus.FAILED, response.message);
+          await this.traceService.appendEvent(
+            traceId,
+            TraceStatus.FAILED,
+            response.message,
+          );
           throw new UnauthorizedException(response.message);
         }
 
@@ -310,10 +360,87 @@ export class WebhooksController {
             { error: error.message },
           );
         }
-        this.logger.error(`[${traceId}] Generic webhook error: ${error.message}`, error.stack);
+        this.logger.error(
+          `[${traceId}] Generic webhook error: ${error.message}`,
+          error.stack,
+        );
         throw error;
       }
     });
+  }
+
+  /**
+   * List persisted failed webhook events (admin only)
+   */
+  @Get('admin/failed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List failed webhook events (Admin only)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: FailedWebhookStatus,
+    description: 'Filter by retry lifecycle status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook events retrieved successfully',
+    type: [FailedWebhookEventResponseDto],
+  })
+  async listFailedWebhooks(
+    @Query('status') status?: FailedWebhookStatus,
+  ): Promise<FailedWebhookEventResponseDto[]> {
+    return this.webhooksService.listFailedWebhooks(status);
+  }
+
+  /**
+   * Inspect a single failed webhook event (admin only)
+   */
+  @Get('admin/failed/:eventId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook event retrieved successfully',
+    type: FailedWebhookEventResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'No failed webhook found' })
+  async getFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<FailedWebhookEventResponseDto> {
+    const record = await this.webhooksService.getFailedWebhook(eventId);
+    if (!record) {
+      throw new NotFoundException(
+        `No failed webhook found for event ${eventId}`,
+      );
+    }
+    return record;
+  }
+
+  /**
+   * Manually trigger a retry of a failed webhook event (admin only)
+   */
+  @Post('admin/failed/:eventId/retry')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Retry a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retry attempted',
+    type: RetryWebhookResponseDto,
+  })
+  async retryFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<RetryWebhookResponseDto> {
+    const success = await this.webhooksService.retryFailedWebhook(eventId);
+    return { success, eventId };
   }
 
   /**

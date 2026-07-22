@@ -1,12 +1,5 @@
-import {
-  IsOptional,
-  IsString,
-  IsNumber,
-  IsObject,
-  IsArray,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNumber, IsObject } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO for creating a new job

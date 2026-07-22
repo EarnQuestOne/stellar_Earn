@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PayoutReconciliationProcessor } from '#src/modules/jobs/processors/payout-reconciliation.processor';
 import { JobLogService } from '#src/modules/jobs/services/job-log.service';
-import { Payout, PayoutStatus } from '#src/modules/payouts/entities/payout.entity';
+import {
+  Payout,
+  PayoutStatus,
+} from '#src/modules/payouts/entities/payout.entity';
 
 describe('PayoutReconciliationProcessor', () => {
   let module: TestingModule;
@@ -109,7 +112,11 @@ describe('PayoutReconciliationProcessor', () => {
 
     it('should do nothing when there are no submitted payouts', async () => {
       payoutRepository.find.mockResolvedValueOnce([
-        { id: 'payout-4', status: PayoutStatus.PROCESSING, transactionHash: null },
+        {
+          id: 'payout-4',
+          status: PayoutStatus.PROCESSING,
+          transactionHash: null,
+        },
       ]);
 
       await processor.runReconciliation();
@@ -118,7 +125,9 @@ describe('PayoutReconciliationProcessor', () => {
     });
 
     it('should handle repository errors gracefully', async () => {
-      payoutRepository.find.mockRejectedValueOnce(new Error('DB connection lost'));
+      payoutRepository.find.mockRejectedValueOnce(
+        new Error('DB connection lost'),
+      );
 
       await expect(processor.runReconciliation()).resolves.not.toThrow();
     });

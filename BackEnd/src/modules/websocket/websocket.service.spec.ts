@@ -11,7 +11,11 @@ describe('WebsocketService', () => {
     findOne: jest.fn(),
     find: jest.fn().mockResolvedValue([]),
     create: jest.fn().mockImplementation((dto) => dto),
-    save: jest.fn().mockImplementation((entity) => Promise.resolve({ id: 'sub-1', ...entity })),
+    save: jest
+      .fn()
+      .mockImplementation((entity) =>
+        Promise.resolve({ id: 'sub-1', ...entity }),
+      ),
   };
 
   const mockMessageRepo = {
@@ -45,7 +49,10 @@ describe('WebsocketService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WebsocketService,
-        { provide: getRepositoryToken(WsSubscription), useValue: mockSubscriptionRepo },
+        {
+          provide: getRepositoryToken(WsSubscription),
+          useValue: mockSubscriptionRepo,
+        },
         { provide: getRepositoryToken(WsMessage), useValue: mockMessageRepo },
       ],
     }).compile();
@@ -79,7 +86,9 @@ describe('WebsocketService', () => {
       const socket2: any = {
         ...mockSocket,
         id: 'socket-2',
-        data: { user: { id: 'user-1', stellarAddress: 'GABCDEF...', role: 'USER' } },
+        data: {
+          user: { id: 'user-1', stellarAddress: 'GABCDEF...', role: 'USER' },
+        },
         join: jest.fn(),
       };
       service.registerClient(mockSocket);
@@ -103,20 +112,32 @@ describe('WebsocketService', () => {
     });
 
     it('should subscribe with resource ID', async () => {
-      const result = await service.subscribe('socket-1', WsChannel.SUBMISSION_STATUS, 'quest-123');
+      const result = await service.subscribe(
+        'socket-1',
+        WsChannel.SUBMISSION_STATUS,
+        'quest-123',
+      );
       expect(result.success).toBe(true);
-      expect(mockSocket.join).toHaveBeenCalledWith(`${WsChannel.SUBMISSION_STATUS}:quest-123`);
+      expect(mockSocket.join).toHaveBeenCalledWith(
+        `${WsChannel.SUBMISSION_STATUS}:quest-123`,
+      );
     });
 
     it('should unsubscribe from a channel', async () => {
-      mockSubscriptionRepo.findOne.mockResolvedValue({ id: 'sub-1', active: true });
+      mockSubscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        active: true,
+      });
       const result = await service.unsubscribe('socket-1', WsChannel.QUEST_NEW);
       expect(result.success).toBe(true);
       expect(mockSocket.leave).toHaveBeenCalledWith(WsChannel.QUEST_NEW);
     });
 
     it('should return error for non-existent client', async () => {
-      const result = await service.subscribe('non-existent', WsChannel.QUEST_NEW);
+      const result = await service.subscribe(
+        'non-existent',
+        WsChannel.QUEST_NEW,
+      );
       expect(result.success).toBe(false);
     });
 
@@ -132,14 +153,21 @@ describe('WebsocketService', () => {
 
   describe('messaging', () => {
     it('should send to user', async () => {
-      await service.sendToUser('user-1', 'test-event', { data: 'test' }, WsChannel.QUEST_NEW);
+      await service.sendToUser(
+        'user-1',
+        'test-event',
+        { data: 'test' },
+        WsChannel.QUEST_NEW,
+      );
       expect(mockServer.to).toHaveBeenCalledWith('user:user-1');
       expect(mockServer.emit).toHaveBeenCalled();
       expect(mockMessageRepo.save).toHaveBeenCalled();
     });
 
     it('should send to channel', async () => {
-      await service.sendToChannel(WsChannel.QUEST_NEW, 'quest:created', { id: '1' });
+      await service.sendToChannel(WsChannel.QUEST_NEW, 'quest:created', {
+        id: '1',
+      });
       expect(mockServer.to).toHaveBeenCalledWith(WsChannel.QUEST_NEW);
       expect(mockServer.emit).toHaveBeenCalled();
     });
@@ -161,13 +189,21 @@ describe('WebsocketService', () => {
 
   describe('message history', () => {
     it('should fetch message history', async () => {
-      const messages = await service.getMessageHistory(WsChannel.QUEST_NEW, 'user-1');
+      const messages = await service.getMessageHistory(
+        WsChannel.QUEST_NEW,
+        'user-1',
+      );
       expect(mockMessageRepo.createQueryBuilder).toHaveBeenCalled();
       expect(messages).toEqual([]);
     });
 
     it('should limit results to 200 max', async () => {
-      await service.getMessageHistory(WsChannel.QUEST_NEW, 'user-1', undefined, 500);
+      await service.getMessageHistory(
+        WsChannel.QUEST_NEW,
+        'user-1',
+        undefined,
+        500,
+      );
       const queryBuilder = mockMessageRepo.createQueryBuilder();
       expect(queryBuilder.take).toHaveBeenCalledWith(200);
     });

@@ -36,7 +36,7 @@ export function EmptyQuestState({
       {hasActiveFilters && onClearFilters && (
         <button
           onClick={onClearFilters}
-          className="mt-4 rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:bg-[#089ec3] dark:hover:bg-[#0ab8d4]"
+          className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary dark:bg-primary dark:hover:bg-primary"
         >
           Clear Filters
         </button>

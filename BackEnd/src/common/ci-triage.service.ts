@@ -28,9 +28,24 @@ export class CiTriageService {
 
     let label: TriageLabel = 'unknown';
     if (msg.includes('timeout') || msg.includes('timed out')) label = 'timeout';
-    else if (msg.includes('econnrefused') || msg.includes('docker') || msg.includes('database')) label = 'infra';
-    else if (msg.includes('flaky') || msg.includes('intermittent') || msg.includes('retry')) label = 'flaky';
-    else if (msg.includes('assertionerror') || msg.includes('expected') || msg.includes('typeerror')) label = 'logic';
+    else if (
+      msg.includes('econnrefused') ||
+      msg.includes('docker') ||
+      msg.includes('database')
+    )
+      label = 'infra';
+    else if (
+      msg.includes('flaky') ||
+      msg.includes('intermittent') ||
+      msg.includes('retry')
+    )
+      label = 'flaky';
+    else if (
+      msg.includes('assertionerror') ||
+      msg.includes('expected') ||
+      msg.includes('typeerror')
+    )
+      label = 'logic';
 
     const result: TriageResult = {
       label,

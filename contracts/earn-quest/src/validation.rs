@@ -144,10 +144,14 @@ pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
 /// # Returns
 /// * `Ok(())` if the quest has not yet expired (with buffer)
 /// * `Err(Error::QuestExpired)` if the deadline + buffer has passed
-pub fn validate_quest_not_expired(env: &Env, deadline: u64) -> Result<(), Error> {
+pub fn validate_quest_not_expired(
+    env: &Env,
+    deadline: u64,
+    grace_period_seconds: u64,
+) -> Result<(), Error> {
     let current_time = env.ledger().timestamp();
     // Use saturating_add to prevent u64 overflow on extreme deadline values
-    if current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER) {
+    if current_time >= deadline.saturating_add(grace_period_seconds) {
         return Err(Error::QuestExpired);
     }
     Ok(())
@@ -157,9 +161,9 @@ pub fn validate_quest_not_expired(env: &Env, deadline: u64) -> Result<(), Error>
 ///
 /// Use this for read-only expiry checks (e.g. `expire_quest`, `auto_expire`).
 /// The buffer ensures we don't mark a quest expired due to minor clock drift.
-pub fn is_quest_expired(env: &Env, deadline: u64) -> bool {
+pub fn is_quest_expired(env: &Env, deadline: u64, grace_period_seconds: u64) -> bool {
     let current_time = env.ledger().timestamp();
-    current_time >= deadline.saturating_add(MIN_EXPIRY_BUFFER)
+    current_time >= deadline.saturating_add(grace_period_seconds)
 }
 
 // String / Symbol Length Validation
@@ -249,16 +253,16 @@ pub fn validate_badge_count(current_count: u32) -> Result<(), Error> {
 /// * `Ok(())` if the transition is allowed
 /// * `Err(Error::InvalidStatusTransition)` if the transition is not allowed
 pub fn validate_quest_status_transition(from: &QuestStatus, to: &QuestStatus) -> Result<(), Error> {
-    let valid = match (from, to) {
-        (QuestStatus::Active, QuestStatus::Paused) => true,
-        (QuestStatus::Active, QuestStatus::Completed) => true,
-        (QuestStatus::Active, QuestStatus::Expired) => true,
-        (QuestStatus::Paused, QuestStatus::Active) => true,
-        (QuestStatus::Paused, QuestStatus::Expired) => true,
-        (QuestStatus::Active, QuestStatus::Cancelled) => true,
-        (QuestStatus::Paused, QuestStatus::Cancelled) => true,
-        _ => false,
-    };
+    let valid = matches!(
+        (from, to),
+        (QuestStatus::Active, QuestStatus::Paused)
+            | (QuestStatus::Active, QuestStatus::Completed)
+            | (QuestStatus::Active, QuestStatus::Expired)
+            | (QuestStatus::Paused, QuestStatus::Active)
+            | (QuestStatus::Paused, QuestStatus::Expired)
+            | (QuestStatus::Active, QuestStatus::Cancelled)
+            | (QuestStatus::Paused, QuestStatus::Cancelled)
+    );
 
     if !valid {
         return Err(Error::InvalidStatusTransition);
@@ -284,15 +288,18 @@ pub fn validate_submission_status_transition(
     from: &SubmissionStatus,
     to: &SubmissionStatus,
 ) -> Result<(), Error> {
-    let valid = match (from, to) {
-        (SubmissionStatus::Pending, SubmissionStatus::Approved) => true,
-        (SubmissionStatus::Pending, SubmissionStatus::Rejected) => true,
-        (SubmissionStatus::Approved, SubmissionStatus::PartiallyPaid) => true,
-        (SubmissionStatus::Approved, SubmissionStatus::Paid) => true,
-        (SubmissionStatus::PartiallyPaid, SubmissionStatus::PartiallyPaid) => true,
-        (SubmissionStatus::PartiallyPaid, SubmissionStatus::Paid) => true,
-        _ => false,
-    };
+    let valid = matches!(
+        (from, to),
+        (SubmissionStatus::Pending, SubmissionStatus::Approved)
+            | (SubmissionStatus::Pending, SubmissionStatus::Rejected)
+            | (SubmissionStatus::Approved, SubmissionStatus::PartiallyPaid)
+            | (SubmissionStatus::Approved, SubmissionStatus::Paid)
+            | (
+                SubmissionStatus::PartiallyPaid,
+                SubmissionStatus::PartiallyPaid
+            )
+            | (SubmissionStatus::PartiallyPaid, SubmissionStatus::Paid)
+    );
 
     if !valid {
         return Err(Error::InvalidStatusTransition);

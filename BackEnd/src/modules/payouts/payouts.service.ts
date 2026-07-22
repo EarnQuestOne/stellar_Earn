@@ -27,11 +27,17 @@ import {
   PaginatedResponseDto,
 } from '../../common/dto/pagination.dto';
 import { QuotaService } from '../quota/quota.service';
+import { MetricsService } from '../../common/services/metrics.service';
+import { JobsService } from '../jobs/jobs.service';
+import { QUEUES } from '../jobs/jobs.constants';
+import { BulkheadService } from '../../common/services/bulkhead.service';
 
 @Injectable()
 export class PayoutsService {
   private readonly logger = new Logger(PayoutsService.name);
   private readonly settlementRetryDelayMs = 60_000;
+  private readonly maxAutomaticPayoutRetries = 5;
+  private readonly payoutRetryBaseDelayMs = 5 * 60 * 1000;
 
   constructor(
     @InjectRepository(Payout)
@@ -40,27 +46,37 @@ export class PayoutsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly fraudRiskRulesService: FraudRiskRulesService,
     private readonly quotaService: QuotaService,
+    private readonly metricsService: MetricsService,
+    private readonly jobsService: JobsService,
+    private readonly bulkheadService: BulkheadService,
   ) {}
 
   // ─── Create ────────────────────────────────────────────────────────────────
 
   async createPayout(createPayoutDto: CreatePayoutDto): Promise<Payout> {
-    await this.quotaService.enforcePayoutQuota(
-      createPayoutDto.stellarAddress,
-      createPayoutDto.amount,
+    return this.bulkheadService.runWithBulkhead(
+      'payouts',
+      async () => {
+        await this.quotaService.enforcePayoutQuota(
+          createPayoutDto.stellarAddress,
+          createPayoutDto.amount,
+        );
+
+        const payout = this.payoutRepository.create({
+          stellarAddress: createPayoutDto.stellarAddress,
+          amount: createPayoutDto.amount,
+          asset: createPayoutDto.asset || 'XLM',
+          type: createPayoutDto.type || PayoutType.QUEST_REWARD,
+          questId: createPayoutDto.questId,
+          submissionId: createPayoutDto.submissionId,
+          status: PayoutStatus.PENDING,
+          maxRetries: this.maxAutomaticPayoutRetries,
+        });
+
+        return this.payoutRepository.save(payout);
+      },
+      this.getPayoutBulkheadOptions(),
     );
-
-    const payout = this.payoutRepository.create({
-      stellarAddress: createPayoutDto.stellarAddress,
-      amount: createPayoutDto.amount,
-      asset: createPayoutDto.asset || 'XLM',
-      type: createPayoutDto.type || PayoutType.QUEST_REWARD,
-      questId: createPayoutDto.questId,
-      submissionId: createPayoutDto.submissionId,
-      status: PayoutStatus.PENDING,
-    });
-
-    return this.payoutRepository.save(payout);
   }
 
   // ─── Claim ─────────────────────────────────────────────────────────────────
@@ -69,106 +85,144 @@ export class PayoutsService {
     claimPayoutDto: ClaimPayoutDto,
     userAddress: string,
   ): Promise<PayoutResponseDto> {
-    const payout = await this.payoutRepository.findOne({
-      where: {
-        submissionId: claimPayoutDto.submissionId,
-        stellarAddress: userAddress,
+    return this.bulkheadService.runWithBulkhead(
+      'payouts',
+      async () => {
+        const payout = await this.payoutRepository.findOne({
+          where: {
+            submissionId: claimPayoutDto.submissionId,
+            stellarAddress: userAddress,
+          },
+        });
+
+        if (!payout) {
+          throw new NotFoundException('Payout not found for this submission');
+        }
+
+        if (!payout.isClaimable()) {
+          throw new BadRequestException(
+            `Payout cannot be claimed. Current status: ${payout.status}`,
+          );
+        }
+
+        if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
+          throw new BadRequestException('Stellar address mismatch');
+        }
+
+        payout.claimedAt = new Date();
+        payout.status = PayoutStatus.PROCESSING;
+        await this.payoutRepository.save(payout);
+
+        this.processPayout(payout.id).catch((error) => {
+          this.logger.error(`Failed to process payout ${payout.id}`, error);
+        });
+
+        return this.mapToResponse(payout);
       },
-    });
-
-    if (!payout) {
-      throw new NotFoundException('Payout not found for this submission');
-    }
-
-    if (!payout.isClaimable()) {
-      throw new BadRequestException(
-        `Payout cannot be claimed. Current status: ${payout.status}`,
-      );
-    }
-
-    if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
-      throw new BadRequestException('Stellar address mismatch');
-    }
-
-    payout.claimedAt = new Date();
-    payout.status = PayoutStatus.PROCESSING;
-    await this.payoutRepository.save(payout);
-
-    this.processPayout(payout.id).catch((error) => {
-      this.logger.error(`Failed to process payout ${payout.id}`, error);
-    });
-
-    return this.mapToResponse(payout);
+      this.getPayoutBulkheadOptions(),
+    );
   }
 
   // ─── Process ───────────────────────────────────────────────────────────────
 
   async processPayout(payoutId: string): Promise<void> {
-    const payout = await this.payoutRepository.findOne({
-      where: { id: payoutId },
-    });
+    return this.bulkheadService.runWithBulkhead(
+      'payouts',
+      async () => {
+        const payout = await this.payoutRepository.findOne({
+          where: { id: payoutId },
+        });
 
-    if (!payout) {
-      throw new NotFoundException(`Payout ${payoutId} not found`);
-    }
+        if (!payout) {
+          throw new NotFoundException(`Payout ${payoutId} not found`);
+        }
 
-    if (payout.status !== PayoutStatus.PROCESSING) {
-      this.logger.warn(
-        `Payout ${payoutId} is not in PROCESSING status, skipping`,
-      );
-      return;
-    }
+        if (payout.status !== PayoutStatus.PROCESSING) {
+          this.logger.warn(
+            `Payout ${payoutId} is not in PROCESSING status, skipping`,
+          );
+          return;
+        }
 
-    if (payout.transactionHash && payout.stellarLedger) {
-      await this.confirmSettlementFinality(payout);
-      return;
-    }
+        if (payout.transactionHash && payout.stellarLedger) {
+          await this.confirmSettlementFinality(payout);
+          return;
+        }
 
-    try {
-      const result = await this.executeStellarPayment(payout);
-      payout.transactionHash = result.transactionHash;
-      payout.stellarLedger = result.ledger;
-      payout.failureReason = null;
+        try {
+          const result = await this.executeStellarPayment(payout);
+          payout.transactionHash = result.transactionHash;
+          payout.stellarLedger = result.ledger;
+          payout.failureReason = null;
 
-      const settlement = await this.getSettlementConfirmationState(
-        result.ledger,
-      );
+          const settlement = await this.getSettlementConfirmationState(
+            result.ledger,
+          );
 
-      payout.settlementConfirmations = settlement.confirmations;
+          payout.settlementConfirmations = settlement.confirmations;
 
-      if (!settlement.isFinal) {
-        payout.status = PayoutStatus.PROCESSING;
-        payout.nextRetryAt = new Date(Date.now() + this.settlementRetryDelayMs);
-        await this.payoutRepository.save(payout);
-        this.logger.log(
-          `Payout ${payoutId} submitted and waiting for settlement finality (${settlement.confirmations}/${settlement.requiredConfirmations} confirmations)`,
-        );
-        return;
-      }
+          if (!settlement.isFinal) {
+            payout.status = PayoutStatus.PROCESSING;
+            payout.nextRetryAt = new Date(
+              Date.now() + this.settlementRetryDelayMs,
+            );
+            await this.payoutRepository.save(payout);
+            this.logger.log(
+              `Payout ${payoutId} submitted and waiting for settlement finality (${settlement.confirmations}/${settlement.requiredConfirmations} confirmations)`,
+            );
+            return;
+          }
 
-      this.markPayoutCompleted(payout);
-      await this.payoutRepository.save(payout);
-      this.logger.log(`Payout ${payoutId} completed successfully`);
+          this.markPayoutCompleted(payout);
+          await this.payoutRepository.save(payout);
+          this.logger.log(`Payout ${payoutId} completed successfully`);
 
-      this.emitPayoutProcessed(payout);
-    } catch (error) {
-      if (payout.transactionHash && payout.stellarLedger) {
-        payout.status = PayoutStatus.PROCESSING;
-        payout.failureReason = error.message || 'Settlement confirmation failed';
-        payout.nextRetryAt = new Date(Date.now() + this.settlementRetryDelayMs);
-        await this.payoutRepository.save(payout);
-        this.logger.warn(
-          `Payout ${payout.id} transaction submitted but settlement confirmation is unavailable; retry scheduled`,
-        );
-        return;
-      }
+          this.emitPayoutProcessed(payout);
+        } catch (error) {
+          if (payout.transactionHash && payout.stellarLedger) {
+            payout.status = PayoutStatus.PROCESSING;
+            payout.failureReason =
+              error.message || 'Settlement confirmation failed';
+            payout.nextRetryAt = new Date(
+              Date.now() + this.settlementRetryDelayMs,
+            );
+            await this.payoutRepository.save(payout);
+            this.logger.warn(
+              `Payout ${payout.id} transaction submitted but settlement confirmation is unavailable; retry scheduled`,
+            );
+            return;
+          }
 
-      this.eventEmitter.emit(
-        'payout.failed',
-        new PayoutFailedEvent(payout.id, payout.stellarAddress, error.message),
-      );
-      await this.handlePayoutFailure(payout, error);
-    }
+          this.eventEmitter.emit(
+            'payout.failed',
+            new PayoutFailedEvent(
+              payout.id,
+              payout.stellarAddress,
+              error.message,
+            ),
+          );
+          await this.handlePayoutFailure(payout, error);
+        }
+      },
+      this.getPayoutBulkheadOptions(),
+    );
+  }
+
+  private getPayoutBulkheadOptions() {
+    return {
+      maxConcurrent: Number(
+        this.configService.get<number | string>(
+          'PAYOUT_BULKHEAD_MAX_CONCURRENT',
+          5,
+        ),
+      ),
+      maxQueueSize: Number(
+        this.configService.get<number | string>(
+          'PAYOUT_BULKHEAD_MAX_QUEUE_SIZE',
+          20,
+        ),
+      ),
+    };
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -259,9 +313,7 @@ export class PayoutsService {
   private async getCurrentStellarLedger(): Promise<number> {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
     const mockLedger = Number(
-      this.configService.get<number | string>(
-        'STELLAR_MOCK_CURRENT_LEDGER',
-      ),
+      this.configService.get<number | string>('STELLAR_MOCK_CURRENT_LEDGER'),
     );
 
     if (Number.isInteger(mockLedger) && mockLedger > 0) {
@@ -285,9 +337,7 @@ export class PayoutsService {
     }
 
     const payload = await response.json();
-    const latestLedger = Number(
-      payload?._embedded?.records?.[0]?.sequence,
-    );
+    const latestLedger = Number(payload?._embedded?.records?.[0]?.sequence);
 
     if (!Number.isInteger(latestLedger) || latestLedger <= 0) {
       throw new ServiceUnavailableException(
@@ -363,23 +413,97 @@ export class PayoutsService {
     this.logger.error(`Payout ${payout.id} failed: ${errorMessage}`);
 
     payout.retryCount += 1;
+    payout.maxRetries = this.maxAutomaticPayoutRetries;
     payout.failureReason = errorMessage;
 
-    if (payout.canRetry()) {
-      const delayMinutes = Math.pow(2, payout.retryCount) * 5;
-      payout.nextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+    if (this.shouldRetryPayout(payout)) {
+      payout.nextRetryAt = new Date(
+        Date.now() + this.getPayoutRetryDelayMs(payout.retryCount),
+      );
       payout.status = PayoutStatus.RETRY_SCHEDULED;
+      this.recordPayoutFailureMetric(payout, 'retry_scheduled');
       this.logger.log(
-        `Payout ${payout.id} scheduled for retry at ${payout.nextRetryAt}`,
+        `Payout ${payout.id} scheduled for retry at ${String(payout.nextRetryAt)}`,
       );
     } else {
-      payout.status = PayoutStatus.FAILED;
+      payout.status = PayoutStatus.DEAD_LETTER;
+      payout.nextRetryAt = null;
+      await this.enqueuePayoutDeadLetter(payout, errorMessage);
+      this.emitPayoutDeadLettered(payout, errorMessage);
+      this.recordPayoutFailureMetric(payout, 'dead_letter');
       this.logger.error(
-        `Payout ${payout.id} failed permanently after ${payout.retryCount} attempts`,
+        `Payout ${payout.id} moved to dead letter after ${payout.retryCount} attempts`,
       );
     }
 
     await this.payoutRepository.save(payout);
+  }
+
+  private shouldRetryPayout(payout: Payout): boolean {
+    return payout.retryCount < this.maxAutomaticPayoutRetries;
+  }
+
+  private getPayoutRetryDelayMs(retryCount: number): number {
+    const exponent = Math.max(0, retryCount - 1);
+    return Math.pow(2, exponent) * this.payoutRetryBaseDelayMs;
+  }
+
+  private async enqueuePayoutDeadLetter(
+    payout: Payout,
+    errorMessage: string,
+  ): Promise<void> {
+    try {
+      await this.jobsService.addJob(
+        QUEUES.DEAD_LETTER,
+        {
+          failedJob: {
+            id: payout.id,
+            name: 'payout.settlement',
+            failedReason: errorMessage,
+            data: {
+              payoutId: payout.id,
+              asset: payout.asset,
+              retryCount: payout.retryCount,
+            },
+          },
+        },
+        {
+          jobId: `payout-${payout.id}-dead-letter`,
+          attempts: 1,
+          removeOnComplete: false,
+          removeOnFail: false,
+        },
+      );
+    } catch (deadLetterError) {
+      this.logger.error(
+        `Failed to enqueue dead-letter entry for payout ${payout.id}`,
+        deadLetterError,
+      );
+    }
+  }
+
+  private emitPayoutDeadLettered(payout: Payout, reason: string): void {
+    this.eventEmitter.emit('payout.dead_lettered', {
+      payoutId: payout.id,
+      asset: payout.asset,
+      retryCount: payout.retryCount,
+      reason,
+      deadLetteredAt: new Date(),
+    });
+  }
+
+  private recordPayoutFailureMetric(
+    payout: Payout,
+    outcome: 'retry_scheduled' | 'dead_letter',
+  ): void {
+    const labels = { asset: payout.asset, outcome };
+    this.metricsService.incrementCounter('payout_failures_total', labels);
+
+    if (outcome === 'dead_letter') {
+      this.metricsService.incrementCounter('payout_dead_letter_total', {
+        asset: payout.asset,
+      });
+    }
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
@@ -488,7 +612,7 @@ export class PayoutsService {
     );
 
     // Cast is safe — PayoutHistoryResponseDto extends PaginatedResponseDto<PayoutResponseDto>
-    return result as PayoutHistoryResponseDto;
+    return result;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────────
@@ -510,12 +634,12 @@ export class PayoutsService {
         'COALESCE(SUM(CASE WHEN payout.status = :pending THEN payout.amount ELSE 0 END), 0) as "pendingAmount"',
         'COUNT(CASE WHEN payout.status = :completed THEN 1 END) as "completedPayouts"',
         'COALESCE(SUM(CASE WHEN payout.status = :completed THEN payout.amount ELSE 0 END), 0) as "completedAmount"',
-        'COUNT(CASE WHEN payout.status = :failed THEN 1 END) as "failedPayouts"',
+        'COUNT(CASE WHEN payout.status IN (:...failedStatuses) THEN 1 END) as "failedPayouts"',
       ])
       .setParameters({
         pending: PayoutStatus.PENDING,
         completed: PayoutStatus.COMPLETED,
-        failed: PayoutStatus.FAILED,
+        failedStatuses: [PayoutStatus.FAILED, PayoutStatus.DEAD_LETTER],
       })
       .getRawOne();
 
@@ -538,12 +662,14 @@ export class PayoutsService {
 
     if (!payout) throw new NotFoundException('Payout not found');
 
-    if (payout.status !== PayoutStatus.FAILED) {
+    if (
+      ![PayoutStatus.FAILED, PayoutStatus.DEAD_LETTER].includes(payout.status)
+    ) {
       throw new BadRequestException('Only failed payouts can be retried');
     }
 
     payout.retryCount = 0;
-    payout.maxRetries = 3;
+    payout.maxRetries = this.maxAutomaticPayoutRetries;
     payout.status = PayoutStatus.PROCESSING;
     payout.failureReason = null;
     await this.payoutRepository.save(payout);

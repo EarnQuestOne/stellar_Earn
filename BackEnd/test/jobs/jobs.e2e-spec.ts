@@ -58,7 +58,9 @@ describe('Jobs (e2e)', () => {
     // Clean up test data
     if (dataSource && dataSource.isInitialized) {
       const jobScheduleRepository = dataSource.getRepository(JobSchedule);
-      await jobScheduleRepository.delete({ jobType: 'dependency:freshness-check' });
+      await jobScheduleRepository.delete({
+        jobType: 'dependency:freshness-check',
+      });
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
     await app.close();

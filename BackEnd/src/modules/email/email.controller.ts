@@ -12,7 +12,13 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { EmailService } from './email.service';
 import { SendEmailDto, UnsubscribeDto } from './dto/email.dto';
 
@@ -109,7 +115,8 @@ export class EmailController {
 
     return {
       success: true,
-      message: 'You have been successfully unsubscribed from email notifications.',
+      message:
+        'You have been successfully unsubscribed from email notifications.',
     };
   }
 

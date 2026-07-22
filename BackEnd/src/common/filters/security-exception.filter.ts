@@ -33,7 +33,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const responseObj = exception.getResponse();
-      
+
       if (typeof responseObj === 'string') {
         message = responseObj;
       } else if (responseObj && typeof responseObj === 'object') {
@@ -47,7 +47,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         exception.stack,
         `IP: ${clientIP} | URL: ${request.method} ${request.url}`,
       );
-      
+
       // Don't expose internal error details to client
       message = 'An unexpected error occurred';
     }
@@ -94,19 +94,20 @@ export class SecurityExceptionFilter implements ExceptionFilter {
 
   private sanitizeErrorMessage(message: string, status: number): string {
     // Don't sanitize 404 messages as they're not sensitive
-    if (status === HttpStatus.NOT_FOUND) {
+    if (status === Number(HttpStatus.NOT_FOUND)) {
       return message;
     }
 
     // For security-related errors, provide generic messages
-    const securityErrorMessages = {
+    const securityErrorMessages: Record<number, string> = {
       [HttpStatus.FORBIDDEN]: 'Access forbidden',
       [HttpStatus.UNAUTHORIZED]: 'Unauthorized access',
       [HttpStatus.TOO_MANY_REQUESTS]: 'Too many requests',
-    } as const;
+    };
 
-    if (securityErrorMessages[status as keyof typeof securityErrorMessages]) {
-      return securityErrorMessages[status as keyof typeof securityErrorMessages];
+    const securityMessage = securityErrorMessages[status];
+    if (securityMessage) {
+      return securityMessage;
     }
 
     // For other errors, keep the original message but sanitize if needed

@@ -69,12 +69,17 @@ export class SendEmailDto {
   @IsNotEmpty()
   subject: string;
 
-  @ApiPropertyOptional({ description: 'Email template to use', enum: EmailTemplate })
+  @ApiPropertyOptional({
+    description: 'Email template to use',
+    enum: EmailTemplate,
+  })
   @IsEnum(EmailTemplate)
   @IsOptional()
   template?: EmailTemplate;
 
-  @ApiPropertyOptional({ description: 'Template variables for dynamic content' })
+  @ApiPropertyOptional({
+    description: 'Template variables for dynamic content',
+  })
   @IsObject()
   @IsOptional()
   templateData?: Record<string, any>;

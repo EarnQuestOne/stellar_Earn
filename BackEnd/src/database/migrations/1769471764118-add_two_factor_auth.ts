@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, Index } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
 /**
  * Migration: add_two_factor_auth
@@ -60,7 +60,9 @@ export class AddTwoFactorAuth1769471764118 implements MigrationInterface {
       true,
     );
 
-    await queryRunner.query(`CREATE UNIQUE INDEX "IDX_two_factor_auth_stellarAddress" ON "two_factor_auth" ("stellarAddress")`);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_two_factor_auth_stellarAddress" ON "two_factor_auth" ("stellarAddress")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

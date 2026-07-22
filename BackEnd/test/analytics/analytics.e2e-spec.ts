@@ -447,7 +447,9 @@ describe('Analytics (e2e)', () => {
         .expect(200)
         .expect('Content-Type', /text\/csv/)
         .expect((res) => {
-          expect(res.text).toContain('ID,Contract Quest ID,Title,Reward Asset,Reward Amount');
+          expect(res.text).toContain(
+            'ID,Contract Quest ID,Title,Reward Asset,Reward Amount',
+          );
           expect(res.text).toContain('Test Quest 0');
         });
     });
@@ -503,7 +505,9 @@ describe('Analytics (e2e)', () => {
         .expect(200)
         .expect('Content-Type', /text\/csv/)
         .expect((res) => {
-          expect(res.text).toContain('ID,Contract Submission ID,Quest ID,User ID,Proof Hash');
+          expect(res.text).toContain(
+            'ID,Contract Submission ID,Quest ID,User ID,Proof Hash',
+          );
           expect(res.text).toContain('hash-0');
         });
     });

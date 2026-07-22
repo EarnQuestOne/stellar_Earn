@@ -1,12 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AnalyticsReport, ReportType, ReportFormat, ReportStatus } from '../entities/analytics-report.entity';
+import {
+  AnalyticsReport,
+  ReportType,
+  ReportFormat,
+  ReportStatus,
+} from '../entities/analytics-report.entity';
 import { User as AnalyticsUser } from '../entities/user.entity';
 import { PlatformAnalyticsService } from './platform-analytics.service';
 import { QuestAnalyticsService } from './quest-analytics.service';
 import { UserAnalyticsService } from './user-analytics.service';
-import { BaseAnalyticsExporter, ExportOptions, ExportResult } from '../exporters/base-exporter';
+import {
+  BaseAnalyticsExporter,
+  ExportOptions,
+  ExportResult,
+} from '../exporters/base-exporter';
 import { AnalyticsQueryDto, Granularity } from '../dto/analytics-query.dto';
 
 export interface ReportGenerationOptions {
@@ -49,7 +58,9 @@ export class AnalyticsReportService {
   /**
    * Generate a new analytics report
    */
-  async generateReport(options: ReportGenerationOptions): Promise<AnalyticsReport> {
+  async generateReport(
+    options: ReportGenerationOptions,
+  ): Promise<AnalyticsReport> {
     const report = this.reportRepository.create({
       name: this.generateReportName(options.type),
       description: this.generateReportDescription(options),
@@ -67,9 +78,16 @@ export class AnalyticsReportService {
     const savedReport = await this.reportRepository.save(report);
 
     // Generate report asynchronously
-    this.generateReportData(savedReport).catch(error => {
-      this.logger.error(`Failed to generate report ${savedReport.id}: ${error.message}`, error.stack);
-      this.updateReportStatus(savedReport.id, ReportStatus.FAILED, error.message);
+    this.generateReportData(savedReport).catch((error) => {
+      this.logger.error(
+        `Failed to generate report ${savedReport.id}: ${error.message}`,
+        error.stack,
+      );
+      this.updateReportStatus(
+        savedReport.id,
+        ReportStatus.FAILED,
+        error.message,
+      );
     });
 
     return savedReport;
@@ -111,15 +129,21 @@ export class AnalyticsReportService {
     }
 
     if (options.generatedBy) {
-      query.andWhere('report.generatedById = :generatedBy', { generatedBy: options.generatedBy });
+      query.andWhere('report.generatedById = :generatedBy', {
+        generatedBy: options.generatedBy,
+      });
     }
 
     if (options.startDate) {
-      query.andWhere('report.createdAt >= :startDate', { startDate: options.startDate });
+      query.andWhere('report.createdAt >= :startDate', {
+        startDate: options.startDate,
+      });
     }
 
     if (options.endDate) {
-      query.andWhere('report.createdAt <= :endDate', { endDate: options.endDate });
+      query.andWhere('report.createdAt <= :endDate', {
+        endDate: options.endDate,
+      });
     }
 
     if (options.limit) {
@@ -155,7 +179,9 @@ export class AnalyticsReportService {
     const report = await this.getReportById(id);
 
     if (report.status !== ReportStatus.COMPLETED) {
-      throw new Error(`Report ${id} is not ready for export. Status: ${report.status}`);
+      throw new Error(
+        `Report ${id} is not ready for export. Status: ${report.status}`,
+      );
     }
 
     if (!report.data) {
@@ -205,23 +231,38 @@ export class AnalyticsReportService {
           break;
 
         case ReportType.PAYOUT_ANALYTICS:
-          data = await this.generatePayoutAnalyticsReport(query, report.parameters);
+          data = await this.generatePayoutAnalyticsReport(
+            query,
+            report.parameters,
+          );
           break;
 
         case ReportType.REVENUE_TRACKING:
-          data = await this.generateRevenueTrackingReport(query, report.parameters);
+          data = await this.generateRevenueTrackingReport(
+            query,
+            report.parameters,
+          );
           break;
 
         case ReportType.RETENTION_ANALYSIS:
-          data = await this.generateRetentionAnalysisReport(query, report.parameters);
+          data = await this.generateRetentionAnalysisReport(
+            query,
+            report.parameters,
+          );
           break;
 
         case ReportType.GEOGRAPHIC_DISTRIBUTION:
-          data = await this.generateGeographicDistributionReport(query, report.parameters);
+          data = await this.generateGeographicDistributionReport(
+            query,
+            report.parameters,
+          );
           break;
 
         case ReportType.TIME_TO_COMPLETION:
-          data = await this.generateTimeToCompletionReport(query, report.parameters);
+          data = await this.generateTimeToCompletionReport(
+            query,
+            report.parameters,
+          );
           break;
 
         case ReportType.CUSTOM:
@@ -229,7 +270,7 @@ export class AnalyticsReportService {
           break;
 
         default:
-          throw new Error(`Unsupported report type: ${report.type}`);
+          throw new Error(`Unsupported report type: ${String(report.type)}`);
       }
 
       const generationTime = Date.now() - startTime;
@@ -252,8 +293,9 @@ export class AnalyticsReportService {
         completedAt: new Date(),
       });
 
-      this.logger.log(`Report ${report.id} generated successfully in ${generationTime}ms`);
-
+      this.logger.log(
+        `Report ${report.id} generated successfully in ${generationTime}ms`,
+      );
     } catch (error) {
       const generationTime = Date.now() - startTime;
 
@@ -311,33 +353,63 @@ export class AnalyticsReportService {
   }
 
   // Placeholder methods for specialized report generation
-  private async generatePayoutAnalyticsReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generatePayoutAnalyticsReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement payout analytics report generation
-    return { message: 'Payout analytics report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Payout analytics report - placeholder implementation',
+    });
   }
 
-  private async generateRevenueTrackingReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generateRevenueTrackingReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement revenue tracking report generation
-    return { message: 'Revenue tracking report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Revenue tracking report - placeholder implementation',
+    });
   }
 
-  private async generateRetentionAnalysisReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generateRetentionAnalysisReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement retention analysis report generation
-    return { message: 'Retention analysis report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Retention analysis report - placeholder implementation',
+    });
   }
 
-  private async generateGeographicDistributionReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generateGeographicDistributionReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement geographic distribution report generation
-    return { message: 'Geographic distribution report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Geographic distribution report - placeholder implementation',
+    });
   }
 
-  private async generateTimeToCompletionReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generateTimeToCompletionReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement time to completion report generation
-    return { message: 'Time to completion report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Time to completion report - placeholder implementation',
+    });
   }
 
-  private async generateCustomReport(query: AnalyticsQueryDto, parameters: any): Promise<any> {
+  private generateCustomReport(
+    _query: AnalyticsQueryDto,
+    _parameters: any,
+  ): Promise<any> {
     // TODO: Implement custom report generation
-    return { message: 'Custom report - placeholder implementation' };
+    return Promise.resolve({
+      message: 'Custom report - placeholder implementation',
+    });
   }
 }

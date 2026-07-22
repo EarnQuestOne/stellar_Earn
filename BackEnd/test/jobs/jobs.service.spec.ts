@@ -1,5 +1,4 @@
 ﻿import { JobsService } from '#src/modules/jobs/jobs.service';
-import { QUEUES } from '#src/modules/jobs/jobs.constants';
 
 describe('JobsService (unit)', () => {
   let service: JobsService;
@@ -42,7 +41,11 @@ describe('JobsService (unit)', () => {
       expect(mockWorker.pause).toHaveBeenCalledWith(true);
       expect(mockWorker.close).toHaveBeenCalled();
       expect(mockQueue.close).toHaveBeenCalled();
-      expect(callOrder).toEqual(['worker.pause', 'worker.close', 'queue.close']);
+      expect(callOrder).toEqual([
+        'worker.pause',
+        'worker.close',
+        'queue.close',
+      ]);
     });
 
     it('should force close worker on drain timeout', async () => {
@@ -51,9 +54,12 @@ describe('JobsService (unit)', () => {
       const mockWorker = {
         name: 'slow-worker',
         pause: jest.fn().mockResolvedValue(undefined),
-        close: jest.fn().mockImplementation(() => new Promise((resolve) => {
-          timer = setTimeout(resolve, 50);
-        })),
+        close: jest.fn().mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              timer = setTimeout(resolve, 50);
+            }),
+        ),
       };
 
       service['workers'] = [mockWorker as any];

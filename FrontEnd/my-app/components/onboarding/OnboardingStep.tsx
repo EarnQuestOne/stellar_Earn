@@ -18,7 +18,7 @@ function ProgressIndicator({ progress }: { progress: number }) {
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
       <div
-        className="h-full rounded-full bg-[#089ec3] transition-all duration-200"
+        className="h-full rounded-full bg-primary transition-all duration-200"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -40,7 +40,7 @@ export function OnboardingStep({
 }: OnboardingStepProps) {
   return (
     <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#089ec3]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
         Step {currentStep} of {totalSteps}
       </p>
       <h3 className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -73,14 +73,14 @@ export function OnboardingStep({
           {isLastStep ? (
             <button
               onClick={onComplete}
-              className="rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0ab8d4]"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
             >
               Complete
             </button>
           ) : (
             <button
               onClick={onNext}
-              className="rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0ab8d4]"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
             >
               Next
             </button>

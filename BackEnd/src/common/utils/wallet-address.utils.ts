@@ -44,7 +44,10 @@ const ALLOWED_RECIPIENT_TYPES: readonly StellarAddressType[] = [
   StellarAddressType.MUXED_ACCOUNT,
 ];
 
-const VALID_RESULT_BASE = { isValid: true, errors: [] as readonly string[] } as const;
+const VALID_RESULT_BASE = {
+  isValid: true,
+  errors: [] as readonly string[],
+} as const;
 
 /** Build a reusable invalid result tuple. */
 function invalidResult(

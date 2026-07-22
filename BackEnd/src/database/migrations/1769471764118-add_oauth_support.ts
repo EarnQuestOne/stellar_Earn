@@ -30,18 +30,12 @@ export class AddOAuthSupport1769471764118 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_USER_ID"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_USER_ID"`);
     await queryRunner.query(
       `ALTER TABLE "refresh_tokens" DROP COLUMN IF EXISTS "userId"`,
     );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_USERS_GITHUB_ID"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_USERS_GOOGLE_ID"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USERS_GITHUB_ID"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USERS_GOOGLE_ID"`);
     await queryRunner.query(
       `ALTER TABLE "users" DROP COLUMN IF EXISTS "githubId"`,
     );

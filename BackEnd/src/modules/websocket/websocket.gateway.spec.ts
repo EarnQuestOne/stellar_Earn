@@ -42,11 +42,17 @@ describe('AppWebsocketGateway', () => {
             registerClient: jest.fn(),
             removeClient: jest.fn(),
             restoreSubscriptions: jest.fn(),
-            subscribe: jest.fn().mockResolvedValue({ success: true, message: 'Subscribed' }),
-            unsubscribe: jest.fn().mockResolvedValue({ success: true, message: 'Unsubscribed' }),
+            subscribe: jest
+              .fn()
+              .mockResolvedValue({ success: true, message: 'Subscribed' }),
+            unsubscribe: jest
+              .fn()
+              .mockResolvedValue({ success: true, message: 'Unsubscribed' }),
             checkRateLimit: jest.fn().mockReturnValue(true),
             getMessageHistory: jest.fn().mockResolvedValue([]),
-            getStats: jest.fn().mockReturnValue({ totalConnections: 1, uniqueUsers: 1 }),
+            getStats: jest
+              .fn()
+              .mockReturnValue({ totalConnections: 1, uniqueUsers: 1 }),
           },
         },
         {
@@ -78,9 +84,12 @@ describe('AppWebsocketGateway', () => {
       await gateway.handleConnection(mockSocket);
       expect(wsService.registerClient).toHaveBeenCalledWith(mockSocket);
       expect(wsService.restoreSubscriptions).toHaveBeenCalledWith(mockSocket);
-      expect(mockSocket.emit).toHaveBeenCalledWith('connected', expect.objectContaining({
-        socketId: 'test-socket-id',
-      }));
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'connected',
+        expect.objectContaining({
+          socketId: 'test-socket-id',
+        }),
+      );
     });
 
     it('should remove client on disconnect', () => {
@@ -131,13 +140,17 @@ describe('AppWebsocketGateway', () => {
     });
 
     it('should handle chat join', async () => {
-      const result = await gateway.handleChatJoin(mockSocket, { roomId: 'room-1' });
+      const result = await gateway.handleChatJoin(mockSocket, {
+        roomId: 'room-1',
+      });
       expect(mockSocket.join).toHaveBeenCalledWith('chat:room-1');
       expect(result.event).toBe('chat:joined');
     });
 
     it('should handle chat leave', async () => {
-      const result = await gateway.handleChatLeave(mockSocket, { roomId: 'room-1' });
+      const result = await gateway.handleChatLeave(mockSocket, {
+        roomId: 'room-1',
+      });
       expect(mockSocket.leave).toHaveBeenCalledWith('chat:room-1');
       expect(result.event).toBe('chat:left');
     });
@@ -175,7 +188,9 @@ describe('AppWebsocketGateway', () => {
 
     it('should reject non-admin users', () => {
       mockSocket.data.user.role = 'USER';
-      expect(() => gateway.handleStats(mockSocket)).toThrow('Forbidden: admin only');
+      expect(() => gateway.handleStats(mockSocket)).toThrow(
+        'Forbidden: admin only',
+      );
     });
   });
 });

@@ -11,23 +11,42 @@ export class QueryMonitoringController {
 
   @Get('statistics')
   @ApiOperation({ summary: 'Get query performance statistics' })
-  @ApiResponse({ status: 200, description: 'Query statistics retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Query statistics retrieved successfully',
+  })
   getQueryStatistics() {
     return this.queryLoggerService.getQueryStatistics();
   }
 
   @Get('metrics')
   @ApiOperation({ summary: 'Get recent query metrics' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of recent metrics to return' })
-  @ApiResponse({ status: 200, description: 'Query metrics retrieved successfully' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of recent metrics to return',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Query metrics retrieved successfully',
+  })
   getQueryMetrics(@Query('limit') limit?: number) {
     return this.queryLoggerService.getQueryMetrics(limit);
   }
 
   @Get('slow-queries')
   @ApiOperation({ summary: 'Get slow queries' })
-  @ApiQuery({ name: 'threshold', required: false, type: Number, description: 'Custom threshold in milliseconds' })
-  @ApiResponse({ status: 200, description: 'Slow queries retrieved successfully' })
+  @ApiQuery({
+    name: 'threshold',
+    required: false,
+    type: Number,
+    description: 'Custom threshold in milliseconds',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slow queries retrieved successfully',
+  })
   getSlowQueries(@Query('threshold') threshold?: number) {
     return this.queryLoggerService.getSlowQueries(threshold);
   }
@@ -39,9 +58,13 @@ export class QueryMonitoringController {
     const stats = this.queryLoggerService.getQueryStatistics();
     return {
       status: 'healthy',
-      queryLoggingEnabled: process.env.DB_QUERY_LOGGING === 'true' || process.env.NODE_ENV === 'development',
+      queryLoggingEnabled:
+        process.env.DB_QUERY_LOGGING === 'true' ||
+        process.env.NODE_ENV === 'development',
       slowQueryThreshold: parseInt(process.env.SLOW_QUERY_THRESHOLD || '1000'),
-      criticalQueryThreshold: parseInt(process.env.CRITICAL_QUERY_THRESHOLD || '5000'),
+      criticalQueryThreshold: parseInt(
+        process.env.CRITICAL_QUERY_THRESHOLD || '5000',
+      ),
       totalQueriesProcessed: stats.totalQueries,
       slowQueriesCount: stats.slowQueriesCount,
       slowQueriesPercentage: stats.slowQueriesPercentage,
@@ -50,7 +73,10 @@ export class QueryMonitoringController {
 
   @Get('clear-metrics')
   @ApiOperation({ summary: 'Clear query metrics history' })
-  @ApiResponse({ status: 200, description: 'Query metrics cleared successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Query metrics cleared successfully',
+  })
   clearMetrics() {
     this.queryLoggerService.clearMetrics();
     return { message: 'Query metrics cleared successfully' };

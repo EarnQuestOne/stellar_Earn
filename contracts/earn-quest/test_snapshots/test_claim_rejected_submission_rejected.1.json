@@ -219,6 +219,274 @@
                         "key": {
                           "vec": [
                             {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "EXPLORER"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "For users who have explored multiple quests"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "EXPLORER"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Explorer"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_reward"
+                              },
+                              "val": {
+                                "u64": 20
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "LEGEND"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "The highest achievement level"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "LEGEND"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Legend"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_reward"
+                              },
+                              "val": {
+                                "u64": 100
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "MASTER"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "For top-tier contributors"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "MASTER"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Master"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_reward"
+                              },
+                              "val": {
+                                "u64": 50
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "ROOKIE"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "Initial badge for new users"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "ROOKIE"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Rookie"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_reward"
+                              },
+                              "val": {
+                                "u64": 10
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeType"
+                            },
+                            {
+                              "symbol": "VETERAN"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "description"
+                              },
+                              "val": {
+                                "string": "For experienced quest completers"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "id"
+                              },
+                              "val": {
+                                "symbol": "VETERAN"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "name"
+                              },
+                              "val": {
+                                "string": "Veteran"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "xp_reward"
+                              },
+                              "val": {
+                                "u64": 30
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "BadgeTypeIds"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "symbol": "ROOKIE"
+                            },
+                            {
+                              "symbol": "EXPLORER"
+                            },
+                            {
+                              "symbol": "VETERAN"
+                            },
+                            {
+                              "symbol": "MASTER"
+                            },
+                            {
+                              "symbol": "LEGEND"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
                               "symbol": "ContractAdmin"
                             }
                           ]
@@ -243,6 +511,33 @@
                         "key": {
                           "vec": [
                             {
+                              "symbol": "PlatformQuestsCreated"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 1
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "PlatformRewardsDistributed"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u128": {
+                            "hi": 0,
+                            "lo": 500
+                          }
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
                               "symbol": "Quest"
                             },
                             {
@@ -252,6 +547,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -322,6 +625,25 @@
                               "val": {
                                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                               }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "QuestCategory"
+                            },
+                            {
+                              "u32": 0
+                            }
+                          ]
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "symbol": "CL2"
                             }
                           ]
                         }
@@ -466,6 +788,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 0
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -908,6 +1241,141 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "btype_reg"
+              },
+              {
+                "symbol": "ROOKIE"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "string": "Rookie"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "btype_reg"
+              },
+              {
+                "symbol": "EXPLORER"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "string": "Explorer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "btype_reg"
+              },
+              {
+                "symbol": "VETERAN"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "string": "Veteran"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "btype_reg"
+              },
+              {
+                "symbol": "MASTER"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "string": "Master"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "btype_reg"
+              },
+              {
+                "symbol": "LEGEND"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "string": "Legend"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
         "type_": "diagnostic",
         "body": {
           "v0": {
@@ -1148,6 +1616,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 500
+                  }
                 }
               ]
             }
@@ -1238,6 +1712,12 @@
                     },
                     {
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                    },
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 500
+                      }
                     }
                   ]
                 }

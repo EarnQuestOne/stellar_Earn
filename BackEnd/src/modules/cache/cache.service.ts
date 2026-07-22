@@ -13,7 +13,10 @@ export class CacheService {
   private readonly keyRegistry = new Set<string>();
 
   // Optional: local memory store for fallbacks
-  private readonly localFallbackStore = new Map<string, { value: any; expiresAt?: number }>();
+  private readonly localFallbackStore = new Map<
+    string,
+    { value: any; expiresAt?: number }
+  >();
 
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -29,7 +32,7 @@ export class CacheService {
         this.analyticsService.recordHit();
         return value;
       }
-      
+
       // Check local fallback
       const fallback = this.localFallbackStore.get(key);
       if (fallback) {
@@ -51,7 +54,12 @@ export class CacheService {
     }
   }
 
-  async set(key: string, value: any, ttl?: number, tags?: string[]): Promise<void> {
+  async set(
+    key: string,
+    value: any,
+    ttl?: number,
+    tags?: string[],
+  ): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl);
       this.keyRegistry.add(key);
@@ -59,10 +67,13 @@ export class CacheService {
 
       // Store in fallback just in case redis goes down
       const fallbackMs = ttl ? ttl * 1000 : undefined;
-      this.localFallbackStore.set(key, { value, expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined });
+      this.localFallbackStore.set(key, {
+        value,
+        expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined,
+      });
 
       if (tags && tags.length > 0) {
-        await Promise.all(tags.map(tag => this.addTagToKey(key, tag)));
+        await Promise.all(tags.map((tag) => this.addTagToKey(key, tag)));
       }
     } catch (e) {
       this.logger.error(`Cache set failed for key ${key}`, e);
@@ -70,7 +81,10 @@ export class CacheService {
       // Store locally as fallback
       this.keyRegistry.add(key);
       const fallbackMs = ttl ? ttl * 1000 : undefined;
-      this.localFallbackStore.set(key, { value, expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined });
+      this.localFallbackStore.set(key, {
+        value,
+        expiresAt: fallbackMs ? Date.now() + fallbackMs : undefined,
+      });
     }
   }
 
@@ -102,14 +116,16 @@ export class CacheService {
     }
 
     await Promise.all(toDelete.map((key) => this.del(key)));
-    this.logger.debug(`deletePattern("${pattern}") removed ${toDelete.length} key(s)`);
+    this.logger.debug(
+      `deletePattern("${pattern}") removed ${toDelete.length} key(s)`,
+    );
   }
 
   // ─── Tags Functionality ────────────────────────────────────────────────────
 
   private async addTagToKey(key: string, tag: string): Promise<void> {
     const tagKey = `cache_tag:${tag}`;
-    const mappedKeys = await this.get<string[]>(tagKey) || [];
+    const mappedKeys = (await this.get<string[]>(tagKey)) || [];
     if (!mappedKeys.includes(key)) {
       mappedKeys.push(key);
       // Store tag mapping with high TTL
@@ -119,9 +135,9 @@ export class CacheService {
 
   async invalidateByTag(tag: string): Promise<void> {
     const tagKey = `cache_tag:${tag}`;
-    const keys = await this.get<string[]>(tagKey) || [];
+    const keys = (await this.get<string[]>(tagKey)) || [];
     if (keys.length > 0) {
-      await Promise.all(keys.map(k => this.del(k)));
+      await Promise.all(keys.map((k) => this.del(k)));
       await this.del(tagKey);
       this.logger.debug(`Invalidated ${keys.length} keys for tag "${tag}"`);
     }
@@ -134,38 +150,56 @@ export class CacheService {
     const lockValue = uuidv4();
 
     try {
-      const store = (this.cacheManager as any).stores?.[0] ?? (this.cacheManager as any).store;
-      const client = store?.getClient ? store.getClient() : store?.client ? store.client : null;
+      const store =
+        (this.cacheManager as any).stores?.[0] ??
+        (this.cacheManager as any).store;
+      const client = store?.getClient
+        ? store.getClient()
+        : store?.client
+          ? store.client
+          : null;
       if (client && typeof client.set === 'function') {
         const result = await client.set(lockKey, lockValue, 'PX', ttlMs, 'NX');
         if (result === 'OK') return lockValue;
         return null;
       }
     } catch (e) {
-      this.logger.warn('Redis client not exposed or failed, falling back to memory lock', e);
+      this.logger.warn(
+        'Redis client not exposed or failed, falling back to memory lock',
+        e,
+      );
     }
 
     // In-memory fallback lock
     if (this.keyRegistry.has(lockKey) || this.localFallbackStore.has(lockKey)) {
       return null;
     }
-    
+
     this.keyRegistry.add(lockKey);
-    this.localFallbackStore.set(lockKey, { value: lockValue, expiresAt: Date.now() + ttlMs });
-    
+    this.localFallbackStore.set(lockKey, {
+      value: lockValue,
+      expiresAt: Date.now() + ttlMs,
+    });
+
     setTimeout(() => {
       this.releaseLock(key, lockValue).catch(() => {});
     }, ttlMs);
-    
+
     return lockValue;
   }
 
   async releaseLock(key: string, lockValue: string): Promise<boolean> {
     const lockKey = `lock:${key}`;
-    
+
     try {
-      const store = (this.cacheManager as any).stores?.[0] ?? (this.cacheManager as any).store;
-      const client = store?.getClient ? store.getClient() : store?.client ? store.client : null;
+      const store =
+        (this.cacheManager as any).stores?.[0] ??
+        (this.cacheManager as any).store;
+      const client = store?.getClient
+        ? store.getClient()
+        : store?.client
+          ? store.client
+          : null;
       if (client && typeof client.eval === 'function') {
         // Lua script to check value and del
         const script = `
@@ -199,7 +233,9 @@ export class CacheService {
       if (typeof (this.cacheManager as any).reset === 'function') {
         await (this.cacheManager as any).reset();
       } else {
-        await Promise.all([...this.keyRegistry].map((key) => this.cacheManager.del(key)));
+        await Promise.all(
+          [...this.keyRegistry].map((key) => this.cacheManager.del(key)),
+        );
       }
     } catch {
       // Ignored
@@ -208,7 +244,7 @@ export class CacheService {
     this.localFallbackStore.clear();
   }
 
-  async getStats(keyPrefix?: string) {
+  getStats(keyPrefix?: string) {
     const analytics = this.analyticsService.getAnalytics();
     const base = {
       ...analytics,
@@ -235,7 +271,13 @@ export class CacheService {
     return `${prefix}:${sortedParams}`;
   }
 
-  async wrap<T>(key: string, fn: () => Promise<T>, ttl?: number, prefix?: string, tags?: string[]): Promise<T> {
+  async wrap<T>(
+    key: string,
+    fn: () => Promise<T>,
+    ttl?: number,
+    prefix?: string,
+    tags?: string[],
+  ): Promise<T> {
     const finalKey = prefix ? `${prefix}:${key}` : key;
     const cached = await this.get<T>(finalKey);
     if (cached !== undefined) {

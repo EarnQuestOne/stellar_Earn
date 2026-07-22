@@ -24,16 +24,12 @@ export class WebsocketEventHandler {
   @OnEvent('quest.created', { async: true })
   async handleQuestCreated(event: QuestCreatedEvent) {
     this.logger.debug(`WS push: quest.created ${event.questId}`);
-    await this.wsService.sendToChannel(
-      WsChannel.QUEST_NEW,
-      'quest:created',
-      {
-        questId: event.questId,
-        title: event.title,
-        creatorAddress: event.creatorAddress,
-        rewardAmount: event.rewardAmount,
-      },
-    );
+    await this.wsService.sendToChannel(WsChannel.QUEST_NEW, 'quest:created', {
+      questId: event.questId,
+      title: event.title,
+      creatorAddress: event.creatorAddress,
+      rewardAmount: event.rewardAmount,
+    });
   }
 
   @OnEvent('quest.updated', { async: true })

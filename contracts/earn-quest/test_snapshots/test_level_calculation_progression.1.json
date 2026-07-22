@@ -149,6 +149,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -259,6 +265,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -369,6 +381,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -479,6 +497,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -588,6 +612,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -697,6 +727,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -807,6 +843,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -916,6 +958,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1025,6 +1073,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1134,6 +1188,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1244,6 +1304,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1353,6 +1419,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1462,6 +1534,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1571,6 +1649,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1680,6 +1764,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -1788,6 +1878,33 @@
                         "key": {
                           "vec": [
                             {
+                              "symbol": "PlatformQuestsCreated"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 15
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "PlatformRewardsDistributed"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u128": {
+                            "hi": 0,
+                            "lo": 1500
+                          }
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
                               "symbol": "Quest"
                             },
                             {
@@ -1797,6 +1914,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -1886,6 +2011,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -1971,6 +2104,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2060,6 +2201,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -2145,6 +2294,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2234,6 +2391,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -2319,6 +2484,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2408,6 +2581,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -2493,6 +2674,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2582,6 +2771,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -2667,6 +2864,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2756,6 +2961,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -2841,6 +3054,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -2930,6 +3151,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -3017,6 +3246,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -3085,6 +3322,67 @@
                               "val": {
                                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                               }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "QuestCategory"
+                            },
+                            {
+                              "u32": 0
+                            }
+                          ]
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "symbol": "Q1"
+                            },
+                            {
+                              "symbol": "Q2"
+                            },
+                            {
+                              "symbol": "Q3"
+                            },
+                            {
+                              "symbol": "Q4"
+                            },
+                            {
+                              "symbol": "Q5"
+                            },
+                            {
+                              "symbol": "Q6"
+                            },
+                            {
+                              "symbol": "Q7"
+                            },
+                            {
+                              "symbol": "Q8"
+                            },
+                            {
+                              "symbol": "Q9"
+                            },
+                            {
+                              "symbol": "Q10"
+                            },
+                            {
+                              "symbol": "Q11"
+                            },
+                            {
+                              "symbol": "Q12"
+                            },
+                            {
+                              "symbol": "Q13"
+                            },
+                            {
+                              "symbol": "Q14"
+                            },
+                            {
+                              "symbol": "Q15"
                             }
                           ]
                         }
@@ -3165,6 +3463,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3226,6 +3535,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3291,6 +3611,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3352,6 +3683,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3417,6 +3759,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3478,6 +3831,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3543,6 +3907,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3604,6 +3979,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3669,6 +4055,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3730,6 +4127,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3795,6 +4203,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3856,6 +4275,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -3921,6 +4351,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -3984,6 +4425,17 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "proof_hash"
                               },
                               "val": {
@@ -4045,6 +4497,17 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "claimed_amount"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "proof_hash"
@@ -6953,6 +7416,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -7576,6 +8045,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -8199,6 +8674,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -8849,6 +9330,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -9398,6 +9885,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -9947,6 +10440,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -10597,6 +11096,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -11146,6 +11651,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -11695,6 +12206,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -12244,6 +12761,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -12894,6 +13417,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -13443,6 +13972,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -13992,6 +14527,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -14541,6 +15082,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }
@@ -15090,6 +15637,12 @@
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 100
+                  }
                 }
               ]
             }

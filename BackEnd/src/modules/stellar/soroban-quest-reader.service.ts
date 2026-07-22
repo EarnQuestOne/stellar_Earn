@@ -57,10 +57,15 @@ export class SorobanQuestReaderService {
         ? Networks.PUBLIC
         : Networks.TESTNET;
 
-    this.rpcServer = new rpc.Server(rpcUrl, { allowHttp: rpcUrl.startsWith('http://') });
+    this.rpcServer = new rpc.Server(rpcUrl, {
+      allowHttp: rpcUrl.startsWith('http://'),
+    });
   }
 
-  async getQuest(contractId: string, questId: string): Promise<OnChainQuestState | null> {
+  async getQuest(
+    contractId: string,
+    questId: string,
+  ): Promise<OnChainQuestState | null> {
     if (!contractId) throw new Error('Missing contractId');
     if (!questId) throw new Error('Missing questId');
 
@@ -84,7 +89,8 @@ export class SorobanQuestReaderService {
             // Generate a deterministic but valid public key-like value is not required; use contractId as source is invalid.
             // Using a well-formed placeholder would be better, but for simulation the SDK accepts any Account ID string.
             // To avoid failures on strict validation, require caller to supply SOURCE_ACCOUNT if present.
-            this.configService.get<string>('SOROBAN_SIM_SOURCE_ACCOUNT') || 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+            this.configService.get<string>('SOROBAN_SIM_SOURCE_ACCOUNT') ||
+              'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
             '0',
           );
 
@@ -103,17 +109,24 @@ export class SorobanQuestReaderService {
             .build();
 
           const sim = await this.rpcServer.simulateTransaction(tx);
-          
+
           const duration = Date.now() - startTime;
-          this.metrics.observeHistogram('stellar_contract_invocation_duration_ms', duration, {
-            contract_id: contractId,
-            function: 'get_quest',
-            status: 'success',
-          });
+          this.metrics.observeHistogram(
+            'stellar_contract_invocation_duration_ms',
+            duration,
+            {
+              contract_id: contractId,
+              function: 'get_quest',
+              status: 'success',
+            },
+          );
 
           if (rpc.Api.isSimulationError(sim)) {
             // "Quest not found" will manifest as a contract error. Treat as missing.
-            const errorMsg = typeof sim.error === 'string' ? sim.error : 'unknown simulation error';
+            const errorMsg =
+              typeof sim.error === 'string'
+                ? sim.error
+                : 'unknown simulation error';
             this.logger.warn(
               `Simulation error fetching quest ${questId}: ${errorMsg}`,
             );
@@ -124,11 +137,14 @@ export class SorobanQuestReaderService {
             span.attributes['error.type'] = 'SimulationError';
 
             // Record failure in metrics
-            this.metrics.incrementCounter('stellar_contract_invocation_failures_total', {
-              contract_id: contractId,
-              function: 'get_quest',
-              error_type: 'simulation_error',
-            });
+            this.metrics.incrementCounter(
+              'stellar_contract_invocation_failures_total',
+              {
+                contract_id: contractId,
+                function: 'get_quest',
+                error_type: 'simulation_error',
+              },
+            );
 
             return null;
           }
@@ -143,11 +159,14 @@ export class SorobanQuestReaderService {
             span.attributes['error.type'] = 'SimulationFailure';
 
             // Record failure in metrics
-            this.metrics.incrementCounter('stellar_contract_invocation_failures_total', {
-              contract_id: contractId,
-              function: 'get_quest',
-              error_type: 'simulation_failure',
-            });
+            this.metrics.incrementCounter(
+              'stellar_contract_invocation_failures_total',
+              {
+                contract_id: contractId,
+                function: 'get_quest',
+                error_type: 'simulation_failure',
+              },
+            );
 
             return null;
           }
@@ -158,7 +177,7 @@ export class SorobanQuestReaderService {
             return null;
           }
 
-          const native = scValToNative(retval) as any;
+          const native = scValToNative(retval);
           span.attributes['stellar.contract.result'] = 'success';
 
           // Expected shape: { id, creator, reward_asset, reward_amount, verifier, deadline, status, total_claims }
@@ -174,26 +193,38 @@ export class SorobanQuestReaderService {
           };
         } catch (error) {
           const duration = Date.now() - startTime;
-          this.metrics.observeHistogram('stellar_contract_invocation_duration_ms', duration, {
-            contract_id: contractId,
-            function: 'get_quest',
-            status: 'failure',
-          });
+          this.metrics.observeHistogram(
+            'stellar_contract_invocation_duration_ms',
+            duration,
+            {
+              contract_id: contractId,
+              function: 'get_quest',
+              status: 'failure',
+            },
+          );
 
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Exception during getQuest for quest ${questId}: ${errorMsg}`, error instanceof Error ? error.stack : undefined);
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          this.logger.error(
+            `Exception during getQuest for quest ${questId}: ${errorMsg}`,
+            error instanceof Error ? error.stack : undefined,
+          );
 
           // Record failure in tracing span
           span.status = 'error';
           span.attributes['error.message'] = errorMsg;
-          span.attributes['error.type'] = error instanceof Error ? error.name : 'UnknownError';
+          span.attributes['error.type'] =
+            error instanceof Error ? error.name : 'UnknownError';
 
           // Record failure in metrics
-          this.metrics.incrementCounter('stellar_contract_invocation_failures_total', {
-            contract_id: contractId,
-            function: 'get_quest',
-            error_type: 'exception',
-          });
+          this.metrics.incrementCounter(
+            'stellar_contract_invocation_failures_total',
+            {
+              contract_id: contractId,
+              function: 'get_quest',
+              error_type: 'exception',
+            },
+          );
 
           throw error;
         }
@@ -202,8 +233,7 @@ export class SorobanQuestReaderService {
         'stellar.contract.id': contractId,
         'stellar.contract.function': 'get_quest',
         'stellar.contract.quest_id': questId,
-      }
+      },
     );
   }
 }
-

@@ -23,7 +23,7 @@ export type QuestDifficulty =
 
 export interface Quest extends Omit<QuestResponse, 'status' | 'difficulty'> {
   status: QuestStatus;
-  difficulty: QuestDifficulty;
+  difficulty?: QuestDifficulty;
 }
 
 // Legacy aliases kept for existing imports.

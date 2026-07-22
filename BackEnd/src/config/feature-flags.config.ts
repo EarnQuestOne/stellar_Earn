@@ -1,6 +1,6 @@
 /**
  * Feature Flags Configuration
- * 
+ *
  * Defines all available feature flags with their default values.
  * Feature flags can be controlled via environment variables.
  */

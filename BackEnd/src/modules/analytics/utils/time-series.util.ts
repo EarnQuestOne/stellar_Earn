@@ -1,4 +1,4 @@
-import { Repository, SelectQueryBuilder, ObjectLiteral } from 'typeorm';
+import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 
 export class TimeSeriesUtil {
   /**

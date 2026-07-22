@@ -32,13 +32,17 @@ export interface IsWalletAddressOptions {
 export class IsWalletAddressConstraint implements ValidatorConstraintInterface {
   validate(value: unknown, args: ValidationArguments): boolean {
     const options = (args.constraints[0] ?? {}) as IsWalletAddressOptions;
-    const allowedTypes = options.allowedTypes ?? [StellarAddressType.PUBLIC_KEY];
+    const allowedTypes = options.allowedTypes ?? [
+      StellarAddressType.PUBLIC_KEY,
+    ];
     return WalletAddressUtils.validate(value as string, allowedTypes).isValid;
   }
 
   defaultMessage(args: ValidationArguments): string {
     const options = (args.constraints[0] ?? {}) as IsWalletAddressOptions;
-    const allowedTypes = options.allowedTypes ?? [StellarAddressType.PUBLIC_KEY];
+    const allowedTypes = options.allowedTypes ?? [
+      StellarAddressType.PUBLIC_KEY,
+    ];
     const typeLabel = allowedTypes.join(' or ');
     return (
       `${args.property} must be a valid Stellar ${typeLabel} address ` +

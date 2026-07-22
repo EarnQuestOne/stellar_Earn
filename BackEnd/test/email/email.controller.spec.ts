@@ -102,9 +102,7 @@ describe('EmailController', () => {
 
   describe('handleSendGridWebhook', () => {
     it('should process webhook events', () => {
-      const events = [
-        { event: 'delivered', email: 'user@example.com' },
-      ];
+      const events = [{ event: 'delivered', email: 'user@example.com' }];
 
       const result = controller.handleSendGridWebhook(events);
 
@@ -115,11 +113,7 @@ describe('EmailController', () => {
     it('should verify signature when provided', () => {
       const events = [{ event: 'delivered', email: 'user@example.com' }];
 
-      controller.handleSendGridWebhook(
-        events,
-        'valid-signature',
-        '1234567890',
-      );
+      controller.handleSendGridWebhook(events, 'valid-signature', '1234567890');
 
       expect(emailService.verifyWebhookSignature).toHaveBeenCalled();
     });
@@ -199,7 +193,9 @@ describe('EmailController', () => {
 
   describe('resubscribe', () => {
     it('should resubscribe a valid email', () => {
-      (emailService.removeFromUnsubscribeList as jest.Mock).mockReturnValue(true);
+      (emailService.removeFromUnsubscribeList as jest.Mock).mockReturnValue(
+        true,
+      );
 
       const result = controller.resubscribe('user@example.com');
 
@@ -208,7 +204,9 @@ describe('EmailController', () => {
     });
 
     it('should indicate when email was not on unsubscribe list', () => {
-      (emailService.removeFromUnsubscribeList as jest.Mock).mockReturnValue(false);
+      (emailService.removeFromUnsubscribeList as jest.Mock).mockReturnValue(
+        false,
+      );
 
       const result = controller.resubscribe('unknown@example.com');
 

@@ -64,7 +64,14 @@ fn test_escrow_balance_uses_hot_path() {
     soroban_sdk::token::StellarAssetClient::new(&env, &token).mint(&creator, &500);
 
     let quest_id = symbol_short!("QEB");
-    client.register_quest(&quest_id, &creator, &token, &100, &verifier, &future_deadline(&env));
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+    );
     client.deposit_escrow(&quest_id, &creator, &token, &300);
 
     let balance = client.get_escrow_balance(&quest_id);
@@ -89,7 +96,14 @@ fn test_escrow_info_assembles_from_split_entries() {
     soroban_sdk::token::StellarAssetClient::new(&env, &token).mint(&creator, &500);
 
     let quest_id = symbol_short!("QEI");
-    client.register_quest(&quest_id, &creator, &token, &100, &verifier, &future_deadline(&env));
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+    );
     client.deposit_escrow(&quest_id, &creator, &token, &200);
 
     let info = client.get_escrow_info(&quest_id);
@@ -120,7 +134,14 @@ fn test_escrow_topup_accumulates_in_balances() {
     soroban_sdk::token::StellarAssetClient::new(&env, &token).mint(&creator, &1_000);
 
     let quest_id = symbol_short!("QTOP");
-    client.register_quest(&quest_id, &creator, &token, &100, &verifier, &future_deadline(&env));
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+    );
     client.deposit_escrow(&quest_id, &creator, &token, &100);
     client.deposit_escrow(&quest_id, &creator, &token, &200);
     client.deposit_escrow(&quest_id, &creator, &token, &300);
@@ -140,7 +161,7 @@ fn test_escrow_topup_accumulates_in_balances() {
 fn test_award_xp_only_updates_user_core() {
     let env = Env::default();
     env.mock_all_auths();
-    let (client, admin) = setup(&env);
+    let (client, _admin) = setup(&env);
 
     set_time(&env, 1_000);
 
@@ -154,7 +175,14 @@ fn test_award_xp_only_updates_user_core() {
     soroban_sdk::token::StellarAssetClient::new(&env, &token).mint(&creator, &500);
 
     let quest_id = symbol_short!("QXPU");
-    client.register_quest(&quest_id, &creator, &token, &100, &verifier, &future_deadline(&env));
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+    );
     client.deposit_escrow(&quest_id, &creator, &token, &100);
 
     let proof = BytesN::from_array(&env, &[1u8; 32]);
@@ -169,10 +197,14 @@ fn test_award_xp_only_updates_user_core() {
 
     // UserBadges should be empty (not touched by award_xp)
     let badges = client.get_user_badges(&submitter);
-    assert_eq!(badges.badges.len(), 0, "badges should be empty after XP award");
+    assert_eq!(
+        badges.badges.len(),
+        0,
+        "badges should be empty after XP award"
+    );
 }
 
-/// grant_badge() only updates UserBadges without touching UserCore XP.
+/// grant_badge() updates UserBadges and awards badge XP via UserCore.
 #[test]
 fn test_grant_badge_only_updates_user_badges() {
     let env = Env::default();
@@ -181,17 +213,15 @@ fn test_grant_badge_only_updates_user_badges() {
 
     let user = Address::generate(&env);
 
-    // Grant a badge — UserCore should remain at defaults
     client.grant_badge(&admin, &user, &Badge::Rookie);
 
     let badges = client.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
     assert!(badges.badges.contains(&Badge::Rookie));
 
-    // UserCore XP should be 0 (untouched)
     let stats = client.get_user_stats(&user);
-    assert_eq!(stats.xp, 0, "XP should be 0 after badge grant only");
-    assert_eq!(stats.quests_completed, 0);
+    assert_eq!(stats.xp, 10, "Rookie badge awards 10 XP");
+    assert_eq!(stats.quests_completed, 1);
 }
 
 /// Multiple badges accumulate in UserBadges independently of XP.
@@ -254,15 +284,23 @@ fn test_metadata_stored_and_retrieved_correctly() {
 
     let metadata = QuestMetadata {
         title: String::from_str(&env, "Build a Contract"),
-        description: MetadataDescription::Inline(String::from_str(&env, "Create a Soroban contract")),
+        description: MetadataDescription::Inline(String::from_str(
+            &env,
+            "Create a Soroban contract",
+        )),
         category: String::from_str(&env, "Development"),
         requirements: reqs.clone(),
         tags: tags.clone(),
     };
 
     client.register_quest_with_metadata(
-        &quest_id, &creator, &token, &100, &verifier,
-        &future_deadline(&env), &metadata,
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+        &metadata,
     );
 
     assert!(client.has_quest_metadata(&quest_id));
@@ -297,8 +335,13 @@ fn test_metadata_update_replaces_both_entries() {
     };
 
     client.register_quest_with_metadata(
-        &quest_id, &creator, &token, &100, &verifier,
-        &future_deadline(&env), &metadata_v1,
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+        &metadata_v1,
     );
 
     let mut new_tags = Vec::new(&env);
@@ -387,8 +430,13 @@ fn test_full_lifecycle_with_split_structs() {
         tags: Vec::new(&env),
     };
     client.register_quest_with_metadata(
-        &quest_id, &creator, &token, &100, &verifier,
-        &future_deadline(&env), &metadata,
+        &quest_id,
+        &creator,
+        &token,
+        &100,
+        &verifier,
+        &future_deadline(&env),
+        &metadata,
     );
 
     // Deposit escrow (writes EscrowBalances + EscrowMeta)
@@ -406,7 +454,10 @@ fn test_full_lifecycle_with_split_structs() {
     // Verify UserCore has XP
     let stats = client.get_user_stats(&submitter);
     assert!(stats.xp > 0);
-    assert_eq!(stats.quests_completed, 1);
+    assert_eq!(
+        stats.quests_completed, 2,
+        "claim and badge grant each award XP"
+    );
 
     // Verify UserBadges has badge
     let badges = client.get_user_badges(&submitter);

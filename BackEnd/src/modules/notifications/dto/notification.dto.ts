@@ -16,7 +16,6 @@ import {
   NotificationPriority,
 } from '../entities/notification.entity';
 
-
 import { Type } from 'class-transformer';
 import { CursorPaginationDto } from '../../../common/dto/pagination.dto';
 

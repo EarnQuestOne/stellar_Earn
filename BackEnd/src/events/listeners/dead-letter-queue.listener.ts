@@ -10,9 +10,13 @@ export class DeadLetterQueueListener {
   constructor(private readonly jobsService: JobsService) {}
 
   @OnEvent('event.failed', { async: true })
-  async handleEventFailed(payload: { eventName: string; payload: any; error: string }) {
+  async handleEventFailed(payload: {
+    eventName: string;
+    payload: any;
+    error: string;
+  }) {
     this.logger.warn(`Event ${payload.eventName} failed. Moving to DLQ.`);
-    
+
     try {
       await this.jobsService.addJob(QUEUES.DEAD_LETTER, {
         type: 'FAILED_EVENT',
@@ -23,7 +27,9 @@ export class DeadLetterQueueListener {
       });
       this.logger.log(`Event ${payload.eventName} successfully moved to DLQ.`);
     } catch (error) {
-      this.logger.error(`Failed to move event ${payload.eventName} to DLQ: ${error.message}`);
+      this.logger.error(
+        `Failed to move event ${payload.eventName} to DLQ: ${error.message}`,
+      );
     }
   }
 }

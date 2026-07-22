@@ -6,36 +6,50 @@ import { Retry } from '../../common/decorators/retry.decorator';
 
 @Injectable()
 export class UserListener {
-    private readonly logger = new Logger(UserListener.name);
+  private readonly logger = new Logger(UserListener.name);
 
-    constructor(private readonly eventEmitter: EventEmitter2) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {}
 
-    @OnEvent('user.created', { async: true })
-    @Retry(3, 2000)
-    async handleUserCreatedEvent(event: UserCreatedEvent) {
-        this.logger.log(`Handling user.created for user ID: ${event.userId}`);
+  @OnEvent('user.created', { async: true })
+  @Retry(3, 2000)
+  async handleUserCreatedEvent(event: UserCreatedEvent) {
+    this.logger.log(`Handling user.created for user ID: ${event.userId}`);
 
-        try {
-            // Simulate async processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            this.logger.log(`Successfully processed user.created for ${event.userId}`);
-        } catch (error) {
-            this.logger.error(`Failed to process user.created for ${event.userId}: ${error.message}`);
-            this.eventEmitter.emit('event.failed', { eventName: 'user.created', payload: event, error: error.message });
-            throw error;
-        }
+    try {
+      // Simulate async processing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      this.logger.log(
+        `Successfully processed user.created for ${event.userId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to process user.created for ${event.userId}: ${error.message}`,
+      );
+      this.eventEmitter.emit('event.failed', {
+        eventName: 'user.created',
+        payload: event,
+        error: error.message,
+      });
+      throw error;
     }
+  }
 
-    @OnEvent('user.updated', { async: true })
-    @Retry(3, 1000)
-    async handleUserUpdatedEvent(event: UserUpdatedEvent) {
-        this.logger.log(`Handling user.updated for user: ${event.userId}. Updated fields: ${event.updatedFields.join(', ')}`);
-        
-        try {
-          // Simulate processing
-        } catch (error) {
-            this.eventEmitter.emit('event.failed', { eventName: 'user.updated', payload: event, error: error.message });
-            throw error;
-        }
+  @OnEvent('user.updated', { async: true })
+  @Retry(3, 1000)
+  handleUserUpdatedEvent(event: UserUpdatedEvent) {
+    this.logger.log(
+      `Handling user.updated for user: ${event.userId}. Updated fields: ${event.updatedFields.join(', ')}`,
+    );
+
+    try {
+      // Simulate processing
+    } catch (error) {
+      this.eventEmitter.emit('event.failed', {
+        eventName: 'user.updated',
+        payload: event,
+        error: error.message,
+      });
+      throw error;
     }
+  }
 }

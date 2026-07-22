@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AnalyticsReport, ReportFormat } from '../entities/analytics-report.entity';
+import { ReportFormat } from '../entities/analytics-report.entity';
 
 export interface ExportOptions {
   format: ReportFormat;
@@ -35,14 +35,14 @@ export class BaseAnalyticsExporter {
       case ReportFormat.PDF:
         return this.exportToPdf(data, options);
       default:
-        throw new Error(`Unsupported export format: ${options.format}`);
+        throw new Error(`Unsupported export format: ${String(options.format)}`);
     }
   }
 
   /**
    * Export data to JSON format
    */
-  private async exportToJson(data: any, options: ExportOptions): Promise<ExportResult> {
+  private exportToJson(data: any, _options: ExportOptions): ExportResult {
     const jsonData = JSON.stringify(data, null, 2);
     const buffer = Buffer.from(jsonData, 'utf-8');
 
@@ -57,7 +57,7 @@ export class BaseAnalyticsExporter {
   /**
    * Export data to CSV format
    */
-  private async exportToCsv(data: any, options: ExportOptions): Promise<ExportResult> {
+  private exportToCsv(data: any, options: ExportOptions): ExportResult {
     const delimiter = options.delimiter || ',';
     const includeHeaders = options.includeHeaders !== false;
 
@@ -71,8 +71,8 @@ export class BaseAnalyticsExporter {
       }
 
       for (const item of data) {
-        const values = Object.values(item).map(value =>
-          this.escapeCsvValue(value, delimiter)
+        const values = Object.values(item).map((value) =>
+          this.escapeCsvValue(value, delimiter),
         );
         csvContent += values.join(delimiter) + '\n';
       }
@@ -85,8 +85,8 @@ export class BaseAnalyticsExporter {
         csvContent += headers.join(delimiter) + '\n';
       }
 
-      const values = Object.values(flattened).map(value =>
-        this.escapeCsvValue(value, delimiter)
+      const values = Object.values(flattened).map((value) =>
+        this.escapeCsvValue(value, delimiter),
       );
       csvContent += values.join(delimiter) + '\n';
     }
@@ -104,14 +104,18 @@ export class BaseAnalyticsExporter {
   /**
    * Export data to Excel format (simplified - returns CSV with Excel MIME type)
    */
-  private async exportToExcel(data: any, options: ExportOptions): Promise<ExportResult> {
+  private async exportToExcel(
+    data: any,
+    options: ExportOptions,
+  ): Promise<ExportResult> {
     // For now, export as CSV with Excel MIME type
     // In a real implementation, you'd use a library like exceljs
-    const csvResult = await this.exportToCsv(data, options);
+    const csvResult = this.exportToCsv(data, options);
 
     return {
       ...csvResult,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       fileName: `analytics-report-${Date.now()}.xlsx`,
     };
   }
@@ -119,7 +123,7 @@ export class BaseAnalyticsExporter {
   /**
    * Export data to PDF format (placeholder)
    */
-  private async exportToPdf(data: any, options: ExportOptions): Promise<ExportResult> {
+  private exportToPdf(data: any, _options: ExportOptions): ExportResult {
     // In a real implementation, you'd use a library like puppeteer or pdfkit
     const htmlContent = this.generateHtmlReport(data);
     const buffer = Buffer.from(htmlContent, 'utf-8');
@@ -139,7 +143,11 @@ export class BaseAnalyticsExporter {
     const stringValue = String(value || '');
 
     // If value contains delimiter, quotes, or newlines, wrap in quotes
-    if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes('\n')) {
+    if (
+      stringValue.includes(delimiter) ||
+      stringValue.includes('"') ||
+      stringValue.includes('\n')
+    ) {
       return '"' + stringValue.replace(/"/g, '""') + '"';
     }
 
@@ -192,15 +200,15 @@ export class BaseAnalyticsExporter {
       html += '<table>';
       if (data.length > 0) {
         html += '<tr>';
-        Object.keys(data[0]).forEach(key => {
+        Object.keys(data[0]).forEach((key) => {
           html += `<th>${key}</th>`;
         });
         html += '</tr>';
 
-        data.forEach(item => {
+        data.forEach((item) => {
           html += '<tr>';
-          Object.values(item).forEach(value => {
-            html += `<td>${value}</td>`;
+          Object.values(item).forEach((value) => {
+            html += `<td>${String(value)}</td>`;
           });
           html += '</tr>';
         });
@@ -209,7 +217,7 @@ export class BaseAnalyticsExporter {
     } else if (typeof data === 'object') {
       html += '<table>';
       Object.entries(data).forEach(([key, value]) => {
-        html += `<tr><th>${key}</th><td>${value}</td></tr>`;
+        html += `<tr><th>${key}</th><td>${String(value)}</td></tr>`;
       });
       html += '</table>';
     }

@@ -14,9 +14,7 @@ describe('TraceIdUtil', () => {
 
     it('should generate a UUID when no webhook ID is provided', () => {
       const id = TraceIdUtil.generate();
-      expect(id).toMatch(
-        /^wh-[0-9a-f-]{36}-oc-pending-ts-\d+$/,
-      );
+      expect(id).toMatch(/^wh-[0-9a-f-]{36}-oc-pending-ts-\d+$/);
     });
 
     it('should use the current epoch millisecond timestamp', () => {

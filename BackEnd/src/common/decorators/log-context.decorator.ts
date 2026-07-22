@@ -32,7 +32,8 @@ export function LogContext(options: LogContextOptions = {}): MethodDecorator {
   ): PropertyDescriptor => {
     const originalMethod = descriptor.value as (...a: unknown[]) => unknown;
     const methodName = String(propertyKey);
-    const className = (target as { constructor: { name: string } }).constructor.name;
+    const className = (target as { constructor: { name: string } }).constructor
+      .name;
 
     descriptor.value = async function (
       this: { logger?: AppLoggerService },
@@ -49,7 +50,7 @@ export function LogContext(options: LogContextOptions = {}): MethodDecorator {
       if (options.logArgs) {
         logger.debug(`Entering ${operation}`, context, {
           argKeys: args.map((a) =>
-            typeof a === 'object' && a !== null ? Object.keys(a as object) : typeof a,
+            typeof a === 'object' && a !== null ? Object.keys(a) : typeof a,
           ),
         });
       }

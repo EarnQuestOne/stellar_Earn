@@ -29,7 +29,9 @@ export class DataExportListener {
         exportId: event.exportId,
       });
 
-      this.logger.log(`Successfully queued export job for exportId: ${event.exportId}`);
+      this.logger.log(
+        `Successfully queued export job for exportId: ${event.exportId}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to queue export job for exportId ${event.exportId}: ${error.message}`,

@@ -1,9 +1,17 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Payout, PayoutStatus } from '../../../payouts/entities/payout.entity';
-import { MultiSigTransaction, MultiSigTransactionStatus } from '../entities/multisig-transaction.entity';
+import {
+  MultiSigTransaction,
+  MultiSigTransactionStatus,
+} from '../entities/multisig-transaction.entity';
 import { MultiSigWallet } from '../entities/multisig-wallet.entity';
 import { CreateMultiSigTransactionDto } from '../dto/multisig.dto';
 import { MultiSigWalletService } from './multisig-wallet.service';
@@ -53,7 +61,9 @@ export class MultiSigPayoutService {
     }
 
     if (payout.status !== PayoutStatus.PENDING) {
-      throw new BadRequestException(`Payout status must be PENDING, current: ${payout.status}`);
+      throw new BadRequestException(
+        `Payout status must be PENDING, current: ${payout.status}`,
+      );
     }
 
     // Create multi-sig transaction for the payout
@@ -71,7 +81,10 @@ export class MultiSigPayoutService {
       }),
     };
 
-    const transaction = await this.multiSigWalletService.createTransaction(createDto, userId);
+    const transaction = await this.multiSigWalletService.createTransaction(
+      createDto,
+      userId,
+    );
 
     // Update payout status to awaiting approval
     payout.status = PayoutStatus.AWAITING_APPROVAL;
@@ -124,11 +137,17 @@ export class MultiSigPayoutService {
     });
 
     if (!payoutTransaction) {
-      throw new NotFoundException('Multi-sig transaction not found for this payout');
+      throw new NotFoundException(
+        'Multi-sig transaction not found for this payout',
+      );
     }
 
-    const approved = payoutTransaction.status === MultiSigTransactionStatus.APPROVED;
-    const remainingApprovals = Math.max(0, payoutTransaction.threshold - payoutTransaction.approvalsReceived);
+    const approved =
+      payoutTransaction.status === MultiSigTransactionStatus.APPROVED;
+    const remainingApprovals = Math.max(
+      0,
+      payoutTransaction.threshold - payoutTransaction.approvalsReceived,
+    );
 
     return {
       approved,
@@ -151,7 +170,9 @@ export class MultiSigPayoutService {
     }
 
     if (transaction.status !== MultiSigTransactionStatus.APPROVED) {
-      throw new BadRequestException('Transaction must be approved to process payout');
+      throw new BadRequestException(
+        'Transaction must be approved to process payout',
+      );
     }
 
     // Find payout using transaction payload
@@ -186,7 +207,10 @@ export class MultiSigPayoutService {
   /**
    * Handle rejected payout
    */
-  async handleRejectedPayout(multiSigTransactionId: string, reason: string): Promise<Payout> {
+  async handleRejectedPayout(
+    multiSigTransactionId: string,
+    reason: string,
+  ): Promise<Payout> {
     const transaction = await this.transactionRepository.findOne({
       where: { id: multiSigTransactionId },
     });
@@ -291,7 +315,9 @@ export class MultiSigPayoutService {
     };
   }
 
-  private buildPayoutEscrow(transaction: MultiSigTransaction): MultiSigPayoutEscrow {
+  private buildPayoutEscrow(
+    transaction: MultiSigTransaction,
+  ): MultiSigPayoutEscrow {
     const payload = JSON.parse(transaction.transactionPayload || '{}');
     return {
       payoutId: payload.payoutId,

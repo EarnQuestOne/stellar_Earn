@@ -35,9 +35,36 @@ describe('UserAnalyticsService (N+1 prevention)', () => {
   let cacheService: any;
 
   const usersBatch: Partial<AnalyticsUser>[] = [
-    { id: 'u1', stellarAddress: 'GA1', username: 'alice', totalXp: 100, level: 1, questsCompleted: 1, badges: [], createdAt: new Date() },
-    { id: 'u2', stellarAddress: 'GA2', username: 'bob', totalXp: 50, level: 1, questsCompleted: 0, badges: [], createdAt: new Date() },
-    { id: 'u3', stellarAddress: 'GA3', username: 'carol', totalXp: 200, level: 2, questsCompleted: 2, badges: [], createdAt: new Date() },
+    {
+      id: 'u1',
+      stellarAddress: 'GA1',
+      username: 'alice',
+      totalXp: 100,
+      level: 1,
+      questsCompleted: 1,
+      badges: [],
+      createdAt: new Date(),
+    },
+    {
+      id: 'u2',
+      stellarAddress: 'GA2',
+      username: 'bob',
+      totalXp: 50,
+      level: 1,
+      questsCompleted: 0,
+      badges: [],
+      createdAt: new Date(),
+    },
+    {
+      id: 'u3',
+      stellarAddress: 'GA3',
+      username: 'carol',
+      totalXp: 200,
+      level: 2,
+      questsCompleted: 2,
+      badges: [],
+      createdAt: new Date(),
+    },
   ];
 
   beforeEach(async () => {
@@ -78,22 +105,46 @@ describe('UserAnalyticsService (N+1 prevention)', () => {
 
     // Batched relation queries built inside loadUserMetricsRelations.
     const submissionsBatchBuilder = buildSelectableQueryBuilder([
-      { id: 's1', status: SubmissionStatus.APPROVED, submittedAt: new Date(), reviewedAt: new Date(), user: { id: 'u1' } },
-      { id: 's2', status: SubmissionStatus.APPROVED, submittedAt: new Date(), reviewedAt: new Date(), user: { id: 'u3' } },
+      {
+        id: 's1',
+        status: SubmissionStatus.APPROVED,
+        submittedAt: new Date(),
+        reviewedAt: new Date(),
+        user: { id: 'u1' },
+      },
+      {
+        id: 's2',
+        status: SubmissionStatus.APPROVED,
+        submittedAt: new Date(),
+        reviewedAt: new Date(),
+        user: { id: 'u3' },
+      },
     ]);
     const payoutsBatchBuilder = buildSelectableQueryBuilder([
       { id: 'p1', amount: '500', recipient: { id: 'u1' } },
       { id: 'p2', amount: '300', recipient: { id: 'u3' } },
     ]);
     const activityBatchBuilder = buildSelectableQueryBuilder([
-      { userId: 'u1', date: new Date('2026-01-01'), submissions: '1', questsCompleted: '1' },
-      { userId: 'u3', date: new Date('2026-01-02'), submissions: '1', questsCompleted: '1' },
+      {
+        userId: 'u1',
+        date: new Date('2026-01-01'),
+        submissions: '1',
+        questsCompleted: '1',
+      },
+      {
+        userId: 'u3',
+        date: new Date('2026-01-02'),
+        submissions: '1',
+        questsCompleted: '1',
+      },
     ]);
 
     // calculateSummary, calculateCohortAnalysis, getUserGrowth issue further
     // queries — return empty-ish builders that cover all the methods used.
     const summaryBuilder = buildSelectableQueryBuilder([]);
-    summaryBuilder.getRawOne = jest.fn().mockResolvedValue({ count: '0', avg: '0' });
+    summaryBuilder.getRawOne = jest
+      .fn()
+      .mockResolvedValue({ count: '0', avg: '0' });
 
     submissionRepo.createQueryBuilder
       .mockReturnValueOnce(submissionsBatchBuilder) // submissions for batch
@@ -104,7 +155,7 @@ describe('UserAnalyticsService (N+1 prevention)', () => {
       .mockReturnValueOnce(userListBuilder)
       .mockReturnValue(summaryBuilder);
 
-    const result = await service.getUserAnalytics({} as any);
+    const result = await service.getUserAnalytics({});
 
     // The legacy implementation called submissionRepository.find() per user
     // (N queries) and payoutRepository.find() per user (another N) and a
@@ -146,7 +197,9 @@ describe('UserAnalyticsService (N+1 prevention)', () => {
   it('skips batch relation queries entirely when the user batch is empty', async () => {
     const userListBuilder = buildSelectableQueryBuilder([]);
     const summaryBuilder = buildSelectableQueryBuilder([]);
-    summaryBuilder.getRawOne = jest.fn().mockResolvedValue({ count: '0', avg: '0' });
+    summaryBuilder.getRawOne = jest
+      .fn()
+      .mockResolvedValue({ count: '0', avg: '0' });
 
     userRepo.createQueryBuilder
       .mockReturnValueOnce(userListBuilder)
@@ -154,7 +207,7 @@ describe('UserAnalyticsService (N+1 prevention)', () => {
     submissionRepo.createQueryBuilder.mockReturnValue(summaryBuilder);
     payoutRepo.createQueryBuilder.mockReturnValue(summaryBuilder);
 
-    const result = await service.getUserAnalytics({} as any);
+    const result = await service.getUserAnalytics({});
 
     expect(result.users).toEqual([]);
     // The batched submission/payout/activity builders for relations should

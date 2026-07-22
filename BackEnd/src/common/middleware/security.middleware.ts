@@ -103,7 +103,9 @@ export class SecurityMiddleware implements NestMiddleware {
         'blocked_request',
         securityConfig.detection.maxAuditBodyLength,
       );
-      throw new BadRequestException('Suspicious request blocked by security policy');
+      throw new BadRequestException(
+        'Suspicious request blocked by security policy',
+      );
     }
 
     if (issues.length > 0) {
@@ -125,7 +127,10 @@ export class SecurityMiddleware implements NestMiddleware {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=()');
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), geolocation=(), microphone=()',
+    );
     res.removeHeader('X-Powered-By');
 
     if (!res.getHeader('Strict-Transport-Security')) {
@@ -144,10 +149,14 @@ export class SecurityMiddleware implements NestMiddleware {
   ): void {
     const contentLengthHeader = req.headers['content-length'];
     const contentLength =
-      typeof contentLengthHeader === 'string' ? Number(contentLengthHeader) : undefined;
+      typeof contentLengthHeader === 'string'
+        ? Number(contentLengthHeader)
+        : undefined;
 
     if (contentLength && contentLength > maxContentLengthBytes) {
-      throw new PayloadTooLargeException('Request payload exceeds configured size limit');
+      throw new PayloadTooLargeException(
+        'Request payload exceeds configured size limit',
+      );
     }
 
     if (Object.keys(req.headers).length > maxHeaderCount) {
@@ -182,7 +191,11 @@ export class SecurityMiddleware implements NestMiddleware {
 
   private sanitizeQueryParams(req: Request, maxDepth: number): void {
     if (req.query) {
-      req.query = sanitizeObjectDeep(req.query, 0, maxDepth) as Request['query'];
+      req.query = sanitizeObjectDeep(
+        req.query,
+        0,
+        maxDepth,
+      ) as Request['query'];
     }
   }
 
@@ -225,7 +238,9 @@ export class SecurityMiddleware implements NestMiddleware {
     ipAddress: string,
   ): { verified: boolean; fingerprint?: string } {
     const signature = req.get(securityConfig.headers.signatureHeaderName);
-    const timestamp = req.get(securityConfig.headers.signatureTimestampHeaderName);
+    const timestamp = req.get(
+      securityConfig.headers.signatureTimestampHeaderName,
+    );
     const nonce = req.get(securityConfig.headers.signatureNonceHeaderName);
     const signatureHeadersPresent = [signature, timestamp, nonce].some(Boolean);
 

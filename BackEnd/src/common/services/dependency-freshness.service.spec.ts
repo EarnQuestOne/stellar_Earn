@@ -22,7 +22,9 @@ describe('DependencyFreshnessService', () => {
       ],
     }).compile();
 
-    service = module.get<DependencyFreshnessService>(DependencyFreshnessService);
+    service = module.get<DependencyFreshnessService>(
+      DependencyFreshnessService,
+    );
     configService = module.get<ConfigService>(ConfigService);
   });
 
@@ -37,9 +39,15 @@ describe('DependencyFreshnessService', () => {
         data: { html_url: 'https://github.com/test/repo/issues/1' },
       });
 
-      const result = await service.checkAndReport('test-owner', 'test-repo', 'main');
+      const result = await service.checkAndReport(
+        'test-owner',
+        'test-repo',
+        'main',
+      );
 
-      expect(result).toEqual({ issueUrl: 'https://github.com/test/repo/issues/1' });
+      expect(result).toEqual({
+        issueUrl: 'https://github.com/test/repo/issues/1',
+      });
       expect(axios.post).toHaveBeenCalledWith(
         'https://api.github.com/repos/test-owner/test-repo/issues',
         expect.objectContaining({
@@ -70,7 +78,11 @@ describe('DependencyFreshnessService', () => {
 
   describe('generateReport', () => {
     it('should generate a report with dependency information', async () => {
-      const report = await service['generateReport']('test-owner', 'test-repo', 'main');
+      const report = await service['generateReport'](
+        'test-owner',
+        'test-repo',
+        'main',
+      );
 
       expect(report).toHaveProperty('repositoryOwner', 'test-owner');
       expect(report).toHaveProperty('repositoryName', 'test-repo');

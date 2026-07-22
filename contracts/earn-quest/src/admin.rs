@@ -126,12 +126,7 @@ pub fn require_role(env: &Env, caller: &Address, role: Role) -> Result<(), Error
 ///
 /// * `Ok(())` if the role is successfully granted.
 /// * `Err(Error::Unauthorized)` if the caller is not a SuperAdmin.
-pub fn grant_role(
-    env: &Env,
-    caller: &Address,
-    address: &Address,
-    role: Role,
-) -> Result<(), Error> {
+pub fn grant_role(env: &Env, caller: &Address, address: &Address, role: Role) -> Result<(), Error> {
     caller.require_auth();
     if !storage::is_super_admin(env, caller) {
         return Err(Error::Unauthorized);
@@ -194,6 +189,20 @@ pub fn set_min_creator_level(env: &Env, caller: &Address, level: u32) -> Result<
     Ok(())
 }
 
+/// Sets the global default quest expiry grace period in seconds.
+///
+/// Quests with an explicit `grace_period_seconds` keep using their per-quest
+/// value; this default only applies when the quest does not define one.
+pub fn set_quest_grace_period(
+    env: &Env,
+    caller: &Address,
+    grace_period_seconds: u64,
+) -> Result<(), Error> {
+    require_admin(env, caller)?;
+    storage::set_quest_grace_period(env, grace_period_seconds);
+    Ok(())
+}
+
 /// Adds an address to the creator whitelist, allowing them to bypass
 /// the minimum creator level requirement when creating quests.
 ///
@@ -233,7 +242,11 @@ pub fn add_creator_whitelist(env: &Env, caller: &Address, address: &Address) -> 
 ///
 /// * `Ok(())` if the address is successfully removed from the whitelist.
 /// * `Err(Error::Unauthorized)` if the caller is not a SuperAdmin.
-pub fn remove_creator_whitelist(env: &Env, caller: &Address, address: &Address) -> Result<(), Error> {
+pub fn remove_creator_whitelist(
+    env: &Env,
+    caller: &Address,
+    address: &Address,
+) -> Result<(), Error> {
     caller.require_auth();
     if !storage::is_super_admin(env, caller) {
         return Err(Error::Unauthorized);

@@ -1,8 +1,8 @@
-use crate::errors::Error;
-use crate::storage;
-use crate::events;
 use crate::admin;
+use crate::errors::Error;
 use crate::escrow;
+use crate::events;
+use crate::storage;
 use soroban_sdk::{Address, Env, Symbol};
 
 use super::types::{Dispute, DisputeStatus};
@@ -92,22 +92,18 @@ pub fn resolve_dispute(
     upheld: bool,
     slash_bps: u32,
 ) -> Result<(), Error> {
-    // Auth: arbitrator must sign
-    arbitrator.require_auth();
-
     // Fetch dispute
     let mut dispute = storage::get_dispute(env, &quest_id, &initiator)?;
 
-    // Validate status
+    // Validate status and auth
     match dispute.status {
         DisputeStatus::Pending | DisputeStatus::UnderReview => {
-            // Verify caller is the assigned arbitrator
+            arbitrator.require_auth();
             if dispute.arbitrator != arbitrator {
                 return Err(Error::DisputeNotAuthorized);
             }
         }
         DisputeStatus::Appealed => {
-            // Verify caller is an admin for appeals
             admin::require_admin(env, &arbitrator)?;
         }
         _ => return Err(Error::DisputeNotPending),
@@ -176,11 +172,7 @@ pub fn appeal_dispute(
 ///
 /// * `Ok(())` if the dispute is successfully withdrawn.
 /// * `Err(Error::DisputeNotPending)` if the dispute is already under review or resolved.
-pub fn withdraw_dispute(
-    env: &Env,
-    quest_id: Symbol,
-    initiator: Address,
-) -> Result<(), Error> {
+pub fn withdraw_dispute(env: &Env, quest_id: Symbol, initiator: Address) -> Result<(), Error> {
     // Auth: initiator must sign
     initiator.require_auth();
 
@@ -214,11 +206,7 @@ pub fn withdraw_dispute(
 ///
 /// * `Ok(Dispute)` if found.
 /// * `Err(Error::DisputeNotFound)` if no dispute exists for the given ID and initiator.
-pub fn get_dispute(
-    env: &Env,
-    quest_id: Symbol,
-    initiator: Address,
-) -> Result<Dispute, Error> {
+pub fn get_dispute(env: &Env, quest_id: Symbol, initiator: Address) -> Result<Dispute, Error> {
     storage::get_dispute(env, &quest_id, &initiator)
 }
 
@@ -233,6 +221,7 @@ pub fn get_dispute(
 /// # Returns
 ///
 /// `true` if an active dispute exists, `false` otherwise.
+#[allow(dead_code)]
 pub fn has_active_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> bool {
     matches!(
         storage::get_dispute(env, quest_id, initiator).ok(),

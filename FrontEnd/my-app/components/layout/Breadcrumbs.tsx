@@ -12,7 +12,10 @@ interface Crumb {
 export function Breadcrumbs() {
   const pathname = usePathname();
   const getRouteLabel = useTranslatedRouteLabel();
-  const segments = pathname.split('/').filter(Boolean).filter(segment => segment !== 'en' && segment !== 'es'); // Remove locale from segments
+  const segments = pathname
+    .split('/')
+    .filter(Boolean)
+    .filter((segment) => segment !== 'en' && segment !== 'es'); // Remove locale from segments
 
   const crumbs: Crumb[] = segments.map((segment, index) => ({
     href: `/${segments.slice(0, index + 1).join('/')}`,

@@ -57,11 +57,11 @@ const SENSITIVE_KEY_PATTERNS = [
 const SENSITIVE_VALUE_PATTERNS = [
   /^Bearer\s+.+$/i,
   /^Basic\s+.+$/i,
-  /^\d{3}-\d{2}-\d{4}$/,                          // SSN
-  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/,    // Credit card
-  /^[A-Za-z0-9+/]{20,}={0,2}$/,                   // Base64 tokens
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/,                    // Email addresses
-  /^(\+?\d[\s\-.]?){7,15}$/,                       // Phone numbers
+  /^\d{3}-\d{2}-\d{4}$/, // SSN
+  /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/, // Credit card
+  /^[A-Za-z0-9+/]{20,}={0,2}$/, // Base64 tokens
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Email addresses
+  /^(\+?\d[\s\-.]?){7,15}$/, // Phone numbers
 ];
 
 const MASK = '[REDACTED]';
@@ -70,8 +70,8 @@ const MAX_STRING_LENGTH = 10000;
 
 function isSensitiveKey(key: string): boolean {
   const lowerKey = key.toLowerCase().replace(/[-_]/g, '');
-  return SENSITIVE_KEY_PATTERNS.some((pattern) => 
-    lowerKey.includes(pattern.replace(/[-_]/g, ''))
+  return SENSITIVE_KEY_PATTERNS.some((pattern) =>
+    lowerKey.includes(pattern.replace(/[-_]/g, '')),
   );
 }
 
@@ -131,13 +131,14 @@ export function sanitizeLogObject(
   }
 
   if (typeof obj !== 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(obj);
   }
 
-  if (seen.has(obj as object)) {
+  if (seen.has(obj)) {
     return '[Circular Reference]';
   }
-  seen.add(obj as object);
+  seen.add(obj);
 
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeLogObject(item, seen, depth + 1));
@@ -155,7 +156,9 @@ export function sanitizeLogObject(
   }
 
   if (obj instanceof Set) {
-    return Array.from(obj).map((item) => sanitizeLogObject(item, seen, depth + 1));
+    return Array.from(obj).map((item) =>
+      sanitizeLogObject(item, seen, depth + 1),
+    );
   }
 
   const sanitized: Record<string, unknown> = {};
@@ -163,7 +166,7 @@ export function sanitizeLogObject(
 
   for (const key of Object.keys(objRecord)) {
     const value = objRecord[key];
-    
+
     if (isSensitiveKey(key)) {
       sanitized[key] = MASK;
     } else {
@@ -204,8 +207,18 @@ export function sanitizeHeaders(
 export function sanitizeUrl(url: string): string {
   try {
     const urlObj = new URL(url, 'http://localhost');
-    const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'api_key', 'apikey', 'email', 'phone'];
-    
+    const sensitiveParams = [
+      'token',
+      'key',
+      'secret',
+      'password',
+      'auth',
+      'api_key',
+      'apikey',
+      'email',
+      'phone',
+    ];
+
     sensitiveParams.forEach((param) => {
       if (urlObj.searchParams.has(param)) {
         urlObj.searchParams.set(param, MASK);

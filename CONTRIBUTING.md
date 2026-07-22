@@ -27,13 +27,24 @@ Thank you for contributing to **stellar_Earn**! This guide covers the standards 
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Node.js | ≥ 22 |
-| npm | ≥ 10 |
-| PostgreSQL | ≥ 14 |
-| Redis | ≥ 7 |
-| Rust | stable (see `rust-toolchain.toml`) |
+| Tool | Min Version | Required? | Notes |
+|------|-------------|-----------|-------|
+| Node.js | ≥ 22 | ✅ Required | Use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) |
+| npm | ≥ 10 | ✅ Required | Bundled with Node 22+ |
+| Bun | ≥ 1 | ⚠️ Recommended | Used for migration commands (`bun run migration:*`) |
+| TypeScript (tsc) | ≥ 5 | ✅ Required | Installed via `npm ci` as devDependency |
+| Git | ≥ 2 | ✅ Required | |
+| Rust / Cargo | ≥ 1.80 (stable) | ✅ Required | Install via [rustup](https://rustup.rs/) |
+| PostgreSQL | ≥ 14 | ✅ Required | Local dev; Docker image works fine |
+| Redis | ≥ 7 | ✅ Required | Local dev; Docker image works fine |
+| Docker | ≥ 24 | ⚠️ Recommended | Easiest way to run Postgres + Redis locally |
+| Stellar CLI (`stellar`) | ≥ 22 | ⚠️ Recommended | Required to build/deploy Soroban contracts |
+
+> **Automated check:** Run the onboarding preflight script to validate all CLI tool versions in one go:
+> ```bash
+> cd BackEnd && npm install && npm run check:toolchain
+> ```
+> Required tools failing → exit code 1. Recommended tools failing → warning only.
 
 ### Local Setup
 
@@ -42,6 +53,7 @@ Thank you for contributing to **stellar_Earn**! This guide covers the standards 
 cd BackEnd
 cp .env.example .env          # Fill in your local values
 npm install
+npm run check:toolchain       # Verify your local toolchain first
 npm run typeorm:run-migrations
 npm run start:dev
 
@@ -54,6 +66,15 @@ npm run dev
 cd Contract
 cargo build --workspace
 ```
+
+### Lockfile Policy
+
+This project uses **npm** as the package manager for the frontend (`FrontEnd/my-app`). The `package-lock.json` file **must be committed** to the repository and kept up to date.
+
+- **Always run `npm install`** (never `yarn`, `pnpm`, or `bun`) inside `FrontEnd/my-app`.
+- **Commit `package-lock.json`** whenever you add, remove, or update dependencies. CI runs `npm ci`, which requires a valid lockfile.
+- **Do not delete or add** `package-lock.json` to `.gitignore`.
+- If you see a merge conflict in `package-lock.json`, resolve it by running `npm install` after resolving `package.json`, then commit the regenerated lockfile.
 
 ---
 

@@ -23,7 +23,9 @@ global.createIntegrationTestModule = async (modules: any[]) => {
 };
 
 // Helper to get repository from test module
-global.getRepository = <T extends ObjectLiteral>(entity: new () => T): Repository<T> => {
+global.getRepository = <T extends ObjectLiteral>(
+  entity: new () => T,
+): Repository<T> => {
   if (!global.integrationTestModule) {
     throw new Error('Integration test module not initialized');
   }

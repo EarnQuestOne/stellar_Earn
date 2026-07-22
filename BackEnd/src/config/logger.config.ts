@@ -31,7 +31,9 @@ export const getLoggerConfig = (): LoggerConfig => ({
   maxFileSize: process.env.LOG_MAX_SIZE || '20m',
   maxFiles: process.env.LOG_MAX_FILES || '14d',
   enablePerformanceLogs: process.env.LOG_PERFORMANCE !== 'false',
-  enableQueryLogs: process.env.DB_QUERY_LOGGING === 'true' || process.env.NODE_ENV === 'development',
+  enableQueryLogs:
+    process.env.DB_QUERY_LOGGING === 'true' ||
+    process.env.NODE_ENV === 'development',
   queryLogLevel: (process.env.DB_QUERY_LOG_LEVEL as LogLevel) || 'debug',
 });
 

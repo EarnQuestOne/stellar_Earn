@@ -14,6 +14,7 @@
 //! - Data migration scenarios
 //! - Security during upgrades
 
+use soroban_sdk::token::StellarAssetClient;
 use soroban_sdk::{testutils::Address as _, Address, Env, Symbol};
 
 extern crate earn_quest;
@@ -26,17 +27,24 @@ use earn_quest::{
 // Test Setup Helpers
 //================================================================================
 
-fn setup_contract(env: &Env) -> (Address, EarnQuestContractClient) {
+fn setup_contract(env: &Env) -> (Address, EarnQuestContractClient<'_>) {
     let contract_id = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &contract_id);
     (contract_id, client)
 }
 
-fn setup_initialized_contract(env: &Env) -> (Address, EarnQuestContractClient, Address) {
+fn setup_initialized_contract(env: &Env) -> (Address, EarnQuestContractClient<'_>, Address) {
     let (contract_id, client) = setup_contract(env);
     let admin = Address::generate(env);
     client.initialize(&admin);
     (contract_id, client, admin)
+}
+
+fn setup_token(env: &Env, holder: &Address, amount: i128) -> Address {
+    let issuer = Address::generate(env);
+    let token = env.register_stellar_asset_contract_v2(issuer).address();
+    StellarAssetClient::new(env, &token).mint(holder, &amount);
+    token
 }
 
 //================================================================================
@@ -182,7 +190,7 @@ fn test_user_stats_persist_across_simulated_upgrade() {
     let user = Address::generate(&env);
 
     // Grant badge before "upgrade"
-    client.grant_badge(&admin, &user, &Badge::rookie(&env));
+    client.grant_badge(&admin, &user, &Badge::Rookie);
 
     // Simulate upgrade
     let client_after_upgrade = EarnQuestContractClient::new(&env, &contract_id);
@@ -193,7 +201,7 @@ fn test_user_stats_persist_across_simulated_upgrade() {
 
     let badges = client_after_upgrade.get_user_badges(&user);
     assert_eq!(badges.badges.len(), 1);
-    assert_eq!(badges.badges.get(0).unwrap(), Badge::rookie(&env));
+    assert_eq!(badges.badges.get(0).unwrap(), Badge::Rookie);
 }
 
 #[test]
@@ -325,9 +333,6 @@ fn test_function_signatures_remain_compatible() {
     let _ = client.get_quest(&quest_id);
     let _ = client.get_platform_stats();
     let _ = client.get_user_stats(&admin);
-
-    // All functions callable - backward compatible
-    assert!(true);
 }
 
 #[test]
@@ -353,7 +358,7 @@ fn test_storage_schema_compatibility() {
         &deadline,
     );
 
-    client.grant_badge(&admin, &creator, &Badge::explorer(&env));
+    client.grant_badge(&admin, &creator, &Badge::Explorer);
 
     // Simulate upgrade
     let client_after = EarnQuestContractClient::new(&env, &contract_id);
@@ -441,10 +446,6 @@ fn test_migration_with_pending_submissions() {
 
     // Simulate upgrade
     let _client_after = EarnQuestContractClient::new(&env, &contract_id);
-
-    // Note: We can't easily verify all submissions without storing submitter addresses
-    // This test validates that the upgrade process doesn't break submission storage
-    assert!(true);
 }
 
 #[test]
@@ -452,23 +453,16 @@ fn test_migration_preserves_escrow_balances() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (contract_id, client, admin) = setup_initialized_contract(&env);
+    let (contract_id, client, _admin) = setup_initialized_contract(&env);
 
     // Create quest with escrow
     let quest_id = Symbol::new(&env, "quest1");
     let creator = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = setup_token(&env, &creator, 10_000);
     let verifier = Address::generate(&env);
     let deadline = env.ledger().timestamp() + 86400;
 
-    client.register_quest(
-        &quest_id,
-        &creator,
-        &token,
-        &1000,
-        &verifier,
-        &deadline,
-    );
+    client.register_quest(&quest_id, &creator, &token, &1000, &verifier, &deadline);
 
     // Deposit to escrow
     client.deposit_escrow(&quest_id, &creator, &token, &5000);
@@ -479,7 +473,7 @@ fn test_migration_preserves_escrow_balances() {
     // Verify escrow info is accessible (balance is part of escrow info)
     let escrow_info_result = client_after.try_get_escrow_info(&quest_id);
     assert!(escrow_info_result.is_ok());
-    
+
     // Verify the escrow data persists
     let escrow_info = escrow_info_result.unwrap().unwrap();
     assert_eq!(escrow_info.total_deposited, 5000);
@@ -513,7 +507,7 @@ fn test_contract_state_recoverable() {
         &deadline,
     );
 
-    client.grant_badge(&admin, &user, &Badge::veteran(&env));
+    client.grant_badge(&admin, &user, &Badge::Veteran);
     client.add_admin(&admin, &creator);
 
     // Simulate "rollback" by creating new client (same contract)
@@ -536,18 +530,13 @@ fn test_contract_state_recoverable() {
 #[test]
 fn test_upgrade_requires_authentication() {
     let env = Env::default();
-    // Don't mock auths - test real auth
+    env.mock_all_auths();
 
-    let (_, client) = setup_contract(&env);
-    let admin = Address::generate(&env);
+    let (_, client, _admin) = setup_initialized_contract(&env);
+    let non_admin = Address::generate(&env);
 
-    client.initialize(&admin);
-
-    // Attempting upgrade without auth should fail
-    // (In real scenario, this would require proper auth)
-    let result = client.try_authorize_upgrade(&admin);
-    // With mocked auths this would pass, without it would fail
-    assert!(result.is_ok() || result.is_err()); // Either is valid depending on auth
+    let result = client.try_authorize_upgrade(&non_admin);
+    assert!(result.is_err(), "non-admin must not authorize upgrades");
 }
 
 #[test]
@@ -703,7 +692,7 @@ fn test_full_migration_workflow() {
 
     let proof_hash = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
     client.submit_proof(&quest_id, &submitter, &proof_hash);
-    client.grant_badge(&admin, &submitter, &Badge::rookie(&env));
+    client.grant_badge(&admin, &submitter, &Badge::Rookie);
 
     // Phase 2: Authorize upgrade
     let auth_result = client.try_authorize_upgrade(&admin);
@@ -770,4 +759,3 @@ fn mainnet_migration_checklist() {
     println!("  ✓ Monitor for issues");
     println!("  ✓ Update documentation");
 }
-

@@ -8,26 +8,24 @@ import { WsSubscription } from './entities/ws-subscription.entity';
 import { WsMessage } from './entities/ws-message.entity';
 import { WsAuthGuard } from '../../common/guards/ws-auth.guard';
 import { WebsocketEventHandler } from '../../events/handlers/websocket-event.handler';
+import { getJwtPrivateKey } from '../../common/utils/jwt-keys';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WsSubscription, WsMessage]),
-     JwtModule.registerAsync({
-       imports: [ConfigModule],
-       useFactory: async (configService: ConfigService) => {
-         const privateKey = configService.get<string>('JWT_PRIVATE_KEY');
-         if (!privateKey) {
-           throw new Error('JWT_PRIVATE_KEY is not defined in environment variables');
-         }
-         return {
-           privateKey,
-           signOptions: {
-             algorithm: 'RS256',
-           },
-         };
-       },
-       inject: [ConfigService],
-     }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const privateKey = getJwtPrivateKey(configService);
+        return {
+          privateKey,
+          signOptions: {
+            algorithm: 'RS256',
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
   ],
   providers: [
     AppWebsocketGateway,

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
 
 interface FilterPanelProps {
@@ -32,6 +33,22 @@ const categoryOptions = [
   'Testing',
   'Community',
 ];
+
+function handleGroupKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const buttons = Array.from(
+    e.currentTarget.querySelectorAll('button')
+  ) as HTMLButtonElement[];
+  const idx = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  if (idx === -1) return;
+  if (e.key === 'ArrowRight' && idx < buttons.length - 1) {
+    e.preventDefault();
+    buttons[idx + 1].focus();
+  } else if (e.key === 'ArrowLeft' && idx > 0) {
+    e.preventDefault();
+    buttons[idx - 1].focus();
+  }
+}
 
 export function FilterPanel({
   selectedStatus,
@@ -72,14 +89,15 @@ export function FilterPanel({
           className="flex flex-wrap gap-2"
           role="group"
           aria-label="Filter by category"
+          onKeyDown={handleGroupKeyDown}
         >
           <button
             onClick={() => onCategoryChange(undefined)}
             aria-pressed={!selectedCategory}
             aria-label="Show all categories"
-            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               !selectedCategory
-                ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                ? 'border-primary bg-primary text-white'
                 : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
             }`}
           >
@@ -95,9 +113,9 @@ export function FilterPanel({
                 }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${category} category${isSelected ? ' (active)' : ''}`}
-                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                   isSelected
-                    ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                    ? 'border-primary bg-primary text-white'
                     : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
                 }`}
               >
@@ -122,9 +140,9 @@ export function FilterPanel({
             onClick={() => onDifficultyChange(undefined)}
             aria-pressed={!selectedDifficulty}
             aria-label="Show all difficulty levels"
-            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+            className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               !selectedDifficulty
-                ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                ? 'border-primary bg-primary text-white'
                 : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
             }`}
           >
@@ -140,9 +158,9 @@ export function FilterPanel({
                 }
                 aria-pressed={isSelected}
                 aria-label={`Filter by ${option.label} difficulty${isSelected ? ' (active)' : ''}`}
-                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#089ec3] ${
+                className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                   isSelected
-                    ? 'border-[#089ec3] bg-[#089ec3] text-white'
+                    ? 'border-primary bg-primary text-white'
                     : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
                 }`}
               >

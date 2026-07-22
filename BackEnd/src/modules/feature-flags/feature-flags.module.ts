@@ -6,9 +6,7 @@ import { FeatureFlag } from './entities/feature-flag.entity';
 import { FeatureFlagAuditLog } from './entities/feature-flag-audit.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FeatureFlag, FeatureFlagAuditLog]),
-  ],
+  imports: [TypeOrmModule.forFeature([FeatureFlag, FeatureFlagAuditLog])],
   controllers: [FeatureFlagsController],
   providers: [FeatureFlagsService],
   exports: [FeatureFlagsService],

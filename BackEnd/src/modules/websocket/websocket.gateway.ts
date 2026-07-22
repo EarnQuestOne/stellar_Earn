@@ -211,7 +211,7 @@ export class AppWebsocketGateway
   }
 
   @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: Socket) {
+  handlePing(@ConnectedSocket() _client: Socket) {
     return {
       event: 'pong',
       data: { timestamp: new Date().toISOString() },

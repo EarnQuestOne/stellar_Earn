@@ -1,8 +1,23 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsObject, IsString, IsDateString, IsArray, IsUUID, IsInt, IsBoolean, Min, Max } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsEnum,
+  IsOptional,
+  IsObject,
+  IsString,
+  IsDateString,
+  IsArray,
+  IsUUID,
+  IsInt,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ReportType, ReportFormat, ReportStatus } from '../entities/analytics-report.entity';
-import { SnapshotType } from '../entities/analytics-snapshot.entity';
+import {
+  ReportType,
+  ReportFormat,
+  ReportStatus,
+} from '../entities/analytics-report.entity';
 
 export class ReportGenerationDto {
   @ApiProperty({

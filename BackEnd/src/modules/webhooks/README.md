@@ -126,7 +126,20 @@ src/modules/webhooks/
 ```
 
 ### Retry Logic
-The service includes built-in retry handling for transient failures with exponential backoff.
+Failed webhook events (signature/handler/processing failures) are persisted to the
+`failed_webhook_events` table instead of being dropped. Retryable failures are
+scheduled for reprocessing with exponential backoff (30s, 1m, 2m, 4m, 8m, 16m,
+capped at 30m), up to a configurable `maxAttempts` (default 5); non-retryable
+failures (invalid signature, unsupported source) go straight to the
+`dead_letter` state. A `@Cron` job (`FailedWebhookRetryScheduler`, every
+minute) automatically reprocesses due retries. Admins can also inspect and
+manually trigger retries:
+
+```
+GET  /webhooks/admin/failed            # list failed events (optional ?status=)
+GET  /webhooks/admin/failed/:eventId   # inspect a single failed event
+POST /webhooks/admin/failed/:eventId/retry
+```
 
 ### Logging
 All webhook events are logged with appropriate log levels:
@@ -163,7 +176,6 @@ Common error responses:
 
 ## Future Enhancements
 
-- Database persistence for webhook events
 - Webhook event queue for better scalability
 - Rate limiting for abuse prevention
 - More external service integrations

@@ -58,7 +58,10 @@ export class ImageModerationService {
           { urls },
           {
             headers: imageKey
-              ? { Authorization: `Bearer ${imageKey}`, 'Content-Type': 'application/json' }
+              ? {
+                  Authorization: `Bearer ${imageKey}`,
+                  'Content-Type': 'application/json',
+                }
               : { 'Content-Type': 'application/json' },
             timeout: 10000,
           },

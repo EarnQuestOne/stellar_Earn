@@ -13,13 +13,15 @@ export class EmailChannel implements NotificationChannel {
 
   async send(notification: Notification): Promise<DeliveryResult> {
     try {
-      this.logger.log(`Sending email notification to user ${notification.userId}`);
-      
+      this.logger.log(
+        `Sending email notification to user ${notification.userId}`,
+      );
+
       // Placeholder for SendGrid/Mailgun integration
       // if (!process.env.SENDGRID_API_KEY) {
       //   throw new Error('SendGrid API key not found');
       // }
-      
+
       return {
         success: true,
         channel: this.type,

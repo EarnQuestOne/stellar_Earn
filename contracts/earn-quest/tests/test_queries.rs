@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
+use soroban_sdk::{symbol_short, testutils::Address as _, testutils::Ledger as _, Address, Env};
 
 extern crate earn_quest;
 use earn_quest::types::QuestStatus;
@@ -21,6 +21,21 @@ fn register(
     let token = Address::generate(env);
     let verifier = Address::generate(env);
     client.register_quest(&id, creator, &token, &reward, &verifier, &99999u64);
+}
+
+fn register_with_category(
+    client: &EarnQuestContractClient,
+    env: &Env,
+    id: soroban_sdk::Symbol,
+    creator: &Address,
+    reward: i128,
+    category: u32,
+) {
+    let token = Address::generate(env);
+    let verifier = Address::generate(env);
+    client.register_quest_with_category(
+        &id, creator, &token, &reward, &verifier, &99999u64, &category,
+    );
 }
 
 //================================================================================
@@ -130,6 +145,98 @@ fn test_get_quests_by_creator_unknown_creator_returns_empty() {
     register(&client, &env, symbol_short!("Q1"), &creator, 100);
 
     let results = client.get_quests_by_creator(&unknown, &0, &10);
+    assert_eq!(results.len(), 0);
+}
+
+//================================================================================
+// get_quests_by_category
+//================================================================================
+
+#[test]
+fn test_get_quests_by_category_returns_only_category_quests() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+
+    register_with_category(&client, &env, symbol_short!("D1"), &creator, 100, 1);
+    register_with_category(&client, &env, symbol_short!("N1"), &creator, 200, 2);
+    register_with_category(&client, &env, symbol_short!("D2"), &creator, 300, 1);
+
+    let defi = client.get_quests_by_category(&1, &0, &10);
+    assert_eq!(defi.len(), 2);
+    assert_eq!(defi.get(0).unwrap().id, symbol_short!("D1"));
+    assert_eq!(defi.get(1).unwrap().id, symbol_short!("D2"));
+
+    let nft = client.get_quests_by_category(&2, &0, &10);
+    assert_eq!(nft.len(), 1);
+    assert_eq!(nft.get(0).unwrap().id, symbol_short!("N1"));
+}
+
+#[test]
+fn test_get_quests_by_category_paginates_index_results() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+
+    register_with_category(&client, &env, symbol_short!("C1"), &creator, 100, 7);
+    register_with_category(&client, &env, symbol_short!("C2"), &creator, 200, 7);
+    register_with_category(&client, &env, symbol_short!("C3"), &creator, 300, 7);
+
+    let page = client.get_quests_by_category(&7, &1, &1);
+    assert_eq!(page.len(), 1);
+    assert_eq!(page.get(0).unwrap().id, symbol_short!("C2"));
+}
+
+#[test]
+fn test_get_quests_by_category_unknown_category_returns_empty() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+
+    register_with_category(&client, &env, symbol_short!("C1"), &creator, 100, 3);
+
+    let results = client.get_quests_by_category(&9, &0, &10);
+    assert_eq!(results.len(), 0);
+}
+
+#[test]
+fn test_category_index_removes_cancelled_quests() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let quest_id = symbol_short!("CX");
+
+    register_with_category(&client, &env, quest_id.clone(), &creator, 100, 4);
+    client.cancel_quest(&quest_id, &creator);
+
+    let results = client.get_quests_by_category(&4, &0, &10);
+    assert_eq!(results.len(), 0);
+}
+
+#[test]
+fn test_category_index_removes_expired_quests() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().with_mut(|l| l.timestamp = 1_000);
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let token = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let quest_id = symbol_short!("EX");
+    let deadline = 1_000u64 + 86_400;
+
+    client.register_quest_with_category(
+        &quest_id, &creator, &token, &100i128, &verifier, &deadline, &5u32,
+    );
+
+    env.ledger().with_mut(|l| l.timestamp = deadline + 20);
+    client.expire_quest(&quest_id, &creator);
+
+    let results = client.get_quests_by_category(&5, &0, &10);
     assert_eq!(results.len(), 0);
 }
 

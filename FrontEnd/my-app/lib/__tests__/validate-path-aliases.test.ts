@@ -3,7 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, test } from 'vitest';
 
-const { validatePathAliases } = await import('../../scripts/validate-path-aliases.js');
+const { validatePathAliases } =
+  await import('../../scripts/validate-path-aliases.js');
 
 const packageRoot = path.resolve(__dirname, '../../');
 
@@ -29,7 +30,9 @@ test('invalid alias target path is reported clearly', () => {
   const errors = validatePathAliases(tsconfigPath);
 
   expect(errors).toHaveLength(1);
-  expect(errors[0]).toContain('does not resolve to an existing file or directory');
+  expect(errors[0]).toContain(
+    'does not resolve to an existing file or directory'
+  );
 });
 
 test('wildcard mismatch between alias and target is reported', () => {

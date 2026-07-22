@@ -94,7 +94,10 @@ describe('AnalyticsController', () => {
 
       const andWhereMock = jest.fn().mockReturnThis();
       const orderByMock = jest.fn().mockReturnThis();
-      const getManyMock = jest.fn().mockResolvedValueOnce(mockQuests).mockResolvedValueOnce([]);
+      const getManyMock = jest
+        .fn()
+        .mockResolvedValueOnce(mockQuests)
+        .mockResolvedValueOnce([]);
 
       questRepositoryMock.createQueryBuilder.mockReturnValue({
         andWhere: andWhereMock,
@@ -104,14 +107,22 @@ describe('AnalyticsController', () => {
         getMany: getManyMock,
       });
 
-      jest.spyOn(streamExportService, 'streamAsCSV').mockResolvedValue(undefined);
+      jest
+        .spyOn(streamExportService, 'streamAsCSV')
+        .mockResolvedValue(undefined);
 
       await controller.exportQuests(
-        { format: ExportFormat.CSV, startDate: '2026-01-01', endDate: '2026-12-31' },
+        {
+          format: ExportFormat.CSV,
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+        },
         mockResponse,
       );
 
-      expect(questRepositoryMock.createQueryBuilder).toHaveBeenCalledWith('quest');
+      expect(questRepositoryMock.createQueryBuilder).toHaveBeenCalledWith(
+        'quest',
+      );
       expect(andWhereMock).toHaveBeenCalledTimes(2); // startDate and endDate
       expect(orderByMock).toHaveBeenCalledWith('quest.createdAt', 'DESC');
       expect(streamExportService.streamAsCSV).toHaveBeenCalled();
@@ -136,7 +147,10 @@ describe('AnalyticsController', () => {
         },
       ];
 
-      const getManyMock = jest.fn().mockResolvedValueOnce(mockUsers).mockResolvedValueOnce([]);
+      const getManyMock = jest
+        .fn()
+        .mockResolvedValueOnce(mockUsers)
+        .mockResolvedValueOnce([]);
 
       userRepositoryMock.createQueryBuilder.mockReturnValue({
         andWhere: jest.fn().mockReturnThis(),
@@ -146,11 +160,15 @@ describe('AnalyticsController', () => {
         getMany: getManyMock,
       });
 
-      jest.spyOn(streamExportService, 'streamAsJSON').mockResolvedValue(undefined);
+      jest
+        .spyOn(streamExportService, 'streamAsJSON')
+        .mockResolvedValue(undefined);
 
       await controller.exportUsers({ format: ExportFormat.JSON }, mockResponse);
 
-      expect(userRepositoryMock.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(userRepositoryMock.createQueryBuilder).toHaveBeenCalledWith(
+        'user',
+      );
       expect(streamExportService.streamAsJSON).toHaveBeenCalled();
     });
   });
@@ -176,7 +194,10 @@ describe('AnalyticsController', () => {
       ];
 
       const leftJoinAndSelectMock = jest.fn().mockReturnThis();
-      const getManyMock = jest.fn().mockResolvedValueOnce(mockSubmissions).mockResolvedValueOnce([]);
+      const getManyMock = jest
+        .fn()
+        .mockResolvedValueOnce(mockSubmissions)
+        .mockResolvedValueOnce([]);
 
       submissionRepositoryMock.createQueryBuilder.mockReturnValue({
         leftJoinAndSelect: leftJoinAndSelectMock,
@@ -187,13 +208,26 @@ describe('AnalyticsController', () => {
         getMany: getManyMock,
       });
 
-      jest.spyOn(streamExportService, 'streamAsJSONLines').mockResolvedValue(undefined);
+      jest
+        .spyOn(streamExportService, 'streamAsJSONLines')
+        .mockResolvedValue(undefined);
 
-      await controller.exportSubmissions({ format: ExportFormat.JSONL }, mockResponse);
+      await controller.exportSubmissions(
+        { format: ExportFormat.JSONL },
+        mockResponse,
+      );
 
-      expect(submissionRepositoryMock.createQueryBuilder).toHaveBeenCalledWith('submission');
-      expect(leftJoinAndSelectMock).toHaveBeenCalledWith('submission.quest', 'quest');
-      expect(leftJoinAndSelectMock).toHaveBeenCalledWith('submission.user', 'user');
+      expect(submissionRepositoryMock.createQueryBuilder).toHaveBeenCalledWith(
+        'submission',
+      );
+      expect(leftJoinAndSelectMock).toHaveBeenCalledWith(
+        'submission.quest',
+        'quest',
+      );
+      expect(leftJoinAndSelectMock).toHaveBeenCalledWith(
+        'submission.user',
+        'user',
+      );
       expect(streamExportService.streamAsJSONLines).toHaveBeenCalled();
     });
   });

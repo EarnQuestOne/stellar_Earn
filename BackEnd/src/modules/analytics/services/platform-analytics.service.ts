@@ -85,7 +85,7 @@ export class PlatformAnalyticsService {
         const avgApprovalTime = ConversionUtil.calculateAverageTime(
           allSubmissions.filter((s) => s.status === SubmissionStatus.APPROVED),
           'submittedAt', // Using submittedAt
-          'reviewedAt',  // Using reviewedAt
+          'reviewedAt', // Using reviewedAt
         );
 
         return {

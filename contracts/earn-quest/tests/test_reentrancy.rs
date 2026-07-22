@@ -89,7 +89,9 @@ impl EvilToken {
         env.storage()
             .instance()
             .set(&symbol_short!("target"), &target);
-        env.storage().instance().set(&symbol_short!("quest"), &quest_id);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("quest"), &quest_id);
         env.storage()
             .instance()
             .set(&symbol_short!("subm"), &submitter);
@@ -185,10 +187,7 @@ fn malicious_token_cannot_double_claim_via_reentrancy() {
     // that error bubbles up through try_transfer; the outer claim_reward
     // returns Err and the transaction reverts.
     let result = contract.try_claim_reward(&quest_id, &submitter, &100);
-    assert!(
-        result.is_err(),
-        "reentrant claim_reward must not succeed",
-    );
+    assert!(result.is_err(), "reentrant claim_reward must not succeed",);
 
     // After the failed attempt the lock must be released (storage rollback)
     // and the submission must still be in its pre-claim state, so a clean

@@ -13,7 +13,8 @@
 //! - Interface compatibility and error handling
 
 use soroban_sdk::{
-    contract, contractimpl, testutils::Address as _, Address, BytesN, Env, String, Symbol, Vec, U256,
+    contract, contractimpl, testutils::Address as _, Address, BytesN, Env, String, Symbol, Vec,
+    U256,
 };
 
 extern crate earn_quest;
@@ -35,10 +36,8 @@ impl MockTokenContract {
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
         // Mock implementation - just emit event
-        env.events().publish(
-            (Symbol::new(&env, "transfer"), from, to),
-            amount,
-        );
+        env.events()
+            .publish((Symbol::new(&env, "transfer"), from, to), amount);
     }
 
     pub fn balance(_env: Env, _id: Address) -> i128 {
@@ -46,7 +45,13 @@ impl MockTokenContract {
         1_000_000
     }
 
-    pub fn approve(env: Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
+    pub fn approve(
+        env: Env,
+        from: Address,
+        spender: Address,
+        amount: i128,
+        expiration_ledger: u32,
+    ) {
         from.require_auth();
         env.events().publish(
             (Symbol::new(&env, "approve"), from, spender),
@@ -113,7 +118,7 @@ impl MockExternalContract {
         deadline: u64,
     ) {
         let earn_quest_client = EarnQuestContractClient::new(&env, &earn_quest_address);
-        
+
         earn_quest_client.register_quest(
             &quest_id,
             &creator,
@@ -131,7 +136,7 @@ impl MockExternalContract {
         quest_id: Symbol,
     ) -> QuestStatus {
         let earn_quest_client = EarnQuestContractClient::new(&env, &earn_quest_address);
-        
+
         let quest = earn_quest_client.get_quest(&quest_id);
         quest.status
     }
@@ -145,7 +150,7 @@ impl MockExternalContract {
         proof_hash: BytesN<32>,
     ) {
         let earn_quest_client = EarnQuestContractClient::new(&env, &earn_quest_address);
-        
+
         earn_quest_client.submit_proof(&quest_id, &submitter, &proof_hash);
     }
 }
@@ -157,28 +162,20 @@ pub struct MockAggregatorContract;
 #[contractimpl]
 impl MockAggregatorContract {
     /// Aggregate user stats from multiple EarnQuest instances
-    pub fn get_total_user_xp(
-        env: Env,
-        earn_quest_addresses: Vec<Address>,
-        user: Address,
-    ) -> u64 {
+    pub fn get_total_user_xp(env: Env, earn_quest_addresses: Vec<Address>, user: Address) -> u64 {
         let mut total_xp = 0u64;
-        
+
         for earn_quest_addr in earn_quest_addresses.iter() {
             let client = EarnQuestContractClient::new(&env, &earn_quest_addr);
             let user_stats = client.get_user_stats(&user);
             total_xp += user_stats.xp;
         }
-        
+
         total_xp
     }
 
     /// Check if user is admin in any of the contracts
-    pub fn is_admin_anywhere(
-        env: Env,
-        earn_quest_addresses: Vec<Address>,
-        user: Address,
-    ) -> bool {
+    pub fn is_admin_anywhere(env: Env, earn_quest_addresses: Vec<Address>, user: Address) -> bool {
         for earn_quest_addr in earn_quest_addresses.iter() {
             let client = EarnQuestContractClient::new(&env, &earn_quest_addr);
             if client.is_admin(&user) {
@@ -193,7 +190,7 @@ impl MockAggregatorContract {
 // Test Setup Helpers
 //================================================================================
 
-fn setup_earn_quest(env: &Env) -> (Address, EarnQuestContractClient) {
+fn setup_earn_quest(env: &Env) -> (Address, EarnQuestContractClient<'_>) {
     let contract_id = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &contract_id);
     (contract_id, client)
@@ -246,10 +243,6 @@ fn test_token_contract_transfer() {
 
     let token_client = MockTokenContractClient::new(&env, &token_address);
     token_client.transfer(&from, &to, &amount);
-
-    // Verify event was emitted (events API changed in newer SDK)
-    // Just verify the call succeeded
-    assert!(true);
 }
 
 #[test]
@@ -263,10 +256,10 @@ fn test_token_contract_approve_and_allowance() {
     let amount = 5000i128;
 
     let token_client = MockTokenContractClient::new(&env, &token_address);
-    
+
     // Approve
     token_client.approve(&owner, &spender, &amount, &1000);
-    
+
     // Check allowance
     let allowance = token_client.allowance(&owner, &spender);
     assert_eq!(allowance, 1_000_000); // Mock returns fixed value
@@ -275,14 +268,14 @@ fn test_token_contract_approve_and_allowance() {
 #[test]
 fn test_token_metadata_queries() {
     let env = Env::default();
-    
+
     let token_address = setup_mock_token(&env);
     let token_client = MockTokenContractClient::new(&env, &token_address);
-    
+
     let name = token_client.name();
     let symbol = token_client.symbol();
     let decimals = token_client.decimals();
-    
+
     assert_eq!(name, String::from_str(&env, "Mock Token"));
     assert_eq!(symbol, String::from_str(&env, "MOCK"));
     assert_eq!(decimals, 7);
@@ -388,7 +381,7 @@ fn test_external_contract_queries_quest_status() {
 
     // Initialize and create quest
     earn_quest_client.initialize(&admin);
-    
+
     let quest_id = Symbol::new(&env, "quest1");
     let creator = Address::generate(&env);
     let reward_asset = setup_mock_token(&env);
@@ -422,7 +415,7 @@ fn test_external_contract_submits_proof() {
 
     // Setup quest
     earn_quest_client.initialize(&admin);
-    
+
     let quest_id = Symbol::new(&env, "quest1");
     let creator = Address::generate(&env);
     let reward_asset = setup_mock_token(&env);
@@ -443,12 +436,7 @@ fn test_external_contract_submits_proof() {
     let submitter = Address::generate(&env);
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    external_client.submit_proof_for_user(
-        &earn_quest_addr,
-        &quest_id,
-        &submitter,
-        &proof_hash,
-    );
+    external_client.submit_proof_for_user(&earn_quest_addr, &quest_id, &submitter, &proof_hash);
 
     // Verify submission exists
     let submission = earn_quest_client.get_submission(&quest_id, &submitter);
@@ -481,13 +469,13 @@ fn test_aggregator_combines_user_xp() {
     // Use aggregator to get total XP
     let aggregator_addr = setup_aggregator_contract(&env);
     let aggregator_client = MockAggregatorContractClient::new(&env, &aggregator_addr);
-    
+
     let mut addresses = Vec::new(&env);
     addresses.push_back(addr1);
     addresses.push_back(addr2);
 
     let total_xp = aggregator_client.get_total_user_xp(&addresses, &user);
-    
+
     // Each badge grants XP, so total should be > 0
     assert!(total_xp > 0);
 }
@@ -511,7 +499,7 @@ fn test_aggregator_checks_admin_status() {
     // Use aggregator
     let aggregator_addr = setup_aggregator_contract(&env);
     let aggregator_client = MockAggregatorContractClient::new(&env, &aggregator_addr);
-    
+
     let mut addresses = Vec::new(&env);
     addresses.push_back(addr1);
     addresses.push_back(addr2);
@@ -607,10 +595,10 @@ fn test_earn_quest_client_interface_completeness() {
     // Test all major interface methods are callable
     assert!(client.is_admin(&admin));
     assert_eq!(client.get_version(), 0);
-    
+
     let stats = client.get_platform_stats();
     assert_eq!(stats.total_quests_created, 0);
-    
+
     let user_stats = client.get_user_stats(&admin);
     assert_eq!(user_stats.xp, 0);
 }
@@ -698,12 +686,7 @@ fn test_complete_quest_workflow_via_external_contract() {
     let submitter = Address::generate(&env);
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    external_client.submit_proof_for_user(
-        &earn_quest_addr,
-        &quest_id,
-        &submitter,
-        &proof_hash,
-    );
+    external_client.submit_proof_for_user(&earn_quest_addr, &quest_id, &submitter, &proof_hash);
 
     // Step 4: Verify submission exists
     let submission = earn_quest_client.get_submission(&quest_id, &submitter);
@@ -752,7 +735,7 @@ fn test_multi_contract_coordination() {
     // Verify all contracts are coordinated
     let quest = earn_quest_client.get_quest(&quest_id);
     assert_eq!(quest.reward_asset, token_addr);
-    
+
     let oracles = earn_quest_client.get_oracle_configs();
     assert_eq!(oracles.len(), 1);
 }

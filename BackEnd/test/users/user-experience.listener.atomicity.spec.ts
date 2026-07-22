@@ -1,12 +1,14 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserExperienceListener } from '../../src/modules/users/events/user-experience.listener';
-import { UserService } from '../../src/modules/users/user.service';
+import { UsersService } from '../../src/modules/users/users.service';
 import { EventStore } from '../../src/events/entities/event-store.entity';
 
 describe('UserExperienceListener atomicity across service boundaries', () => {
   let listener: UserExperienceListener;
   let eventEmitter: jest.Mocked<EventEmitter2>;
-  let userService: jest.Mocked<Pick<UserService, 'applyReputationDeltaAtomic'>>;
+  let userService: jest.Mocked<
+    Pick<UsersService, 'applyReputationDeltaAtomic'>
+  >;
 
   const approvedEvent = {
     submissionId: 'sub-1',
@@ -27,7 +29,7 @@ describe('UserExperienceListener atomicity across service boundaries', () => {
 
     listener = new UserExperienceListener(
       eventEmitter,
-      userService as unknown as UserService,
+      userService as unknown as UsersService,
     );
   });
 
@@ -152,9 +154,9 @@ describe('UserExperienceListener atomicity across service boundaries', () => {
       new Error('db transaction failed'),
     );
 
-    await expect(listener.handleSubmissionApproved(approvedEvent)).rejects.toThrow(
-      'db transaction failed',
-    );
+    await expect(
+      listener.handleSubmissionApproved(approvedEvent),
+    ).rejects.toThrow('db transaction failed');
 
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
@@ -192,7 +194,9 @@ describe('UserExperienceListener atomicity across service boundaries', () => {
       return true;
     });
 
-    await expect(listener.handleSubmissionApproved(approvedEvent)).resolves.toBeUndefined();
+    await expect(
+      listener.handleSubmissionApproved(approvedEvent),
+    ).resolves.toBeUndefined();
     expect(eventRepo.save).toHaveBeenCalledTimes(2);
   });
 });

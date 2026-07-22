@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration: Add Performance Indexes
- * 
+ *
  * This migration adds critical indexes to improve query performance across the application.
  * Focus areas:
  * - User queries by address, email, username, and OAuth IDs
@@ -11,11 +11,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Notification management
  * - Submission analytics
  * - Token security and rotation
- * 
+ *
  * Performance Impact:
  * - Expected 50-80% improvement in query response times
  * - Particularly beneficial for user authentication and quest listing
- * 
+ *
  * See DATABASE_INDEX_ANALYSIS.md for detailed analysis
  */
 export class AddPerformanceIndexes1777213481000 implements MigrationInterface {
@@ -25,7 +25,7 @@ export class AddPerformanceIndexes1777213481000 implements MigrationInterface {
     // ============================================
     // USER TABLE INDEXES
     // ============================================
-    
+
     // Email index for authentication queries (already has unique constraint in entity)
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_USER_EMAIL" ON "users" ("email") WHERE "email" IS NOT NULL`,
@@ -322,7 +322,7 @@ export class AddPerformanceIndexes1777213481000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes in reverse order
-    
+
     // Analytics indexes
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_CREATED_STATUS"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USER_CREATED_DELETED"`);
@@ -332,36 +332,68 @@ export class AddPerformanceIndexes1777213481000 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_JOB_LOG_USER_ID"`);
 
     // Notification preference indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_PREF_USER_ENABLED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_PREF_ENABLED"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_PREF_USER_ENABLED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_PREF_ENABLED"`,
+    );
 
     // Event store indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_NAME_TIMESTAMP"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_EVENT_STORE_NAME_TIMESTAMP"`,
+    );
 
     // Two factor auth indexes
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_TWO_FACTOR_ENABLED"`);
 
     // Refresh token indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_FAMILY_REVOKED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_USER_REVOKED_EXPIRES"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_EXPIRES_AT"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_IS_REVOKED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_FAMILY_ID"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_FAMILY_REVOKED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_USER_REVOKED_EXPIRES"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_EXPIRES_AT"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_IS_REVOKED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_FAMILY_ID"`,
+    );
 
     // Submission indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_STATUS_CREATED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_QUEST_STATUS_CREATED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_USER_STATUS_CREATED"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_REJECTED_AT"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_APPROVED_AT"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_SUBMISSION_STATUS_CREATED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_SUBMISSION_QUEST_STATUS_CREATED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_SUBMISSION_USER_STATUS_CREATED"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_SUBMISSION_REJECTED_AT"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_SUBMISSION_APPROVED_AT"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_CREATED_AT"`);
 
     // Notification indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_USER_TYPE"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_USER_READ_CREATED"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_USER_TYPE"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_USER_READ_CREATED"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_PRIORITY"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_TYPE"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_CREATED_AT"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_CREATED_AT"`,
+    );
 
     // Payout indexes
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_QUEST_STATUS"`);
@@ -370,18 +402,24 @@ export class AddPerformanceIndexes1777213481000 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_PROCESSED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_CREATED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_NEXT_RETRY_AT"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_TRANSACTION_HASH"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_PAYOUT_TRANSACTION_HASH"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_SUBMISSION_ID"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_QUEST_ID"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_TYPE"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_STATUS"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_STELLAR_ADDRESS"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_PAYOUT_STELLAR_ADDRESS"`,
+    );
 
     // Quest indexes
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_DELETED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_CREATOR_STATUS"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_STATUS_DEADLINE"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_CONTRACT_TASK_ID"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_QUEST_CONTRACT_TASK_ID"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_DEADLINE"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_CREATED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_CREATED_BY"`);

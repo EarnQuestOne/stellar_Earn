@@ -5,13 +5,30 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PayoutsController } from './payouts.controller';
 import { PayoutsService } from './payouts.service';
 import { Payout } from './entities/payout.entity';
+import { IdempotencyKey } from './entities/idempotency-key.entity';
+import { IdempotencyService } from './services/idempotency.service';
+import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
 import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { QuotaModule } from '../quota/quota.module';
+import { JobsModule } from '../jobs/jobs.module';
+import { BulkheadService } from '../../common/services/bulkhead.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payout]), ScheduleModule.forRoot(), EventEmitterModule, QuotaModule],
+  imports: [
+    TypeOrmModule.forFeature([Payout, IdempotencyKey]),
+    ScheduleModule.forRoot(),
+    EventEmitterModule,
+    QuotaModule,
+    JobsModule,
+  ],
   controllers: [PayoutsController],
-  providers: [PayoutsService, FraudRiskRulesService],
-  exports: [PayoutsService, FraudRiskRulesService],
+  providers: [
+    PayoutsService,
+    FraudRiskRulesService,
+    IdempotencyService,
+    IdempotencyInterceptor,
+    BulkheadService,
+  ],
+  exports: [PayoutsService, FraudRiskRulesService, IdempotencyService],
 })
 export class PayoutsModule {}

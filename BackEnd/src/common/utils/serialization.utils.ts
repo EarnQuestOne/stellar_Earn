@@ -55,11 +55,11 @@ export function cachedStringify(value: unknown): string {
     return JSON.stringify(value);
   }
 
-  const cached = serializeCache.get(value as object);
+  const cached = serializeCache.get(value);
   if (cached !== undefined) return cached;
 
   const json = JSON.stringify(value);
-  serializeCache.set(value as object, json);
+  serializeCache.set(value, json);
   return json;
 }
 

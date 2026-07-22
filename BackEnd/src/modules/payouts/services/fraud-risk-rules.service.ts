@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Payout, PayoutStatus } from '../entities/payout.entity';
+import { Payout } from '../entities/payout.entity';
 
 export interface FraudRiskAssessment {
   payoutId: string;
@@ -109,7 +109,9 @@ export class FraudRiskRulesService {
   /**
    * Batch analyze multiple payouts for anomalies
    */
-  async analyzeRecentPayouts(hours: number = 24): Promise<AnomalyDetectionResult> {
+  async analyzeRecentPayouts(
+    hours: number = 24,
+  ): Promise<AnomalyDetectionResult> {
     this.logger.log(`Analyzing payouts from last ${hours} hours for anomalies`);
 
     const since = new Date(Date.now() - hours * 60 * 60 * 1000);
@@ -160,7 +162,7 @@ export class FraudRiskRulesService {
     uniqueAddresses: number;
   }> {
     const totalPayouts = await this.payoutRepository.count();
-    
+
     const highRiskPayouts = await this.payoutRepository
       .createQueryBuilder('payout')
       .where('payout.amount > :threshold', { threshold: 10000 })

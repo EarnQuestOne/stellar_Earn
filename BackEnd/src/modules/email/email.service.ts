@@ -47,9 +47,18 @@ export class EmailService implements OnModuleInit {
     private readonly jobsService: JobsService,
   ) {
     this.apiKey = this.configService.get<string>('email.sendgrid.apiKey', '');
-    this.fromEmail = this.configService.get<string>('email.from.email', 'noreply@stellarearn.com');
-    this.fromName = this.configService.get<string>('email.from.name', 'Stellar Earn');
-    this.replyTo = this.configService.get<string>('email.replyTo', 'support@stellarearn.com');
+    this.fromEmail = this.configService.get<string>(
+      'email.from.email',
+      'noreply@stellarearn.com',
+    );
+    this.fromName = this.configService.get<string>(
+      'email.from.name',
+      'Stellar Earn',
+    );
+    this.replyTo = this.configService.get<string>(
+      'email.replyTo',
+      'support@stellarearn.com',
+    );
     this.webhookVerificationKey = this.configService.get<string>(
       'email.sendgrid.webhookVerificationKey',
       '',
@@ -71,14 +80,16 @@ export class EmailService implements OnModuleInit {
       this.sgMail = sgMailModule.default || sgMailModule;
       this.sgMail.setApiKey(this.apiKey);
       this.logger.log('SendGrid email service initialized');
-    } catch (error) {
+    } catch (_error) {
       this.logger.warn(
         'SendGrid SDK not available. Install @sendgrid/mail to enable email sending.',
       );
     }
   }
 
-  async sendEmail(dto: SendEmailDto): Promise<{ messageId: string; status: EmailStatus }> {
+  async sendEmail(
+    dto: SendEmailDto,
+  ): Promise<{ messageId: string; status: EmailStatus }> {
     const filteredRecipients = this.filterUnsubscribed(dto.to);
 
     if (filteredRecipients.length === 0) {
@@ -101,7 +112,9 @@ export class EmailService implements OnModuleInit {
     return { messageId, status: EmailStatus.QUEUED };
   }
 
-  async queueEmail(dto: SendEmailDto): Promise<{ messageId: string; status: EmailStatus }> {
+  async queueEmail(
+    dto: SendEmailDto,
+  ): Promise<{ messageId: string; status: EmailStatus }> {
     const result = await this.sendEmail(dto);
 
     if (result.status === EmailStatus.DROPPED) {
@@ -112,18 +125,30 @@ export class EmailService implements OnModuleInit {
     const jobPriority = this.mapPriorityToJobPriority(priority);
 
     try {
-      await this.jobsService.addJob(QUEUES.EMAIL, {
-        messageId: result.messageId,
-        dto: {
-          ...dto,
-          to: this.filterUnsubscribed(dto.to),
+      await this.jobsService.addJob(
+        QUEUES.EMAIL,
+        {
+          messageId: result.messageId,
+          dto: {
+            ...dto,
+            to: this.filterUnsubscribed(dto.to),
+          },
         },
-      }, { priority: jobPriority });
+        { priority: jobPriority },
+      );
 
-      this.logger.log(`Email queued: ${result.messageId} to ${dto.to.length} recipient(s)`);
+      this.logger.log(
+        `Email queued: ${result.messageId} to ${dto.to.length} recipient(s)`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue email ${result.messageId}: ${error.message}`);
-      this.updateDeliveryStatus(result.messageId, EmailStatus.FAILED, error.message);
+      this.logger.error(
+        `Failed to queue email ${result.messageId}: ${error.message}`,
+      );
+      this.updateDeliveryStatus(
+        result.messageId,
+        EmailStatus.FAILED,
+        error.message,
+      );
       return { messageId: result.messageId, status: EmailStatus.FAILED };
     }
 
@@ -138,16 +163,27 @@ export class EmailService implements OnModuleInit {
     let textContent = dto.text || '';
 
     if (dto.template) {
-      const rendered = this.templateEngine.render(dto.template, dto.templateData || {});
+      const rendered = this.templateEngine.render(
+        dto.template,
+        dto.templateData || {},
+      );
       subject = rendered.subject;
       htmlContent = rendered.html;
       textContent = rendered.text;
     }
 
     if (!this.sgMail) {
-      this.logger.warn(`Email not sent (SendGrid not configured): ${messageId}`);
-      this.logger.debug(`Would send to ${dto.to.length} recipient(s), subject: "${subject}"`);
-      this.updateDeliveryStatus(messageId, EmailStatus.DROPPED, 'SendGrid not configured');
+      this.logger.warn(
+        `Email not sent (SendGrid not configured): ${messageId}`,
+      );
+      this.logger.debug(
+        `Would send to ${dto.to.length} recipient(s), subject: "${subject}"`,
+      );
+      this.updateDeliveryStatus(
+        messageId,
+        EmailStatus.DROPPED,
+        'SendGrid not configured',
+      );
       return;
     }
 
@@ -180,7 +216,8 @@ export class EmailService implements OnModuleInit {
       this.updateDeliveryStatus(messageId, EmailStatus.SENT);
       this.logger.log(`Email sent: ${messageId} (sg: ${sgMessageId})`);
     } catch (error) {
-      const errorMessage = error?.response?.body?.errors?.[0]?.message || error.message;
+      const errorMessage =
+        error?.response?.body?.errors?.[0]?.message || error.message;
       this.updateDeliveryStatus(messageId, EmailStatus.FAILED, errorMessage);
       this.logger.error(`Email send failed: ${messageId} - ${errorMessage}`);
       throw error;
@@ -204,14 +241,17 @@ export class EmailService implements OnModuleInit {
   }
 
   async sendWelcomeEmail(email: string, username: string): Promise<void> {
-    await this.sendTemplateEmail(
-      EmailTemplate.WELCOME,
-      [{ email }],
-      { username, unsubscribeToken: this.generateUnsubscribeToken(email) },
-    );
+    await this.sendTemplateEmail(EmailTemplate.WELCOME, [{ email }], {
+      username,
+      unsubscribeToken: this.generateUnsubscribeToken(email),
+    });
   }
 
-  async sendPasswordResetEmail(email: string, username: string, resetLink: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    username: string,
+    resetLink: string,
+  ): Promise<void> {
     await this.sendTemplateEmail(
       EmailTemplate.PASSWORD_RESET,
       [{ email }],
@@ -263,17 +303,13 @@ export class EmailService implements OnModuleInit {
     transactionHash: string,
     stellarAddress: string,
   ): Promise<void> {
-    await this.sendTemplateEmail(
-      EmailTemplate.PAYOUT_PROCESSED,
-      [{ email }],
-      {
-        username,
-        amount,
-        transactionHash,
-        stellarAddress,
-        unsubscribeToken: this.generateUnsubscribeToken(email),
-      },
-    );
+    await this.sendTemplateEmail(EmailTemplate.PAYOUT_PROCESSED, [{ email }], {
+      username,
+      amount,
+      transactionHash,
+      stellarAddress,
+      unsubscribeToken: this.generateUnsubscribeToken(email),
+    });
   }
 
   async sendPayoutFailedEmail(
@@ -297,9 +333,17 @@ export class EmailService implements OnModuleInit {
 
   handleWebhookEvent(events: Array<Record<string, any>>): void {
     for (const event of events) {
-      const { event: eventType, email, sg_message_id, reason, bounce_classification } = event;
+      const {
+        event: eventType,
+        email,
+        sg_message_id,
+        reason,
+        bounce_classification,
+      } = event;
 
-      this.logger.log(`Webhook event: ${eventType} for [EMAIL REDACTED] (${sg_message_id || 'unknown'})`);
+      this.logger.log(
+        `Webhook event: ${eventType} for [EMAIL REDACTED] (${sg_message_id || 'unknown'})`,
+      );
 
       const status = this.mapWebhookEventToStatus(eventType);
       if (!status) {
@@ -331,34 +375,51 @@ export class EmailService implements OnModuleInit {
     timestamp: string,
   ): boolean {
     if (!this.webhookVerificationKey) {
-      this.logger.warn('Webhook verification key not configured, skipping verification');
+      this.logger.warn(
+        'Webhook verification key not configured, skipping verification',
+      );
       return true;
     }
 
     try {
       const timestampPayload = timestamp + payload;
-      const expectedSignature = createHmac('sha256', this.webhookVerificationKey)
+      const expectedSignature = createHmac(
+        'sha256',
+        this.webhookVerificationKey,
+      )
         .update(timestampPayload)
         .digest('base64');
       return signature === expectedSignature;
     } catch (error) {
-      this.logger.error(`Webhook signature verification failed: ${error.message}`);
+      this.logger.error(
+        `Webhook signature verification failed: ${error.message}`,
+      );
       return false;
     }
   }
 
-  private handleBounce(email: string, reason: string, classification: string): void {
-    this.logger.warn(`Bounce detected for [EMAIL REDACTED]: ${classification} - ${reason}`);
+  private handleBounce(
+    email: string,
+    reason: string,
+    classification: string,
+  ): void {
+    this.logger.warn(
+      `Bounce detected for [EMAIL REDACTED]: ${classification} - ${reason}`,
+    );
 
     const hardBounceTypes = ['hard', 'permanent', 'invalid'];
     if (hardBounceTypes.some((t) => classification.toLowerCase().includes(t))) {
       this.addToUnsubscribeList(email);
-      this.logger.warn(`Hard bounce: [EMAIL REDACTED] added to unsubscribe list`);
+      this.logger.warn(
+        `Hard bounce: [EMAIL REDACTED] added to unsubscribe list`,
+      );
     }
   }
 
   private handleSpamReport(email: string): void {
-    this.logger.warn(`Spam report from [EMAIL REDACTED], adding to unsubscribe list`);
+    this.logger.warn(
+      `Spam report from [EMAIL REDACTED], adding to unsubscribe list`,
+    );
     this.addToUnsubscribeList(email);
   }
 
@@ -425,7 +486,10 @@ export class EmailService implements OnModuleInit {
 
     const delivered = byStatus[EmailStatus.DELIVERED] || 0;
     const bounced = byStatus[EmailStatus.BOUNCED] || 0;
-    const sent = total - (byStatus[EmailStatus.QUEUED] || 0) - (byStatus[EmailStatus.DROPPED] || 0);
+    const sent =
+      total -
+      (byStatus[EmailStatus.QUEUED] || 0) -
+      (byStatus[EmailStatus.DROPPED] || 0);
 
     return {
       total,
@@ -435,7 +499,11 @@ export class EmailService implements OnModuleInit {
     };
   }
 
-  private updateDeliveryStatus(messageId: string, status: EmailStatus, reason?: string): void {
+  private updateDeliveryStatus(
+    messageId: string,
+    status: EmailStatus,
+    reason?: string,
+  ): void {
     const record = this.deliveryLog.get(messageId);
     if (record) {
       record.status = status;
@@ -446,7 +514,9 @@ export class EmailService implements OnModuleInit {
     }
   }
 
-  private filterUnsubscribed(recipients: EmailRecipientDto[]): EmailRecipientDto[] {
+  private filterUnsubscribed(
+    recipients: EmailRecipientDto[],
+  ): EmailRecipientDto[] {
     return recipients.filter((r) => !this.isUnsubscribed(r.email));
   }
 
@@ -483,7 +553,10 @@ export class EmailService implements OnModuleInit {
   }
 
   private generateUnsubscribeToken(email: string): string {
-    const secret = this.configService.get<string>('JWT_SECRET', 'fallback-secret');
+    const secret = this.configService.get<string>(
+      'JWT_SECRET',
+      'fallback-secret',
+    );
     return createHmac('sha256', secret)
       .update(email.toLowerCase().trim())
       .digest('hex');

@@ -9,12 +9,12 @@
 //!   6. Execute fails when the caller is not a SuperAdmin
 //!   7. Second SuperAdmin can execute and the record is removed
 
-#![cfg(test)]
-
 use soroban_sdk::testutils::Address as _;
+use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{symbol_short, Address, Env};
 
 use crate::{EarnQuestContract, EarnQuestContractClient};
+use crate::{EarnQuestContract, EarnQuestContractClient, Role};
 
 fn make_env() -> Env {
     let env = Env::default();
@@ -23,7 +23,7 @@ fn make_env() -> Env {
 }
 
 /// Returns a client, a primary super-admin, and a secondary super-admin.
-fn setup(env: &Env) -> (EarnQuestContractClient, Address, Address) {
+fn setup(env: &Env) -> (EarnQuestContractClient<'_>, Address, Address) {
     let cid = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &cid);
 
@@ -34,6 +34,7 @@ fn setup(env: &Env) -> (EarnQuestContractClient, Address, Address) {
     // Grant SuperAdmin role to the second admin via add_admin + grant_role
     client.add_admin(&admin1, &admin2);
     client.grant_role(&admin1, &admin2, &crate::Role::SuperAdmin);
+    client.grant_role(&admin1, &admin2, &Role::SuperAdmin);
 
     (client, admin1, admin2)
 }
@@ -148,21 +149,21 @@ fn test_happy_path_two_admins() {
     let (client, admin1, admin2) = setup(&env);
 
     let recipient = Address::generate(&env);
-    // Use the contract's own built-in token so the transfer resolves.
-    let contract_addr = client.address.clone();
-    let asset = contract_addr.clone();
+    let token_admin = Address::generate(&env);
+    let token_obj = env.register_stellar_asset_contract_v2(token_admin);
+    let asset = token_obj.address();
+    let token_admin_client = StellarAssetClient::new(&env, &asset);
+    let token_client = TokenClient::new(&env, &asset);
 
-    // Mint some tokens to the recipient via the contract's built-in token.
-    client.mint(&admin1, &recipient, &1000i128);
-    assert_eq!(client.balance(&recipient), 1000);
+    token_admin_client.mint(&recipient, &1000i128);
+    assert_eq!(token_client.balance(&recipient), 1000);
 
     let quest_id = symbol_short!("q1");
 
     client.initiate_clawback(&admin1, &quest_id, &recipient, &asset, &400i128);
     client.execute_clawback(&admin2, &quest_id, &recipient);
 
-    // Recipient balance should have decreased by 400.
-    assert_eq!(client.balance(&recipient), 600);
+    assert_eq!(token_client.balance(&recipient), 600);
 
     // A second execute on the same record must now fail (record cleaned up).
     let result = client.try_execute_clawback(&admin2, &quest_id, &recipient);

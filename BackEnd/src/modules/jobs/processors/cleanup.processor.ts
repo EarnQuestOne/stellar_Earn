@@ -124,7 +124,10 @@ export class CleanupProcessor {
       this.logger.log(`Cleaned ${deletedCount} old log entries`);
       return result;
     } catch (error) {
-      this.logger.error(`Error cleaning old logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error cleaning old logs: ${error.message}`,
+        error.stack,
+      );
 
       throw error;
     }

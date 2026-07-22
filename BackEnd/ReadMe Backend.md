@@ -88,6 +88,37 @@ apps/api/
 
 ## Getting Started
 
+### Onboarding / Toolchain Check
+
+Before installing dependencies, run the preflight script to verify that all required tools are installed and meet the project's minimum version requirements:
+
+```bash
+cd BackEnd
+npm install   # installs ts-node and other devDependencies
+npm run check:toolchain
+# Alias: npm run onboarding
+```
+
+The script checks every tool the project needs and prints a colour-coded report:
+
+| Tool | Min Version | Required? |
+|------|-------------|-----------|
+| Node.js | 22.x | ✅ Required |
+| npm | 10.x | ✅ Required |
+| Bun | 1.x | ⚠️ Recommended |
+| TypeScript (tsc) | 5.x | ✅ Required |
+| Git | 2.x | ✅ Required |
+| Rust (rustc) | 1.80.x | ✅ Required |
+| Cargo | 1.80.x | ✅ Required |
+| Docker | 24.x | ⚠️ Recommended |
+| Stellar CLI | 22.x | ⚠️ Recommended |
+
+**Exit codes:**
+- `0` – All required tools pass (warnings about recommended tools are non-fatal).
+- `1` – One or more **required** tools are missing or below minimum version.
+
+The same script runs as a preflight CI job (`toolchain-check`) in `.github/workflows/backend-ci.yml`.
+
 ### Prerequisites
 
 - Node.js ≥ 18.x

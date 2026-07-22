@@ -3,9 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { getQueueToken } from '@nestjs/bullmq';
 import { NotificationsService } from './notifications.service';
 import { Notification } from './entities/notification.entity';
-import { NotificationPreference } from './entities/notificationPreference.entity';
+import { NotificationPreference } from './entities/notification-preference.entity';
 import { NotificationLog } from './entities/notification-log.entity';
-import { NotificationTemplateService } from './templates/notification-template.service';
+import { NotificationTemplateService } from './template/notification-template.service';
 
 const buildUpdateBuilder = (
   raw: Array<{ id: string }> = [],
@@ -13,14 +13,20 @@ const buildUpdateBuilder = (
 ) => {
   const execute = executeMock ?? jest.fn().mockResolvedValue({ raw });
   const returning = jest.fn().mockReturnValue({ execute });
-  const andWhere = jest
-    .fn()
-    .mockReturnValue({ returning, execute });
+  const andWhere = jest.fn().mockReturnValue({ returning, execute });
   const where = jest.fn().mockReturnValue({ andWhere });
   const set = jest.fn().mockReturnValue({ where });
   const update = jest.fn().mockReturnValue({ set });
   const createQueryBuilder = jest.fn().mockReturnValue({ update });
-  return { createQueryBuilder, update, set, where, andWhere, returning, execute };
+  return {
+    createQueryBuilder,
+    update,
+    set,
+    where,
+    andWhere,
+    returning,
+    execute,
+  };
 };
 
 describe('NotificationsService', () => {
@@ -60,7 +66,10 @@ describe('NotificationsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsService,
-        { provide: getRepositoryToken(Notification), useValue: notificationsRepo },
+        {
+          provide: getRepositoryToken(Notification),
+          useValue: notificationsRepo,
+        },
         {
           provide: getRepositoryToken(NotificationPreference),
           useValue: preferenceRepo,
@@ -87,7 +96,8 @@ describe('NotificationsService', () => {
       ]);
       const logBuilder = buildUpdateBuilder();
 
-      notificationsRepo.createQueryBuilder = notificationsBuilder.createQueryBuilder;
+      notificationsRepo.createQueryBuilder =
+        notificationsBuilder.createQueryBuilder;
       logRepo.createQueryBuilder = logBuilder.createQueryBuilder;
 
       await service.markAllAsRead('user-1');
@@ -101,16 +111,20 @@ describe('NotificationsService', () => {
       // Exactly one batched UPDATE for notifications and one for logs.
       expect(notificationsBuilder.execute).toHaveBeenCalledTimes(1);
       expect(logBuilder.execute).toHaveBeenCalledTimes(1);
-      expect(notificationsBuilder.where).toHaveBeenCalledWith('userId = :userId', {
-        userId: 'user-1',
-      });
+      expect(notificationsBuilder.where).toHaveBeenCalledWith(
+        'userId = :userId',
+        {
+          userId: 'user-1',
+        },
+      );
     });
 
     it('skips the log update when no notifications were unread', async () => {
       const notificationsBuilder = buildUpdateBuilder([]);
       const logBuilder = buildUpdateBuilder();
 
-      notificationsRepo.createQueryBuilder = notificationsBuilder.createQueryBuilder;
+      notificationsRepo.createQueryBuilder =
+        notificationsBuilder.createQueryBuilder;
       logRepo.createQueryBuilder = logBuilder.createQueryBuilder;
 
       await service.markAllAsRead('user-1');

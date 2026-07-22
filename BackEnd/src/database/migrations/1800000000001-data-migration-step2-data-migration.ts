@@ -13,16 +13,16 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
     // Migrate user data
     await this.migrateUserData(queryRunner);
-    
+
     // Migrate quest data
     await this.migrateQuestData(queryRunner);
-    
+
     // Migrate submission data
     await this.migrateSubmissionData(queryRunner);
-    
+
     // Migrate payout data
     await this.migratePayoutData(queryRunner);
-    
+
     // Establish relationships and constraints
     await this.establishRelationships(queryRunner);
 
@@ -31,7 +31,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
   private async migrateUserData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating user data...');
-    
+
     // Update user statistics based on existing data
     await queryRunner.query(`
       UPDATE "users" u
@@ -94,7 +94,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
   private async migrateQuestData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating quest data...');
-    
+
     // Update quest creatorAddress from user stellarAddress
     await queryRunner.query(`
       UPDATE "quests" q
@@ -125,7 +125,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
   private async migrateSubmissionData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating submission data...');
-    
+
     // Update submission status to use proper enum values
     await queryRunner.query(`
       UPDATE "submissions" 
@@ -148,7 +148,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
   private async migratePayoutData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating payout data...');
-    
+
     // Update payout status to use proper enum values
     await queryRunner.query(`
       UPDATE "payouts" 
@@ -179,9 +179,11 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     console.log('Payout data migration completed');
   }
 
-  private async establishRelationships(queryRunner: QueryRunner): Promise<void> {
+  private async establishRelationships(
+    queryRunner: QueryRunner,
+  ): Promise<void> {
     console.log('Establishing relationships and constraints...');
-    
+
     // Create foreign key constraints if they don't exist
     try {
       // User foreign keys
@@ -190,7 +192,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_submissions_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_submissions_user already exists or cannot be created');
     }
 
@@ -200,7 +202,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_quests_creator" 
         FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_quests_creator already exists or cannot be created');
     }
 
@@ -210,7 +212,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_submissions_quest" 
         FOREIGN KEY ("questId") REFERENCES "quests"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_submissions_quest already exists or cannot be created');
     }
 
@@ -220,7 +222,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_notifications_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_notifications_user already exists or cannot be created');
     }
 
@@ -230,7 +232,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         ADD CONSTRAINT "FK_refresh_tokens_user" 
         FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
       `);
-    } catch (error) {
+    } catch {
       console.log('FK_refresh_tokens_user already exists or cannot be created');
     }
 
@@ -246,13 +248,13 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
       'CREATE INDEX IF NOT EXISTS "IDX_payouts_status" ON "payouts" ("status")',
       'CREATE INDEX IF NOT EXISTS "IDX_payouts_stellarAddress" ON "payouts" ("stellarAddress")',
       'CREATE INDEX IF NOT EXISTS "IDX_payouts_questId" ON "payouts" ("questId")',
-      'CREATE INDEX IF NOT EXISTS "IDX_payouts_submissionId" ON "payouts" ("submissionId")'
+      'CREATE INDEX IF NOT EXISTS "IDX_payouts_submissionId" ON "payouts" ("submissionId")',
     ];
 
     for (const indexQuery of indexes) {
       try {
         await queryRunner.query(indexQuery);
-      } catch (error) {
+      } catch {
         console.log(`Index creation failed: ${indexQuery}`);
       }
     }
@@ -262,21 +264,25 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Rolling back Step 2: Data migration...');
-    
+
     // Drop foreign key constraints
     const constraints = [
       'FK_submissions_user',
-      'FK_quests_creator', 
+      'FK_quests_creator',
       'FK_submissions_quest',
       'FK_notifications_user',
-      'FK_refresh_tokens_user'
+      'FK_refresh_tokens_user',
     ];
 
     for (const constraint of constraints) {
       try {
-        await queryRunner.query(`ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`);
-      } catch (error) {
-        console.log(`Constraint ${constraint} does not exist or cannot be dropped`);
+        await queryRunner.query(
+          `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
+        );
+      } catch {
+        console.log(
+          `Constraint ${constraint} does not exist or cannot be dropped`,
+        );
       }
     }
 
@@ -292,13 +298,13 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
       'IDX_payouts_status',
       'IDX_payouts_stellarAddress',
       'IDX_payouts_questId',
-      'IDX_payouts_submissionId'
+      'IDX_payouts_submissionId',
     ];
 
     for (const index of indexes) {
       try {
         await queryRunner.query(`DROP INDEX IF EXISTS "${index}"`);
-      } catch (error) {
+      } catch {
         console.log(`Index ${index} does not exist or cannot be dropped`);
       }
     }

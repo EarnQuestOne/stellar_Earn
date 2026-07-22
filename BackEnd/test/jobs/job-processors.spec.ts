@@ -1,18 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PayoutProcessor } from '../processors/payout.processor';
-import { EmailProcessor } from '../processors/email.processor';
-import { DataExportProcessor } from '../processors/export.processor';
-import { CleanupProcessor } from '../processors/cleanup.processor';
-import { WebhookProcessor } from '../processors/webhook.processor';
-import { AnalyticsProcessor } from '../processors/analytics.processor';
-import { QuestProcessor } from '../processors/quest.processor';
-import { JobLogService } from '../services/job-log.service';
-import { PayoutProcessPayload, EmailSendPayload, JobStatus } from '../job.types';
+import { PayoutProcessor } from 'src/modules/jobs/processors/payout.processor';
+import { EmailProcessor } from 'src/modules/jobs/processors/email.processor';
+import { DataExportProcessor } from 'src/modules/jobs/processors/export.processor';
+import { CleanupProcessor } from 'src/modules/jobs/processors/cleanup.processor';
+import { WebhookProcessor } from 'src/modules/jobs/processors/webhook.processor';
+import { AnalyticsProcessor } from 'src/modules/jobs/processors/analytics.processor';
+import { QuestProcessor } from 'src/modules/jobs/processors/quest.processor';
+import { JobLogService } from 'src/modules/jobs/services/job-log.service';
+import { JobIdempotencyService } from 'src/modules/jobs/services/job-idempotency.service';
+import {
+  PayoutProcessPayload,
+  EmailSendPayload,
+} from 'src/modules/jobs/job.types';
 import { Job } from 'bullmq';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataExport } from 'src/modules/users/entities/data-export.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Quest } from 'src/modules/quests/entities/quest.entity';
+import { Submission } from 'src/modules/submissions/entities/submission.entity';
+import { Payout } from 'src/modules/payouts/entities/payout.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AnalyticsAggregationService } from 'src/modules/analytics/services/aggregation.service';
+import { AnalyticsReportService } from 'src/modules/analytics/services/report.service';
 
 describe('Job Processors', () => {
   let module: TestingModule;
-  let jobLogService: JobLogService;
+  let _jobLogService: JobLogService;
   let payoutProcessor: PayoutProcessor;
   let emailProcessor: EmailProcessor;
   let exportProcessor: DataExportProcessor;
@@ -35,6 +48,101 @@ describe('Job Processors', () => {
             recordJobFailure: jest.fn(),
           },
         },
+        {
+          provide: getRepositoryToken(DataExport),
+          useValue: {
+            update: jest.fn().mockResolvedValue({}),
+          },
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            findOne: jest.fn().mockResolvedValue({
+              id: 'user-456',
+              stellarAddress: 'GB...',
+              username: 'testuser',
+              email: 'test@example.com',
+            }),
+          },
+        },
+        {
+          provide: getRepositoryToken(Quest),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'quest-123',
+                title: 'Test Quest',
+                createdBy: 'user-456',
+              },
+            ]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Submission),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'sub-789',
+                questId: 'quest-123',
+                userId: 'user-456',
+                status: 'APPROVED',
+              },
+            ]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Payout),
+          useValue: {
+            find: jest.fn().mockResolvedValue([
+              {
+                id: 'payout-1',
+                amount: 10,
+                stellarAddress: 'GB...',
+              },
+            ]),
+          },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
+          },
+        },
+        {
+          provide: AnalyticsAggregationService,
+          useValue: {
+            runBatchAggregation: jest
+              .fn()
+              .mockResolvedValue({ processed: 10, skipped: 2 }),
+            aggregateQuestData: jest.fn().mockResolvedValue(5),
+            aggregateUserData: jest.fn().mockResolvedValue(5),
+          },
+        },
+        {
+          provide: AnalyticsReportService,
+          useValue: {
+            generateReport: jest
+              .fn()
+              .mockResolvedValue({ id: 'report-1', status: 'COMPLETED' }),
+          },
+        },
+        // Default mock for JobIdempotencyService: always allow processing
+        {
+          provide: JobIdempotencyService,
+          useValue: {
+            buildPayoutJobKey: jest
+              .fn()
+              .mockImplementation(
+                (payoutId: string, jobType: string) =>
+                  `payout-job:${payoutId}:${jobType}`,
+              ),
+            checkAndLock: jest
+              .fn()
+              .mockResolvedValue({ alreadyProcessed: false, locked: false }),
+            complete: jest.fn().mockResolvedValue(undefined),
+            release: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         PayoutProcessor,
         EmailProcessor,
         DataExportProcessor,
@@ -45,7 +153,7 @@ describe('Job Processors', () => {
       ],
     }).compile();
 
-    jobLogService = module.get<JobLogService>(JobLogService);
+    _jobLogService = module.get<JobLogService>(JobLogService);
     payoutProcessor = module.get<PayoutProcessor>(PayoutProcessor);
     emailProcessor = module.get<EmailProcessor>(EmailProcessor);
     exportProcessor = module.get<DataExportProcessor>(DataExportProcessor);
@@ -67,7 +175,8 @@ describe('Job Processors', () => {
           payoutId: 'payout-123',
           organizationId: 'org-456',
           amount: 100,
-          recipientAddress: 'GDZST3XVCDTUJ76ZAV2HA72KYXM4ZCT5JBHNYX7UHZASDEFDZDCXACHL',
+          recipientAddress:
+            'GDZST3XVCDTUJ76ZAV2HA72KYXM4ZCT5JBHNYX7UHZASDEFDZDCXACHL',
         } as PayoutProcessPayload,
         updateProgress: jest.fn(),
         timestamp: Date.now(),
@@ -88,7 +197,8 @@ describe('Job Processors', () => {
           payoutId: 'payout-123',
           organizationId: 'org-456',
           amount: -100,
-          recipientAddress: 'GDZST3XVCDTUJ76ZAV2HA72KYXM4ZCT5JBHNYX7UHZASDEFDZDCXACHL',
+          recipientAddress:
+            'GDZST3XVCDTUJ76ZAV2HA72KYXM4ZCT5JBHNYX7UHZASDEFDZDCXACHL',
         } as PayoutProcessPayload,
         updateProgress: jest.fn(),
         timestamp: Date.now(),
@@ -311,7 +421,7 @@ describe('Job Processors', () => {
       const result = await analyticsProcessor.processAggregation(mockJob);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('aggregatedMetrics');
+      expect(result.data).toHaveProperty('processed');
     });
 
     it('should collect metrics successfully', async () => {
@@ -367,7 +477,9 @@ describe('Job Processors', () => {
 
       // Result can be success or failure with rejection reason
       expect(result.data).toHaveProperty('verificationStatus');
-      expect(['APPROVED', 'REJECTED']).toContain(result.data.verificationStatus);
+      expect(['APPROVED', 'REJECTED']).toContain(
+        result.data.verificationStatus,
+      );
     });
   });
 

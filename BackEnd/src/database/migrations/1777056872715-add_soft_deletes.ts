@@ -55,17 +55,25 @@ export class AddSoftDeletes1777056872715 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_DELETED_AT"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_DELETED_AT"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PAYOUT_DELETED_AT"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_DELETED_AT"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_NOTIFICATION_DELETED_AT"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_DELETED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_QUEST_DELETED_AT"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USER_DELETED_AT"`);
 
     // Drop deletedAt columns
-    await queryRunner.query(`ALTER TABLE "RefreshToken" DROP COLUMN "deletedAt"`);
+    await queryRunner.query(
+      `ALTER TABLE "RefreshToken" DROP COLUMN "deletedAt"`,
+    );
     await queryRunner.query(`ALTER TABLE "Payout" DROP COLUMN "deletedAt"`);
-    await queryRunner.query(`ALTER TABLE "Notification" DROP COLUMN "deletedAt"`);
+    await queryRunner.query(
+      `ALTER TABLE "Notification" DROP COLUMN "deletedAt"`,
+    );
     await queryRunner.query(`ALTER TABLE "Submission" DROP COLUMN "deletedAt"`);
     await queryRunner.query(`ALTER TABLE "Quest" DROP COLUMN "deletedAt"`);
     await queryRunner.query(`ALTER TABLE "User" DROP COLUMN "deletedAt"`);

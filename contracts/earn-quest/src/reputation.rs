@@ -2,7 +2,7 @@ use crate::errors::Error;
 use crate::events;
 use crate::storage;
 use crate::types::{Badge, BadgeType, Role, UserCore};
-use soroban_sdk::{Address, Env, String, Symbol, symbol_short};
+use soroban_sdk::{symbol_short, Address, Env, String, Symbol};
 
 const LEVEL_2_XP: u64 = 300;
 const LEVEL_3_XP: u64 = 600;
@@ -75,16 +75,16 @@ pub fn calculate_level(xp: u64) -> u32 {
     }
 }
 
-    // Map badge to XP reward
-    fn badge_xp(badge: &Badge) -> u64 {
-        match badge {
-            Badge::Rookie => 10,
-            Badge::Explorer => 20,
-            Badge::Veteran => 30,
-            Badge::Master => 50,
-            Badge::Legend => 100,
-        }
+// Map badge to XP reward
+fn badge_xp(badge: &Badge) -> u64 {
+    match badge {
+        Badge::Rookie => 10,
+        Badge::Explorer => 20,
+        Badge::Veteran => 30,
+        Badge::Master => 50,
+        Badge::Legend => 100,
     }
+}
 
 /// Grants a badge to a user (BadgeAdmin or Admin only).
 ///
@@ -102,23 +102,26 @@ pub fn calculate_level(xp: u64) -> u32 {
 /// * `Ok(())` if the badge is successfully granted.
 /// * `Err(Error::Unauthorized)` if the caller lacks permission.
 pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) -> Result<(), Error> {
-        caller.require_auth();
-        if !(storage::is_super_admin(env, caller) || storage::has_role(env, caller, &Role::Admin) || storage::has_role(env, caller, &Role::BadgeAdmin)) {
-            return Err(Error::Unauthorized);
-        }
-
-        let mut user_badges = storage::get_user_badges(env, user);
-
-        if !user_badges.badges.contains(&badge) {
-            user_badges.badges.push_back(badge.clone());
-            storage::set_user_badges(env, user, &user_badges);
-            events::badge_granted(env, user.clone(), badge.clone());
-            // Award XP based on badge
-            let _ = award_xp(env, user, badge_xp(&badge));
-        }
-
-        Ok(())
+    caller.require_auth();
+    if !(storage::is_super_admin(env, caller)
+        || storage::has_role(env, caller, &Role::Admin)
+        || storage::has_role(env, caller, &Role::BadgeAdmin))
+    {
+        return Err(Error::Unauthorized);
     }
+
+    let mut user_badges = storage::get_user_badges(env, user);
+
+    if !user_badges.badges.contains(&badge) {
+        user_badges.badges.push_back(badge.clone());
+        storage::set_user_badges(env, user, &user_badges);
+        events::badge_granted(env, user.clone(), badge.clone());
+        // Award XP based on badge
+        let _ = award_xp(env, user, badge_xp(&badge));
+    }
+
+    Ok(())
+}
 
 /// Retrieves the core reputation statistics for a user.
 ///
@@ -153,7 +156,7 @@ pub fn seed_default_badge_types(env: &Env, caller: &Address) -> Result<(), Error
     if !storage::is_admin(env, caller) && !storage::has_role(env, caller, &Role::BadgeAdmin) {
         return Err(Error::Unauthorized);
     }
-    
+
     // Seed common badge types
     let rookie = BadgeType {
         id: symbol_short!("ROOKIE"),
@@ -161,42 +164,42 @@ pub fn seed_default_badge_types(env: &Env, caller: &Address) -> Result<(), Error
         description: String::from_str(env, "Initial badge for new users"),
         xp_reward: 10,
     };
-    
+
     let explorer = BadgeType {
         id: symbol_short!("EXPLORER"),
         name: String::from_str(env, "Explorer"),
         description: String::from_str(env, "For users who have explored multiple quests"),
         xp_reward: 20,
     };
-    
+
     let veteran = BadgeType {
         id: symbol_short!("VETERAN"),
         name: String::from_str(env, "Veteran"),
         description: String::from_str(env, "For experienced quest completers"),
         xp_reward: 30,
     };
-    
+
     let master = BadgeType {
         id: symbol_short!("MASTER"),
         name: String::from_str(env, "Master"),
         description: String::from_str(env, "For top-tier contributors"),
         xp_reward: 50,
     };
-    
+
     let legend = BadgeType {
         id: symbol_short!("LEGEND"),
         name: String::from_str(env, "Legend"),
         description: String::from_str(env, "The highest achievement level"),
         xp_reward: 100,
     };
-    
+
     // Register each badge type
     register_badge_type(env, caller, &rookie)?;
     register_badge_type(env, caller, &explorer)?;
     register_badge_type(env, caller, &veteran)?;
     register_badge_type(env, caller, &master)?;
     register_badge_type(env, caller, &legend)?;
-    
+
     Ok(())
 }
 
@@ -212,21 +215,25 @@ pub fn seed_default_badge_types(env: &Env, caller: &Address) -> Result<(), Error
 ///
 /// * `Ok(())` if registration was successful.
 /// * `Err(Error)` if any operation fails.
-pub fn register_badge_type(env: &Env, caller: &Address, badge_type: &BadgeType) -> Result<(), Error> {
+pub fn register_badge_type(
+    env: &Env,
+    caller: &Address,
+    badge_type: &BadgeType,
+) -> Result<(), Error> {
     // Verify caller has admin role
     if !storage::is_admin(env, caller) && !storage::has_role(env, caller, &Role::BadgeAdmin) {
         return Err(Error::Unauthorized);
     }
-    
+
     // Store the badge type
     storage::set_badge_type(env, badge_type);
-    
+
     // Add to the list of badge type IDs
     storage::add_badge_type_id(env, &badge_type.id);
-    
+
     // Emit event
     events::badge_type_registered(env, badge_type.id.clone(), badge_type.name.clone());
-    
+
     Ok(())
 }
 
@@ -247,13 +254,13 @@ pub fn update_badge_type(env: &Env, caller: &Address, badge_type: &BadgeType) ->
     if !storage::is_admin(env, caller) && !storage::has_role(env, caller, &Role::BadgeAdmin) {
         return Err(Error::Unauthorized);
     }
-    
+
     // Update the badge type
     storage::set_badge_type(env, badge_type);
-    
+
     // Emit event
     events::badge_type_updated(env, badge_type.id.clone());
-    
+
     Ok(())
 }
 
@@ -274,15 +281,15 @@ pub fn remove_badge_type(env: &Env, caller: &Address, id: &Symbol) -> Result<(),
     if !storage::is_admin(env, caller) && !storage::has_role(env, caller, &Role::BadgeAdmin) {
         return Err(Error::Unauthorized);
     }
-    
+
     // Remove from storage
     storage::remove_badge_type(env, id);
-    
+
     // Remove from the list of badge type IDs
     storage::remove_badge_type_id(env, id);
-    
+
     // Emit event
     events::badge_type_removed(env, id.clone());
-    
+
     Ok(())
 }

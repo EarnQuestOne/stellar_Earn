@@ -58,7 +58,10 @@ export async function retryWithBackoff<T>(
 
       if (attempt < finalConfig.maxAttempts) {
         await sleep(delay);
-        delay = Math.min(delay * finalConfig.backoffMultiplier, finalConfig.maxDelayMs);
+        delay = Math.min(
+          delay * finalConfig.backoffMultiplier,
+          finalConfig.maxDelayMs,
+        );
       }
     }
   }
@@ -141,10 +144,9 @@ export function authenticatedRequest(
   path: string,
   token: string,
 ) {
-  return request(app.getHttpServer())[method](path).set(
-    'Authorization',
-    `Bearer ${token}`,
-  );
+  return request(app.getHttpServer())
+    [method](path)
+    .set('Authorization', `Bearer ${token}`);
 }
 
 /**
@@ -176,11 +178,13 @@ export async function waitForAppReady(
 
   while (attempts < maxAttempts) {
     try {
-      await request(app.getHttpServer()).get('/health').expect((res) => {
-        if (res.status !== 200 && res.status !== 503) {
-          throw new Error('App not ready');
-        }
-      });
+      await request(app.getHttpServer())
+        .get('/health')
+        .expect((res) => {
+          if (res.status !== 200 && res.status !== 503) {
+            throw new Error('App not ready');
+          }
+        });
       return;
     } catch {
       attempts++;
@@ -240,7 +244,8 @@ export async function waitForEvent(
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(
-      () => reject(new Error(`Event "${eventName}" not received within timeout`)),
+      () =>
+        reject(new Error(`Event "${eventName}" not received within timeout`)),
       timeoutMs,
     );
 
@@ -284,13 +289,18 @@ export async function pollDatabase<T>(
 /**
  * Setup test isolation - clear state between tests
  */
-export async function setupTestIsolation(options: {
-  clearDatabase?: boolean;
-  clearCache?: boolean;
-  clearStorage?: boolean;
-} = {}) {
-  const { clearDatabase = true, clearCache = true, clearStorage = true } =
-    options;
+export async function setupTestIsolation(
+  options: {
+    clearDatabase?: boolean;
+    clearCache?: boolean;
+    clearStorage?: boolean;
+  } = {},
+) {
+  const {
+    clearDatabase = true,
+    clearCache = true,
+    clearStorage = true,
+  } = options;
 
   // Override with appropriate cleanup logic based on your setup
   return {
@@ -363,7 +373,10 @@ export async function retryRequest(
 
       if (attempt < finalConfig.maxAttempts) {
         await sleep(delay);
-        delay = Math.min(delay * finalConfig.backoffMultiplier, finalConfig.maxDelayMs);
+        delay = Math.min(
+          delay * finalConfig.backoffMultiplier,
+          finalConfig.maxDelayMs,
+        );
       }
     }
   }
@@ -384,10 +397,12 @@ export async function assertResponseWithRetry(
   return retryWithBackoff(
     () =>
       new Promise((resolve, reject) => {
-        request(app.getHttpServer())[method](path).expect(expectedStatus, (err, res) => {
-          if (err) reject(err);
-          else resolve(res);
-        });
+        request(app.getHttpServer())
+          [method](path)
+          .expect(expectedStatus, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          });
       }),
     config,
   );
@@ -428,7 +443,10 @@ export async function batchAsync<T, R>(
 
     if (executing.length >= concurrency) {
       await Promise.race(executing);
-      executing.splice(executing.findIndex((p) => p === promise), 1);
+      executing.splice(
+        executing.findIndex((p) => p === promise),
+        1,
+      );
     }
   }
 

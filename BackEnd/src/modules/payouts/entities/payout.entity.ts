@@ -12,6 +12,7 @@ export enum PayoutStatus {
   PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
+  DEAD_LETTER = 'dead_letter',
   RETRY_SCHEDULED = 'retry_scheduled',
   AWAITING_APPROVAL = 'awaiting_approval',
 }
@@ -74,7 +75,7 @@ export class Payout {
   @Column({ default: 0 })
   retryCount: number;
 
-  @Column({ default: 3 })
+  @Column({ default: 5 })
   maxRetries: number;
 
   @Column({ type: 'timestamp', nullable: true })
@@ -98,7 +99,9 @@ export class Payout {
   // Helper method to check if payout can be retried
   canRetry(): boolean {
     return (
-      this.status === PayoutStatus.FAILED && this.retryCount < this.maxRetries
+      [PayoutStatus.FAILED, PayoutStatus.RETRY_SCHEDULED].includes(
+        this.status,
+      ) && this.retryCount < this.maxRetries
     );
   }
 

@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Quest } from '../entities/quest.entity';
+import { QuestDifficulty } from '../enums/quest-difficulty.enum';
 
 export class QuestResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -8,7 +9,9 @@ export class QuestResponseDto {
   @ApiProperty({ example: 'Complete KYC Verification' })
   title: string;
 
-  @ApiProperty({ example: 'Complete the KYC verification process to earn rewards' })
+  @ApiProperty({
+    example: 'Complete the KYC verification process to earn rewards',
+  })
   description: string;
 
   @ApiProperty({ example: 10.5 })
@@ -17,7 +20,9 @@ export class QuestResponseDto {
   @ApiProperty({ example: 'ACTIVE' })
   status: string;
 
-  @ApiProperty({ example: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' })
+  @ApiProperty({
+    example: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+  })
   createdBy: string;
 
   @ApiProperty({ example: '2026-01-23T12:34:56.000Z' })
@@ -25,6 +30,9 @@ export class QuestResponseDto {
 
   @ApiProperty({ example: '2026-01-24T08:00:00.000Z' })
   updatedAt: Date;
+
+  @ApiPropertyOptional({ enum: QuestDifficulty, example: 'beginner' })
+  difficulty?: QuestDifficulty;
 
   static fromEntity(quest: Quest): QuestResponseDto {
     const dto = new QuestResponseDto();
@@ -36,6 +44,7 @@ export class QuestResponseDto {
     dto.createdBy = quest.createdBy;
     dto.createdAt = quest.createdAt;
     dto.updatedAt = quest.updatedAt;
+    dto.difficulty = quest.difficulty;
     return dto;
   }
 }

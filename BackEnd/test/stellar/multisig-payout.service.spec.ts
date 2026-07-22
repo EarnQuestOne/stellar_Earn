@@ -5,9 +5,19 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import fc from 'fast-check';
 import { MultiSigPayoutService } from '#src/modules/stellar/multisig/services/multisig-payout.service';
 import { MultiSigWalletService } from '#src/modules/stellar/multisig/services/multisig-wallet.service';
-import { MultiSigTransaction, MultiSigTransactionStatus } from '#src/modules/stellar/multisig/entities/multisig-transaction.entity';
-import { MultiSigWallet, MultiSigWalletStatus } from '#src/modules/stellar/multisig/entities/multisig-wallet.entity';
-import { Payout, PayoutStatus, PayoutType } from '#src/modules/payouts/entities/payout.entity';
+import {
+  MultiSigTransaction,
+  MultiSigTransactionStatus,
+} from '#src/modules/stellar/multisig/entities/multisig-transaction.entity';
+import {
+  MultiSigWallet,
+  MultiSigWalletStatus,
+} from '#src/modules/stellar/multisig/entities/multisig-wallet.entity';
+import {
+  Payout,
+  PayoutStatus,
+  PayoutType,
+} from '#src/modules/payouts/entities/payout.entity';
 
 // â”€â”€â”€ Arbitraries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -56,18 +66,25 @@ const makePayout = (overrides: Partial<Payout> = {}): Payout =>
     canRetry: () => false,
     isClaimable: () => true,
     ...overrides,
-  } as Payout);
+  }) as Payout;
 
-const makeTransaction = (overrides: Partial<MultiSigTransaction> = {}): MultiSigTransaction =>
+const makeTransaction = (
+  overrides: Partial<MultiSigTransaction> = {},
+): MultiSigTransaction =>
   ({
     id: 'tx-123',
     multiSigWalletId: 'wallet-123',
     transactionType: 'PAYOUT' as any,
     status: MultiSigTransactionStatus.APPROVED,
-    destinationAddress: 'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
+    destinationAddress:
+      'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
     amount: 500,
     asset: 'XLM',
-    transactionPayload: JSON.stringify({ payoutId: 'payout-123', questId: 'quest-1', submissionId: 'sub-1' }),
+    transactionPayload: JSON.stringify({
+      payoutId: 'payout-123',
+      questId: 'quest-1',
+      submissionId: 'sub-1',
+    }),
     description: 'Test payout',
     approvalsReceived: 2,
     rejectionsReceived: 0,
@@ -84,7 +101,7 @@ const makeTransaction = (overrides: Partial<MultiSigTransaction> = {}): MultiSig
     cancelledAt: null,
     cancelledBy: null,
     ...overrides,
-  } as MultiSigTransaction);
+  }) as MultiSigTransaction;
 
 const makeWallet = (overrides: Partial<MultiSigWallet> = {}): MultiSigWallet =>
   ({
@@ -105,7 +122,7 @@ const makeWallet = (overrides: Partial<MultiSigWallet> = {}): MultiSigWallet =>
     updatedAt: new Date(),
     lastActivityAt: new Date(),
     ...overrides,
-  } as MultiSigWallet);
+  }) as MultiSigWallet;
 
 // â”€â”€â”€ Test Suite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -174,11 +191,17 @@ describe('MultiSigPayoutService', () => {
   describe('createPayoutEscrow', () => {
     it('should create escrow, update payout to AWAITING_APPROVAL, and emit event', async () => {
       const payout = makePayout();
-      const tx = makeTransaction({ status: MultiSigTransactionStatus.PENDING, approvalsReceived: 0 });
+      const tx = makeTransaction({
+        status: MultiSigTransactionStatus.PENDING,
+        approvalsReceived: 0,
+      });
 
       mockPayoutRepo.findOne.mockResolvedValue(payout);
       mockMultiSigWalletService.createTransaction.mockResolvedValue(tx);
-      mockPayoutRepo.save.mockResolvedValue({ ...payout, status: PayoutStatus.AWAITING_APPROVAL });
+      mockPayoutRepo.save.mockResolvedValue({
+        ...payout,
+        status: PayoutStatus.AWAITING_APPROVAL,
+      });
 
       const result = await service.createPayoutEscrow(
         'payout-123',
@@ -203,7 +226,13 @@ describe('MultiSigPayoutService', () => {
       mockPayoutRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        service.createPayoutEscrow('missing-payout', 'wallet-123', 'addr', 100, 'user-1'),
+        service.createPayoutEscrow(
+          'missing-payout',
+          'wallet-123',
+          'addr',
+          100,
+          'user-1',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -216,7 +245,13 @@ describe('MultiSigPayoutService', () => {
           mockPayoutRepo.findOne.mockResolvedValue(makePayout({ status }));
 
           await expect(
-            service.createPayoutEscrow('payout-123', 'wallet-123', 'addr', 100, 'user-1'),
+            service.createPayoutEscrow(
+              'payout-123',
+              'wallet-123',
+              'addr',
+              100,
+              'user-1',
+            ),
           ).rejects.toThrow(BadRequestException);
         }),
       );
@@ -232,7 +267,10 @@ describe('MultiSigPayoutService', () => {
 
       mockTransactionRepo.findOne.mockResolvedValue(tx);
       mockPayoutRepo.findOne.mockResolvedValue(payout);
-      mockPayoutRepo.save.mockResolvedValue({ ...payout, status: PayoutStatus.PROCESSING });
+      mockPayoutRepo.save.mockResolvedValue({
+        ...payout,
+        status: PayoutStatus.PROCESSING,
+      });
 
       const result = await service.processApprovedPayout('tx-123');
 
@@ -249,7 +287,9 @@ describe('MultiSigPayoutService', () => {
     it('should throw NotFoundException when transaction does not exist', async () => {
       mockTransactionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.processApprovedPayout('missing-tx')).rejects.toThrow(NotFoundException);
+      await expect(service.processApprovedPayout('missing-tx')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     // Property 14: Non-APPROVED transaction rejects payout processing
@@ -258,9 +298,13 @@ describe('MultiSigPayoutService', () => {
       await fc.assert(
         fc.asyncProperty(nonApprovedTransactionStatus, async (status) => {
           jest.clearAllMocks();
-          mockTransactionRepo.findOne.mockResolvedValue(makeTransaction({ status }));
+          mockTransactionRepo.findOne.mockResolvedValue(
+            makeTransaction({ status }),
+          );
 
-          await expect(service.processApprovedPayout('tx-123')).rejects.toThrow(BadRequestException);
+          await expect(service.processApprovedPayout('tx-123')).rejects.toThrow(
+            BadRequestException,
+          );
         }),
       );
     });
@@ -270,14 +314,19 @@ describe('MultiSigPayoutService', () => {
 
   describe('handleRejectedPayout', () => {
     it('should set payout to FAILED with failureReason and emit event', async () => {
-      const tx = makeTransaction({ status: MultiSigTransactionStatus.REJECTED });
+      const tx = makeTransaction({
+        status: MultiSigTransactionStatus.REJECTED,
+      });
       const payout = makePayout({ status: PayoutStatus.AWAITING_APPROVAL });
 
       mockTransactionRepo.findOne.mockResolvedValue(tx);
       mockPayoutRepo.findOne.mockResolvedValue(payout);
       mockPayoutRepo.save.mockImplementation((p: Payout) => Promise.resolve(p));
 
-      const result = await service.handleRejectedPayout('tx-123', 'Insufficient funds');
+      const result = await service.handleRejectedPayout(
+        'tx-123',
+        'Insufficient funds',
+      );
 
       expect(mockPayoutRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -287,7 +336,10 @@ describe('MultiSigPayoutService', () => {
       );
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         'multisig.payout.rejected',
-        expect.objectContaining({ payoutId: 'payout-123', reason: 'Insufficient funds' }),
+        expect.objectContaining({
+          payoutId: 'payout-123',
+          reason: 'Insufficient funds',
+        }),
       );
       expect(result.status).toBe(PayoutStatus.FAILED);
       expect(result.failureReason).toContain('Insufficient funds');
@@ -296,7 +348,9 @@ describe('MultiSigPayoutService', () => {
     it('should throw NotFoundException when transaction does not exist', async () => {
       mockTransactionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.handleRejectedPayout('missing-tx', 'reason')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.handleRejectedPayout('missing-tx', 'reason'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -306,10 +360,21 @@ describe('MultiSigPayoutService', () => {
     it('should return dashboard with correct pending and approved counts', async () => {
       const wallet = makeWallet();
       const pendingTxs = [
-        makeTransaction({ id: 'tx-1', status: MultiSigTransactionStatus.PENDING }),
-        makeTransaction({ id: 'tx-2', status: MultiSigTransactionStatus.PENDING }),
+        makeTransaction({
+          id: 'tx-1',
+          status: MultiSigTransactionStatus.PENDING,
+        }),
+        makeTransaction({
+          id: 'tx-2',
+          status: MultiSigTransactionStatus.PENDING,
+        }),
       ];
-      const approvedTxs = [makeTransaction({ id: 'tx-3', status: MultiSigTransactionStatus.APPROVED })];
+      const approvedTxs = [
+        makeTransaction({
+          id: 'tx-3',
+          status: MultiSigTransactionStatus.APPROVED,
+        }),
+      ];
 
       mockWalletRepo.findOne.mockResolvedValue(wallet);
       mockTransactionRepo.find
@@ -326,30 +391,39 @@ describe('MultiSigPayoutService', () => {
     it('should throw NotFoundException when wallet does not exist', async () => {
       mockWalletRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.getPayoutApprovalDashboard('missing-wallet')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.getPayoutApprovalDashboard('missing-wallet'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     // Property 12: Dashboard counts match actual transaction counts
     // Feature: multisig-edge-case-testing, Property 12: Dashboard counts match actual transaction counts
     it('should return pendingCount matching the number of pending transactions', async () => {
       await fc.assert(
-        fc.asyncProperty(fc.integer({ min: 0, max: 8 }), async (pendingCount) => {
-          jest.clearAllMocks();
+        fc.asyncProperty(
+          fc.integer({ min: 0, max: 8 }),
+          async (pendingCount) => {
+            jest.clearAllMocks();
 
-          const wallet = makeWallet();
-          const pendingTxs = Array.from({ length: pendingCount }, (_, i) =>
-            makeTransaction({ id: `tx-pending-${i}`, status: MultiSigTransactionStatus.PENDING }),
-          );
+            const wallet = makeWallet();
+            const pendingTxs = Array.from({ length: pendingCount }, (_, i) =>
+              makeTransaction({
+                id: `tx-pending-${i}`,
+                status: MultiSigTransactionStatus.PENDING,
+              }),
+            );
 
-          mockWalletRepo.findOne.mockResolvedValue(wallet);
-          mockTransactionRepo.find
-            .mockResolvedValueOnce(pendingTxs)
-            .mockResolvedValueOnce([]);
+            mockWalletRepo.findOne.mockResolvedValue(wallet);
+            mockTransactionRepo.find
+              .mockResolvedValueOnce(pendingTxs)
+              .mockResolvedValueOnce([]);
 
-          const result = await service.getPayoutApprovalDashboard('wallet-123');
+            const result =
+              await service.getPayoutApprovalDashboard('wallet-123');
 
-          return result.pendingCount === pendingCount;
-        }),
+            return result.pendingCount === pendingCount;
+          },
+        ),
       );
     });
   });

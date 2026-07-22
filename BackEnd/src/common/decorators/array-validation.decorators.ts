@@ -24,7 +24,7 @@ export function ArrayMinSize(
   min: number,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
@@ -52,7 +52,7 @@ export function ArrayMaxSize(
   max: number,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
@@ -66,7 +66,7 @@ export function ArrayMaxSize(
 // Unique array elements
 @ValidatorConstraint({ async: false })
 export class ArrayUniqueConstraint implements ValidatorConstraintInterface {
-  validate(value: any, args: ValidationArguments) {
+  validate(value: any, _args: ValidationArguments) {
     if (!Array.isArray(value)) return false;
 
     // For primitive types, use Set
@@ -92,7 +92,7 @@ export class ArrayUniqueConstraint implements ValidatorConstraintInterface {
 }
 
 export function ArrayUnique(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
@@ -122,7 +122,7 @@ export function ArrayElements(
   elementValidator: (item: any) => boolean,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,

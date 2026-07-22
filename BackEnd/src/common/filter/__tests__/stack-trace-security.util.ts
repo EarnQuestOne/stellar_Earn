@@ -19,20 +19,26 @@ export interface StackTraceLeakageResult {
  * Primary assertion function: checks response body for stack trace leakage
  * Must be called on every error response in production mode tests
  */
-export function assertNoStackLeakage(responseBody: unknown): StackTraceLeakageResult {
+export function assertNoStackLeakage(
+  responseBody: unknown,
+): StackTraceLeakageResult {
   const bodyStr = JSON.stringify(responseBody);
   const leakages: string[] = [];
-  
+
   // Pattern 1: Stack frame lines (e.g., "at Object.<anonymous> (/app/src/main.ts:123:45)")
   const stackFramePattern = /at\s+[\w\s.]+\s+\(.*?:\d+:\d+\)/g;
   if (stackFramePattern.test(bodyStr)) {
-    leakages.push('Found stack frame pattern: ' + bodyStr.match(stackFramePattern)?.[0]);
+    leakages.push(
+      'Found stack frame pattern: ' + bodyStr.match(stackFramePattern)?.[0],
+    );
   }
 
   // Pattern 2: File paths with line numbers (e.g., "/app/src/handlers/error.ts:42:15")
-  const filePathPattern = /[\\/][\w\/-]+\.(ts|js):\d+:\d+/g;
+  const filePathPattern = /[\\/][\w/-]+\.(ts|js):\d+:\d+/g;
   if (filePathPattern.test(bodyStr)) {
-    leakages.push('Found file path pattern: ' + bodyStr.match(filePathPattern)?.[0]);
+    leakages.push(
+      'Found file path pattern: ' + bodyStr.match(filePathPattern)?.[0],
+    );
   }
 
   // Pattern 3: Common server paths
@@ -44,7 +50,7 @@ export function assertNoStackLeakage(responseBody: unknown): StackTraceLeakageRe
     /C:\\Users\\/g,
     /C:\\app\\/g,
   ];
-  
+
   serverPathPatterns.forEach((pattern) => {
     if (pattern.test(bodyStr)) {
       leakages.push('Found server path: ' + bodyStr.match(pattern)?.[0]);
@@ -57,13 +63,8 @@ export function assertNoStackLeakage(responseBody: unknown): StackTraceLeakageRe
   }
 
   // Pattern 5: ORM/framework internals that indicate stack trace content
-  const ormPatterns = [
-    /prisma/gi,
-    /typeorm/gi,
-    /sequelize/gi,
-    /sqlalchemy/gi,
-  ];
-  
+  const ormPatterns = [/prisma/gi, /typeorm/gi, /sequelize/gi, /sqlalchemy/gi];
+
   ormPatterns.forEach((pattern) => {
     if (pattern.test(bodyStr)) {
       leakages.push('Found ORM internals: ' + bodyStr.match(pattern)?.[0]);
@@ -75,7 +76,10 @@ export function assertNoStackLeakage(responseBody: unknown): StackTraceLeakageRe
     // Allow these only if they appear in clear database-specific fields that are expected
     const dbQueryFields = ['query', 'sql', 'statement'];
     const hasDbField = dbQueryFields.some((field) =>
-      new RegExp(`"${field}"\\s*:\\s*"[^"]*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)`, 'gi').test(bodyStr)
+      new RegExp(
+        `"${field}"\\s*:\\s*"[^"]*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)`,
+        'gi',
+      ).test(bodyStr),
     );
     if (hasDbField) {
       leakages.push('Found database query patterns in response');
@@ -90,7 +94,8 @@ export function assertNoStackLeakage(responseBody: unknown): StackTraceLeakageRe
       foundFilePaths: /\.(?:ts|js):\d+:\d+/.test(bodyStr),
       foundNodeModules: /node_modules/.test(bodyStr),
       foundORMNames: /(?:prisma|typeorm|sequelize|sqlalchemy)/gi.test(bodyStr),
-      foundServerPaths: /(?:\/app\/|\/home\/|\/usr\/|C:\\Users\\|C:\\app\\)/.test(bodyStr),
+      foundServerPaths:
+        /(?:\/app\/|\/home\/|\/usr\/|C:\\Users\\|C:\\app\\)/.test(bodyStr),
     },
   };
 }
@@ -108,9 +113,10 @@ export interface SafeErrorResponse {
   debug?: Record<string, unknown>; // Only in development/non-operational
 }
 
-export function assertSafeErrorContract(
-  responseBody: unknown,
-): { isValid: boolean; errors: string[] } {
+export function assertSafeErrorContract(responseBody: unknown): {
+  isValid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
   const body = responseBody as Record<string, unknown>;
 

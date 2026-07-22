@@ -31,7 +31,7 @@ export async function claimReward(
   walletAddress: string,
   signTransaction: (xdr: string) => Promise<string>,
   rpcUrl?: string,
-  contractId?: string,
+  contractId?: string
 ): Promise<ClaimResult> {
   try {
     const client = new StellarEarn({

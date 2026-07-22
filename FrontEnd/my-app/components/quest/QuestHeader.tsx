@@ -5,7 +5,7 @@ import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
 interface QuestHeaderProps {
   title: string;
   status: QuestStatus;
-  difficulty: QuestDifficulty;
+  difficulty?: QuestDifficulty;
   category: string;
   currentParticipants?: number;
   maxParticipants?: number;
@@ -72,11 +72,11 @@ const statusConfig = {
 const difficultyConfig = {
   [QuestDifficulty.EASY]: {
     label: 'Easy',
-    className: 'bg-green-500 text-white',
+    className: 'bg-green-500 text-green-900',
   },
   [QuestDifficulty.MEDIUM]: {
     label: 'Medium',
-    className: 'bg-orange-500 text-white',
+    className: 'bg-orange-500 text-orange-950',
   },
   [QuestDifficulty.HARD]: {
     label: 'Hard',
@@ -104,7 +104,7 @@ export function QuestHeader({
   maxParticipants,
 }: QuestHeaderProps) {
   const statusInfo = statusConfig[status];
-  const difficultyInfo = difficultyConfig[difficulty];
+  const difficultyInfo = difficulty ? difficultyConfig[difficulty] : null;
   const categoryColor =
     categoryColors[category] ||
     'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
@@ -130,12 +130,14 @@ export function QuestHeader({
         >
           {category}
         </span>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${difficultyInfo.className}`}
-          aria-label={`Difficulty: ${difficultyInfo.label}`}
-        >
-          {difficultyInfo.label}
-        </span>
+        {difficulty && difficultyInfo && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${difficultyInfo.className}`}
+            aria-label={`Difficulty: ${difficultyInfo.label}`}
+          >
+            {difficultyInfo.label}
+          </span>
+        )}
       </div>
 
       {/* Title */}

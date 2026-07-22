@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PoisonMessage, PoisonMessageStatus } from '../entities/poison-message.entity';
+import {
+  PoisonMessage,
+  PoisonMessageStatus,
+} from '../entities/poison-message.entity';
 
 @Injectable()
 export class PoisonMessageService {
@@ -37,11 +40,16 @@ export class PoisonMessageService {
     });
 
     const saved = await this.poisonMessageRepository.save(message);
-    this.logger.warn(`Quarantined poison message: ${eventName} (id: ${saved.id})`);
+    this.logger.warn(
+      `Quarantined poison message: ${eventName} (id: ${saved.id})`,
+    );
     return saved;
   }
 
-  private async recordRetryFailure(message: PoisonMessage, error: string): Promise<PoisonMessage> {
+  private async recordRetryFailure(
+    message: PoisonMessage,
+    error: string,
+  ): Promise<PoisonMessage> {
     const history = message.errorHistory || [];
     history.push({ error, attemptedAt: new Date().toISOString() });
 

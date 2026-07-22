@@ -59,7 +59,10 @@ interface FormatterFns {
    * compactReward(1_200_000, { type: 'points' })
    * // → "1.2M pts"
    */
-  compactReward: (value: number | string, options: RewardFormatOptions) => string;
+  compactReward: (
+    value: number | string,
+    options: RewardFormatOptions
+  ) => string;
 }
 
 /**
@@ -77,11 +80,9 @@ export function useFormatter(): FormatterFns {
         : 'en-US';
 
     return {
-      date: (value, style = 'medium') =>
-        formatDate(value, { style, locale }),
+      date: (value, style = 'medium') => formatDate(value, { style, locale }),
 
-      deadline: (value) =>
-        formatDeadline(value, { locale }),
+      deadline: (value) => formatDeadline(value, { locale }),
 
       reward: (value, options) =>
         formatReward(Number(value), { ...options, locale }),

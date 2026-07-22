@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 
-let sdk: any | null = null;
+const sdk: any = null;
 
 /**
  * Initialize OpenTelemetry SDK with:
@@ -10,19 +10,23 @@ let sdk: any | null = null;
  */
 export function initOpenTelemetry(configService: ConfigService): void {
   const tracingEnabled = configService.get<boolean>('TRACING_ENABLED', false);
-  
+
   if (!tracingEnabled) {
-    console.log('[OpenTelemetry] Tracing is disabled. Set TRACING_ENABLED=true to enable.');
+    console.log(
+      '[OpenTelemetry] Tracing is disabled. Set TRACING_ENABLED=true to enable.',
+    );
     return;
   }
 
-  console.log('[OpenTelemetry] Tracing is enabled but not initialized in minimal mode');
+  console.log(
+    '[OpenTelemetry] Tracing is enabled but not initialized in minimal mode',
+  );
 }
 
 /**
  * Gracefully shutdown OpenTelemetry SDK
  */
-export async function shutdownOpenTelemetry(): Promise<void> {
+export function shutdownOpenTelemetry(): Promise<void> {
   if (sdk) {
     console.log('[OpenTelemetry] Shutting down...');
     try {
@@ -32,4 +36,5 @@ export async function shutdownOpenTelemetry(): Promise<void> {
       console.error('[OpenTelemetry] Error during shutdown:', error);
     }
   }
+  return Promise.resolve();
 }

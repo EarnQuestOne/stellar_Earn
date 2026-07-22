@@ -8,13 +8,17 @@
  *  POST /quests/:questId/submissions/:id/approve – approve (verifier/admin)
  *  POST /quests/:questId/submissions/:id/reject  – reject  (verifier/admin)
  *  POST /submissions/upload                    – upload large proof file
+ *
+ * High-level helper:
+ *  submitProof  – convenience wrapper used by SubmissionForm; handles the
+ *                 upload-then-create flow and accepts an optional progress
+ *                 callback for file proofs larger than 5 MB.
  */
 
 import {
   get,
   post,
   withRetry,
-  apiClient,
   createCancelToken,
   type CancelToken,
 } from './client';
@@ -281,6 +285,49 @@ export async function uploadProofFile(
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.send(formData);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Submit proof (high-level helper for SubmissionForm)
+// ---------------------------------------------------------------------------
+
+/**
+ * Convenience wrapper used by `SubmissionForm`.
+ *
+ * For file proofs larger than 5 MB the file is uploaded first via
+ * `uploadProofFile` (which tracks XHR progress), and the resulting URL is
+ * attached to the proof payload before calling `createSubmission`.
+ * Smaller files are inlined as base64 by `createSubmission` directly.
+ *
+ * @param questId    The quest the submission belongs to.
+ * @param proofData  Proof fields without `questId` (supplied separately).
+ * @param file       Optional file object for `file`-type proofs.
+ * @param onProgress Optional callback receiving 0-100 upload percentage.
+ */
+export async function submitProof(
+  questId: string,
+  proofData: Omit<CreateSubmissionData, 'questId'>,
+  file?: File | null,
+  onProgress?: (pct: number) => void
+): Promise<SubmissionResponse> {
+  const data: CreateSubmissionData = { ...proofData, questId };
+
+  if (
+    proofData.proofType === 'file' &&
+    file != null &&
+    file.size > 5 * 1024 * 1024
+  ) {
+    const uploaded = await uploadProofFile(questId, file, onProgress);
+    return createSubmission(
+      {
+        ...data,
+        proof: { ...data.proof, link: uploaded.fileUrl },
+      },
+      null
+    );
+  }
+
+  return createSubmission(data, file ?? null);
 }
 
 // ---------------------------------------------------------------------------

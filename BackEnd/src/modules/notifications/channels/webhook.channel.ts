@@ -5,14 +5,19 @@ import {
   DeliveryResult,
 } from './notification-channel.interface';
 import { Notification } from '../entities/notification.entity';
-import axios from 'axios';
+import { PooledHttpClientService } from '../../../common/http-client/http-client.service';
 
 @Injectable()
 export class WebhookChannel implements NotificationChannel {
   private readonly logger = new Logger(WebhookChannel.name);
   readonly type = ChannelType.WEBHOOK;
 
-  async send(notification: Notification, recipient: any): Promise<DeliveryResult> {
+  constructor(private readonly httpClient: PooledHttpClientService) {}
+
+  async send(
+    notification: Notification,
+    recipient: any,
+  ): Promise<DeliveryResult> {
     try {
       if (!recipient.webhookUrl) {
         return {
@@ -23,9 +28,12 @@ export class WebhookChannel implements NotificationChannel {
         };
       }
 
-      this.logger.log(`Sending webhook notification to ${recipient.webhookUrl}`);
-      
-      const response = await axios.post(recipient.webhookUrl, {
+      this.logger.log(
+        `Sending webhook notification to ${recipient.webhookUrl}`,
+      );
+
+      const client = this.httpClient.create('medium');
+      const response = await client.post(recipient.webhookUrl, {
         id: notification.id,
         type: notification.type,
         title: notification.title,
@@ -33,7 +41,7 @@ export class WebhookChannel implements NotificationChannel {
         metadata: notification.metadata,
         createdAt: notification.createdAt,
       });
-      
+
       return {
         success: true,
         channel: this.type,

@@ -1,16 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { FeatureFlagsController } from './feature-flags.controller';
 import { FeatureFlagsService } from './feature-flags.service';
 import { FeatureFlagsModule } from './feature-flags.module';
-import { FeatureFlag, RolloutStrategy, FlagStatus } from './entities/feature-flag.entity';
+import {
+  FeatureFlag,
+  RolloutStrategy,
+  FlagStatus,
+} from './entities/feature-flag.entity';
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 
 describe('FeatureFlagsController (e2e)', () => {
   let app: INestApplication;
-  let featureFlagsService: FeatureFlagsService;
+  let _featureFlagsService: FeatureFlagsService;
 
   const mockFeatureFlagsService = {
     findAll: jest.fn(),
@@ -35,7 +38,8 @@ describe('FeatureFlagsController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
 
-    featureFlagsService = moduleFixture.get<FeatureFlagsService>(FeatureFlagsService);
+    _featureFlagsService =
+      moduleFixture.get<FeatureFlagsService>(FeatureFlagsService);
   });
 
   afterEach(async () => {
@@ -111,11 +115,11 @@ describe('FeatureFlagsController (e2e)', () => {
     });
 
     it('should return 404 when flag not found', async () => {
-      mockFeatureFlagsService.findOne.mockRejectedValue(new Error('Feature flag with ID "1" not found'));
+      mockFeatureFlagsService.findOne.mockRejectedValue(
+        new Error('Feature flag with ID "1" not found'),
+      );
 
-      await request(app.getHttpServer())
-        .get('/feature-flags/1')
-        .expect(404);
+      await request(app.getHttpServer()).get('/feature-flags/1').expect(404);
     });
   });
 
@@ -197,7 +201,7 @@ describe('FeatureFlagsController (e2e)', () => {
 
       // Note: This test would normally require authentication
       // For now, we'll skip the auth check in the test
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/feature-flags')
         .send(createDto)
         .expect(401); // Unauthorized due to missing JWT
@@ -260,9 +264,7 @@ describe('FeatureFlagsController (e2e)', () => {
       mockFeatureFlagsService.delete.mockResolvedValue(undefined);
 
       // Note: This test would normally require authentication
-      await request(app.getHttpServer())
-        .delete('/feature-flags/1')
-        .expect(401); // Unauthorized due to missing JWT
+      await request(app.getHttpServer()).delete('/feature-flags/1').expect(401); // Unauthorized due to missing JWT
     });
   });
 

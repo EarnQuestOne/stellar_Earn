@@ -3,16 +3,23 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { FeatureFlagsService } from './feature-flags.service';
-import { FeatureFlag, RolloutStrategy, FlagStatus } from './entities/feature-flag.entity';
-import { FeatureFlagAuditLog, AuditAction } from './entities/feature-flag-audit.entity';
+import {
+  FeatureFlag,
+  RolloutStrategy,
+  FlagStatus,
+} from './entities/feature-flag.entity';
+import {
+  FeatureFlagAuditLog,
+  AuditAction,
+} from './entities/feature-flag-audit.entity';
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 
 describe('FeatureFlagsService', () => {
   let service: FeatureFlagsService;
-  let featureFlagRepository: Repository<FeatureFlag>;
-  let auditLogRepository: Repository<FeatureFlagAuditLog>;
-  let cacheManager: any;
+  let _featureFlagRepository: Repository<FeatureFlag>;
+  let _auditLogRepository: Repository<FeatureFlagAuditLog>;
+  let _cacheManager: any;
 
   const mockFeatureFlagRepository = {
     findOne: jest.fn(),
@@ -53,9 +60,13 @@ describe('FeatureFlagsService', () => {
     }).compile();
 
     service = module.get<FeatureFlagsService>(FeatureFlagsService);
-    featureFlagRepository = module.get<Repository<FeatureFlag>>(getRepositoryToken(FeatureFlag));
-    auditLogRepository = module.get<Repository<FeatureFlagAuditLog>>(getRepositoryToken(FeatureFlagAuditLog));
-    cacheManager = module.get(CACHE_MANAGER);
+    _featureFlagRepository = module.get<Repository<FeatureFlag>>(
+      getRepositoryToken(FeatureFlag),
+    );
+    _auditLogRepository = module.get<Repository<FeatureFlagAuditLog>>(
+      getRepositoryToken(FeatureFlagAuditLog),
+    );
+    _cacheManager = module.get(CACHE_MANAGER);
 
     jest.clearAllMocks();
   });
@@ -258,7 +269,11 @@ describe('FeatureFlagsService', () => {
       mockCacheManager.get.mockResolvedValue(undefined);
 
       const userContext = { role: 'ADMIN', level: 10, xp: 1000 };
-      const result = await service.isEnabled('TEST_FLAG', 'user123', userContext);
+      const result = await service.isEnabled(
+        'TEST_FLAG',
+        'user123',
+        userContext,
+      );
 
       expect(result).toBe(true);
     });
@@ -324,7 +339,10 @@ describe('FeatureFlagsService', () => {
         description: 'Existing flag description',
       };
 
-      mockFeatureFlagRepository.findOne.mockResolvedValue({ id: '1', key: 'EXISTING_FLAG' });
+      mockFeatureFlagRepository.findOne.mockResolvedValue({
+        id: '1',
+        key: 'EXISTING_FLAG',
+      });
 
       await expect(service.create(createDto, 'user123')).rejects.toThrow(
         'Feature flag with key "EXISTING_FLAG" already exists',
@@ -503,7 +521,9 @@ describe('FeatureFlagsService', () => {
     it('should throw error when flag not found', async () => {
       mockFeatureFlagRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('1')).rejects.toThrow('Feature flag with ID "1" not found');
+      await expect(service.findOne('1')).rejects.toThrow(
+        'Feature flag with ID "1" not found',
+      );
     });
   });
 

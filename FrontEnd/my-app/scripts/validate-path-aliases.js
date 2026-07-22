@@ -2,7 +2,16 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const TS_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.d.ts'];
+const TS_EXTENSIONS = [
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+  '.d.ts',
+];
 
 function loadTsconfig(tsconfigPath) {
   const fileContents = fs.readFileSync(tsconfigPath, 'utf8');
@@ -27,6 +36,54 @@ function existsPathCandidate(candidate) {
   return false;
 }
 
+function validatePathEntries(resolvedBaseUrl, paths, messages) {
+  const errors = [];
+
+  Object.entries(paths).forEach(([aliasKey, aliasValue]) => {
+    if (!Array.isArray(aliasValue) || aliasValue.length === 0) {
+      errors.push(
+        `Path alias '${aliasKey}' must map to a non-empty array of paths.`
+      );
+      return;
+    }
+
+    const aliasWildcardCount = normalizeWildcardCount(aliasKey);
+
+    if (aliasWildcardCount > 1) {
+      errors.push(
+        `Path alias '${aliasKey}' may contain at most one wildcard ('*').`
+      );
+      return;
+    }
+
+    aliasValue.forEach((targetPath) => {
+      if (typeof targetPath !== 'string' || targetPath.trim().length === 0) {
+        errors.push(
+          `Path alias '${aliasKey}' contains an invalid target path.`
+        );
+        return;
+      }
+
+      const targetWildcardCount = normalizeWildcardCount(targetPath);
+
+      if (aliasWildcardCount !== targetWildcardCount) {
+        errors.push(messages.mismatch(aliasKey, targetPath));
+        return;
+      }
+
+      const candidate = targetPath.replace('*', '');
+      const resolvedTarget = path.resolve(resolvedBaseUrl, candidate);
+
+      if (!existsPathCandidate(resolvedTarget)) {
+        errors.push(messages.missing(aliasKey, resolvedTarget));
+      }
+    });
+  });
+
+  return errors;
+}
+
+// Strict validator: requires baseUrl, uses original error phrasing.
 function validateTsconfigPaths(tsconfigPath) {
   const errors = [];
   const tsconfig = loadTsconfig(tsconfigPath);
@@ -52,50 +109,48 @@ function validateTsconfigPaths(tsconfigPath) {
 
   const resolvedBaseUrl = path.resolve(tsconfigDir, baseUrl);
   if (!fs.existsSync(resolvedBaseUrl)) {
-    errors.push(`compilerOptions.baseUrl does not exist at ${resolvedBaseUrl}.`);
+    errors.push(
+      `compilerOptions.baseUrl does not exist at ${resolvedBaseUrl}.`
+    );
     return { errors };
   }
 
-  Object.entries(paths).forEach(([aliasKey, aliasValue]) => {
-    if (!Array.isArray(aliasValue) || aliasValue.length === 0) {
-      errors.push(`Path alias '${aliasKey}' must map to a non-empty array of paths.`);
-      return;
-    }
+  const messages = {
+    mismatch: (key, target) =>
+      `Alias pattern mismatch: '${key}' -> '${target}'. Both must have the same number of '*'`,
+    missing: (key, resolved) =>
+      `Path alias '${key}' maps to a missing path: ${resolved}`,
+  };
 
-    const aliasWildcardCount = normalizeWildcardCount(aliasKey);
-
-    if (aliasWildcardCount > 1) {
-      errors.push(`Path alias '${aliasKey}' may contain at most one wildcard ('*').`);
-      return;
-    }
-
-    aliasValue.forEach((targetPath) => {
-      if (typeof targetPath !== 'string' || targetPath.trim().length === 0) {
-        errors.push(`Path alias '${aliasKey}' contains an invalid target path.`);
-        return;
-      }
-
-      const targetWildcardCount = normalizeWildcardCount(targetPath);
-
-      if (aliasWildcardCount !== targetWildcardCount) {
-        errors.push(
-          `Wildcard mismatch: '${aliasKey}' -> '${targetPath}'. Both must have the same number of '*'`
-        );
-        return;
-      }
-
-      const candidate = targetPath.replace('*', '');
-      const resolvedTarget = path.resolve(resolvedBaseUrl, candidate);
-
-      if (!existsPathCandidate(resolvedTarget)) {
-        errors.push(
-          `Path alias '${aliasKey}' maps to a missing path: ${resolvedTarget}`
-        );
-      }
-    });
-  });
-
+  errors.push(...validatePathEntries(resolvedBaseUrl, paths, messages));
   return { errors };
+}
+
+// Lenient validator: baseUrl optional (falls back to tsconfig dir), clearer messages.
+function validatePathAliases(tsconfigPath) {
+  const tsconfig = loadTsconfig(tsconfigPath);
+  const compilerOptions = tsconfig.compilerOptions || {};
+  const paths = compilerOptions.paths;
+
+  if (!paths || typeof paths !== 'object') {
+    return [];
+  }
+
+  const tsconfigDir = path.dirname(tsconfigPath);
+  const baseUrl = compilerOptions.baseUrl;
+  const resolvedBaseUrl =
+    baseUrl && typeof baseUrl === 'string'
+      ? path.resolve(tsconfigDir, baseUrl)
+      : tsconfigDir;
+
+  const messages = {
+    mismatch: (key, target) =>
+      `Alias pattern mismatch: '${key}' -> '${target}'. Both must have the same number of '*'`,
+    missing: (key, resolved) =>
+      `Path alias '${key}' does not resolve to an existing file or directory: ${resolved}`,
+  };
+
+  return validatePathEntries(resolvedBaseUrl, paths, messages);
 }
 
 function run() {
@@ -123,5 +178,6 @@ if (require.main === module) {
 
 module.exports = {
   validateTsconfigPaths,
+  validatePathAliases,
   loadTsconfig,
 };

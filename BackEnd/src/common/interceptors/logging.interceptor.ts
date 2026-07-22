@@ -39,10 +39,10 @@ export class LoggingInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const skipLogging = this.reflector?.getAllAndOverride<boolean>(SKIP_LOGGING_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skipLogging = this.reflector?.getAllAndOverride<boolean>(
+      SKIP_LOGGING_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (skipLogging) {
       return next.handle();
@@ -100,7 +100,10 @@ export class LoggingInterceptor implements NestInterceptor {
       userId: request.user?.id,
     };
 
-    if (process.env.LOG_RESPONSE_DATA === 'true' && responseData !== undefined) {
+    if (
+      process.env.LOG_RESPONSE_DATA === 'true' &&
+      responseData !== undefined
+    ) {
       const sanitized = sanitizeBody(responseData);
       if (typeof sanitized === 'object' && sanitized !== null) {
         const keys = Object.keys(sanitized);
@@ -109,7 +112,11 @@ export class LoggingInterceptor implements NestInterceptor {
       }
     }
 
-    this.logger.log(`Handler completed: ${routeInfo}`, 'LoggingInterceptor', logData);
+    this.logger.log(
+      `Handler completed: ${routeInfo}`,
+      'LoggingInterceptor',
+      logData,
+    );
 
     this.logger.performance({
       operation: routeInfo,
@@ -128,7 +135,9 @@ export class LoggingInterceptor implements NestInterceptor {
       method: request.method,
       status: String(response.statusCode),
     });
-    this.metrics?.incrementCounter('http_requests_total', { method: request.method });
+    this.metrics?.incrementCounter('http_requests_total', {
+      method: request.method,
+    });
     this.alerts?.recordRequest(roundedMs, false);
   }
 
@@ -140,7 +149,7 @@ export class LoggingInterceptor implements NestInterceptor {
   ): void {
     const isHttpException = error instanceof HttpException;
     const isError = error instanceof Error;
-    
+
     const statusCode = isHttpException ? error.getStatus() : 500;
     const errorResponse = isHttpException ? error.getResponse() : null;
     const errorName = isError ? error.name : 'UnknownError';
@@ -171,7 +180,11 @@ export class LoggingInterceptor implements NestInterceptor {
         logData,
       );
     } else {
-      this.logger.warn(`Handler returned error: ${routeInfo}`, 'LoggingInterceptor', logData);
+      this.logger.warn(
+        `Handler returned error: ${routeInfo}`,
+        'LoggingInterceptor',
+        logData,
+      );
     }
 
     this.logger.performance({
@@ -192,8 +205,13 @@ export class LoggingInterceptor implements NestInterceptor {
       method: request.method,
       status: String(statusCode),
     });
-    this.metrics?.incrementCounter('http_requests_total', { method: request.method });
-    this.metrics?.incrementCounter('http_errors_total', { method: request.method, status: String(statusCode) });
+    this.metrics?.incrementCounter('http_requests_total', {
+      method: request.method,
+    });
+    this.metrics?.incrementCounter('http_errors_total', {
+      method: request.method,
+      status: String(statusCode),
+    });
     this.alerts?.recordRequest(roundedMs, true);
   }
 }

@@ -16,7 +16,10 @@ interface WalletContextType {
   supportedWallets: { id: string; name: string; icon: string }[];
   error: string | null;
   signMessage: (message: string) => Promise<string>;
-  signTransaction: (xdr: string, opts: { networkPassphrase: string; address: string }) => Promise<string>;
+  signTransaction: (
+    xdr: string,
+    opts: { networkPassphrase: string; address: string }
+  ) => Promise<string>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -135,7 +138,10 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signTransaction = async (xdr: string, opts: { networkPassphrase: string; address: string }) => {
+  const signTransaction = async (
+    xdr: string,
+    opts: { networkPassphrase: string; address: string }
+  ) => {
     if (!kit) {
       throw new Error('Wallet kit not loaded');
     }

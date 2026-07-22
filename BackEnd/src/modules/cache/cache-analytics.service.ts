@@ -72,7 +72,8 @@ export class CacheAnalyticsService {
   /** Returns alert status against the configured target and threshold. */
   getHitRateAlert(): CacheHitRateAlert {
     const currentRate = this.getHitRate();
-    const triggered = currentRate < CacheAnalyticsService.HIT_RATE_ALERT_THRESHOLD;
+    const triggered =
+      currentRate < CacheAnalyticsService.HIT_RATE_ALERT_THRESHOLD;
     return {
       triggered,
       currentRate,

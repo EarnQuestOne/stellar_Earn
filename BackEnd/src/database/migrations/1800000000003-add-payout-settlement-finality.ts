@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddPayoutSettlementFinality1800000000003
-  implements MigrationInterface
-{
+export class AddPayoutSettlementFinality1800000000003 implements MigrationInterface {
   name = 'AddPayoutSettlementFinality1800000000003';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -1,3 +1,5 @@
+import { DEFAULT_RETRY_POLICY, policyToBullMQOptions } from './job-retry-policy';
+
 export const QUEUES = {
   NOTIFICATIONS: 'notifications',
   ANALYTICS: 'analytics',
@@ -13,13 +15,11 @@ export const QUEUES = {
   QUESTS: 'quests',
 };
 
-export const DEFAULT_JOB_OPTIONS = {
-  attempts: 5,
-  backoff: {
-    type: 'exponential',
-    delay: 5000,
-  },
-};
+/**
+ * Fallback BullMQ job options used when no per-type policy is applied.
+ * Derived directly from DEFAULT_RETRY_POLICY so the two are always in sync.
+ */
+export const DEFAULT_JOB_OPTIONS = policyToBullMQOptions(DEFAULT_RETRY_POLICY);
 
 export const JOB_QUEUE_CONFIG = {
   [QUEUES.PAYOUTS]: {

@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
@@ -19,6 +20,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { Idempotent } from './decorators/idempotent.decorator';
+import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
 import { PayoutsService } from './payouts.service';
 import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -38,6 +41,7 @@ import { Role } from '../../common/enums/role.enum';
 @ApiTags('Payouts')
 @Controller('payouts')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(IdempotencyInterceptor)
 @ApiBearerAuth()
 export class PayoutsController {
   constructor(
@@ -48,6 +52,7 @@ export class PayoutsController {
   @Post('claim')
   @HttpCode(HttpStatus.OK)
   @RateLimit({ name: 'payout' })
+  @Idempotent()
   @ApiOperation({ summary: 'Claim a pending payout' })
   @ApiResponse({
     status: 200,

@@ -15,8 +15,14 @@ export class EmailTemplateEngine {
   private readonly appName: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.appUrl = this.configService.get<string>('email.appUrl', 'http://localhost:3000');
-    this.appName = this.configService.get<string>('email.from.name', 'Stellar Earn');
+    this.appUrl = this.configService.get<string>(
+      'email.appUrl',
+      'http://localhost:3000',
+    );
+    this.appName = this.configService.get<string>(
+      'email.from.name',
+      'Stellar Earn',
+    );
   }
 
   render(template: EmailTemplate, data: Record<string, any>): TemplateResult {
@@ -28,17 +34,25 @@ export class EmailTemplateEngine {
     return renderer(data);
   }
 
-  private get templateMap(): Record<EmailTemplate, (data: Record<string, any>) => TemplateResult> {
+  private get templateMap(): Record<
+    EmailTemplate,
+    (data: Record<string, any>) => TemplateResult
+  > {
     return {
       [EmailTemplate.WELCOME]: (data) => this.renderWelcome(data),
       [EmailTemplate.PASSWORD_RESET]: (data) => this.renderPasswordReset(data),
-      [EmailTemplate.QUEST_COMPLETED]: (data) => this.renderQuestCompleted(data),
-      [EmailTemplate.SUBMISSION_APPROVED]: (data) => this.renderSubmissionApproved(data),
-      [EmailTemplate.SUBMISSION_REJECTED]: (data) => this.renderSubmissionRejected(data),
-      [EmailTemplate.PAYOUT_PROCESSED]: (data) => this.renderPayoutProcessed(data),
+      [EmailTemplate.QUEST_COMPLETED]: (data) =>
+        this.renderQuestCompleted(data),
+      [EmailTemplate.SUBMISSION_APPROVED]: (data) =>
+        this.renderSubmissionApproved(data),
+      [EmailTemplate.SUBMISSION_REJECTED]: (data) =>
+        this.renderSubmissionRejected(data),
+      [EmailTemplate.PAYOUT_PROCESSED]: (data) =>
+        this.renderPayoutProcessed(data),
       [EmailTemplate.PAYOUT_FAILED]: (data) => this.renderPayoutFailed(data),
       [EmailTemplate.ACCOUNT_UPDATE]: (data) => this.renderAccountUpdate(data),
-      [EmailTemplate.GENERAL_NOTIFICATION]: (data) => this.renderGeneralNotification(data),
+      [EmailTemplate.GENERAL_NOTIFICATION]: (data) =>
+        this.renderGeneralNotification(data),
     };
   }
 
@@ -46,7 +60,8 @@ export class EmailTemplateEngine {
     const { username } = data;
     return {
       subject: `Welcome to ${this.appName}!`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Welcome to ${this.appName}!</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>We're excited to have you on board. Start exploring quests, completing challenges, and earning rewards on the Stellar network.</p>
@@ -54,7 +69,9 @@ export class EmailTemplateEngine {
           <a href="${this.appUrl}/quests" style="${this.buttonStyle()}">Explore Quests</a>
         </div>
         <p>If you have any questions, feel free to reach out to our support team.</p>
-      `, data),
+      `,
+        data,
+      ),
       text: `Welcome to ${this.appName}!\n\nHi ${username || 'there'},\n\nWe're excited to have you on board. Start exploring quests, completing challenges, and earning rewards on the Stellar network.\n\nExplore Quests: ${this.appUrl}/quests`,
     };
   }
@@ -63,7 +80,8 @@ export class EmailTemplateEngine {
     const { username, resetLink, expiresIn } = data;
     return {
       subject: `${this.appName} - Password Reset Request`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Password Reset</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>We received a request to reset your password. Click the button below to set a new password:</p>
@@ -71,7 +89,9 @@ export class EmailTemplateEngine {
           <a href="${this.escape(resetLink)}" style="${this.buttonStyle()}">Reset Password</a>
         </div>
         <p style="color: #666; font-size: 14px;">This link will expire in ${expiresIn || '1 hour'}. If you didn't request this reset, you can safely ignore this email.</p>
-      `, data),
+      `,
+        data,
+      ),
       text: `Password Reset\n\nHi ${username || 'there'},\n\nWe received a request to reset your password. Visit the link below:\n\n${resetLink}\n\nThis link expires in ${expiresIn || '1 hour'}.`,
     };
   }
@@ -80,7 +100,8 @@ export class EmailTemplateEngine {
     const { username, questTitle, xpEarned } = data;
     return {
       subject: `Quest Completed: ${questTitle}`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Quest Completed!</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>Congratulations! You've completed the quest <strong>"${this.escape(questTitle)}"</strong>.</p>
@@ -88,7 +109,9 @@ export class EmailTemplateEngine {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.appUrl}/quests" style="${this.buttonStyle()}">Find More Quests</a>
         </div>
-      `, data),
+      `,
+        data,
+      ),
       text: `Quest Completed!\n\nHi ${username || 'there'},\n\nCongratulations! You've completed "${questTitle}".${xpEarned ? ` You earned ${xpEarned} XP.` : ''}\n\nFind more quests: ${this.appUrl}/quests`,
     };
   }
@@ -97,7 +120,8 @@ export class EmailTemplateEngine {
     const { username, questTitle, rewardAmount } = data;
     return {
       subject: `Submission Approved: ${questTitle}`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Submission Approved!</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>Your submission for <strong>"${this.escape(questTitle)}"</strong> has been approved.</p>
@@ -105,7 +129,9 @@ export class EmailTemplateEngine {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.appUrl}/dashboard" style="${this.buttonStyle()}">View Dashboard</a>
         </div>
-      `, data),
+      `,
+        data,
+      ),
       text: `Submission Approved!\n\nHi ${username || 'there'},\n\nYour submission for "${questTitle}" has been approved.${rewardAmount ? ` You will receive ${rewardAmount} tokens.` : ''}\n\nView dashboard: ${this.appUrl}/dashboard`,
     };
   }
@@ -114,7 +140,8 @@ export class EmailTemplateEngine {
     const { username, questTitle, reason } = data;
     return {
       subject: `Submission Update: ${questTitle}`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Submission Update</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>Your submission for <strong>"${this.escape(questTitle)}"</strong> was not approved.</p>
@@ -123,7 +150,9 @@ export class EmailTemplateEngine {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.appUrl}/quests" style="${this.buttonStyle()}">Try Again</a>
         </div>
-      `, data),
+      `,
+        data,
+      ),
       text: `Submission Update\n\nHi ${username || 'there'},\n\nYour submission for "${questTitle}" was not approved.${reason ? ` Reason: ${reason}` : ''}\n\nYou can review the feedback and submit again at ${this.appUrl}/quests`,
     };
   }
@@ -132,7 +161,8 @@ export class EmailTemplateEngine {
     const { username, amount, transactionHash, stellarAddress } = data;
     return {
       subject: `Payout Processed: ${amount} tokens`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Payout Processed</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>Your payout of <strong>${amount} tokens</strong> has been sent to your Stellar address.</p>
@@ -143,7 +173,9 @@ export class EmailTemplateEngine {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.appUrl}/dashboard" style="${this.buttonStyle()}">View Dashboard</a>
         </div>
-      `, data),
+      `,
+        data,
+      ),
       text: `Payout Processed\n\nHi ${username || 'there'},\n\nYour payout of ${amount} tokens has been sent.\n\nAddress: ${stellarAddress || ''}\nTransaction: ${transactionHash || ''}\n\nView dashboard: ${this.appUrl}/dashboard`,
     };
   }
@@ -152,7 +184,8 @@ export class EmailTemplateEngine {
     const { username, amount, reason } = data;
     return {
       subject: `Payout Issue: Action Required`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Payout Issue</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>We encountered an issue processing your payout of <strong>${amount} tokens</strong>.</p>
@@ -161,7 +194,9 @@ export class EmailTemplateEngine {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.appUrl}/support" style="${this.buttonStyle()}">Contact Support</a>
         </div>
-      `, data),
+      `,
+        data,
+      ),
       text: `Payout Issue\n\nHi ${username || 'there'},\n\nWe encountered an issue processing your payout of ${amount} tokens.${reason ? ` Details: ${reason}` : ''}\n\nContact support: ${this.appUrl}/support`,
     };
   }
@@ -170,7 +205,8 @@ export class EmailTemplateEngine {
     const { username, updateType, details } = data;
     return {
       subject: `Account Update: ${updateType || 'Important Notice'}`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>Account Update</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>${this.escape(details || 'There has been an update to your account.')}</p>
@@ -178,7 +214,9 @@ export class EmailTemplateEngine {
           <a href="${this.appUrl}/settings" style="${this.buttonStyle()}">View Settings</a>
         </div>
         <p style="color: #666; font-size: 14px;">If you didn't make this change, please contact support immediately.</p>
-      `, data),
+      `,
+        data,
+      ),
       text: `Account Update\n\nHi ${username || 'there'},\n\n${details || 'There has been an update to your account.'}\n\nView settings: ${this.appUrl}/settings`,
     };
   }
@@ -187,15 +225,22 @@ export class EmailTemplateEngine {
     const { username, title, message, ctaText, ctaUrl } = data;
     return {
       subject: title || `${this.appName} Notification`,
-      html: this.wrapHtml(`
+      html: this.wrapHtml(
+        `
         <h1>${this.escape(title || 'Notification')}</h1>
         <p>Hi ${this.escape(username || 'there')},</p>
         <p>${this.escape(message || '')}</p>
-        ${ctaUrl ? `
+        ${
+          ctaUrl
+            ? `
         <div style="text-align: center; margin: 30px 0;">
           <a href="${this.escape(ctaUrl)}" style="${this.buttonStyle()}">${this.escape(ctaText || 'Learn More')}</a>
-        </div>` : ''}
-      `, data),
+        </div>`
+            : ''
+        }
+      `,
+        data,
+      ),
       text: `${title || 'Notification'}\n\nHi ${username || 'there'},\n\n${message || ''}${ctaUrl ? `\n\n${ctaText || 'Learn More'}: ${ctaUrl}` : ''}`,
     };
   }

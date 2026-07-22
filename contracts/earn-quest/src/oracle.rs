@@ -2,7 +2,14 @@ use crate::errors::Error;
 use crate::types::{
     AggregatedPrice, OracleConfig, OracleResponse, OracleType, PriceData, PriceFeedRequest,
 };
-use soroban_sdk::{Env, U256, Vec};
+use soroban_sdk::{Address, Env, Vec, U256};
+
+#[allow(dead_code)]
+#[soroban_sdk::contractclient(name = "OracleClient")]
+pub trait OracleInterface {
+    fn lastprice(env: Env, base: Address, quote: Address) -> Option<PriceData>;
+    fn price(env: Env, base: Address, quote: Address) -> Option<PriceData>;
+}
 
 /// Oracle module for decentralized price feeds
 pub struct Oracle;
@@ -18,11 +25,40 @@ impl Oracle {
             return Err(Error::OracleInactive);
         }
 
-        match oracle_config.oracle_type {
-            OracleType::StellarAsset => Self::get_stellar_asset_price(env, oracle_config, request),
-            OracleType::StellarOracle => Self::get_stellar_oracle_price(env, oracle_config, request),
-            OracleType::Custom => Self::get_custom_oracle_price(env, oracle_config, request),
+        let price_data = match oracle_config.oracle_type {
+            OracleType::StellarAsset => Self::get_stellar_asset_price(env, oracle_config, request)?,
+            OracleType::StellarOracle => {
+                Self::get_stellar_oracle_price(env, oracle_config, request)?
+            }
+            OracleType::Custom => Self::get_custom_oracle_price(env, oracle_config, request)?,
+        };
+
+        // Validate base and quote asset
+        if price_data.base_asset != request.base_asset
+            || price_data.quote_asset != request.quote_asset
+        {
+            return Err(Error::OracleRespMismatch);
         }
+
+        // Validate timestamp / age
+        let current_time = env.ledger().timestamp();
+        if price_data.timestamp > current_time {
+            return Err(Error::InvalidOracleData);
+        }
+        let age = current_time - price_data.timestamp;
+        if age > oracle_config.max_age_seconds || age > request.max_age_seconds {
+            return Err(Error::StaleOracleData);
+        }
+
+        // Validate confidence
+        if price_data.confidence > 100 {
+            return Err(Error::InvalidOracleData);
+        }
+        if price_data.confidence < oracle_config.min_confidence {
+            return Err(Error::LowOracleConfidence);
+        }
+
+        Ok(price_data)
     }
 
     /// Get aggregated price from multiple oracles
@@ -36,16 +72,9 @@ impl Oracle {
 
         for config in oracle_configs.iter() {
             total_sources += 1;
-            
+
             if let Ok(price_data) = Self::get_price(env, &config, request) {
-                valid_prices.push_back((price_data.clone(), config.min_confidence));
-                let current_time = env.ledger().timestamp();
-                if current_time - price_data.timestamp <= config.max_age_seconds {
-                    // Check confidence threshold
-                    if price_data.confidence >= config.min_confidence {
-                        // No need to push again
-                    }
-                }
+                valid_prices.push_back((price_data, config.min_confidence));
             }
         }
 
@@ -64,7 +93,7 @@ impl Oracle {
     ) -> Result<PriceData, Error> {
         // Implementation for Stellar Asset oracle
         // This would interface with Stellar's built-in asset pricing
-        
+
         // For now, return a mock implementation
         let current_time = env.ledger().timestamp();
         Ok(PriceData {
@@ -80,43 +109,44 @@ impl Oracle {
     /// Get price from Stellar Oracle contract
     fn get_stellar_oracle_price(
         env: &Env,
-        _oracle_config: &OracleConfig,
+        oracle_config: &OracleConfig,
         request: &PriceFeedRequest,
     ) -> Result<PriceData, Error> {
-        // Implementation for Stellar Oracle contract
-        // This would call an external oracle contract
-        
-        // For now, return a mock implementation
-        let current_time = env.ledger().timestamp();
-        Ok(PriceData {
-            base_asset: request.base_asset.clone(),
-            quote_asset: request.quote_asset.clone(),
-            price: U256::from_u32(env, 1050), // Mock price
-            decimals: 7,
-            timestamp: current_time,
-            confidence: 90,
-        })
+        Self::query_external_oracle(env, &oracle_config.oracle_address, request)
     }
 
     /// Get price from custom oracle implementation
     fn get_custom_oracle_price(
         env: &Env,
-        _oracle_config: &OracleConfig,
+        oracle_config: &OracleConfig,
         request: &PriceFeedRequest,
     ) -> Result<PriceData, Error> {
-        // Implementation for custom oracle
-        // This would call a user-defined oracle contract
-        
-        // For now, return a mock implementation
-        let current_time = env.ledger().timestamp();
-        Ok(PriceData {
-            base_asset: request.base_asset.clone(),
-            quote_asset: request.quote_asset.clone(),
-            price: U256::from_u32(env, 1025), // Mock price
-            decimals: 7,
-            timestamp: current_time,
-            confidence: 85,
-        })
+        Self::query_external_oracle(env, &oracle_config.oracle_address, request)
+    }
+
+    /// Query price from external oracle contract
+    fn query_external_oracle(
+        env: &Env,
+        oracle_address: &Address,
+        request: &PriceFeedRequest,
+    ) -> Result<PriceData, Error> {
+        let client = OracleClient::new(env, oracle_address);
+
+        // Try calling lastprice first
+        if let Ok(Ok(Some(price_data))) =
+            client.try_lastprice(&request.base_asset, &request.quote_asset)
+        {
+            return Ok(price_data);
+        }
+
+        // Fallback to price
+        if let Ok(Ok(Some(price_data))) =
+            client.try_price(&request.base_asset, &request.quote_asset)
+        {
+            return Ok(price_data);
+        }
+
+        Err(Error::NoValidOracleData)
     }
 
     /// Calculate weighted average of multiple price sources
@@ -144,14 +174,14 @@ impl Oracle {
         }
 
         let weighted_price = weighted_sum.div(&U256::from_u32(env, total_weight));
-        let avg_confidence = confidence_sum / valid_prices.len() as u32;
+        let avg_confidence = confidence_sum / valid_prices.len();
 
         Ok(AggregatedPrice {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
             weighted_price,
             decimals: 7, // Standard Stellar decimals
-            sources_used: valid_prices.len() as u32,
+            sources_used: valid_prices.len(),
             total_sources,
             confidence_score: avg_confidence,
             timestamp: env.ledger().timestamp(),
@@ -172,6 +202,7 @@ impl Oracle {
     }
 
     /// Check if oracle response is valid
+    #[allow(dead_code)]
     pub fn validate_response(
         env: &Env,
         response: &OracleResponse,
@@ -199,6 +230,7 @@ impl Oracle {
     }
 
     /// Convert price between different decimal precisions
+    #[allow(dead_code)]
     pub fn normalize_price(
         env: &Env,
         price: U256,
@@ -219,6 +251,7 @@ impl Oracle {
     }
 
     /// Get historical price data (if available)
+    #[allow(dead_code)]
     pub fn get_historical_price(
         env: &Env,
         oracle_config: &OracleConfig,

@@ -21,9 +21,10 @@ export function useClaim(): UseClaimReturn {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
   const { address, signTransaction } = useWallet();
-  const networkPassphrase = process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet'
-    ? 'Public Global Stellar Network ; September 2015'
-    : 'Test SDF Network ; September 2015';
+  const networkPassphrase =
+    process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet'
+      ? 'Public Global Stellar Network ; September 2015'
+      : 'Test SDF Network ; September 2015';
 
   const claim = useCallback(
     async (rewardId: string, amount: number) => {
@@ -40,7 +41,8 @@ export function useClaim(): UseClaimReturn {
       setResult(null);
 
       try {
-        const signTx = (xdr: string) => signTransaction(xdr, { networkPassphrase, address });
+        const signTx = (xdr: string) =>
+          signTransaction(xdr, { networkPassphrase, address });
         const response = await claimReward(rewardId, amount, address, signTx);
 
         if (response.success) {

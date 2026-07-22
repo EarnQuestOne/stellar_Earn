@@ -6,9 +6,13 @@
 /** Parse a hex color string (#rrggbb or #rgb) into [r, g, b] 0-255. */
 export function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '');
-  const full = clean.length === 3
-    ? clean.split('').map((c) => c + c).join('')
-    : clean;
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
   const n = parseInt(full, 16);
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 }
@@ -36,6 +40,10 @@ export const WCAG_AA_NORMAL = 4.5;
 export const WCAG_AA_LARGE = 3.0;
 export const WCAG_AAA_NORMAL = 7.0;
 
-export function meetsWCAG_AA(hex1: string, hex2: string, large = false): boolean {
+export function meetsWCAG_AA(
+  hex1: string,
+  hex2: string,
+  large = false
+): boolean {
   return contrastRatio(hex1, hex2) >= (large ? WCAG_AA_LARGE : WCAG_AA_NORMAL);
 }

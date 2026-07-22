@@ -3,11 +3,31 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MultiSigWalletService } from '#src/modules/stellar/multisig/services/multisig-wallet.service';
-import { MultiSigWallet, MultiSigWalletStatus } from '#src/modules/stellar/multisig/entities/multisig-wallet.entity';
-import { MultiSigSigner, SignerRole, SignerStatus } from '#src/modules/stellar/multisig/entities/multisig-signer.entity';
-import { MultiSigTransaction, MultiSigTransactionStatus, MultiSigTransactionType } from '#src/modules/stellar/multisig/entities/multisig-transaction.entity';
-import { MultiSigSignature, SignatureStatus } from '#src/modules/stellar/multisig/entities/multisig-signature.entity';
-import { CreateMultiSigWalletDto, ApproveTransactionDto, UpdateThresholdDto, CreateMultiSigTransactionDto, RejectTransactionDto } from '#src/modules/stellar/multisig/dto/multisig.dto';
+import {
+  MultiSigWallet,
+  MultiSigWalletStatus,
+} from '#src/modules/stellar/multisig/entities/multisig-wallet.entity';
+import {
+  MultiSigSigner,
+  SignerRole,
+  SignerStatus,
+} from '#src/modules/stellar/multisig/entities/multisig-signer.entity';
+import {
+  MultiSigTransaction,
+  MultiSigTransactionStatus,
+  MultiSigTransactionType,
+} from '#src/modules/stellar/multisig/entities/multisig-transaction.entity';
+import {
+  MultiSigSignature,
+  SignatureStatus,
+} from '#src/modules/stellar/multisig/entities/multisig-signature.entity';
+import {
+  CreateMultiSigWalletDto,
+  ApproveTransactionDto,
+  UpdateThresholdDto,
+  CreateMultiSigTransactionDto,
+  RejectTransactionDto,
+} from '#src/modules/stellar/multisig/dto/multisig.dto';
 
 describe('MultiSigWalletService', () => {
   let service: MultiSigWalletService;
@@ -19,7 +39,8 @@ describe('MultiSigWalletService', () => {
 
   const testUserId = 'test-user-123';
   const testOrgId = 'org-123';
-  const testWalletAddress = 'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2';
+  const testWalletAddress =
+    'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2';
 
   beforeEach(async () => {
     mockWalletRepo = {
@@ -123,7 +144,10 @@ describe('MultiSigWalletService', () => {
         lastModifiedBy: testUserId,
         lastActivityAt: expect.any(Date),
       });
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.wallet.created', expect.any(Object));
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.wallet.created',
+        expect.any(Object),
+      );
     });
 
     it('should throw error if wallet already exists', async () => {
@@ -159,7 +183,8 @@ describe('MultiSigWalletService', () => {
 
   describe('addSigner', () => {
     it('should add a new signer to wallet', async () => {
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockWallet = {
         id: 'wallet-123',
@@ -210,11 +235,15 @@ describe('MultiSigWalletService', () => {
       );
 
       expect(result).toEqual(expectedSigner);
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.signer.added', expect.any(Object));
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.signer.added',
+        expect.any(Object),
+      );
     });
 
     it('should re-add a previously removed signer successfully', async () => {
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockWallet = {
         id: 'wallet-123',
@@ -289,14 +318,18 @@ describe('MultiSigWalletService', () => {
         }),
       );
       expect(mockSignerRepo.save).toHaveBeenCalled();
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.signer.added', expect.any(Object));
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.signer.added',
+        expect.any(Object),
+      );
     });
   });
 
   describe('removeSigner', () => {
     it('should remove a signer and emit multisig.signer.removed event', async () => {
       const walletId = 'wallet-123';
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockSigner = {
         id: 'signer-123',
@@ -342,21 +375,29 @@ describe('MultiSigWalletService', () => {
       mockWalletRepo.findOne.mockResolvedValue(mockWallet);
       mockWalletRepo.save.mockResolvedValue(mockWallet);
 
-      const result = await service.removeSigner(walletId, signerAddress, testUserId);
+      const result = await service.removeSigner(
+        walletId,
+        signerAddress,
+        testUserId,
+      );
 
       expect(result.status).toBe(SignerStatus.REMOVED);
       expect(result.removedAt).toBeInstanceOf(Date);
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.signer.removed', {
-        walletId,
-        signerAddress,
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.signer.removed',
+        {
+          walletId,
+          signerAddress,
+        },
+      );
     });
   });
 
   describe('approveTransaction', () => {
     it('should approve transaction and update signature', async () => {
       const transactionId = 'tx-123';
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockTx = {
         id: transactionId,
@@ -404,7 +445,11 @@ describe('MultiSigWalletService', () => {
       mockTransactionRepo.findOne.mockResolvedValue(mockTx);
       mockSignatureRepo.findOne.mockResolvedValue(mockSignature);
       mockSignerRepo.findOne.mockResolvedValue(mockSigner);
-      mockSignatureRepo.save.mockResolvedValue({ ...mockSignature, status: SignatureStatus.SIGNED, signedAt: new Date() });
+      mockSignatureRepo.save.mockResolvedValue({
+        ...mockSignature,
+        status: SignatureStatus.SIGNED,
+        signedAt: new Date(),
+      });
       mockSignerRepo.save.mockResolvedValue(mockSigner);
       mockTransactionRepo.save.mockResolvedValue(mockTx);
 
@@ -426,7 +471,8 @@ describe('MultiSigWalletService', () => {
 
     it('should mark transaction as approved when threshold reached', async () => {
       const transactionId = 'tx-123';
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockTx = {
         id: transactionId,
@@ -459,7 +505,10 @@ describe('MultiSigWalletService', () => {
 
       mockTransactionRepo.findOne.mockResolvedValue(mockTx);
       mockSignatureRepo.findOne.mockResolvedValue(mockSignature);
-      mockSignatureRepo.save.mockResolvedValue({ ...mockSignature, status: SignatureStatus.SIGNED });
+      mockSignatureRepo.save.mockResolvedValue({
+        ...mockSignature,
+        status: SignatureStatus.SIGNED,
+      });
       mockSignerRepo.findOne.mockResolvedValue({});
       mockSignerRepo.save.mockResolvedValue({});
       mockTransactionRepo.save.mockResolvedValue({
@@ -486,20 +535,22 @@ describe('MultiSigWalletService', () => {
       // Requirements: 4.6
       const approveDto: ApproveTransactionDto = {
         multiSigTransactionId: 'nonexistent-tx',
-        signerAddress: 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R',
+        signerAddress:
+          'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R',
       };
 
       mockTransactionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.approveTransaction(approveDto, testUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.approveTransaction(approveDto, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when signature record does not exist for signer', async () => {
       // Requirements: 4.4
       const transactionId = 'tx-123';
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockTx = {
         id: transactionId,
@@ -517,15 +568,16 @@ describe('MultiSigWalletService', () => {
         signerAddress,
       };
 
-      await expect(service.approveTransaction(approveDto, testUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.approveTransaction(approveDto, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when signature is already SIGNED (double-approve)', async () => {
       // Requirements: 4.5
       const transactionId = 'tx-123';
-      const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+      const signerAddress =
+        'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
 
       const mockTx = {
         id: transactionId,
@@ -551,9 +603,9 @@ describe('MultiSigWalletService', () => {
         signerAddress,
       };
 
-      await expect(service.approveTransaction(approveDto, testUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.approveTransaction(approveDto, testUserId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -595,10 +647,13 @@ describe('MultiSigWalletService', () => {
       expect(mockWalletRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ threshold: 1 }),
       );
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.threshold.updated', {
-        walletId,
-        newThreshold: 1,
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.threshold.updated',
+        {
+          walletId,
+          newThreshold: 1,
+        },
+      );
     });
 
     it('should update threshold to totalSigners (maximum) and emit multisig.threshold.updated', async () => {
@@ -618,10 +673,13 @@ describe('MultiSigWalletService', () => {
       expect(mockWalletRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ threshold: 3 }),
       );
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.threshold.updated', {
-        walletId,
-        newThreshold: 3,
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.threshold.updated',
+        {
+          walletId,
+          newThreshold: 3,
+        },
+      );
     });
 
     it('should throw NotFoundException when wallet does not exist', async () => {
@@ -632,9 +690,9 @@ describe('MultiSigWalletService', () => {
 
       mockWalletRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.updateThreshold(updateDto, testUserId)).rejects.toThrow(
-        'Multi-sig wallet not found',
-      );
+      await expect(
+        service.updateThreshold(updateDto, testUserId),
+      ).rejects.toThrow('Multi-sig wallet not found');
     });
   });
 
@@ -679,15 +737,16 @@ describe('MultiSigWalletService', () => {
       // Requirements: 6.5
       mockWalletRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.getWalletStats('nonexistent-wallet')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.getWalletStats('nonexistent-wallet'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('rejectTransaction', () => {
     const transactionId = 'tx-reject-123';
-    const signerAddress = 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
+    const signerAddress =
+      'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R';
     const rejectionReason = 'Amount too high';
 
     const rejectDto: RejectTransactionDto = {
@@ -701,7 +760,8 @@ describe('MultiSigWalletService', () => {
       multiSigWalletId: 'wallet-123',
       transactionType: MultiSigTransactionType.PAYOUT,
       status: MultiSigTransactionStatus.PENDING,
-      destinationAddress: 'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
+      destinationAddress:
+        'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
       amount: 1000,
       asset: 'XLM',
       approvalsReceived: 0,
@@ -757,24 +817,33 @@ describe('MultiSigWalletService', () => {
       });
       mockTransactionRepo.save.mockResolvedValue(rejectedTx);
       mockSignerRepo.findOne.mockResolvedValue({ ...mockSigner });
-      mockSignerRepo.save.mockResolvedValue({ ...mockSigner, rejectionCount: 1, lastRejectionAt: new Date() });
+      mockSignerRepo.save.mockResolvedValue({
+        ...mockSigner,
+        rejectionCount: 1,
+        lastRejectionAt: new Date(),
+      });
 
       const result = await service.rejectTransaction(rejectDto, testUserId);
 
       expect(result.status).toBe(MultiSigTransactionStatus.REJECTED);
       expect(result.failureReason).toContain(rejectionReason);
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.transaction.rejected', {
-        transactionId,
-        signer: signerAddress,
-        reason: rejectionReason,
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.transaction.rejected',
+        {
+          transactionId,
+          signer: signerAddress,
+          reason: rejectionReason,
+        },
+      );
     });
 
     it('should throw NotFoundException when transaction does not exist', async () => {
       // Requirements: 5.6
       mockTransactionRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.rejectTransaction(rejectDto, testUserId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.rejectTransaction(rejectDto, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when signature record does not exist for signer', async () => {
@@ -782,7 +851,9 @@ describe('MultiSigWalletService', () => {
       mockTransactionRepo.findOne.mockResolvedValue({ ...mockPendingTx });
       mockSignatureRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.rejectTransaction(rejectDto, testUserId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.rejectTransaction(rejectDto, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when signature is already REJECTED (double-reject)', async () => {
@@ -796,7 +867,9 @@ describe('MultiSigWalletService', () => {
       mockTransactionRepo.findOne.mockResolvedValue({ ...mockPendingTx });
       mockSignatureRepo.findOne.mockResolvedValue(alreadyRejectedSignature);
 
-      await expect(service.rejectTransaction(rejectDto, testUserId)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.rejectTransaction(rejectDto, testUserId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -805,9 +878,9 @@ describe('MultiSigWalletService', () => {
       // Requirements: 6.2
       mockWalletRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.getWalletDetails('nonexistent-wallet')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.getWalletDetails('nonexistent-wallet'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -819,21 +892,24 @@ describe('MultiSigWalletService', () => {
         {
           id: 'sig-1',
           multiSigTransactionId: transactionId,
-          signerAddress: 'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R',
+          signerAddress:
+            'GCZST3XVCDTUJ76ZAV2HA72KYRF5QSGN4BXDGWV6MWVR5DXWPQSWVF5R',
           status: SignatureStatus.SIGNED,
           createdAt: new Date(),
         } as MultiSigSignature,
         {
           id: 'sig-2',
           multiSigTransactionId: transactionId,
-          signerAddress: 'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
+          signerAddress:
+            'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
           status: SignatureStatus.PENDING,
           createdAt: new Date(),
         } as MultiSigSignature,
         {
           id: 'sig-3',
           multiSigTransactionId: transactionId,
-          signerAddress: 'GDQJUTQYK2MQX2VGDR2FYWLIYAQIEGXTQVTFEMGH3IEQBOHAVSQ37YR',
+          signerAddress:
+            'GDQJUTQYK2MQX2VGDR2FYWLIYAQIEGXTQVTFEMGH3IEQBOHAVSQ37YR',
           status: SignatureStatus.REJECTED,
           createdAt: new Date(),
         } as MultiSigSignature,
@@ -855,7 +931,8 @@ describe('MultiSigWalletService', () => {
   describe('createTransaction', () => {
     const createDto: CreateMultiSigTransactionDto = {
       multiSigWalletId: 'wallet-123',
-      destinationAddress: 'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
+      destinationAddress:
+        'GBZXN7PIRZNT4Z5TZHTG2793CFAND3P5PMXEVII27KSKNM7TOTF7YLT2',
       amount: 500,
       asset: 'XLM',
       description: 'Test payout',
@@ -872,9 +949,9 @@ describe('MultiSigWalletService', () => {
 
       mockWalletRepo.findOne.mockResolvedValue(inactiveWallet);
 
-      await expect(service.createTransaction(createDto, testUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createTransaction(createDto, testUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when wallet status is SUSPENDED', async () => {
@@ -888,18 +965,18 @@ describe('MultiSigWalletService', () => {
 
       mockWalletRepo.findOne.mockResolvedValue(suspendedWallet);
 
-      await expect(service.createTransaction(createDto, testUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createTransaction(createDto, testUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when wallet does not exist', async () => {
       // Requirements: 3.3
       mockWalletRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.createTransaction(createDto, testUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createTransaction(createDto, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should emit multisig.transaction.created with correct walletId, amount, and threshold', async () => {
@@ -925,16 +1002,22 @@ describe('MultiSigWalletService', () => {
       mockTransactionRepo.create.mockReturnValue(savedTx);
       mockTransactionRepo.save.mockResolvedValue(savedTx);
       mockSignerRepo.find.mockResolvedValue([]);
-      mockWalletRepo.save.mockResolvedValue({ ...activeWallet, totalTransactions: 6 });
+      mockWalletRepo.save.mockResolvedValue({
+        ...activeWallet,
+        totalTransactions: 6,
+      });
 
       await service.createTransaction(createDto, testUserId);
 
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('multisig.transaction.created', {
-        transactionId: 'tx-new-123',
-        walletId: 'wallet-123',
-        amount: 500,
-        threshold: 2,
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'multisig.transaction.created',
+        {
+          transactionId: 'tx-new-123',
+          walletId: 'wallet-123',
+          amount: 500,
+          threshold: 2,
+        },
+      );
     });
   });
 });

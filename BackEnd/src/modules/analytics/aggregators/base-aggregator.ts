@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { AnalyticsSnapshot, SnapshotType } from '../entities/analytics-snapshot.entity';
+import { Repository, Between } from 'typeorm';
+import {
+  AnalyticsSnapshot,
+  SnapshotType,
+} from '../entities/analytics-snapshot.entity';
 import { Quest } from '../entities/quest.entity';
 import { Submission } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
@@ -76,7 +79,10 @@ export class BaseAnalyticsAggregator {
   /**
    * Get date range for a specific period
    */
-  protected getDateRange(date: Date, granularity: 'hourly' | 'daily' | 'weekly' | 'monthly'): { start: Date; end: Date } {
+  protected getDateRange(
+    date: Date,
+    granularity: 'hourly' | 'daily' | 'weekly' | 'monthly',
+  ): { start: Date; end: Date } {
     const start = new Date(date);
     const end = new Date(date);
 

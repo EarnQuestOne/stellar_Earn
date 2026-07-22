@@ -30,10 +30,12 @@ Specifically:
 ### Option A: Build-time validation (e.g. `next.config.ts` or a custom webpack plugin)
 
 Pros:
+
 - Catches missing variables before any code ships.
 - Fails the CI build immediately.
 
 Cons:
+
 - `NEXT_PUBLIC_*` values are often environment-specific (testnet vs mainnet) and are not known at the time the Docker image or static bundle is built in a multi-environment pipeline.
 - Breaks the common pattern of building once and deploying to multiple environments by injecting vars at container start.
 - Does not cover server-only variables that are injected at runtime by the orchestrator (Kubernetes, ECS, etc.).
@@ -41,9 +43,11 @@ Cons:
 ### Option B: Runtime validation in every consumer (ad-hoc `getRequiredEnv` calls)
 
 Pros:
+
 - No central dependency.
 
 Cons:
+
 - Errors surface lazily, only when the specific code path is hit.
 - No single place to audit which variables are required.
 - Duplicate validation logic scattered across the codebase.
@@ -51,6 +55,7 @@ Cons:
 ### Option C (chosen): Centralised server-startup runtime validation
 
 Pros:
+
 - Fails fast on server start — the process exits before serving any traffic if a required variable is absent in production.
 - Compatible with build-once / deploy-many pipelines.
 - Single source of truth (`REQUIRED_ENV_VARS` / `OPTIONAL_ENV_VARS` maps in `env.ts`) for documentation and validation.
@@ -58,6 +63,7 @@ Pros:
 - Provides structured errors with descriptions and examples, making misconfiguration easy to diagnose.
 
 Cons:
+
 - Does not catch missing variables at build time; a broken deployment is only detected when the container starts.
 - Mitigation: CI runs `npm test` which exercises `validateEnv()` with controlled env values, and the `.env.example` file documents all required variables.
 

@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QuestDeadlineCheckPayload, QuestCompletionVerifyPayload, JobResult } from '../job.types';
+import {
+  QuestDeadlineCheckPayload,
+  QuestCompletionVerifyPayload,
+  JobResult,
+} from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 
 /**
@@ -16,7 +20,9 @@ export class QuestProcessor {
   /**
    * Process quest deadline check job
    */
-  async checkDeadlines(job: Job<QuestDeadlineCheckPayload>): Promise<JobResult> {
+  async checkDeadlines(
+    job: Job<QuestDeadlineCheckPayload>,
+  ): Promise<JobResult> {
     const { questId, organizationId } = job.data;
 
     try {

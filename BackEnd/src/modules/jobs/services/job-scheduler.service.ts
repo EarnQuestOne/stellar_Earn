@@ -1,10 +1,16 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CronJob } from 'cron';
 import { JobType, JobPriority } from '../job.types';
 import { JobSchedule } from '../entities/job-log.entity';
 import { JobsService } from '../jobs.service';
+import { policyToBullMQOptions, getRetryPolicy } from '../job-retry-policy';
 
 /**
  * Job Scheduler Service
@@ -27,10 +33,13 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Initializing Job Scheduler Service');
     await this.loadScheduledJobs();
     // Re-check for new schedules every 60 seconds
-    this.schedulerInterval = setInterval(() => this.syncScheduledJobs(), 60000);
+    this.schedulerInterval = setInterval(
+      () => void this.syncScheduledJobs(),
+      60000,
+    );
   }
 
-  async onModuleDestroy() {
+  onModuleDestroy(): void {
     this.stopAllSchedules();
     if (this.schedulerInterval) {
       clearInterval(this.schedulerInterval);
@@ -47,7 +56,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       });
 
       for (const schedule of schedules) {
-        await this.startSchedule(schedule);
+        this.startSchedule(schedule);
       }
 
       this.logger.log(`Loaded ${schedules.length} scheduled jobs`);
@@ -78,7 +87,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       // Add new schedules
       for (const schedule of dbSchedules) {
         if (!activeScheduleIds.has(schedule.id)) {
-          await this.startSchedule(schedule);
+          this.startSchedule(schedule);
         }
       }
     } catch (error) {
@@ -118,7 +127,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     });
 
     const saved = await this.jobScheduleRepository.save(schedule);
-    await this.startSchedule(saved);
+    this.startSchedule(saved);
 
     this.logger.log(`Created scheduled job: ${saved.id} for ${jobType}`);
     return saved;
@@ -140,12 +149,18 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
 
     // Stop existing schedule if updating cron expression
-    if (updates.cronExpression && updates.cronExpression !== schedule.cronExpression) {
+    if (
+      updates.cronExpression &&
+      updates.cronExpression !== schedule.cronExpression
+    ) {
       this.stopSchedule(scheduleId);
     }
 
     Object.assign(schedule, updates);
-    const nextRunTime = this.getNextRunTime(schedule.cronExpression, schedule.timezone);
+    const nextRunTime = this.getNextRunTime(
+      schedule.cronExpression,
+      schedule.timezone,
+    );
     if (nextRunTime) {
       schedule.nextRunAt = nextRunTime;
     }
@@ -153,7 +168,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     const updated = await this.jobScheduleRepository.save(schedule);
 
     if (updated.isActive) {
-      await this.startSchedule(updated);
+      this.startSchedule(updated);
     }
 
     this.logger.log(`Updated scheduled job: ${scheduleId}`);
@@ -194,13 +209,16 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     schedule.isActive = true;
     (schedule as any).disabledAt = null;
-    const nextRunTime = this.getNextRunTime(schedule.cronExpression, schedule.timezone);
+    const nextRunTime = this.getNextRunTime(
+      schedule.cronExpression,
+      schedule.timezone,
+    );
     if (nextRunTime) {
       schedule.nextRunAt = nextRunTime;
     }
     await this.jobScheduleRepository.save(schedule);
 
-    await this.startSchedule(schedule);
+    this.startSchedule(schedule);
     this.logger.log(`Enabled scheduled job: ${scheduleId}`);
   }
 
@@ -243,7 +261,10 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Manually trigger a scheduled job
+   * Manually trigger a scheduled job.
+   *
+   * The per-type retry policy is merged into the job options so that manually
+   * triggered jobs benefit from the same backoff behaviour as scheduled ones.
    */
   async triggerScheduleNow(scheduleId: string): Promise<string> {
     const schedule = await this.jobScheduleRepository.findOne({
@@ -254,13 +275,17 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       throw new Error(`Schedule not found: ${scheduleId}`);
     }
 
+    const retryOpts = policyToBullMQOptions(getRetryPolicy(schedule.jobType));
+
     const job = await this.jobsService.addJob(
       this.mapJobTypeToQueue(schedule.jobType),
-      schedule.jobPayload,
+      { ...schedule.jobPayload, __jobType: schedule.jobType },
       {
+        ...retryOpts,
         priority: JobPriority.HIGH,
         jobId: `${scheduleId}:manual-trigger:${Date.now()}`,
       },
+      schedule.jobType,
     );
 
     this.logger.log(
@@ -279,13 +304,18 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       totalSchedules: schedules.length,
       activeSchedules: schedules.filter((s) => s.isActive).length,
       disabledSchedules: schedules.filter((s) => !s.isActive).length,
-      totalSuccessfulRuns: schedules.reduce((sum, s) => sum + s.successCount, 0),
+      totalSuccessfulRuns: schedules.reduce(
+        (sum, s) => sum + s.successCount,
+        0,
+      ),
       totalFailedRuns: schedules.reduce((sum, s) => sum + s.failureCount, 0),
       successRate:
         schedules.length > 0
           ? (schedules.reduce((sum, s) => sum + s.successCount, 0) /
-              (schedules.reduce((sum, s) => sum + s.successCount + s.failureCount, 0) ||
-                1)) *
+              (schedules.reduce(
+                (sum, s) => sum + s.successCount + s.failureCount,
+                0,
+              ) || 1)) *
             100
           : 0,
       nextScheduledJobs: schedules
@@ -300,7 +330,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   /**
    * Start a scheduled job
    */
-  private async startSchedule(schedule: JobSchedule): Promise<void> {
+  private startSchedule(schedule: JobSchedule): void {
     try {
       if (this.cronJobs.has(schedule.id)) {
         return; // Already running
@@ -312,13 +342,21 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
           try {
             schedule.lastRunAt = new Date();
 
+            // Resolve the per-type retry policy and embed __jobType so the
+            // worker's failed handler can apply non-retryable logic.
+            const retryOpts = policyToBullMQOptions(
+              getRetryPolicy(schedule.jobType),
+            );
+
             const job = await this.jobsService.addJob(
               this.mapJobTypeToQueue(schedule.jobType),
-              schedule.jobPayload,
+              { ...schedule.jobPayload, __jobType: schedule.jobType },
               {
+                ...retryOpts,
                 priority: JobPriority.MEDIUM,
                 jobId: `${schedule.id}:${Date.now()}`,
               },
+              schedule.jobType,
             );
 
             schedule.successCount++;
@@ -377,7 +415,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
    * Stop all scheduled jobs
    */
   private stopAllSchedules(): void {
-    for (const [id, cronJob] of this.cronJobs.entries()) {
+    for (const [_id, cronJob] of this.cronJobs.entries()) {
       cronJob.stop();
     }
     this.cronJobs.clear();
@@ -387,21 +425,30 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   /**
    * Validate cron expression
    */
-private isValidCronExpression(expression: string): boolean {
+  private isValidCronExpression(expression: string): boolean {
     try {
       new CronJob(expression, () => {});
       return true;
     } catch {
       return false;
     }
-}
+  }
 
   /**
    * Get next run time for a cron expression
    */
-  private getNextRunTime(cronExpression: string, timezone?: string): Date | null {
+  private getNextRunTime(
+    cronExpression: string,
+    timezone?: string,
+  ): Date | null {
     try {
-      const job = new CronJob(cronExpression, () => {}, null, false, timezone || 'UTC');
+      const job = new CronJob(
+        cronExpression,
+        () => {},
+        null,
+        false,
+        timezone || 'UTC',
+      );
       return job.nextDate().toJSDate();
     } catch {
       return null;

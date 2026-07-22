@@ -10,7 +10,8 @@ export class Enable2faResponseDto {
 
   @ApiProperty({
     description: 'otpauth:// URI for QR code generation',
-    example: 'otpauth://totp/StellarEarn:GABC...?secret=JBSWY3DPEHPK3PXP&issuer=StellarEarn',
+    example:
+      'otpauth://totp/StellarEarn:GABC...?secret=JBSWY3DPEHPK3PXP&issuer=StellarEarn',
   })
   otpauthUrl: string;
 

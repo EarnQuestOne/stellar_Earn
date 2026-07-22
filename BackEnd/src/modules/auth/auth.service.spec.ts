@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/user.service';
+import { UsersService } from '../users/users.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { Role } from '../../common/enums/role.enum';
 import {
@@ -12,14 +14,16 @@ import {
   createMockJwtService,
   createMockConfigService,
   generateRandomStellarAddress,
-} from '../../test/utils/test-helpers';
+} from 'test/utils/test-helpers';
 
 // Mock the signature utilities
 jest.mock('./utils/signature', () => ({
-  generateChallengeMessage: jest.fn((address, timestamp) => `Challenge for ${address} at ${timestamp}`),
+  generateChallengeMessage: jest.fn(
+    (address, timestamp) => `Challenge for ${address} at ${timestamp}`,
+  ),
   verifyStellarSignature: jest.fn(),
-  isChallengeExpired: jest.fn((timestamp, minutes) => false),
-  extractTimestampFromChallenge: jest.fn((challenge) => Date.now()),
+  isChallengeExpired: jest.fn((_timestamp, _minutes) => false),
+  extractTimestampFromChallenge: jest.fn((_challenge) => Date.now()),
 }));
 
 describe('AuthService', () => {
@@ -38,11 +42,11 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: 'JwtService',
+          provide: JwtService,
           useValue: jwtService,
         },
         {
-          provide: 'ConfigService',
+          provide: ConfigService,
           useValue: configService,
         },
         {
@@ -63,8 +67,8 @@ describe('AuthService', () => {
       ],
     })
       .useMocker((token) => {
-        if (token === 'JwtService') return jwtService;
-        if (token === 'ConfigService') return configService;
+        if (token === JwtService) return jwtService;
+        if (token === ConfigService) return configService;
         return undefined;
       })
       .compile();
@@ -95,7 +99,9 @@ describe('AuthService', () => {
       const expectedMinExpiry = beforeCall + 5 * 60 * 1000;
       const expectedMaxExpiry = afterCall + 5 * 60 * 1000;
 
-      expect(result.expiresAt.getTime()).toBeGreaterThanOrEqual(expectedMinExpiry);
+      expect(result.expiresAt.getTime()).toBeGreaterThanOrEqual(
+        expectedMinExpiry,
+      );
       expect(result.expiresAt.getTime()).toBeLessThanOrEqual(expectedMaxExpiry);
     });
   });
@@ -130,7 +136,9 @@ describe('AuthService', () => {
     it('should save refresh token to repository', async () => {
       const subject = 'test-user-id';
       const stellarAddress = generateRandomStellarAddress();
-      const saveSpy = jest.spyOn(refreshTokenRepository, 'save').mockResolvedValue({});
+      const saveSpy = jest
+        .spyOn(refreshTokenRepository, 'save')
+        .mockResolvedValue({});
 
       await service.generateTokens(subject, subject, stellarAddress, Role.USER);
 
@@ -172,7 +180,9 @@ describe('AuthService', () => {
         .spyOn(refreshTokenRepository, 'findOne')
         .mockResolvedValue(refreshToken);
       jest.spyOn(usersService, 'findById').mockResolvedValue(user);
-      jest.spyOn(refreshTokenRepository, 'save').mockResolvedValue(refreshToken);
+      jest
+        .spyOn(refreshTokenRepository, 'save')
+        .mockResolvedValue(refreshToken);
       jest.spyOn(refreshTokenRepository, 'create').mockReturnValue({
         token: 'new-refresh-token',
       });
@@ -181,7 +191,9 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      expect(result).toHaveProperty('expiresIn');
       expect(result).toHaveProperty('user');
+      expect(typeof result.expiresIn).toBe('number');
     });
 
     it('should throw UnauthorizedException for invalid refresh token', async () => {
@@ -199,9 +211,9 @@ describe('AuthService', () => {
         .spyOn(refreshTokenRepository, 'findOne')
         .mockResolvedValue(refreshToken);
 
-      await expect(
-        service.refreshTokens(refreshToken.token),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshTokens(refreshToken.token)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException for expired token', async () => {
@@ -214,9 +226,9 @@ describe('AuthService', () => {
         .spyOn(refreshTokenRepository, 'findOne')
         .mockResolvedValue(refreshToken);
 
-      await expect(
-        service.refreshTokens(refreshToken.token),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshTokens(refreshToken.token)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should revoke old refresh token when issuing new one', async () => {
@@ -251,9 +263,7 @@ describe('AuthService', () => {
       const tokenId = 'token-id-123';
       const token = createMockRefreshToken({ id: tokenId, userId });
 
-      jest
-        .spyOn(refreshTokenRepository, 'findOne')
-        .mockResolvedValue(token);
+      jest.spyOn(refreshTokenRepository, 'findOne').mockResolvedValue(token);
       jest.spyOn(refreshTokenRepository, 'save').mockResolvedValue(token);
 
       await service.revokeToken(userId, tokenId);
@@ -269,9 +279,9 @@ describe('AuthService', () => {
     it('should throw NotFoundException when token not found', async () => {
       jest.spyOn(refreshTokenRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(
-        service.revokeToken('user-id', 'token-id'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.revokeToken('user-id', 'token-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should revoke all user tokens when tokenId not provided', async () => {
@@ -338,6 +348,82 @@ describe('AuthService', () => {
         stellarAddress,
         role: Role.USER,
       });
+    });
+  });
+
+  describe('validate (JWT payload → identity)', () => {
+    it('should resolve the real identity/role for the user encoded in the payload, not a stub', async () => {
+      const user = createMockUser({
+        id: 'user-a-id',
+        role: Role.ADMIN,
+      });
+      jest.spyOn(usersService, 'findById').mockResolvedValue(user);
+
+      const result = await service.validate({
+        sub: user.id,
+        stellarAddress: user.stellarAddress,
+        role: 'USER', // stale/forged claim in the token — must be ignored
+      });
+
+      expect(result).toEqual({
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        role: user.role,
+      });
+      expect(result.role).toBe(Role.ADMIN);
+    });
+
+    it('should never resolve two different users to the same identity', async () => {
+      const userA = createMockUser({ id: 'user-a-id', role: Role.USER });
+      const userB = createMockUser({
+        id: 'user-b-id',
+        role: Role.ADMIN,
+        stellarAddress: generateRandomStellarAddress(),
+      });
+
+      jest
+        .spyOn(usersService, 'findById')
+        .mockImplementation(async (id: string) =>
+          id === userA.id ? userA : id === userB.id ? userB : null,
+        );
+
+      const resultA = await service.validate({
+        sub: userA.id,
+        stellarAddress: userA.stellarAddress,
+        role: userA.role,
+      });
+      const resultB = await service.validate({
+        sub: userB.id,
+        stellarAddress: userB.stellarAddress,
+        role: userB.role,
+      });
+
+      expect(resultA.id).toBe(userA.id);
+      expect(resultA.role).toBe(Role.USER);
+      expect(resultB.id).toBe(userB.id);
+      expect(resultB.role).toBe(Role.ADMIN);
+      expect(resultA.id).not.toBe(resultB.id);
+      expect(resultA.role).not.toBe(resultB.role);
+    });
+
+    it('should fall back to the stellarAddress claim when sub is absent', async () => {
+      const user = createMockUser();
+      jest.spyOn(usersService, 'findByAddress').mockResolvedValue(user);
+
+      const result = await service.validate({
+        stellarAddress: user.stellarAddress,
+      } as any);
+
+      expect(usersService.findByAddress).toHaveBeenCalledWith(
+        user.stellarAddress,
+      );
+      expect(result.id).toBe(user.id);
+    });
+
+    it('should throw UnauthorizedException when the payload has no identifiable subject', async () => {
+      await expect(service.validate({} as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

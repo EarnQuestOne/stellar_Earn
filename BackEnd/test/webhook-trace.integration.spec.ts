@@ -1,15 +1,15 @@
-﻿import { ExecutionTraceService } from '#src/modules/trace/execution-trace.service';
-import { WebhookService } from '#src/modules/webhooks/webhook.service';
+﻿import { TraceService } from '#src/modules/trace/trace.service';
+import { WebhooksService } from '#src/modules/webhooks/webhooks.service';
 import { TraceIdUtil } from '#src/modules/trace/trace-id.util';
 import { TraceStatus } from '#src/modules/trace/trace.types';
 
 describe('WebhookService (integration)', () => {
-  let traceService: ExecutionTraceService;
-  let webhookService: WebhookService;
+  let traceService: TraceService;
+  let webhookService: WebhooksService;
 
   beforeEach(() => {
-    traceService = new ExecutionTraceService();
-    webhookService = new WebhookService(traceService);
+    traceService = new TraceService();
+    webhookService = new WebhooksService(traceService);
   });
 
   it('should return an accepted result with a linked trace ID', async () => {

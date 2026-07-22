@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from './cache.service';
 import { CacheAnalyticsService } from './cache-analytics.service';
-import {
-  createMockCacheManager,
-} from '../../test/utils/test-helpers';
+import { createMockCacheManager } from '../../test/utils/test-helpers';
 
 describe('CacheService', () => {
   let service: CacheService;
@@ -67,7 +65,9 @@ describe('CacheService', () => {
     });
 
     it('should use local fallback when cache errors', async () => {
-      jest.spyOn(cacheManager, 'get').mockRejectedValue(new Error('Cache error'));
+      jest
+        .spyOn(cacheManager, 'get')
+        .mockRejectedValue(new Error('Cache error'));
 
       const result = await service.get('test-key');
 
@@ -256,10 +256,12 @@ describe('CacheService', () => {
       await service.set(key, value, 3600);
 
       // Then make cache unavailable
-      jest.spyOn(cacheManager, 'get').mockRejectedValue(new Error('Cache down'));
+      jest
+        .spyOn(cacheManager, 'get')
+        .mockRejectedValue(new Error('Cache down'));
 
       // Should still retrieve from fallback
-      const result = await service.get(key);
+      await service.get(key);
 
       // Result should be from fallback store
       expect(analyticsService.recordError).toHaveBeenCalled();
@@ -277,7 +279,9 @@ describe('CacheService', () => {
       // Wait for fallback to expire
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      jest.spyOn(cacheManager, 'get').mockRejectedValue(new Error('Cache down'));
+      jest
+        .spyOn(cacheManager, 'get')
+        .mockRejectedValue(new Error('Cache down'));
 
       const result = await service.get(key);
 

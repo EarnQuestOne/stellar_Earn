@@ -25,8 +25,6 @@ describe('Security Components Integration', () => {
 
   // Test that the application can handle basic requests
   it('should respond to requests', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(404); // Should return 404 for non-existent route
+    return request(app.getHttpServer()).get('/').expect(404); // Should return 404 for non-existent route
   });
 });

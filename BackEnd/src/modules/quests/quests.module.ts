@@ -10,7 +10,13 @@ import { ModerationModule } from '../moderation/moderation.module';
 import { QuotaModule } from '../quota/quota.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Quest]), EventEmitterModule, CacheModule, ModerationModule, QuotaModule],
+  imports: [
+    TypeOrmModule.forFeature([Quest]),
+    EventEmitterModule,
+    CacheModule,
+    ModerationModule,
+    QuotaModule,
+  ],
   controllers: [QuestsController],
   providers: [QuestsService, QuestNotificationsListener],
   exports: [QuestsService],

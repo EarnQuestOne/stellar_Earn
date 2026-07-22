@@ -14,7 +14,9 @@ export class CacheWarmingStrategy implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     if (this.warmUpTasks.length > 0) {
-      this.logger.log(`Starting cache warming with ${this.warmUpTasks.length} tasks...`);
+      this.logger.log(
+        `Starting cache warming with ${this.warmUpTasks.length} tasks...`,
+      );
       for (const [index, task] of this.warmUpTasks.entries()) {
         try {
           await task();

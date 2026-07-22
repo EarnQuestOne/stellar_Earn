@@ -27,8 +27,8 @@ export class ValidationExceptionFilter implements ExceptionFilter {
 
       if (typeof errorResponse === 'object' && errorResponse !== null) {
         status = HttpStatus.BAD_REQUEST;
-        message = (errorResponse as any).message || 'Validation failed';
-        errors = (errorResponse as any).errors || {};
+        message = errorResponse.message || 'Validation failed';
+        errors = errorResponse.errors || {};
       }
     }
 
@@ -61,7 +61,9 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     });
   }
 
-  private formatValidationErrors(errors: ValidationError[]): Record<string, string[]> {
+  private formatValidationErrors(
+    errors: ValidationError[],
+  ): Record<string, string[]> {
     const formattedErrors: Record<string, string[]> = {};
 
     const flattenErrors = (

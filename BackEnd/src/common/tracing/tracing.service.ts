@@ -54,7 +54,11 @@ export class TracingService {
   extractContext(traceparent?: string): TraceContext {
     if (traceparent) {
       const parts = traceparent.split('-');
-      if (parts.length === 4 && parts[1].length === 32 && parts[2].length === 16) {
+      if (
+        parts.length === 4 &&
+        parts[1].length === 32 &&
+        parts[2].length === 16
+      ) {
         return { traceId: parts[1], spanId: parts[2] };
       }
     }
@@ -120,11 +124,7 @@ export class TracingService {
   }
 
   /** Record a point-in-time event on an open span. */
-  addSpanEvent(
-    span: Span,
-    name: string,
-    attributes?: SpanAttributes,
-  ): void {
+  addSpanEvent(span: Span, name: string, attributes?: SpanAttributes): void {
     span.events.push({ name, timestamp: Date.now(), attributes });
   }
 
@@ -151,7 +151,10 @@ export class TracingService {
       this.finishSpan(span);
       return result;
     } catch (error) {
-      this.finishSpan(span, error instanceof Error ? error : new Error(String(error)));
+      this.finishSpan(
+        span,
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }

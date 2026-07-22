@@ -113,9 +113,7 @@ export class TwoFactorService {
 
     const valid = this.totpService.verifyToken(record.secret, totpCode);
     if (!valid) {
-      throw new UnauthorizedException(
-        'Invalid TOTP code. Cannot disable 2FA.',
-      );
+      throw new UnauthorizedException('Invalid TOTP code. Cannot disable 2FA.');
     }
 
     await this.twoFactorRepository.remove(record);
@@ -170,9 +168,7 @@ export class TwoFactorService {
   /**
    * Returns the full 2FA status record (without the secret).
    */
-  async get2faStatus(
-    stellarAddress: string,
-  ): Promise<{ enabled: boolean }> {
+  async get2faStatus(stellarAddress: string): Promise<{ enabled: boolean }> {
     const enabled = await this.is2faEnabled(stellarAddress);
     return { enabled };
   }

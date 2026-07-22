@@ -14,14 +14,19 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node --max-old-space-size=512 --expose-gc dist/main",
+    "start:prod:pm2": "pm2 start ecosystem.config.js --env production",
+    "stop:prod:pm2": "pm2 stop stellar-earn-api",
+    "reload:prod:pm2": "pm2 reload ecosystem.config.js --env production",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "changelog:check": "node ../scripts/backend-changelog.js check",
+    "changelog:generate": "node ../scripts/backend-changelog.js generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:integration": "jest --config ./test/jest-integration.json",
+    "test:e2e": "jest --clearCache && jest --config ./test/jest-e2e.json",
+    "test:integration": "jest --clearCache && jest --config ./test/jest-integration.json",
     "db:backup": "ts-node scripts/db-backup.ts",
     "db:rollback": "ts-node scripts/db-rollback.ts",
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
@@ -36,9 +41,12 @@
     "migration:test:performance": "ts-node scripts/test-migrations.ts performance",
     "migration:test:syntax": "ts-node scripts/test-migration-syntax.ts",
     "verify:indexes": "ts-node scripts/verify-indexes.ts",
+    "openapi:generate": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts",
     "schema:sync": "bun run typeorm -- schema:sync",
     "schema:drop": "bun run typeorm -- schema:drop",
-    "schema:log": "bun run typeorm -- schema:log"
+    "schema:log": "bun run typeorm -- schema:log",
+    "check:toolchain": "ts-node scripts/check-toolchain.ts",
+    "onboarding": "ts-node scripts/check-toolchain.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.19.0",
@@ -86,6 +94,7 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
+    "jest-util": "^29.7.0",
     "nest-winston": "^1.10.2",
     "otplib": "^12.0.1",
     "passport": "^0.7.0",
@@ -132,7 +141,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
@@ -150,6 +159,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!uuid/)"
+    ],
     "collectCoverageFrom": [
       "src/**/*.(t|j)s"
     ],
@@ -157,7 +169,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^#src/(.*)$": "<rootDir>/src/$1",
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^test/(.*)$": "<rootDir>/test/$1"
     }
   },
   "overrides": {

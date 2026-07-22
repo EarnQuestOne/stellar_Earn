@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { AppLoggerService } from '../logger/logger.service';
 import { MetricsService } from './metrics.service';
 import { DatabasePoolMonitorService } from '../../modules/health/services/database-pool-monitor.service';
@@ -130,13 +135,26 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
 
     switch (rule.severity) {
       case 'critical':
-        this.logger.error(`ALERT FIRING [critical]: ${rule.name}`, undefined, 'AlertService', meta);
+        this.logger.error(
+          `ALERT FIRING [critical]: ${rule.name}`,
+          undefined,
+          'AlertService',
+          meta,
+        );
         break;
       case 'warning':
-        this.logger.warn(`ALERT FIRING [warning]: ${rule.name}`, 'AlertService', meta);
+        this.logger.warn(
+          `ALERT FIRING [warning]: ${rule.name}`,
+          'AlertService',
+          meta,
+        );
         break;
       default:
-        this.logger.log(`ALERT FIRING [info]: ${rule.name}`, 'AlertService', meta);
+        this.logger.log(
+          `ALERT FIRING [info]: ${rule.name}`,
+          'AlertService',
+          meta,
+        );
     }
   }
 
@@ -155,7 +173,8 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
     // ── Error rate > 10 % ──────────────────────────────────────────────────
     this.registerRule({
       name: 'high_error_rate',
-      description: 'HTTP error rate exceeds 10 % over the last 60-second window',
+      description:
+        'HTTP error rate exceeds 10 % over the last 60-second window',
       severity: 'critical',
       cooldownMs: 120_000,
       evaluate: () => {
@@ -204,7 +223,8 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
       // ── Database pool waiting queue growing ─────────────────────────────
       this.registerRule({
         name: 'db_pool_waiting_queue_growth',
-        description: 'Database pool waiting queue consistently elevated (> 5 requests)',
+        description:
+          'Database pool waiting queue consistently elevated (> 5 requests)',
         severity: 'warning',
         cooldownMs: 120_000,
         evaluate: () => this.poolMonitor!.getPoolStats().waitingRequests > 5,
@@ -213,7 +233,8 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
       // ── Database connection acquisition latency abnormal ─────────────────
       this.registerRule({
         name: 'db_pool_slow_acquisition',
-        description: 'Database connection acquisition time exceeds 500 ms average',
+        description:
+          'Database connection acquisition time exceeds 500 ms average',
         severity: 'warning',
         cooldownMs: 180_000,
         evaluate: () => this.poolMonitor!.getAverageAcquisitionTime() > 500,

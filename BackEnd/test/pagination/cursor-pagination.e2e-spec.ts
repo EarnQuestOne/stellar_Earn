@@ -17,7 +17,7 @@ import { DataSource } from 'typeorm';
  */
 describe('Cursor Pagination (e2e)', () => {
   let app: INestApplication;
-  let dataSource: DataSource;
+  let _dataSource: DataSource;
   let adminToken: string;
   let userToken: string;
   let questId: string;
@@ -35,7 +35,7 @@ describe('Cursor Pagination (e2e)', () => {
     );
     await app.init();
 
-    dataSource = moduleFixture.get(DataSource);
+    _dataSource = moduleFixture.get(DataSource);
 
     // Obtain tokens
     const adminLogin = await request(app.getHttpServer())
@@ -168,9 +168,7 @@ describe('Cursor Pagination (e2e)', () => {
     });
 
     it('rejects limit > 100', async () => {
-      await request(app.getHttpServer())
-        .get('/quests?limit=101')
-        .expect(400);
+      await request(app.getHttpServer()).get('/quests?limit=101').expect(400);
     });
 
     it('filters by status and still paginates', async () => {
@@ -323,7 +321,9 @@ describe('Cursor Pagination (e2e)', () => {
 
     it('returns 404 for unknown address', async () => {
       await request(app.getHttpServer())
-        .get('/users/GUNKNOWNADDRESS000000000000000000000000000000000000000000/quests')
+        .get(
+          '/users/GUNKNOWNADDRESS000000000000000000000000000000000000000000/quests',
+        )
         .expect(404);
     });
   });

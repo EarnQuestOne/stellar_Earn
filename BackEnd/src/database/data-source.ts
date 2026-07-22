@@ -5,20 +5,20 @@ import * as path from 'path';
 import { AppLoggerService } from '../common/logger/logger.service';
 
 import { RefreshToken } from '../modules/auth/entities/refresh-token.entity';
-import { TwoFactorAuth } from '../modules/auth/entities/two-factor.entity';
 
 import { Quest } from '../modules/quests/entities/quest.entity';
 import { Submission } from '../modules/submissions/entities/submission.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { Notification } from '../modules/notifications/entities/notification.entity';
 import { Payout } from '../modules/payouts/entities/payout.entity';
-import { ModerationItem } from '../modules/moderation/entities/moderation-item.entity';
-import { ModerationAppeal } from '../modules/moderation/entities/moderation-appeal.entity';
-import { DataExport } from '../modules/users/entities/data-export.entity';
+import { IdempotencyKey } from '../modules/payouts/entities/idempotency-key.entity';
 import { FeatureFlag } from '../modules/feature-flags/entities/feature-flag.entity';
 import { FeatureFlagAuditLog } from '../modules/feature-flags/entities/feature-flag-audit.entity';
 import { QuotaConfig } from '../modules/quota/entities/quota-config.entity';
 import { QuotaUsage } from '../modules/quota/entities/quota-usage.entity';
+import { EventStore } from '../events/entities/event-store.entity';
+import { PoisonMessage } from '../events/entities/poison-message.entity';
+import { FailedWebhookEvent } from '../modules/webhooks/entities/failed-webhook-event.entity';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -26,7 +26,7 @@ class TypeORMQueryLogger implements Logger {
   private readonly logger = new AppLoggerService();
   private readonly slowQueryThreshold = parseInt(
     process.env.SLOW_QUERY_THRESHOLD || '1000',
-    10
+    10,
   );
 
   private readonly enableQueryLogging =
@@ -101,15 +101,17 @@ export const dataSourceOptions: DataSourceOptions = {
     Submission,
     Notification,
     Payout,
+    IdempotencyKey,
     FeatureFlag,
     FeatureFlagAuditLog,
     QuotaConfig,
     QuotaUsage,
+    EventStore,
+    PoisonMessage,
+    FailedWebhookEvent,
   ],
 
-  migrations: [
-    path.join(__dirname, 'migrations', '*.{ts,js}'),
-  ],
+  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
 
   migrationsTableName: 'typeorm_migrations',
   synchronize: false,
@@ -122,7 +124,7 @@ export const dataSourceOptions: DataSourceOptions = {
 
   maxQueryExecutionTime: parseInt(
     process.env.SLOW_QUERY_THRESHOLD || '1000',
-    10
+    10,
   ),
 
   extra: {
@@ -131,12 +133,12 @@ export const dataSourceOptions: DataSourceOptions = {
 
     connectionTimeoutMillis: parseInt(
       process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000',
-      10
+      10,
     ),
 
     idleTimeoutMillis: parseInt(
       process.env.DB_POOL_IDLE_TIMEOUT ?? '30000',
-      10
+      10,
     ),
   },
 };

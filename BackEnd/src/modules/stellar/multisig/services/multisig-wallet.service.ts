@@ -1,15 +1,30 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MultiSigWallet, MultiSigWalletStatus } from '../entities/multisig-wallet.entity';
-import { MultiSigSigner, SignerStatus, SignerRole } from '../entities/multisig-signer.entity';
+import {
+  MultiSigWallet,
+  MultiSigWalletStatus,
+} from '../entities/multisig-wallet.entity';
+import {
+  MultiSigSigner,
+  SignerStatus,
+  SignerRole,
+} from '../entities/multisig-signer.entity';
 import {
   MultiSigTransaction,
   MultiSigTransactionStatus,
   MultiSigTransactionType,
 } from '../entities/multisig-transaction.entity';
-import { MultiSigSignature, SignatureStatus } from '../entities/multisig-signature.entity';
+import {
+  MultiSigSignature,
+  SignatureStatus,
+} from '../entities/multisig-signature.entity';
 import {
   CreateMultiSigWalletDto,
   AddSignerDto,
@@ -38,7 +53,10 @@ export class MultiSigWalletService {
   /**
    * Create a new multi-sig wallet
    */
-  async createWallet(createDto: CreateMultiSigWalletDto, userId: string): Promise<MultiSigWallet> {
+  async createWallet(
+    createDto: CreateMultiSigWalletDto,
+    userId: string,
+  ): Promise<MultiSigWallet> {
     const existing = await this.walletRepository.findOne({
       where: {
         organizationId: createDto.organizationId,
@@ -47,7 +65,9 @@ export class MultiSigWalletService {
     });
 
     if (existing) {
-      throw new BadRequestException('Multi-sig wallet already exists for this organization and address');
+      throw new BadRequestException(
+        'Multi-sig wallet already exists for this organization and address',
+      );
     }
 
     if (createDto.threshold > createDto.totalSigners) {
@@ -81,7 +101,10 @@ export class MultiSigWalletService {
   /**
    * Add signer to multi-sig wallet
    */
-  async addSigner(addDto: AddSignerDto, userId: string): Promise<MultiSigSigner> {
+  async addSigner(
+    addDto: AddSignerDto,
+    userId: string,
+  ): Promise<MultiSigSigner> {
     const wallet = await this.walletRepository.findOne({
       where: { id: addDto.multiSigWalletId },
     });
@@ -180,7 +203,10 @@ export class MultiSigWalletService {
   /**
    * Update wallet threshold
    */
-  async updateThreshold(updateDto: UpdateThresholdDto, userId: string): Promise<MultiSigWallet> {
+  async updateThreshold(
+    updateDto: UpdateThresholdDto,
+    userId: string,
+  ): Promise<MultiSigWallet> {
     const wallet = await this.walletRepository.findOne({
       where: { id: updateDto.multiSigWalletId },
     });
@@ -301,7 +327,9 @@ export class MultiSigWalletService {
     }
 
     if (transaction.status !== MultiSigTransactionStatus.PENDING) {
-      throw new BadRequestException(`Cannot approve transaction with status: ${transaction.status}`);
+      throw new BadRequestException(
+        `Cannot approve transaction with status: ${transaction.status}`,
+      );
     }
 
     const signature = await this.signatureRepository.findOne({
@@ -316,7 +344,9 @@ export class MultiSigWalletService {
     }
 
     if (signature.status !== SignatureStatus.PENDING) {
-      throw new BadRequestException(`Signature already has status: ${signature.status}`);
+      throw new BadRequestException(
+        `Signature already has status: ${signature.status}`,
+      );
     }
 
     signature.status = SignatureStatus.SIGNED;
@@ -342,11 +372,14 @@ export class MultiSigWalletService {
       await this.signerRepository.save(signer);
     }
 
-    this.logger.log(`Transaction approved: ${approveDto.multiSigTransactionId}`, {
-      signer: approveDto.signerAddress,
-      approvalsReceived: transaction.approvalsReceived,
-      threshold: transaction.threshold,
-    });
+    this.logger.log(
+      `Transaction approved: ${approveDto.multiSigTransactionId}`,
+      {
+        signer: approveDto.signerAddress,
+        approvalsReceived: transaction.approvalsReceived,
+        threshold: transaction.threshold,
+      },
+    );
 
     this.eventEmitter.emit('multisig.transaction.approved', {
       transactionId: approveDto.multiSigTransactionId,
@@ -361,10 +394,13 @@ export class MultiSigWalletService {
       transaction.status = MultiSigTransactionStatus.APPROVED;
       await this.transactionRepository.save(transaction);
 
-      this.logger.log(`Transaction approved! Ready for execution: ${approveDto.multiSigTransactionId}`, {
-        approvalsReceived: transaction.approvalsReceived,
-        threshold: transaction.threshold,
-      });
+      this.logger.log(
+        `Transaction approved! Ready for execution: ${approveDto.multiSigTransactionId}`,
+        {
+          approvalsReceived: transaction.approvalsReceived,
+          threshold: transaction.threshold,
+        },
+      );
 
       this.eventEmitter.emit('multisig.transaction.approved_complete', {
         transactionId: approveDto.multiSigTransactionId,
@@ -383,7 +419,7 @@ export class MultiSigWalletService {
    */
   async rejectTransaction(
     rejectDto: RejectTransactionDto,
-    userId: string,
+    _userId: string,
   ): Promise<MultiSigTransaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id: rejectDto.multiSigTransactionId },
@@ -394,7 +430,9 @@ export class MultiSigWalletService {
     }
 
     if (transaction.status !== MultiSigTransactionStatus.PENDING) {
-      throw new BadRequestException(`Cannot reject transaction with status: ${transaction.status}`);
+      throw new BadRequestException(
+        `Cannot reject transaction with status: ${transaction.status}`,
+      );
     }
 
     const signature = await this.signatureRepository.findOne({
@@ -409,7 +447,9 @@ export class MultiSigWalletService {
     }
 
     if (signature.status !== SignatureStatus.PENDING) {
-      throw new BadRequestException(`Signature already has status: ${signature.status}`);
+      throw new BadRequestException(
+        `Signature already has status: ${signature.status}`,
+      );
     }
 
     signature.status = SignatureStatus.REJECTED;
@@ -436,10 +476,13 @@ export class MultiSigWalletService {
       await this.signerRepository.save(signer);
     }
 
-    this.logger.log(`Transaction rejected: ${rejectDto.multiSigTransactionId}`, {
-      signer: rejectDto.signerAddress,
-      reason: rejectDto.rejectionReason,
-    });
+    this.logger.log(
+      `Transaction rejected: ${rejectDto.multiSigTransactionId}`,
+      {
+        signer: rejectDto.signerAddress,
+        reason: rejectDto.rejectionReason,
+      },
+    );
 
     this.eventEmitter.emit('multisig.transaction.rejected', {
       transactionId: rejectDto.multiSigTransactionId,
@@ -467,7 +510,9 @@ export class MultiSigWalletService {
       order: { addedAt: 'DESC' },
     });
 
-    const activeSigners = signers.filter((s) => s.status === SignerStatus.ACTIVE);
+    const activeSigners = signers.filter(
+      (s) => s.status === SignerStatus.ACTIVE,
+    );
 
     return {
       wallet,

@@ -156,28 +156,36 @@ export class InitialSchema1769471764117 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_REFERENCE_ID"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_TYPE"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_DATE"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_REFERENCE_ID"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_TYPE"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_ANALYTICS_SNAPSHOT_DATE"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "AnalyticsSnapshot"`);
-    
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_STELLAR_ADDRESS"`);
+
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_STELLAR_ADDRESS"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_REFRESH_TOKEN_TOKEN"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "RefreshToken"`);
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "Payout"`);
-    
+
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_READ"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_NOTIFICATION_USER_ID"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "Notification"`);
-    
+
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_STATUS"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_USER_ID"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_SUBMISSION_QUEST_ID"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "Submission"`);
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "Quest"`);
-    
+
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USER_STELLAR_ADDRESS"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "User"`);
   }

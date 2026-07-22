@@ -13,10 +13,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { contrastRatio, meetsWCAG_AA, WCAG_AA_LARGE } from '@/lib/utils/color-contrast';
+import {
+  contrastRatio,
+  meetsWCAG_AA,
+  WCAG_AA_LARGE,
+} from '@/lib/utils/color-contrast';
 
 const ZINC = {
-  50:  '#fafafa',
+  50: '#fafafa',
   400: '#a1a1aa',
   500: '#71717a',
   900: '#18181b',

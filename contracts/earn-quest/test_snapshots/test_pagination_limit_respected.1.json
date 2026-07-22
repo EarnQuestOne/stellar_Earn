@@ -230,6 +230,33 @@
                         "key": {
                           "vec": [
                             {
+                              "symbol": "PlatformQuestsCreated"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 5
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "PlatformRewardsDistributed"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u128": {
+                            "hi": 0,
+                            "lo": 1500
+                          }
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
                               "symbol": "Quest"
                             },
                             {
@@ -239,6 +266,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -328,6 +363,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -413,6 +456,14 @@
                         },
                         "val": {
                           "map": [
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
                             {
                               "key": {
                                 "symbol": "creator"
@@ -502,6 +553,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -589,6 +648,14 @@
                           "map": [
                             {
                               "key": {
+                                "symbol": "category"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "creator"
                               },
                               "val": {
@@ -657,6 +724,37 @@
                               "val": {
                                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYRE5"
                               }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "QuestCategory"
+                            },
+                            {
+                              "u32": 0
+                            }
+                          ]
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "symbol": "P1"
+                            },
+                            {
+                              "symbol": "P2"
+                            },
+                            {
+                              "symbol": "P3"
+                            },
+                            {
+                              "symbol": "P4"
+                            },
+                            {
+                              "symbol": "P5"
                             }
                           ]
                         }
@@ -1497,6 +1595,14 @@
                   "map": [
                     {
                       "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "creator"
                       },
                       "val": {
@@ -1570,6 +1676,14 @@
                 },
                 {
                   "map": [
+                    {
+                      "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
                     {
                       "key": {
                         "symbol": "creator"
@@ -1704,6 +1818,14 @@
                   "map": [
                     {
                       "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "creator"
                       },
                       "val": {
@@ -1777,6 +1899,14 @@
                 },
                 {
                   "map": [
+                    {
+                      "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
                     {
                       "key": {
                         "symbol": "creator"
@@ -1909,6 +2039,14 @@
               "vec": [
                 {
                   "map": [
+                    {
+                      "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
                     {
                       "key": {
                         "symbol": "creator"

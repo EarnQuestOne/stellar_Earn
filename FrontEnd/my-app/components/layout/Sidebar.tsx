@@ -1,8 +1,12 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { isActiveRoute, useTranslatedNavigation } from '@/lib/config/navigation';
+import {
+  isActiveRoute,
+  useTranslatedNavigation,
+} from '@/lib/config/navigation';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -29,7 +33,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
       }`}
     >
       <div className="flex h-16 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#089ec3] text-sm font-bold text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
           S
         </span>
         {!collapsed && (
@@ -48,13 +52,17 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
               href={item.href}
               aria-current={active ? 'page' : undefined}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089ec3] ${
+              className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 active
-                  ? 'bg-[#089ec3] text-white'
+                  ? 'bg-primary text-white'
                   : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
               } ${collapsed ? 'justify-center' : 'gap-3'}`}
             >
-              <NavDot active={active} />
+              {item.icon ? (
+                <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              ) : (
+                <NavDot active={active} />
+              )}
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );

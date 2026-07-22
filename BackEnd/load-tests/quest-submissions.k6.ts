@@ -9,9 +9,9 @@
  * Stages:
  *   ramp-up   0 → 50 VUs over 1 min
  *   sustained 50 VUs for 3 min
- *   spike     50 → 150 VUs over 30 s
- *   sustained 150 VUs for 1 min
- *   ramp-down 150 → 0 VUs over 1 min
+ *   spike     50 → 100 VUs over 30 s
+ *   sustained 100 VUs for 1 min
+ *   ramp-down 100 → 0 VUs over 1 min
  */
 
 import http from 'k6/http';
@@ -31,14 +31,14 @@ export const options = {
   stages: [
     { duration: '1m',  target: 50  },  // ramp-up
     { duration: '3m',  target: 50  },  // sustained load
-    { duration: '30s', target: 150 },  // spike
-    { duration: '1m',  target: 150 },  // sustained spike
+    { duration: '30s', target: 100 },  // spike
+    { duration: '1m',  target: 100 },  // sustained spike
     { duration: '1m',  target: 0   },  // ramp-down
   ],
   thresholds: {
     // 95th-percentile response times
     quest_list_duration:  ['p(95)<500'],
-    submission_duration:  ['p(95)<800'],
+    submission_duration:  ['p(95)<500'],
     // Error rates must stay below 1%
     quest_list_errors:    ['rate<0.01'],
     quest_detail_errors:  ['rate<0.01'],

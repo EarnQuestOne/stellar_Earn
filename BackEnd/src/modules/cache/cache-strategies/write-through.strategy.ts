@@ -19,7 +19,10 @@ export class WriteThroughStrategy {
       await this.cacheService.set(key, savedData, ttl, tags);
       this.logger.debug(`Cache Write-through strategy for ${key}`);
     } catch (e) {
-      this.logger.error(`Error updating cache in write-through strategy for ${key}`, e);
+      this.logger.error(
+        `Error updating cache in write-through strategy for ${key}`,
+        e,
+      );
     }
     return savedData;
   }

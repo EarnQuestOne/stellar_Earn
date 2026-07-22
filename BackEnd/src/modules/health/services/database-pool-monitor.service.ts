@@ -19,7 +19,9 @@ export interface PoolConfig {
 }
 
 @Injectable()
-export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy {
+export class DatabasePoolMonitorService
+  implements OnModuleInit, OnModuleDestroy
+{
   private monitoringInterval: ReturnType<typeof setInterval> | undefined;
   private readonly POLL_INTERVAL_MS = 15_000; // 15 seconds
 
@@ -42,7 +44,10 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
   onModuleInit(): void {
     this.registerMetrics();
     this.startMonitoring();
-    this.logger.log('Database pool monitor initialized', 'DatabasePoolMonitorService');
+    this.logger.log(
+      'Database pool monitor initialized',
+      'DatabasePoolMonitorService',
+    );
   }
 
   onModuleDestroy(): void {
@@ -88,8 +93,12 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
     return {
       max: extra.max ?? parseInt(process.env.DB_POOL_MAX ?? '10', 10),
       min: extra.min ?? parseInt(process.env.DB_POOL_MIN ?? '2', 10),
-      connectionTimeoutMillis: extra.connectionTimeoutMillis ?? parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000', 10),
-      idleTimeoutMillis: extra.idleTimeoutMillis ?? parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
+      connectionTimeoutMillis:
+        extra.connectionTimeoutMillis ??
+        parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000', 10),
+      idleTimeoutMillis:
+        extra.idleTimeoutMillis ??
+        parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10),
     };
   }
 
@@ -115,18 +124,26 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
   recordTimeout(): void {
     this.timeoutCount++;
     this.metrics.incrementCounter('db_pool_timeout_total');
-    this.logger.warn('Database connection timeout detected', 'DatabasePoolMonitorService', {
-      timeoutCount: this.timeoutCount,
-    });
+    this.logger.warn(
+      'Database connection timeout detected',
+      'DatabasePoolMonitorService',
+      {
+        timeoutCount: this.timeoutCount,
+      },
+    );
   }
 
   /** Record a failed connection attempt */
   recordFailedConnection(): void {
     this.failedConnectionCount++;
     this.metrics.incrementCounter('db_pool_failed_connections_total');
-    this.logger.error('Database connection failed', 'DatabasePoolMonitorService', {
-      failedCount: this.failedConnectionCount,
-    });
+    this.logger.error(
+      'Database connection failed',
+      'DatabasePoolMonitorService',
+      {
+        failedCount: this.failedConnectionCount,
+      },
+    );
   }
 
   /** Record a connection retry attempt */
@@ -146,18 +163,48 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
 
   private registerMetrics(): void {
     // Pool connection metrics
-    this.metrics.registerGauge('db_pool_active_connections', 'Number of active database connections');
-    this.metrics.registerGauge('db_pool_idle_connections', 'Number of idle database connections');
-    this.metrics.registerGauge('db_pool_total_connections', 'Total number of database connections');
-    this.metrics.registerGauge('db_pool_waiting_requests', 'Number of requests waiting for a connection');
-    this.metrics.registerGauge('db_pool_utilization_percent', 'Pool utilization as percentage of max connections');
+    this.metrics.registerGauge(
+      'db_pool_active_connections',
+      'Number of active database connections',
+    );
+    this.metrics.registerGauge(
+      'db_pool_idle_connections',
+      'Number of idle database connections',
+    );
+    this.metrics.registerGauge(
+      'db_pool_total_connections',
+      'Total number of database connections',
+    );
+    this.metrics.registerGauge(
+      'db_pool_waiting_requests',
+      'Number of requests waiting for a connection',
+    );
+    this.metrics.registerGauge(
+      'db_pool_utilization_percent',
+      'Pool utilization as percentage of max connections',
+    );
 
     // Acquisition metrics
-    this.metrics.registerHistogram('db_pool_acquire_duration_ms', 'Time to acquire a connection from pool (ms)');
-    this.metrics.registerCounter('db_pool_timeout_total', 'Total connection timeout events');
-    this.metrics.registerCounter('db_pool_failed_connections_total', 'Total failed connection attempts');
-    this.metrics.registerCounter('db_pool_retry_total', 'Total connection retry attempts');
-    this.metrics.registerCounter('db_pool_exhaustion_total', 'Total pool exhaustion events');
+    this.metrics.registerHistogram(
+      'db_pool_acquire_duration_ms',
+      'Time to acquire a connection from pool (ms)',
+    );
+    this.metrics.registerCounter(
+      'db_pool_timeout_total',
+      'Total connection timeout events',
+    );
+    this.metrics.registerCounter(
+      'db_pool_failed_connections_total',
+      'Total failed connection attempts',
+    );
+    this.metrics.registerCounter(
+      'db_pool_retry_total',
+      'Total connection retry attempts',
+    );
+    this.metrics.registerCounter(
+      'db_pool_exhaustion_total',
+      'Total pool exhaustion events',
+    );
   }
 
   private startMonitoring(): void {
@@ -177,7 +224,10 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
 
     collect(); // Initial collection
     this.monitoringInterval = setInterval(collect, this.POLL_INTERVAL_MS);
-    if (this.monitoringInterval && typeof this.monitoringInterval.unref === 'function') {
+    if (
+      this.monitoringInterval &&
+      typeof this.monitoringInterval.unref === 'function'
+    ) {
       this.monitoringInterval.unref();
     }
   }
@@ -187,7 +237,10 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
     const config = this.getPoolConfig();
     const utilization = this.getUtilizationPercentage();
 
-    this.metrics.setGauge('db_pool_active_connections', stats.activeConnections);
+    this.metrics.setGauge(
+      'db_pool_active_connections',
+      stats.activeConnections,
+    );
     this.metrics.setGauge('db_pool_idle_connections', stats.idleConnections);
     this.metrics.setGauge('db_pool_total_connections', stats.totalConnections);
     this.metrics.setGauge('db_pool_waiting_requests', stats.waitingRequests);
@@ -195,11 +248,15 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
 
     // Log if waiting queue is growing
     if (stats.waitingRequests > 5) {
-      this.logger.warn('Database pool waiting queue elevated', 'DatabasePoolMonitorService', {
-        waitingRequests: stats.waitingRequests,
-        activeConnections: stats.activeConnections,
-        maxConnections: config.max,
-      });
+      this.logger.warn(
+        'Database pool waiting queue elevated',
+        'DatabasePoolMonitorService',
+        {
+          waitingRequests: stats.waitingRequests,
+          activeConnections: stats.activeConnections,
+          maxConnections: config.max,
+        },
+      );
     }
   }
 
@@ -212,28 +269,42 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
     // Check for pool exhaustion (all connections in use + waiting requests)
     if (stats.totalConnections >= config.max && stats.waitingRequests > 0) {
       const cooldown = 5 * 60 * 1000; // 5 minutes
-      if (!this.lastExhaustionAlert || now - this.lastExhaustionAlert > cooldown) {
+      if (
+        !this.lastExhaustionAlert ||
+        now - this.lastExhaustionAlert > cooldown
+      ) {
         this.metrics.incrementCounter('db_pool_exhaustion_total');
         this.lastExhaustionAlert = now;
-        this.logger.error('Database pool exhaustion detected', 'DatabasePoolMonitorService', {
-          totalConnections: stats.totalConnections,
-          maxConnections: config.max,
-          waitingRequests: stats.waitingRequests,
-          utilization: `${utilization.toFixed(1)}%`,
-        });
+        this.logger.error(
+          'Database pool exhaustion detected',
+          'DatabasePoolMonitorService',
+          {
+            totalConnections: stats.totalConnections,
+            maxConnections: config.max,
+            waitingRequests: stats.waitingRequests,
+            utilization: `${utilization.toFixed(1)}%`,
+          },
+        );
       }
     }
 
     // Check for high utilization (> 90%)
     if (utilization > 90) {
       const cooldown = 5 * 60 * 1000; // 5 minutes
-      if (!this.lastHighUtilizationAlert || now - this.lastHighUtilizationAlert > cooldown) {
+      if (
+        !this.lastHighUtilizationAlert ||
+        now - this.lastHighUtilizationAlert > cooldown
+      ) {
         this.lastHighUtilizationAlert = now;
-        this.logger.warn('Database pool utilization critical', 'DatabasePoolMonitorService', {
-          utilization: `${utilization.toFixed(1)}%`,
-          activeConnections: stats.activeConnections,
-          maxConnections: config.max,
-        });
+        this.logger.warn(
+          'Database pool utilization critical',
+          'DatabasePoolMonitorService',
+          {
+            utilization: `${utilization.toFixed(1)}%`,
+            activeConnections: stats.activeConnections,
+            maxConnections: config.max,
+          },
+        );
       }
     }
 
@@ -242,10 +313,14 @@ export class DatabasePoolMonitorService implements OnModuleInit, OnModuleDestroy
       const cooldown = 2 * 60 * 1000; // 2 minutes
       if (!this.lastTimeoutAlert || now - this.lastTimeoutAlert > cooldown) {
         this.lastTimeoutAlert = now;
-        this.logger.error('Database connection timeout spike detected', 'DatabasePoolMonitorService', {
-          timeoutCount: this.timeoutCount,
-          avgAcquisitionTime: `${this.getAverageAcquisitionTime().toFixed(1)}ms`,
-        });
+        this.logger.error(
+          'Database connection timeout spike detected',
+          'DatabasePoolMonitorService',
+          {
+            timeoutCount: this.timeoutCount,
+            avgAcquisitionTime: `${this.getAverageAcquisitionTime().toFixed(1)}ms`,
+          },
+        );
         // Reset counter after alerting
         this.timeoutCount = 0;
       }

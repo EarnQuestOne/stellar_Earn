@@ -5,7 +5,7 @@ import { WebVitalsDto } from '../dto/web-vitals.dto';
 export class WebVitalsAnalyticsService {
   private readonly logger = new Logger(WebVitalsAnalyticsService.name);
 
-  async recordWebVitals(metric: WebVitalsDto): Promise<void> {
+  recordWebVitals(metric: WebVitalsDto): void {
     this.logger.debug('Received web vitals metric', { metric });
     // Future work: queue or persist metrics for historical analysis.
   }

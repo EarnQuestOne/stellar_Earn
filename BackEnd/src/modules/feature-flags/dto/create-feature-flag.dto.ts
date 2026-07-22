@@ -1,4 +1,16 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsBoolean, IsInt, Min, Max, IsArray, ValidateNested, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { RolloutStrategy, FlagStatus } from '../entities/feature-flag.entity';
 

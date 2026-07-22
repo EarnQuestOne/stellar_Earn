@@ -1,9 +1,11 @@
 ﻿import { NotFoundException } from '@nestjs/common';
-import { ExecutionTraceService } from '#src/modules/trace/execution-trace.service';
+import { TraceService } from '#src/modules/trace/trace.service';
 import { TraceIdUtil } from '#src/modules/trace/trace-id.util';
 import { TraceStatus } from '#src/modules/trace/trace.types';
 
-const makeDto = (overrides?: Partial<Parameters<ExecutionTraceService['createTrace']>[0]>) => ({
+const makeDto = (
+  overrides?: Partial<Parameters<TraceService['createTrace']>[0]>,
+) => ({
   traceId: TraceIdUtil.generate('delivery-001'),
   webhookEventId: 'delivery-001',
   questId: 'Q-001',
@@ -11,11 +13,11 @@ const makeDto = (overrides?: Partial<Parameters<ExecutionTraceService['createTra
   ...overrides,
 });
 
-describe('ExecutionTraceService', () => {
-  let service: ExecutionTraceService;
+describe('TraceService', () => {
+  let service: TraceService;
 
   beforeEach(() => {
-    service = new ExecutionTraceService();
+    service = new TraceService();
   });
 
   // â”€â”€ createTrace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -135,9 +137,27 @@ describe('ExecutionTraceService', () => {
 
   describe('findByQuestId', () => {
     it('should return all traces for a given quest', async () => {
-      await service.createTrace(makeDto({ traceId: TraceIdUtil.generate('d1'), webhookEventId: 'd1', questId: 'Q-001' }));
-      await service.createTrace(makeDto({ traceId: TraceIdUtil.generate('d2'), webhookEventId: 'd2', questId: 'Q-001' }));
-      await service.createTrace(makeDto({ traceId: TraceIdUtil.generate('d3'), webhookEventId: 'd3', questId: 'Q-002' }));
+      await service.createTrace(
+        makeDto({
+          traceId: TraceIdUtil.generate('d1'),
+          webhookEventId: 'd1',
+          questId: 'Q-001',
+        }),
+      );
+      await service.createTrace(
+        makeDto({
+          traceId: TraceIdUtil.generate('d2'),
+          webhookEventId: 'd2',
+          questId: 'Q-001',
+        }),
+      );
+      await service.createTrace(
+        makeDto({
+          traceId: TraceIdUtil.generate('d3'),
+          webhookEventId: 'd3',
+          questId: 'Q-002',
+        }),
+      );
 
       const q1Traces = await service.findByQuestId('Q-001');
       expect(q1Traces).toHaveLength(2);

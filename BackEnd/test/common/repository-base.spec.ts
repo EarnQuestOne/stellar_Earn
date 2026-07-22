@@ -1,14 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../../common/enums/role.enum';
-import { createMockUser, createMockRepository } from '../../test/utils/test-helpers';
+import {
+  createMockUser,
+  createMockRepository,
+} from '../../test/utils/test-helpers';
 
 /**
  * Base Repository Test Suite
  * Provides common patterns for testing TypeORM repositories
- * 
+ *
  * Note: In production, use DataSource-based testing with real database
  * or in-memory database like sqlite for integration tests
  */
@@ -106,7 +106,7 @@ describe('Repository Base Tests', () => {
 
       jest.spyOn(repository, 'findOne').mockResolvedValue(user);
 
-      const result = await repository.findOne({
+      await repository.findOne({
         where: { id: user.id },
         relations: ['createdQuests', 'submissions'],
       });
@@ -172,9 +172,7 @@ describe('Repository Base Tests', () => {
     });
 
     it('should delete multiple entities', async () => {
-      jest
-        .spyOn(repository, 'delete')
-        .mockResolvedValue({ affected: 3 });
+      jest.spyOn(repository, 'delete').mockResolvedValue({ affected: 3 });
 
       const result = await repository.delete(['id1', 'id2', 'id3']);
 
@@ -185,8 +183,7 @@ describe('Repository Base Tests', () => {
   describe('QueryBuilder Operations', () => {
     it('should build complex queries', async () => {
       const qb = repository.createQueryBuilder('user');
-      const chainedQb = qb
-        .where('user.role = :role', { role: Role.ADMIN })
+      qb.where('user.role = :role', { role: Role.ADMIN })
         .andWhere('user.isEmailVerified = :verified', { verified: true })
         .orderBy('user.createdAt', 'DESC')
         .take(10);
@@ -199,9 +196,10 @@ describe('Repository Base Tests', () => {
 
     it('should support join operations', async () => {
       const qb = repository.createQueryBuilder('user');
-      const joinedQb = qb
-        .leftJoinAndSelect('user.submissions', 'submissions')
-        .leftJoinAndSelect('user.createdQuests', 'quests');
+      qb.leftJoinAndSelect('user.submissions', 'submissions').leftJoinAndSelect(
+        'user.createdQuests',
+        'quests',
+      );
 
       expect(qb.leftJoinAndSelect).toBeDefined();
     });
@@ -281,9 +279,7 @@ describe('Repository Base Tests', () => {
 
       jest
         .spyOn(repository, 'save')
-        .mockRejectedValue(
-          new Error('Unique constraint violation'),
-        );
+        .mockRejectedValue(new Error('Unique constraint violation'));
 
       await expect(repository.save(duplicateUser)).rejects.toThrow(
         'Unique constraint violation',
@@ -314,7 +310,7 @@ describe('Repository Base Tests', () => {
 
 /**
  * Repository Pattern Best Practices
- * 
+ *
  * 1. Always mock repositories in unit tests
  * 2. Use DataSource-based testing for integration tests
  * 3. Keep repository logic thin - move business logic to services

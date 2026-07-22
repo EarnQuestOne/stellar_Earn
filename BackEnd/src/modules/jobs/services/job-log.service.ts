@@ -96,10 +96,7 @@ export class JobLogService {
   /**
    * Record job completion
    */
-  async recordJobCompletion(
-    jobId: string,
-    result: JobResult,
-  ): Promise<void> {
+  async recordJobCompletion(jobId: string, result: JobResult): Promise<void> {
     await this.jobLogRepository.update(
       { id: jobId },
       {
@@ -269,12 +266,21 @@ export class JobLogService {
   /**
    * Get job statistics by type
    */
-  async getStatisticsByJobType(organizationId?: string): Promise<Record<string, any>> {
-    const qb = this.jobLogRepository.createQueryBuilder('jl')
+  async getStatisticsByJobType(
+    organizationId?: string,
+  ): Promise<Record<string, any>> {
+    const qb = this.jobLogRepository
+      .createQueryBuilder('jl')
       .select('jl.jobType', 'jobType')
       .addSelect('COUNT(*)', 'count')
-      .addSelect('SUM(CASE WHEN jl.status = :completed THEN 1 ELSE 0 END)', 'completedCount')
-      .addSelect('SUM(CASE WHEN jl.status = :failed THEN 1 ELSE 0 END)', 'failedCount')
+      .addSelect(
+        'SUM(CASE WHEN jl.status = :completed THEN 1 ELSE 0 END)',
+        'completedCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN jl.status = :failed THEN 1 ELSE 0 END)',
+        'failedCount',
+      )
       .addSelect('AVG(jl.durationMs)', 'avgDurationMs')
       .setParameter('completed', JobStatus.COMPLETED)
       .setParameter('failed', JobStatus.FAILED);
@@ -294,7 +300,8 @@ export class JobLogService {
         completed: parseInt(stat.completedCount),
         failed: parseInt(stat.failedCount),
         avgDurationMs: Math.round(stat.avgDurationMs || 0),
-        successRate: (parseInt(stat.completedCount) / parseInt(stat.count)) * 100,
+        successRate:
+          (parseInt(stat.completedCount) / parseInt(stat.count)) * 100,
       };
     }
 
@@ -304,8 +311,11 @@ export class JobLogService {
   /**
    * Get job statistics by status
    */
-  async getStatisticsByStatus(organizationId?: string): Promise<Record<JobStatus, number>> {
-    const qb = this.jobLogRepository.createQueryBuilder('jl')
+  async getStatisticsByStatus(
+    organizationId?: string,
+  ): Promise<Record<JobStatus, number>> {
+    const qb = this.jobLogRepository
+      .createQueryBuilder('jl')
       .select('jl.status', 'status')
       .addSelect('COUNT(*)', 'count');
 
@@ -348,7 +358,10 @@ export class JobLogService {
   /**
    * Get slow jobs (exceeding threshold)
    */
-  async getSlowJobs(durationThresholdMs: number = 60000, limit: number = 10): Promise<JobLog[]> {
+  async getSlowJobs(
+    durationThresholdMs: number = 60000,
+    limit: number = 10,
+  ): Promise<JobLog[]> {
     return this.jobLogRepository
       .createQueryBuilder('jl')
       .where('jl.durationMs > :threshold AND jl.status = :completed', {
@@ -364,11 +377,15 @@ export class JobLogService {
    * Get job performance metrics
    */
   async getPerformanceMetrics(organizationId?: string): Promise<any> {
-    const qb = this.jobLogRepository.createQueryBuilder('jl')
+    const qb = this.jobLogRepository
+      .createQueryBuilder('jl')
       .select('AVG(jl.durationMs)', 'avgDurationMs')
       .addSelect('MIN(jl.durationMs)', 'minDurationMs')
       .addSelect('MAX(jl.durationMs)', 'maxDurationMs')
-      .addSelect('PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY jl.durationMs)', 'p95DurationMs')
+      .addSelect(
+        'PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY jl.durationMs)',
+        'p95DurationMs',
+      )
       .where('jl.status = :status', { status: JobStatus.COMPLETED });
 
     if (organizationId) {
@@ -389,7 +406,9 @@ export class JobLogService {
       createdAt: Between(new Date('1970-01-01'), cutoffDate),
     });
 
-    this.logger.log(`Deleted ${result.affected} job logs older than ${olderThanDays} days`);
+    this.logger.log(
+      `Deleted ${result.affected} job logs older than ${olderThanDays} days`,
+    );
     return result.affected || 0;
   }
 
@@ -482,7 +501,7 @@ export class JobLogService {
 
     const csv = [
       headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+      ...rows.map((row) => row.map((cell) => `"${String(cell)}"`).join(',')),
     ].join('\n');
 
     return csv;

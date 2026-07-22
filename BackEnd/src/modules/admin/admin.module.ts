@@ -61,10 +61,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  getUsers(
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
+  getUsers(@Query('page') page = 1, @Query('limit') limit = 20) {
     return this.adminService.getUsers(Number(page), Number(limit));
   }
 

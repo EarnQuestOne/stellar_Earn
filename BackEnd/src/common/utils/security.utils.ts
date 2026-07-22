@@ -48,7 +48,12 @@ const xssPatterns = [
   /<svg\b[^>]*onload/i,
 ];
 
-const traversalPatterns = [/\.\.[/\\]/, /%2e%2e%2f/i, /\/etc\/passwd/i, /\\windows\\system32/i];
+const traversalPatterns = [
+  /\.\.[/\\]/,
+  /%2e%2e%2f/i,
+  /\/etc\/passwd/i,
+  /\\windows\\system32/i,
+];
 const templateInjectionPatterns = [/\$\{.+\}/, /\{\{.+\}\}/, /<%=?[\s\S]+%>/];
 
 const dangerousKeys = new Set([
@@ -139,7 +144,8 @@ export const serializeCookie = (
 export const sha256 = (value: string): string =>
   createHash('sha256').update(value, 'utf8').digest('hex');
 
-export const buildBodyHash = (payload: unknown): string => sha256(safeStringify(payload));
+export const buildBodyHash = (payload: unknown): string =>
+  sha256(safeStringify(payload));
 
 export const safeStringify = (value: unknown): string => {
   try {
@@ -152,6 +158,7 @@ export const safeStringify = (value: unknown): string => {
 export const sanitizePrimitiveString = (value: string): string =>
   value
     .replace(/\0/g, '')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     .replace(/<script\b[^>]*>/gi, '')
     .replace(/<\/script>/gi, '')
@@ -163,7 +170,8 @@ export const sanitizePrimitiveString = (value: string): string =>
     .trim();
 
 export const isDangerousKey = (key: string): boolean =>
-  dangerousKeys.has(key.toLowerCase()) || key.toLowerCase().includes('__proto__');
+  dangerousKeys.has(key.toLowerCase()) ||
+  key.toLowerCase().includes('__proto__');
 
 export const sanitizeObjectDeep = (
   value: unknown,
@@ -183,15 +191,14 @@ export const sanitizeObjectDeep = (
   }
 
   if (value && typeof value === 'object') {
-    return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>(
-      (acc, [key, entry]) => {
-        if (!isDangerousKey(key)) {
-          acc[key] = sanitizeObjectDeep(entry, depth + 1, maxDepth);
-        }
-        return acc;
-      },
-      {},
-    );
+    return Object.entries(value as Record<string, unknown>).reduce<
+      Record<string, unknown>
+    >((acc, [key, entry]) => {
+      if (!isDangerousKey(key)) {
+        acc[key] = sanitizeObjectDeep(entry, depth + 1, maxDepth);
+      }
+      return acc;
+    }, {});
   }
 
   return value;
@@ -236,7 +243,7 @@ export const detectSecurityIssues = (value: unknown): SecurityIssue[] => {
   if (
     typeof value === 'object' &&
     value !== null &&
-    Object.keys(value as Record<string, unknown>).some((key) => isDangerousKey(key))
+    Object.keys(value).some((key) => isDangerousKey(key))
   ) {
     issues.push({
       category: 'prototype_pollution',
@@ -278,7 +285,9 @@ export const verifyCsrfToken = (
   }
 
   const payload = `${issuedAt}.${nonce}`;
-  const expectedSignature = createHmac('sha256', secret).update(payload).digest('hex');
+  const expectedSignature = createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
 
   return safeCompare(signature, expectedSignature);
 };
@@ -349,7 +358,10 @@ export const recordSuspiciousActivity = (options: {
           lastReasons: [],
         };
 
-  const totalIssueScore = options.issues.reduce((sum, issue) => sum + issue.score, 0);
+  const totalIssueScore = options.issues.reduce(
+    (sum, issue) => sum + issue.score,
+    0,
+  );
   entry.score += totalIssueScore;
   entry.expiresAt = currentTime + options.windowMs;
   entry.lastReasons = options.issues.map((issue) => issue.reason).slice(-5);
@@ -413,7 +425,10 @@ const safeCompare = (a: string, b: string): boolean => {
 const cleanupSuspiciousStore = (): void => {
   const currentTime = now();
   for (const [key, entry] of suspiciousActivityStore.entries()) {
-    if (entry.expiresAt <= currentTime && (!entry.blockedUntil || entry.blockedUntil <= currentTime)) {
+    if (
+      entry.expiresAt <= currentTime &&
+      (!entry.blockedUntil || entry.blockedUntil <= currentTime)
+    ) {
       suspiciousActivityStore.delete(key);
     }
   }
@@ -451,7 +466,10 @@ const ipMatchesRule = (ip: string, rule: string): boolean => {
 
 const ipv4ToNumber = (ip: string): number | null => {
   const parts = ip.split('.').map((part) => Number(part));
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
     return null;
   }
 

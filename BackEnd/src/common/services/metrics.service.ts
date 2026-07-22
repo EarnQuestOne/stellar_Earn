@@ -54,9 +54,18 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  registerHistogram(name: string, help: string, buckets = DEFAULT_BUCKETS): void {
+  registerHistogram(
+    name: string,
+    help: string,
+    buckets = DEFAULT_BUCKETS,
+  ): void {
     if (!this.registry.has(name)) {
-      this.registry.set(name, { type: 'histogram', help, buckets, data: new Map() });
+      this.registry.set(name, {
+        type: 'histogram',
+        help,
+        buckets,
+        data: new Map(),
+      });
     }
   }
 
@@ -147,21 +156,23 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
         },
         uptime_seconds: Math.floor(process.uptime()),
       },
-      metrics: {} as Record<string, unknown>,
+      metrics: {},
     };
 
     for (const [name, metric] of this.registry) {
       if (metric.type === 'counter' || metric.type === 'gauge') {
-        (snapshot.metrics as Record<string, unknown>)[name] = Object.fromEntries(
-          metric.values,
-        );
+        (snapshot.metrics as Record<string, unknown>)[name] =
+          Object.fromEntries(metric.values);
       } else if (metric.type === 'histogram') {
         const histData: Record<string, unknown> = {};
         for (const [labelStr, entry] of metric.data) {
           histData[labelStr || '_total'] = {
             count: entry.count,
             sum: entry.sum,
-            avg: entry.count > 0 ? Math.round((entry.sum / entry.count) * 100) / 100 : 0,
+            avg:
+              entry.count > 0
+                ? Math.round((entry.sum / entry.count) * 100) / 100
+                : 0,
           };
         }
         (snapshot.metrics as Record<string, unknown>)[name] = histData;
@@ -182,34 +193,96 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
 
   private registerBuiltins(): void {
     this.registerCounter('http_requests_total', 'Total HTTP requests received');
-    this.registerCounter('http_errors_total', 'Total HTTP responses with 4xx/5xx status');
+    this.registerCounter(
+      'http_errors_total',
+      'Total HTTP responses with 4xx/5xx status',
+    );
     this.registerHistogram(
       'http_request_duration_ms',
       'HTTP request latency in milliseconds',
     );
-    this.registerGauge('process_memory_rss_bytes', 'Process RSS memory in bytes');
+    this.registerGauge(
+      'process_memory_rss_bytes',
+      'Process RSS memory in bytes',
+    );
     this.registerGauge('nodejs_heap_used_bytes', 'Node.js heap used in bytes');
-    this.registerGauge('process_uptime_seconds', 'Application uptime in seconds');
-    this.registerCounter('auth_attempts_total', 'Total authentication attempts');
-    this.registerCounter('auth_failures_total', 'Total failed authentication attempts');
+    this.registerGauge(
+      'nodejs_heap_total_bytes',
+      'Node.js heap total allocated in bytes',
+    );
+    this.registerGauge(
+      'nodejs_external_bytes',
+      'Node.js external memory in bytes',
+    );
+    this.registerGauge(
+      'process_uptime_seconds',
+      'Application uptime in seconds',
+    );
+    this.registerGauge(
+      'nodejs_cpu_user_microseconds',
+      'Cumulative user-mode CPU time in microseconds',
+    );
+    this.registerGauge(
+      'nodejs_cpu_system_microseconds',
+      'Cumulative system-mode CPU time in microseconds',
+    );
+    this.registerCounter(
+      'auth_attempts_total',
+      'Total authentication attempts',
+    );
+    this.registerCounter(
+      'auth_failures_total',
+      'Total failed authentication attempts',
+    );
     this.registerCounter('job_created_total', 'Total background jobs created');
     this.registerCounter('job_failures_total', 'Total background jobs failed');
-    this.registerCounter('job_dead_letter_jobs_total', 'Total background jobs moved to the dead letter queue');
-    this.registerGauge('dead_letter_queue_size', 'Number of jobs currently in the dead letter queue');
-    this.registerHistogram('job_processing_duration_ms', 'Background job processing duration in milliseconds');
-    
+    this.registerCounter(
+      'job_dead_letter_jobs_total',
+      'Total background jobs moved to the dead letter queue',
+    );
+    this.registerCounter(
+      'payout_failures_total',
+      'Total failed payout processing attempts by retry outcome',
+    );
+    this.registerCounter(
+      'payout_dead_letter_total',
+      'Total payouts moved to the dead letter queue',
+    );
+    this.registerGauge(
+      'dead_letter_queue_size',
+      'Number of jobs currently in the dead letter queue',
+    );
+    this.registerHistogram(
+      'job_processing_duration_ms',
+      'Background job processing duration in milliseconds',
+    );
+
     // Smart Contract Invocations & Telemetry
-    this.registerCounter('stellar_contract_invocations_total', 'Total smart contract invocations');
-    this.registerCounter('stellar_contract_invocation_failures_total', 'Total smart contract invocation failures');
-    this.registerHistogram('stellar_contract_invocation_duration_ms', 'Smart contract invocation latency in milliseconds');
+    this.registerCounter(
+      'stellar_contract_invocations_total',
+      'Total smart contract invocations',
+    );
+    this.registerCounter(
+      'stellar_contract_invocation_failures_total',
+      'Total smart contract invocation failures',
+    );
+    this.registerHistogram(
+      'stellar_contract_invocation_duration_ms',
+      'Smart contract invocation latency in milliseconds',
+    );
   }
 
   private startSystemCollection(): void {
     const collect = () => {
       const mem = process.memoryUsage();
+      const cpu = process.cpuUsage();
       this.setGauge('process_memory_rss_bytes', mem.rss);
       this.setGauge('nodejs_heap_used_bytes', mem.heapUsed);
+      this.setGauge('nodejs_heap_total_bytes', mem.heapTotal);
+      this.setGauge('nodejs_external_bytes', mem.external);
       this.setGauge('process_uptime_seconds', Math.floor(process.uptime()));
+      this.setGauge('nodejs_cpu_user_microseconds', cpu.user);
+      this.setGauge('nodejs_cpu_system_microseconds', cpu.system);
     };
 
     collect();

@@ -151,13 +151,13 @@ export class UserAnalyticsService {
       badges: user.badges || [],
       activityHistory,
       // Analytics User entity doesn't have these fields, providing defaults
-      role: 'USER' as any,
+      role: 'USER',
       failedQuests: 0,
       successRate: 0,
       totalEarned: '0',
       bio: undefined,
       avatarUrl: undefined,
-      privacyLevel: 'PUBLIC' as any,
+      privacyLevel: 'PUBLIC',
       socialLinks: {},
     };
   }
@@ -377,7 +377,8 @@ export class UserAnalyticsService {
     const previouslyActiveResult = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :prevStart', { // Using submittedAt
+      .where('submission.submittedAt >= :prevStart', {
+        // Using submittedAt
         prevStart: previousPeriodStart,
       })
       .andWhere('submission.submittedAt < :startDate', { startDate }) // Using submittedAt
@@ -526,7 +527,8 @@ export class UserAnalyticsService {
       .select(`DATE_TRUNC('day', submission.submittedAt)`, 'date') // Using submittedAt
       .addSelect('COUNT(*)', 'count')
       .where('submission.userId = :userId', { userId })
-      .andWhere('submission.submittedAt >= :startDate', { // Using submittedAt
+      .andWhere('submission.submittedAt >= :startDate', {
+        // Using submittedAt
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
       })
       .groupBy(`DATE_TRUNC('day', submission.submittedAt)`) // Using submittedAt

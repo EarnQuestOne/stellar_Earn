@@ -27,7 +27,8 @@ describe('SorobanQuestReaderService', () => {
 
   const mockConfig = {
     get: jest.fn((key: string) => {
-      if (key === 'SOROBAN_RPC_URL') return 'https://soroban-testnet.stellar.org';
+      if (key === 'SOROBAN_RPC_URL')
+        return 'https://soroban-testnet.stellar.org';
       if (key === 'STELLAR_NETWORK') return 'TESTNET';
       return null;
     }),
@@ -64,7 +65,7 @@ describe('SorobanQuestReaderService', () => {
     service = module.get<SorobanQuestReaderService>(SorobanQuestReaderService);
     tracingService = module.get<TracingService>(TracingService);
     metricsService = module.get<MetricsService>(MetricsService);
-    
+
     // Inject mock method onto RPC server instance
     mockRpcServer = (service as any).rpcServer;
     mockRpcServer.simulateTransaction = jest.fn();
@@ -76,7 +77,7 @@ describe('SorobanQuestReaderService', () => {
     const mockRetval = {
       _type: 'struct',
     };
-    
+
     mockRpcServer.simulateTransaction.mockResolvedValue({
       result: {
         retval: mockRetval,
@@ -122,7 +123,7 @@ describe('SorobanQuestReaderService', () => {
         'stellar.contract.id': validContractId,
         'stellar.contract.function': 'get_quest',
         'stellar.contract.quest_id': 'quest_1',
-      })
+      }),
     );
 
     // Verify tracing span attributes updated
@@ -131,13 +132,17 @@ describe('SorobanQuestReaderService', () => {
     // Verify metrics calls
     expect(metricsService.incrementCounter).toHaveBeenCalledWith(
       'stellar_contract_invocations_total',
-      { contract_id: validContractId, function: 'get_quest' }
+      { contract_id: validContractId, function: 'get_quest' },
     );
-    
+
     expect(metricsService.observeHistogram).toHaveBeenCalledWith(
       'stellar_contract_invocation_duration_ms',
       expect.any(Number),
-      { contract_id: validContractId, function: 'get_quest', status: 'success' }
+      {
+        contract_id: validContractId,
+        function: 'get_quest',
+        status: 'success',
+      },
     );
 
     // Restore original helpers
@@ -165,7 +170,11 @@ describe('SorobanQuestReaderService', () => {
     // Verify metrics tracked failure
     expect(metricsService.incrementCounter).toHaveBeenCalledWith(
       'stellar_contract_invocation_failures_total',
-      { contract_id: validContractId, function: 'get_quest', error_type: 'simulation_error' }
+      {
+        contract_id: validContractId,
+        function: 'get_quest',
+        error_type: 'simulation_error',
+      },
     );
 
     StellarSdk.rpc.Api.isSimulationError = originalIsSimulationError;
@@ -185,13 +194,19 @@ describe('SorobanQuestReaderService', () => {
 
     // Verify trace marked as error
     expect(mockSpan.status).toBe('error');
-    expect(mockSpan.attributes['error.message']).toBe('Unexpected simulation response');
+    expect(mockSpan.attributes['error.message']).toBe(
+      'Unexpected simulation response',
+    );
     expect(mockSpan.attributes['error.type']).toBe('SimulationFailure');
 
     // Verify metrics tracked failure
     expect(metricsService.incrementCounter).toHaveBeenCalledWith(
       'stellar_contract_invocation_failures_total',
-      { contract_id: validContractId, function: 'get_quest', error_type: 'simulation_failure' }
+      {
+        contract_id: validContractId,
+        function: 'get_quest',
+        error_type: 'simulation_failure',
+      },
     );
 
     StellarSdk.rpc.Api.isSimulationError = originalIsSimulationError;
@@ -202,7 +217,9 @@ describe('SorobanQuestReaderService', () => {
     const error = new Error('Network timeout');
     mockRpcServer.simulateTransaction.mockRejectedValue(error);
 
-    await expect(service.getQuest(validContractId, 'quest_1')).rejects.toThrow('Network timeout');
+    await expect(service.getQuest(validContractId, 'quest_1')).rejects.toThrow(
+      'Network timeout',
+    );
 
     // Verify trace marked as error
     expect(mockSpan.status).toBe('error');
@@ -212,13 +229,21 @@ describe('SorobanQuestReaderService', () => {
     // Verify metrics tracked failure
     expect(metricsService.incrementCounter).toHaveBeenCalledWith(
       'stellar_contract_invocation_failures_total',
-      { contract_id: validContractId, function: 'get_quest', error_type: 'exception' }
+      {
+        contract_id: validContractId,
+        function: 'get_quest',
+        error_type: 'exception',
+      },
     );
 
     expect(metricsService.observeHistogram).toHaveBeenCalledWith(
       'stellar_contract_invocation_duration_ms',
       expect.any(Number),
-      { contract_id: validContractId, function: 'get_quest', status: 'failure' }
+      {
+        contract_id: validContractId,
+        function: 'get_quest',
+        status: 'failure',
+      },
     );
   });
 });

@@ -1,5 +1,7 @@
+import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { getSiteUrl } from '@/lib/seo';
 import './globals.css';
 
 const geistSans = Geist({
@@ -13,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: 'StellarEarn - Quest-Based Earning Platform',
   description:
     'Complete quests, earn rewards, and build your on-chain reputation with Stellar',

@@ -15,7 +15,6 @@ describe('Rate Limiting (e2e)', () => {
   const adminKeypair = Keypair.random();
   const userKeypair = Keypair.random();
   const secondUserKeypair = Keypair.random();
-  const verifierKeypair = Keypair.random();
 
   const fetchChallenge = async (stellarAddress: string): Promise<string> => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -103,7 +102,7 @@ describe('Rate Limiting (e2e)', () => {
 
     const payload = { stellarAddress: userKeypair.publicKey() };
     const first = await request(server).post('/auth/challenge').send(payload);
-    const second = await request(server).post('/auth/challenge').send(payload);
+    await request(server).post('/auth/challenge').send(payload);
     const blocked = await request(server).post('/auth/challenge').send(payload);
 
     expect(first.headers['x-ratelimit-limit-auth']).toBeDefined();
@@ -273,4 +272,3 @@ describe('Rate Limiting (e2e)', () => {
     });
   });
 });
-

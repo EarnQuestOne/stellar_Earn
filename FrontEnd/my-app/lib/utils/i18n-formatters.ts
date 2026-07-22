@@ -47,13 +47,13 @@ export interface RewardFormatOptions {
 
 /** Preset date format styles mirroring `Intl.DateTimeFormatOptions`. */
 export type DateFormatStyle =
-  | 'short'    // 30/05/2026
-  | 'medium'   // May 30, 2026
-  | 'long'     // Saturday, May 30, 2026
+  | 'short' // 30/05/2026
+  | 'medium' // May 30, 2026
+  | 'long' // Saturday, May 30, 2026
   | 'relative' // "2 days ago", "in 3 hours"
-  | 'time'     // 14:30
+  | 'time' // 14:30
   | 'datetime' // May 30, 2026, 14:30
-  | 'iso';     // 2026-05-30T14:30:00.000Z (locale-independent)
+  | 'iso'; // 2026-05-30T14:30:00.000Z (locale-independent)
 
 export interface DateFormatOptions {
   /** Preset style. Defaults to `'medium'`. */
@@ -187,11 +187,16 @@ function formatRelativeDate(date: Date, locale: string): string {
   const absSec = Math.abs(diffSec);
 
   if (absSec < 60) return formatter.format(diffSec, 'second');
-  if (absSec < 3_600) return formatter.format(Math.round(diffSec / 60), 'minute');
-  if (absSec < 86_400) return formatter.format(Math.round(diffSec / 3_600), 'hour');
-  if (absSec < 604_800) return formatter.format(Math.round(diffSec / 86_400), 'day');
-  if (absSec < 2_592_000) return formatter.format(Math.round(diffSec / 604_800), 'week');
-  if (absSec < 31_536_000) return formatter.format(Math.round(diffSec / 2_592_000), 'month');
+  if (absSec < 3_600)
+    return formatter.format(Math.round(diffSec / 60), 'minute');
+  if (absSec < 86_400)
+    return formatter.format(Math.round(diffSec / 3_600), 'hour');
+  if (absSec < 604_800)
+    return formatter.format(Math.round(diffSec / 86_400), 'day');
+  if (absSec < 2_592_000)
+    return formatter.format(Math.round(diffSec / 604_800), 'week');
+  if (absSec < 31_536_000)
+    return formatter.format(Math.round(diffSec / 2_592_000), 'month');
   return formatter.format(Math.round(diffSec / 31_536_000), 'year');
 }
 
@@ -279,13 +284,7 @@ export function formatReward(
   value: number,
   options: RewardFormatOptions
 ): string {
-  const {
-    type,
-    currency,
-    label,
-    locale,
-    maximumFractionDigits,
-  } = options;
+  const { type, currency, label, locale, maximumFractionDigits } = options;
 
   if (!isFinite(value)) {
     throw new RangeError(
@@ -337,8 +336,7 @@ export function formatReward(
       const formattedNumber = new Intl.NumberFormat(resolvedLocale, {
         maximumFractionDigits: maximumFractionDigits ?? 0,
       }).format(value);
-      const unitLabel =
-        Math.abs(value) === 1 ? label.singular : label.plural;
+      const unitLabel = Math.abs(value) === 1 ? label.singular : label.plural;
       return `${formattedNumber} ${unitLabel}`;
     }
 
@@ -381,9 +379,15 @@ export function formatRewardRange(
     const nfOptions: Intl.NumberFormatOptions =
       options.type === 'currency'
         ? { style: 'currency', currency: options.currency! }
-        : { style: 'percent', maximumFractionDigits: options.maximumFractionDigits ?? 1 };
+        : {
+            style: 'percent',
+            maximumFractionDigits: options.maximumFractionDigits ?? 1,
+          };
 
-    return new Intl.NumberFormat(resolvedLocale, nfOptions).formatRange(min, max);
+    return new Intl.NumberFormat(resolvedLocale, nfOptions).formatRange(
+      min,
+      max
+    );
   }
 
   const formattedMin = formatReward(min, options);
@@ -441,9 +445,8 @@ export function formatCompactReward(
 
   // Points or custom
   const label =
-    options.label ?? (options.type === 'points'
-      ? { singular: 'pt', plural: 'pts' }
-      : null);
+    options.label ??
+    (options.type === 'points' ? { singular: 'pt', plural: 'pts' } : null);
 
   if (!label) {
     throw new TypeError(

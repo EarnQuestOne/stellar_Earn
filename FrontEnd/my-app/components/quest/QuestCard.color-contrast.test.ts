@@ -67,11 +67,11 @@ describe('QuestCard – dark mode color contrast (FE-074)', () => {
 
   describe('category badges – dark mode overrides', () => {
     const categories = [
-      { name: 'security',  bg: '#2e1065', text: '#c4b5fd' },
-      { name: 'frontend',  bg: '#1e3a5f', text: '#93c5fd' },
-      { name: 'backend',   bg: '#431407', text: '#fdba74' },
-      { name: 'docs',      bg: '#042f2e', text: '#5eead4' },
-      { name: 'testing',   bg: '#422006', text: '#fde047' },
+      { name: 'security', bg: '#2e1065', text: '#c4b5fd' },
+      { name: 'frontend', bg: '#1e3a5f', text: '#93c5fd' },
+      { name: 'backend', bg: '#431407', text: '#fdba74' },
+      { name: 'docs', bg: '#042f2e', text: '#5eead4' },
+      { name: 'testing', bg: '#422006', text: '#fde047' },
       { name: 'community', bg: '#500724', text: '#f9a8d4' },
     ];
 
@@ -86,9 +86,9 @@ describe('QuestCard – dark mode color contrast (FE-074)', () => {
     // After FE-074 fix: easy/medium use dark text for WCAG compliance.
     // Hard retains white text (ratio 3.76:1 ≥ 3:1 AA large).
     const difficulties = [
-      { name: 'easy',   bg: '#22c55e', text: '#14532d' }, // dark green text
+      { name: 'easy', bg: '#22c55e', text: '#14532d' }, // dark green text
       { name: 'medium', bg: '#f97316', text: '#431407' }, // dark brown text
-      { name: 'hard',   bg: '#ef4444', text: '#ffffff' }, // white text
+      { name: 'hard', bg: '#ef4444', text: '#ffffff' }, // white text
     ];
 
     difficulties.forEach(({ name, bg, text }) => {
@@ -104,7 +104,9 @@ describe('QuestCard – dark mode color contrast (FE-074)', () => {
     });
 
     it('primary on surface has ratio ≥ 3', () => {
-      expect(contrastRatio(DARK.primary, DARK.surface)).toBeGreaterThanOrEqual(WCAG_AA_LARGE);
+      expect(contrastRatio(DARK.primary, DARK.surface)).toBeGreaterThanOrEqual(
+        WCAG_AA_LARGE
+      );
     });
   });
 });

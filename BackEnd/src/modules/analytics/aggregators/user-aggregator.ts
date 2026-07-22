@@ -4,7 +4,11 @@ import { Repository } from 'typeorm';
 import { User as AnalyticsUser } from '../entities/user.entity';
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
-import { BaseAnalyticsAggregator, AggregationOptions, AggregationResult } from './base-aggregator';
+import {
+  BaseAnalyticsAggregator,
+  AggregationOptions,
+  AggregationResult,
+} from './base-aggregator';
 import { SnapshotType } from '../entities/analytics-snapshot.entity';
 
 export interface UserMetrics {
@@ -41,7 +45,9 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
     );
   }
 
-  async aggregateUserMetrics(options: AggregationOptions): Promise<AggregationResult[]> {
+  async aggregateUserMetrics(
+    options: AggregationOptions,
+  ): Promise<AggregationResult[]> {
     const dateRanges = this.generateDateRanges(
       options.startDate,
       options.endDate,
@@ -123,7 +129,9 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate user metrics for a time period
    */
-  private async calculateUserMetrics(options: AggregationOptions): Promise<UserMetrics> {
+  private async calculateUserMetrics(
+    options: AggregationOptions,
+  ): Promise<UserMetrics> {
     const conditions = this.getCommonConditions(options);
 
     // Get user statistics
@@ -150,8 +158,10 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
     ]);
 
     // Calculate derived metrics
-    const averageSubmissionsPerUser = activeUsers > 0 ? totalSubmissions / activeUsers : 0;
-    const approvalRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
+    const averageSubmissionsPerUser =
+      activeUsers > 0 ? totalSubmissions / activeUsers : 0;
+    const approvalRate =
+      totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
     const retentionRate = await this.calculateRetentionRate(options);
     const averageXpEarned = await this.calculateAverageXpEarned(options);
 
@@ -206,7 +216,8 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
     ]);
 
     // Calculate derived metrics
-    const approvalRate = totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
+    const approvalRate =
+      totalSubmissions > 0 ? (approvedSubmissions / totalSubmissions) * 100 : 0;
 
     return {
       totalUsers: 1,
@@ -226,7 +237,9 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Get count of active users (users who made submissions)
    */
-  private async getActiveUsersCount(options: AggregationOptions): Promise<number> {
+  private async getActiveUsersCount(
+    options: AggregationOptions,
+  ): Promise<number> {
     const result = await this.submissionRepository
       .createQueryBuilder('submission')
       .select('COUNT(DISTINCT submission.userId)', 'count')
@@ -259,7 +272,10 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate total earned by a specific user
    */
-  private async getTotalEarnedByUser(userId: string, options: AggregationOptions): Promise<string> {
+  private async getTotalEarnedByUser(
+    userId: string,
+    options: AggregationOptions,
+  ): Promise<string> {
     const result = await this.payoutRepository
       .createQueryBuilder('payout')
       .select('SUM(CAST(payout.amount AS DECIMAL))', 'total')
@@ -278,15 +294,25 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
    * Calculate user retention rate
    * This is a simplified calculation - in a real system, you'd track user activity over multiple periods
    */
-  private async calculateRetentionRate(options: AggregationOptions): Promise<number> {
+  private async calculateRetentionRate(
+    options: AggregationOptions,
+  ): Promise<number> {
     // For simplicity, calculate retention as the ratio of users who were active
     // in the previous period and are still active in the current period
     const previousPeriodEnd = new Date(options.startDate);
     const previousPeriodStart = new Date(previousPeriodEnd);
-    previousPeriodStart.setDate(previousPeriodStart.getDate() - (options.endDate.getTime() - options.startDate.getTime()) / (1000 * 60 * 60 * 24));
+    previousPeriodStart.setDate(
+      previousPeriodStart.getDate() -
+        (options.endDate.getTime() - options.startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+    );
 
     const [previousActiveUsers, currentActiveUsers] = await Promise.all([
-      this.getActiveUsersCount({ ...options, startDate: previousPeriodStart, endDate: previousPeriodEnd }),
+      this.getActiveUsersCount({
+        ...options,
+        startDate: previousPeriodStart,
+        endDate: previousPeriodEnd,
+      }),
       this.getActiveUsersCount(options),
     ]);
 
@@ -298,7 +324,9 @@ export class UserAnalyticsAggregator extends BaseAnalyticsAggregator {
   /**
    * Calculate average XP earned by users
    */
-  private async calculateAverageXpEarned(options: AggregationOptions): Promise<number> {
+  private async calculateAverageXpEarned(
+    options: AggregationOptions,
+  ): Promise<number> {
     const users = await this.userRepository.find({
       where: this.getCommonConditions(options),
       select: ['totalXp'],

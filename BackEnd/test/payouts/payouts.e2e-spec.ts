@@ -10,6 +10,7 @@ import {
   PayoutStatus,
   PayoutType,
 } from '#src/modules/payouts/entities/payout.entity';
+import { IdempotencyKey } from '#src/modules/payouts/entities/idempotency-key.entity';
 
 describe('Payouts (e2e)', () => {
   let app: INestApplication<App>;
@@ -80,6 +81,8 @@ describe('Payouts (e2e)', () => {
     if (dataSource && dataSource.isInitialized) {
       const payoutRepository = dataSource.getRepository(Payout);
       await payoutRepository.delete({ stellarAddress });
+      const idempotencyRepository = dataSource.getRepository(IdempotencyKey);
+      await idempotencyRepository.delete({});
     }
     // Wait for any pending async tasks to finish
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -332,6 +335,121 @@ describe('Payouts (e2e)', () => {
     });
   });
 
+  describe('Idempotency', () => {
+    let idempotentSubmissionId: string;
+
+    beforeAll(async () => {
+      const payoutRepository = dataSource.getRepository(Payout);
+      idempotentSubmissionId = '550e8400-e29b-41d4-a716-446655440010';
+      const claimablePayout = payoutRepository.create({
+        stellarAddress,
+        amount: 7.5,
+        asset: 'XLM',
+        type: PayoutType.QUEST_REWARD,
+        status: PayoutStatus.PENDING,
+        submissionId: idempotentSubmissionId,
+      });
+      await payoutRepository.save(claimablePayout);
+    });
+
+    it('should return cached response on duplicate Idempotency-Key', async () => {
+      const idempotencyKey = 'test-idemp-key-001';
+
+      const firstResponse = await request(app.getHttpServer())
+        .post('/payouts/claim')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', idempotencyKey)
+        .send({
+          submissionId: idempotentSubmissionId,
+          stellarAddress,
+        });
+
+      expect(firstResponse.status).toBe(200);
+      expect(firstResponse.body.status).toBe('processing');
+      expect(firstResponse.body.claimedAt).toBeTruthy();
+
+      const secondResponse = await request(app.getHttpServer())
+        .post('/payouts/claim')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', idempotencyKey)
+        .send({
+          submissionId: idempotentSubmissionId,
+          stellarAddress,
+        });
+
+      expect(secondResponse.status).toBe(200);
+      expect(secondResponse.headers['x-idempotency-replay']).toBe('true');
+      expect(secondResponse.body).toEqual(firstResponse.body);
+    });
+
+    it('should return 409 Conflict when idempotency key used with different body', async () => {
+      const idempotencyKey = 'test-idemp-key-conflict';
+
+      await request(app.getHttpServer())
+        .post('/payouts/claim')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', idempotencyKey)
+        .send({
+          submissionId: idempotentSubmissionId,
+          stellarAddress,
+        });
+
+      const response = await request(app.getHttpServer())
+        .post('/payouts/claim')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', idempotencyKey)
+        .send({
+          submissionId: idempotentSubmissionId,
+          stellarAddress: Keypair.random().publicKey(),
+        });
+
+      expect(response.status).toBe(409);
+    });
+
+    it('should return X-Idempotency-Key header on first claim', async () => {
+      const newKeypair = Keypair.random();
+      const newAddress = newKeypair.publicKey();
+
+      const challengeResponse = await request(app.getHttpServer())
+        .post('/auth/challenge')
+        .send({ stellarAddress: newAddress });
+
+      const challenge = challengeResponse.body.challenge;
+      const signature = newKeypair
+        .sign(Buffer.from(challenge, 'utf8'))
+        .toString('base64');
+
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ stellarAddress: newAddress, signature, challenge });
+
+      const newToken = loginResponse.body.accessToken;
+      const newSubmissionId = '550e8400-e29b-41d4-a716-446655440011';
+
+      const payoutRepository = dataSource.getRepository(Payout);
+      const freshPayout = payoutRepository.create({
+        stellarAddress: newAddress,
+        amount: 3.0,
+        asset: 'XLM',
+        type: PayoutType.QUEST_REWARD,
+        status: PayoutStatus.PENDING,
+        submissionId: newSubmissionId,
+      });
+      await payoutRepository.save(freshPayout);
+
+      const response = await request(app.getHttpServer())
+        .post('/payouts/claim')
+        .set('Authorization', `Bearer ${newToken}`)
+        .send({
+          submissionId: newSubmissionId,
+          stellarAddress: newAddress,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.headers['x-idempotency-key']).toBeDefined();
+    });
+  });
+
   describe('Fraud Risk Assessment (Admin)', () => {
     let adminAccessToken: string;
 
@@ -373,8 +491,9 @@ describe('Payouts (e2e)', () => {
       });
 
       it('should return 401 for unauthorized requests', async () => {
-        const response = await request(app.getHttpServer())
-          .get(`/payouts/fraud-risk/${testPayoutId}`);
+        const response = await request(app.getHttpServer()).get(
+          `/payouts/fraud-risk/${testPayoutId}`,
+        );
 
         expect(response.status).toBe(401);
       });
@@ -411,8 +530,9 @@ describe('Payouts (e2e)', () => {
       });
 
       it('should return 401 for unauthorized requests', async () => {
-        const response = await request(app.getHttpServer())
-          .get('/payouts/fraud-risk/batch');
+        const response = await request(app.getHttpServer()).get(
+          '/payouts/fraud-risk/batch',
+        );
 
         expect(response.status).toBe(401);
       });
@@ -441,8 +561,9 @@ describe('Payouts (e2e)', () => {
       });
 
       it('should return 401 for unauthorized requests', async () => {
-        const response = await request(app.getHttpServer())
-          .get('/payouts/fraud-risk/statistics');
+        const response = await request(app.getHttpServer()).get(
+          '/payouts/fraud-risk/statistics',
+        );
 
         expect(response.status).toBe(401);
       });

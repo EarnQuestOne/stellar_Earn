@@ -1,4 +1,4 @@
-import { SetMetadata, applyDecorators } from '@nestjs/common';
+import { SetMetadata } from '@nestjs/common';
 
 export const CACHE_KEY_METADATA = 'cache:key';
 export const CACHE_TTL_METADATA = 'cache:ttl';
@@ -34,11 +34,15 @@ export interface CacheEvictOptions {
  * async findAll(): Promise<User[]> { ... }
  */
 export function Cacheable(options: CacheableOptions = {}): MethodDecorator {
-  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (
+    target: object,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: unknown[]) {
-      const cacheService = (this as any).cacheService;
+    descriptor.value = function (...args: unknown[]) {
+      const cacheService = this.cacheService;
       if (!cacheService) {
         // No cache service available; call through
         return originalMethod.apply(this, args);
@@ -47,7 +51,13 @@ export function Cacheable(options: CacheableOptions = {}): MethodDecorator {
       const key =
         options.key ?? `${String(propertyKey)}:${JSON.stringify(args)}`;
 
-      return cacheService.wrap(key, () => originalMethod.apply(this, args), options.ttl, options.prefix, options.tags);
+      return cacheService.wrap(
+        key,
+        () => originalMethod.apply(this, args),
+        options.ttl,
+        options.prefix,
+        options.tags,
+      );
     };
 
     return descriptor;
@@ -62,13 +72,17 @@ export function Cacheable(options: CacheableOptions = {}): MethodDecorator {
  * async update(id: number, dto: UpdateUserDto): Promise<User> { ... }
  */
 export function CacheEvict(options: CacheEvictOptions): MethodDecorator {
-  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (
+    target: object,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args);
 
-      const cacheService = (this as any).cacheService;
+      const cacheService = this.cacheService;
       if (!cacheService) return result;
 
       if (options.prefix) {
@@ -76,7 +90,9 @@ export function CacheEvict(options: CacheEvictOptions): MethodDecorator {
       } else if (options.key) {
         await cacheService.delete(options.key);
       } else if (options.tags) {
-        await Promise.all(options.tags.map(tag => cacheService.invalidateByTag(tag)));
+        await Promise.all(
+          options.tags.map((tag) => cacheService.invalidateByTag(tag)),
+        );
       }
 
       return result;
@@ -91,8 +107,10 @@ export function CacheEvict(options: CacheEvictOptions): MethodDecorator {
  */
 export const CacheKey = (key: string) => SetMetadata(CACHE_KEY_METADATA, key);
 export const CacheTTL = (ttl: number) => SetMetadata(CACHE_TTL_METADATA, ttl);
-export const CachePrefix = (prefix: string) => SetMetadata(CACHE_PREFIX_METADATA, prefix);
-export const CacheTags = (tags: string[]) => SetMetadata(CACHE_TAGS_METADATA, tags);
+export const CachePrefix = (prefix: string) =>
+  SetMetadata(CACHE_PREFIX_METADATA, prefix);
+export const CacheTags = (tags: string[]) =>
+  SetMetadata(CACHE_TAGS_METADATA, tags);
 
 /**
  * Combined decorator for controller routes.

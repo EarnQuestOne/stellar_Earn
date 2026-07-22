@@ -29,7 +29,9 @@ describe('EmailTemplateEngine', () => {
 
   describe('render', () => {
     it('should render welcome template with username', () => {
-      const result = engine.render(EmailTemplate.WELCOME, { username: 'Alice' });
+      const result = engine.render(EmailTemplate.WELCOME, {
+        username: 'Alice',
+      });
 
       expect(result.subject).toContain('Welcome');
       expect(result.html).toContain('Alice');

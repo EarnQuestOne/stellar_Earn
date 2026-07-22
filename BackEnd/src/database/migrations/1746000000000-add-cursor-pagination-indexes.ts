@@ -14,9 +14,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Safe to run on live data — CREATE INDEX CONCURRENTLY does not lock the
  * table. Rollback drops all indexes added by this migration.
  */
-export class AddCursorPaginationIndexes1746000000000
-  implements MigrationInterface
-{
+export class AddCursorPaginationIndexes1746000000000 implements MigrationInterface {
   name = 'AddCursorPaginationIndexes1746000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -151,32 +149,70 @@ export class AddCursorPaginationIndexes1746000000000
     // Drop in reverse order
 
     // notifications
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_read_flag"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_unread"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_created_at_id"`);
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_read_flag"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_unread"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_notifications_user_created_at_id"`,
+    );
 
     // payouts
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_retry_scheduled"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_address_status_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_address_created_at_id"`);
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_retry_scheduled"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_address_status_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_payouts_address_created_at_id"`,
+    );
 
     // users
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_users_username_lower"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_users_role_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_users_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_users_xp_id"`);
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_users_username_lower"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_users_role_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_users_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_users_xp_id"`,
+    );
 
     // submissions
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_user_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_user_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_status_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_created_at_id"`);
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_user_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_user_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_status_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_submissions_quest_created_at_id"`,
+    );
 
     // quests
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_reward_amount_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_created_by_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_status_created_at_id"`);
-    await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_created_at_id"`);
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_reward_amount_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_created_by_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_status_created_at_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX CONCURRENTLY IF EXISTS "idx_quests_created_at_id"`,
+    );
   }
 }

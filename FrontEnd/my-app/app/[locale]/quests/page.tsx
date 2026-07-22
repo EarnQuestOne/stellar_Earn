@@ -1,22 +1,21 @@
 'use client';
 
-import { useState, Suspense, useMemo, useCallback } from 'react';
+import { useState, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SearchBar } from '@/components/ui/SearchBar';
-import { FilterPanel } from '@/components/quest/FilterPanel';
+import { QuestListFilters } from '@/components/quest/QuestListFilters';
 import { QuestList } from '@/components/quest/QuestList';
 import { OfflineIndicator } from '@/components/quest/OfflineIndicator';
 import { Pagination } from '@/components/ui/Pagination';
-import { mockQuests } from '@/lib/mock/quests';
 import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
 import type { Quest } from '@/lib/types/quest';
 import LazyLoad from '@/components/ui/LazyLoad';
 import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
+import { useQuests } from '@/lib/hooks/useQuests';
 
 function QuestsContent() {
   const searchParams = useSearchParams();
@@ -24,7 +23,7 @@ function QuestsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const { isOnline } = useOnlineStatus();
 
-  // Get filters from URL params
+  // Derive filter state from URL search params
   const statusParam = searchParams.get('status');
   const statusFilter =
     statusParam &&
@@ -42,93 +41,85 @@ function QuestsContent() {
   const categoryParam = searchParams.get('category');
   const categoryFilter = categoryParam || undefined;
 
-  // Get page from URL params
+  const minRewardParam = searchParams.get('minReward');
+  const minReward = minRewardParam ? Number(minRewardParam) : undefined;
+
+  const maxRewardParam = searchParams.get('maxReward');
+  const maxReward = maxRewardParam ? Number(maxRewardParam) : undefined;
+
+  const searchParam = searchParams.get('search');
   const pageParam = searchParams.get('page');
   const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
   const limit = 12;
 
-  // Filter quests based on all criteria
-  const filteredQuests = useMemo(() => {
-    let filtered = [...mockQuests];
+  // Wire useQuests hook — filters and pagination are passed to the API
+  const { quests, isLoading, error, pagination, refetch } = useQuests(
+    {
+      status: statusFilter,
+      difficulty: difficultyFilter,
+      category: categoryFilter,
+      search: searchParam ?? searchQuery ?? undefined,
+      minReward,
+      maxReward,
+    },
+    { page: currentPage, limit }
+  );
 
-    // Filter by status
-    if (statusFilter) {
-      filtered = filtered.filter((q) => q.status === statusFilter);
-    }
-
-    // Filter by difficulty
-    if (difficultyFilter) {
-      filtered = filtered.filter((q) => q.difficulty === difficultyFilter);
-    }
-
-    // Filter by category
-    if (categoryFilter) {
-      filtered = filtered.filter((q) => q.category === categoryFilter);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (q) =>
-          q.title.toLowerCase().includes(query) ||
-          q.description.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [statusFilter, difficultyFilter, categoryFilter, searchQuery]);
-
-  // Paginate results
-  const paginatedQuests = useMemo(() => {
-    const start = (currentPage - 1) * limit;
-    const end = start + limit;
-    return filteredQuests.slice(start, end);
-  }, [filteredQuests, currentPage, limit]);
-
-  const totalPages = Math.ceil(filteredQuests.length / limit);
-  const hasMore = currentPage < totalPages;
+  const totalPages = pagination?.totalPages ?? 1;
+  const hasMore = pagination?.hasMore ?? false;
   const hasActiveFilters = !!(
     statusFilter ||
     difficultyFilter ||
     categoryFilter ||
-    searchQuery
+    searchQuery ||
+    minReward !== undefined ||
+    maxReward !== undefined
   );
 
-  // Update URL when filters change
+  // Push filter/pagination updates to URL so state persists across navigation
   const updateURL = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
       Object.entries(updates).forEach(([key, value]) => {
-        if (value) {
+        if (value !== null && value !== '') {
           params.set(key, value);
         } else {
           params.delete(key);
         }
       });
-      params.set('page', '1'); // Reset to first page when filters change
-      router.push(`/quests?${params.toString()}`);
+      params.set('page', '1');
+      router.push(`?${params.toString()}`);
     },
     [router, searchParams]
   );
 
   const handleStatusChange = useCallback(
     (status: QuestStatus | undefined) => {
-      updateURL({ status: status || null });
+      updateURL({ status: status ?? null });
     },
     [updateURL]
   );
 
   const handleDifficultyChange = useCallback(
     (difficulty: QuestDifficulty | undefined) => {
-      updateURL({ difficulty: difficulty || null });
+      updateURL({ difficulty: difficulty ?? null });
     },
     [updateURL]
   );
 
   const handleCategoryChange = useCallback(
     (category: string | undefined) => {
-      updateURL({ category: category || null });
+      updateURL({ category: category ?? null });
+    },
+    [updateURL]
+  );
+
+  const handleRewardRangeChange = useCallback(
+    (min: number | undefined, max: number | undefined) => {
+      updateURL({
+        minReward: min !== undefined ? String(min) : null,
+        maxReward: max !== undefined ? String(max) : null,
+      });
     },
     [updateURL]
   );
@@ -143,15 +134,14 @@ function QuestsContent() {
 
   const handleClearFilters = useCallback(() => {
     setSearchQuery('');
-    router.push('/quests');
+    router.push('?');
   }, [router]);
 
-  // Update URL when page changes
   const handlePageChange = useCallback(
     (page: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
-      router.push(`/quests?${params.toString()}`);
+      router.push(`?${params.toString()}`);
     },
     [router, searchParams]
   );
@@ -163,23 +153,15 @@ function QuestsContent() {
     [router]
   );
 
-  // Retry handler for reloading quests when coming back online
-  const handleRetry = useCallback(async () => {
-    // In a real app, this would refetch from the API
-    // For now, just a no-op since we're using mock data
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }, []);
-
   return (
     <AppLayout>
-      {/* Offline Indicator */}
       <OfflineIndicator
         isOffline={!isOnline}
         message="You appear to be offline. Quest data may not load properly."
       />
 
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header content */}
+        {/* Header */}
         <div
           className="mb-6 flex items-center justify-between lg:mb-8"
           data-onboarding="quest-board-header"
@@ -194,13 +176,14 @@ function QuestsContent() {
           </div>
           <Link
             href="/quests/create"
-            className="flex items-center gap-2 rounded-lg bg-[#089ec3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:bg-[#089ec3] dark:hover:bg-[#0ab8d4]"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary dark:bg-primary dark:hover:bg-primary"
           >
             <svg
               className="h-5 w-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -213,26 +196,29 @@ function QuestsContent() {
           </Link>
         </div>
 
-        {/* Search and Filter Section */}
+        {/* Search + Filters */}
         <ComponentErrorBoundary componentName="SearchAndFilters">
           <div
             className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
             data-onboarding="quest-board-filters"
           >
-            <div className=" lg:max-w-md">
+            <div className="lg:max-w-md">
               <SearchBar
                 onSearch={handleSearch}
                 placeholder="Search quests..."
                 defaultValue={searchQuery}
               />
             </div>
-            <FilterPanel
+            <QuestListFilters
               selectedStatus={statusFilter}
               selectedDifficulty={difficultyFilter}
               selectedCategory={categoryFilter}
+              minReward={minReward}
+              maxReward={maxReward}
               onStatusChange={handleStatusChange}
               onDifficultyChange={handleDifficultyChange}
               onCategoryChange={handleCategoryChange}
+              onRewardRangeChange={handleRewardRangeChange}
               onClearFilters={handleClearFilters}
             />
           </div>
@@ -243,26 +229,26 @@ function QuestsContent() {
           <div className="mb-6" data-onboarding="quest-board-list">
             <LazyLoad>
               <QuestList
-                quests={paginatedQuests as unknown as Quest[]}
-                isLoading={false}
-                error={null}
+                quests={quests as Quest[]}
+                isLoading={isLoading}
+                error={error}
                 onQuestClick={handleQuestClick}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={handleClearFilters}
-                onRetry={handleRetry}
+                onRetry={refetch}
               />
             </LazyLoad>
           </div>
         </ComponentErrorBoundary>
 
-        {/* Pagination logic */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             hasMore={hasMore}
             onPageChange={handlePageChange}
-            isLoading={false}
+            isLoading={isLoading}
           />
         )}
       </div>

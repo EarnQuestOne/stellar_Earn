@@ -1,10 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { AnalyticsAggregatePayload, MetricsCollectPayload, JobResult } from '../job.types';
+import {
+  AnalyticsAggregatePayload,
+  MetricsCollectPayload,
+  JobResult,
+} from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 import { AnalyticsAggregationService } from '../../analytics/services/aggregation.service';
-import { AnalyticsReportService, ReportGenerationOptions } from '../../analytics/services/report.service';
-import { ReportType, ReportFormat } from '../../analytics/entities/analytics-report.entity';
+import {
+  AnalyticsReportService,
+  ReportGenerationOptions,
+} from '../../analytics/services/report.service';
 import { SnapshotType } from '../../analytics/entities/analytics-snapshot.entity';
 
 /**
@@ -24,8 +30,16 @@ export class AnalyticsProcessor {
   /**
    * Process analytics aggregation job
    */
-  async processAggregation(job: Job<AnalyticsAggregatePayload>): Promise<JobResult> {
-    const { organizationId, aggregationType, metricsType, dateRange, specificIds } = job.data;
+  async processAggregation(
+    job: Job<AnalyticsAggregatePayload>,
+  ): Promise<JobResult> {
+    const {
+      organizationId,
+      aggregationType,
+      metricsType,
+      dateRange,
+      specificIds,
+    } = job.data;
 
     try {
       await job.updateProgress(10);
@@ -48,10 +62,10 @@ export class AnalyticsProcessor {
       // Determine date range
       let startDate: Date;
       let endDate: Date;
-      
+
       if (dateRange) {
-        startDate = new Date(dateRange.startDate || (dateRange as any).start);
-        endDate = new Date(dateRange.endDate || (dateRange as any).end);
+        startDate = new Date(dateRange.startDate || dateRange.start);
+        endDate = new Date(dateRange.endDate || dateRange.end);
       } else {
         const defaultRange = this.getDefaultDateRange(aggregationType);
         startDate = defaultRange.start;
@@ -61,7 +75,7 @@ export class AnalyticsProcessor {
       const aggregationOptions = {
         startDate,
         endDate,
-        granularity: aggregationType as 'hourly' | 'daily' | 'weekly' | 'monthly',
+        granularity: aggregationType,
         organizationId,
       };
 
@@ -71,15 +85,19 @@ export class AnalyticsProcessor {
       let skipped = 0;
 
       // Determine which types to aggregate
-      const typesToAggregate = metricsType && metricsType.length > 0 ?
-        metricsType.map(type => this.mapMetricTypeToSnapshotType(type)).filter((t): t is SnapshotType => t !== null && t !== undefined) :
-        [SnapshotType.PLATFORM, SnapshotType.QUEST, SnapshotType.USER];
+      const typesToAggregate =
+        metricsType && metricsType.length > 0
+          ? metricsType
+              .map((type) => this.mapMetricTypeToSnapshotType(type))
+              .filter((t): t is SnapshotType => t !== null && t !== undefined)
+          : [SnapshotType.PLATFORM, SnapshotType.QUEST, SnapshotType.USER];
 
       // Run batch aggregation
-      const batchResult = await this.analyticsAggregationService.runBatchAggregation({
-        ...aggregationOptions,
-        types: typesToAggregate,
-      });
+      const batchResult =
+        await this.analyticsAggregationService.runBatchAggregation({
+          ...aggregationOptions,
+          types: typesToAggregate,
+        });
 
       processed = batchResult.processed;
       skipped = batchResult.skipped;
@@ -90,16 +108,18 @@ export class AnalyticsProcessor {
       if (specificIds && specificIds.length > 0) {
         for (const id of specificIds) {
           if (id.startsWith('quest_')) {
-            const questProcessed = await this.analyticsAggregationService.aggregateQuestData(
-              id.replace('quest_', ''),
-              aggregationOptions,
-            );
+            const questProcessed =
+              await this.analyticsAggregationService.aggregateQuestData(
+                id.replace('quest_', ''),
+                aggregationOptions,
+              );
             processed += questProcessed;
           } else if (id.startsWith('user_')) {
-            const userProcessed = await this.analyticsAggregationService.aggregateUserData(
-              id.replace('user_', ''),
-              aggregationOptions,
-            );
+            const userProcessed =
+              await this.analyticsAggregationService.aggregateUserData(
+                id.replace('user_', ''),
+                aggregationOptions,
+              );
             processed += userProcessed;
           }
         }
@@ -140,15 +160,25 @@ export class AnalyticsProcessor {
    * Process report generation job
    */
   async processReportGeneration(job: Job<any>): Promise<JobResult> {
-    const { reportType, reportFormat, parameters, filters, startDate, endDate, generatedById } = job.data;
+    const {
+      reportType,
+      reportFormat,
+      parameters,
+      filters,
+      startDate,
+      endDate,
+      generatedById,
+    } = job.data;
 
     try {
       await job.updateProgress(10);
-      this.logger.log(`Processing report generation job ${job.id}: type=${reportType}`);
+      this.logger.log(
+        `Processing report generation job ${job.id}: type=${reportType}`,
+      );
 
       // Get user (simplified - in real implementation, fetch from database)
-      const generatedBy = { 
-        id: generatedById, 
+      const generatedBy = {
+        id: generatedById,
         email: 'system@stellarearn.com',
         stellarAddress: null,
         username: 'System',
@@ -171,7 +201,8 @@ export class AnalyticsProcessor {
 
       await job.updateProgress(50);
 
-      const report = await this.analyticsReportService.generateReport(reportOptions);
+      const report =
+        await this.analyticsReportService.generateReport(reportOptions);
 
       await job.updateProgress(100);
 
@@ -190,7 +221,10 @@ export class AnalyticsProcessor {
       this.logger.log(`Report generation completed: ${report.id}`);
       return result;
     } catch (error) {
-      this.logger.error(`Error generating report: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error generating report: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

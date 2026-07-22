@@ -72,6 +72,7 @@ fn test_partial_claim_support() {
     let token_contract = token_contract_obj.address();
     let token_admin_client = StellarAssetClient::new(&env, &token_contract);
     let token_client = TokenClient::new(&env, &token_contract);
+    token_admin_client.mint(&contract_id, &1000);
 
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);

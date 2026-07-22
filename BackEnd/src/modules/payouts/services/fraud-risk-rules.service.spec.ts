@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FraudRiskRulesService } from './fraud-risk-rules.service';
-import { Payout, PayoutStatus } from '../entities/payout.entity';
+import { Payout } from '../entities/payout.entity';
 
 describe('FraudRiskRulesService', () => {
   let service: FraudRiskRulesService;
-  let repository: Repository<Payout>;
+  let _repository: Repository<Payout>;
 
   const mockPayoutRepository = {
     findOne: jest.fn(),
@@ -27,7 +27,7 @@ describe('FraudRiskRulesService', () => {
     }).compile();
 
     service = module.get<FraudRiskRulesService>(FraudRiskRulesService);
-    repository = module.get<Repository<Payout>>(getRepositoryToken(Payout));
+    _repository = module.get<Repository<Payout>>(getRepositoryToken(Payout));
   });
 
   it('should be defined', () => {
@@ -90,7 +90,9 @@ describe('FraudRiskRulesService', () => {
 
       const result = await service.analyzePayout('test-id');
 
-      expect(result.riskFactors).toContain('Multiple payouts to same address in 24 hours');
+      expect(result.riskFactors).toContain(
+        'Multiple payouts to same address in 24 hours',
+      );
     });
 
     it('should throw error if payout not found', async () => {
@@ -110,8 +112,8 @@ describe('FraudRiskRulesService', () => {
       ];
 
       mockPayoutRepository.find.mockResolvedValue(mockPayouts);
-      mockPayoutRepository.findOne.mockImplementation((id) => 
-        Promise.resolve(mockPayouts.find((p: any) => p.id === id))
+      mockPayoutRepository.findOne.mockImplementation((id) =>
+        Promise.resolve(mockPayouts.find((p: any) => p.id === id)),
       );
 
       const result = await service.analyzeRecentPayouts(24);
@@ -162,12 +164,13 @@ describe('FraudRiskRulesService', () => {
   describe('getRiskStatistics', () => {
     it('should return risk statistics', async () => {
       mockPayoutRepository.count.mockResolvedValue(100);
-      
+
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(10),
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn()
+        getRawOne: jest
+          .fn()
           .mockResolvedValueOnce({ avg: '500' })
           .mockResolvedValueOnce({ count: '50' }),
       };

@@ -19,10 +19,14 @@ export class EventsService {
     private readonly eventStore: EventStoreService,
   ) {}
 
-  async emit(type: string, payload: any, metadata?: EventMetadata): Promise<void> {
+  async emit(
+    type: string,
+    payload: any,
+    metadata?: EventMetadata,
+  ): Promise<void> {
     // Emit the event
     this.eventEmitter.emit(type, payload);
-    
+
     // Store the event in database
     await this.eventStore.saveEvent(type, payload, metadata);
   }

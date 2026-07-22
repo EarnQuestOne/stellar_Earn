@@ -1,11 +1,8 @@
 import {
   Controller,
   Get,
-  Post,
-  Delete,
   Query,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -17,8 +14,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiParam,
-  ApiBody,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -161,7 +156,8 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Export quest performance metrics',
-    description: 'Streams quest metrics as CSV, JSON, or JSONL file. Admin-only endpoint.',
+    description:
+      'Streams quest metrics as CSV, JSON, or JSONL file. Admin-only endpoint.',
   })
   @ApiResponse({
     status: 200,
@@ -251,7 +247,8 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Export user engagement metrics',
-    description: 'Streams user metrics as CSV, JSON, or JSONL file. Admin-only endpoint.',
+    description:
+      'Streams user metrics as CSV, JSON, or JSONL file. Admin-only endpoint.',
   })
   @ApiResponse({
     status: 200,
@@ -341,7 +338,8 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Export quest submissions data',
-    description: 'Streams quest submissions data as CSV, JSON, or JSONL file. Admin-only endpoint.',
+    description:
+      'Streams quest submissions data as CSV, JSON, or JSONL file. Admin-only endpoint.',
   })
   @ApiResponse({
     status: 200,

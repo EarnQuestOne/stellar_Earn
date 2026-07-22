@@ -96,11 +96,11 @@ export function RewardDisplay({
           aria-label={`Experience points reward: +${formattedXpReward}`}
         >
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#089ec3]/10"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"
             aria-hidden="true"
           >
             <svg
-              className="h-6 w-6 text-[#089ec3]"
+              className="h-6 w-6 text-primary"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -115,10 +115,7 @@ export function RewardDisplay({
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               Experience Points
             </div>
-            <div
-              className="text-2xl font-bold text-[#089ec3]"
-              aria-hidden="true"
-            >
+            <div className="text-2xl font-bold text-primary" aria-hidden="true">
               +{formattedXpReward}
             </div>
           </div>

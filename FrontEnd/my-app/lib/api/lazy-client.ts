@@ -10,8 +10,8 @@
  *   const data = await apiClient.get('/quests');
  */
 export async function getLazyApiClient() {
-  const { apiClient } = await import('./client');
-  return { apiClient };
+  const { getApiClient } = await import('./client');
+  return { apiClient: getApiClient() };
 }
 
 /**
@@ -19,6 +19,6 @@ export async function getLazyApiClient() {
  * Use in components or services that only need the client on user interaction.
  */
 export async function getLazyAuthClient() {
-  const { apiClient } = await import('./client');
-  return { authClient: apiClient };
+  const { getApiClient } = await import('./client');
+  return { authClient: getApiClient() };
 }

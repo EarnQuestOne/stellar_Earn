@@ -4,7 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { Notification } from './entities/notification.entity';
-import { NotificationLog, DeliveryStatus } from './entities/notification-log.entity';
+import {
+  NotificationLog,
+  DeliveryStatus,
+} from './entities/notification-log.entity';
 import { ChannelType } from './channels/notification-channel.interface';
 import { User } from '../users/entities/user.entity';
 
@@ -35,21 +38,25 @@ export class NotificationsProcessor extends WorkerHost {
   async process(job: Job<any, any, string>): Promise<any> {
     if (job.name === 'deliver') {
       const { notificationId, channel, logId } = job.data;
-      
-      this.logger.log(`Processing delivery for notification ${notificationId} via ${channel}`);
-      
-      const notification = await this.notificationRepository.findOne({ 
-        where: { id: notificationId } 
+
+      this.logger.log(
+        `Processing delivery for notification ${notificationId} via ${channel}`,
+      );
+
+      const notification = await this.notificationRepository.findOne({
+        where: { id: notificationId },
       });
-      const user = await this.userRepository.findOne({ 
-        where: { id: notification?.userId } 
+      const user = await this.userRepository.findOne({
+        where: { id: notification?.userId },
       });
-      const log = await this.logRepository.findOne({ 
-        where: { id: logId } 
+      const log = await this.logRepository.findOne({
+        where: { id: logId },
       });
 
       if (!notification || !user || !log) {
-        this.logger.error(`Missing data: notification=${!!notification}, user=${!!user}, log=${!!log}`);
+        this.logger.error(
+          `Missing data: notification=${!!notification}, user=${!!user}, log=${!!log}`,
+        );
         return;
       }
 
@@ -77,13 +84,13 @@ export class NotificationsProcessor extends WorkerHost {
       log.providerResponse = result.providerResponse;
       log.error = result.error ?? '';
       log.retryCount = job.attemptsMade;
-      
+
       await this.logRepository.save(log);
 
       if (!result.success && result.retryable) {
         throw new Error(`Failed to deliver via ${channel}: ${result.error}`);
       }
-      
+
       return result;
     }
   }

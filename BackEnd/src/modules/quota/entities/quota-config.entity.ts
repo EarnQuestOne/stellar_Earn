@@ -22,11 +22,23 @@ export class QuotaConfig {
   maxQuestsPerPeriod: number | null;
 
   /** Max total payout amount per period (null = unlimited) */
-  @Column({ type: 'decimal', precision: 18, scale: 7, nullable: true, default: 10000 })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 7,
+    nullable: true,
+    default: 10000,
+  })
   maxPayoutAmountPerPeriod: number | null;
 
   /** Max individual payout amount (null = unlimited) */
-  @Column({ type: 'decimal', precision: 18, scale: 7, nullable: true, default: 1000 })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 7,
+    nullable: true,
+    default: 1000,
+  })
   maxSinglePayoutAmount: number | null;
 
   /** Period in seconds (default: 86400 = 1 day) */

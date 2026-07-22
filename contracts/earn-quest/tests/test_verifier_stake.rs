@@ -25,7 +25,6 @@ fn set_time(env: &Env, ts: u64) {
 struct TestCtx<'a> {
     env: Env,
     client: EarnQuestContractClient<'a>,
-    admin: Address,
     token_addr: Address,
     token_admin: token::StellarAssetClient<'a>,
 }
@@ -45,15 +44,30 @@ fn setup() -> TestCtx<'static> {
     let token_addr = token_obj.address();
     let token_admin = token::StellarAssetClient::new(&env, &token_addr);
 
-    TestCtx { env, client, admin: admin.clone(), token_addr, token_admin }
+    TestCtx {
+        env,
+        client,
+        token_addr,
+        token_admin,
+    }
 }
 
 /// Register a quest and return (quest_id, verifier, creator).
-fn register_quest(ctx: &TestCtx, id: soroban_sdk::Symbol) -> (soroban_sdk::Symbol, Address, Address) {
+fn register_quest(
+    ctx: &TestCtx,
+    id: soroban_sdk::Symbol,
+) -> (soroban_sdk::Symbol, Address, Address) {
     let creator = Address::generate(&ctx.env);
     let verifier = Address::generate(&ctx.env);
     let deadline = ctx.env.ledger().timestamp() + 86_400;
-    ctx.client.register_quest(&id, &creator, &ctx.token_addr, &100_i128, &verifier, &deadline);
+    ctx.client.register_quest(
+        &id,
+        &creator,
+        &ctx.token_addr,
+        &100_i128,
+        &verifier,
+        &deadline,
+    );
     (id, verifier, creator)
 }
 
@@ -65,7 +79,8 @@ fn test_deposit_verifier_stake_succeeds() {
     let (quest_id, verifier, _) = register_quest(&ctx, symbol_short!("q001"));
 
     ctx.token_admin.mint(&verifier, &1_000);
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &500_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &500_u128);
 
     let tok = token::Client::new(&ctx.env, &ctx.token_addr);
     assert_eq!(tok.balance(&verifier), 500); // 500 transferred in, 500 remain
@@ -77,7 +92,8 @@ fn test_deposit_verifier_stake_zero_amount_rejected() {
     let ctx = setup();
     let (quest_id, verifier, _) = register_quest(&ctx, symbol_short!("q002"));
 
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &0_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &0_u128);
 }
 
 #[test]
@@ -90,7 +106,8 @@ fn test_deposit_verifier_stake_wrong_token_rejected() {
     let other_obj = ctx.env.register_stellar_asset_contract_v2(other_issuer);
     let wrong_token = other_obj.address();
 
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &wrong_token, &100_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &wrong_token, &100_u128);
 }
 
 // ─── slash tests ────────────────────────────────────────────────────────────
@@ -102,7 +119,8 @@ fn test_resolve_dispute_upheld_full_slash() {
     let submitter = Address::generate(&ctx.env);
 
     ctx.token_admin.mint(&verifier, &1_000);
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
 
     let proof: BytesN<32> = BytesN::from_array(&ctx.env, &[1u8; 32]);
     ctx.client.submit_proof(&quest_id, &submitter, &proof);
@@ -110,7 +128,8 @@ fn test_resolve_dispute_upheld_full_slash() {
     let arbitrator = Address::generate(&ctx.env);
     ctx.client.open_dispute(&quest_id, &submitter, &arbitrator);
 
-    ctx.client.resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &10_000_u32);
+    ctx.client
+        .resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &10_000_u32);
 
     let tok = token::Client::new(&ctx.env, &ctx.token_addr);
     // Full stake slashed to submitter (initiator)
@@ -125,7 +144,8 @@ fn test_resolve_dispute_not_upheld_no_slash() {
     let submitter = Address::generate(&ctx.env);
 
     ctx.token_admin.mint(&verifier, &1_000);
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
 
     let proof: BytesN<32> = BytesN::from_array(&ctx.env, &[2u8; 32]);
     ctx.client.submit_proof(&quest_id, &submitter, &proof);
@@ -134,11 +154,12 @@ fn test_resolve_dispute_not_upheld_no_slash() {
     ctx.client.open_dispute(&quest_id, &submitter, &arbitrator);
 
     // Not upheld — stake is NOT slashed
-    ctx.client.resolve_dispute(&quest_id, &submitter, &arbitrator, &false, &10_000_u32);
+    ctx.client
+        .resolve_dispute(&quest_id, &submitter, &arbitrator, &false, &10_000_u32);
 
     let tok = token::Client::new(&ctx.env, &ctx.token_addr);
-    assert_eq!(tok.balance(&submitter), 0);  // nothing transferred
-    assert_eq!(tok.balance(&verifier), 0);   // still held in contract
+    assert_eq!(tok.balance(&submitter), 0); // nothing transferred
+    assert_eq!(tok.balance(&verifier), 0); // still held in contract
 }
 
 #[test]
@@ -154,7 +175,8 @@ fn test_resolve_dispute_no_stake_still_resolves() {
     let arbitrator = Address::generate(&ctx.env);
     ctx.client.open_dispute(&quest_id, &submitter, &arbitrator);
 
-    ctx.client.resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &10_000_u32);
+    ctx.client
+        .resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &10_000_u32);
     // No panic = passed
 }
 
@@ -165,7 +187,8 @@ fn test_resolve_dispute_partial_slash() {
     let submitter = Address::generate(&ctx.env);
 
     ctx.token_admin.mint(&verifier, &1_000);
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &1_000_u128);
 
     let proof: BytesN<32> = BytesN::from_array(&ctx.env, &[4u8; 32]);
     ctx.client.submit_proof(&quest_id, &submitter, &proof);
@@ -174,7 +197,8 @@ fn test_resolve_dispute_partial_slash() {
     ctx.client.open_dispute(&quest_id, &submitter, &arbitrator);
 
     // 50% slash: 500 to submitter, 500 back to verifier
-    ctx.client.resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &5_000_u32);
+    ctx.client
+        .resolve_dispute(&quest_id, &submitter, &arbitrator, &true, &5_000_u32);
 
     let tok = token::Client::new(&ctx.env, &ctx.token_addr);
     assert_eq!(tok.balance(&submitter), 500);
@@ -189,13 +213,15 @@ fn test_return_verifier_stake_by_creator() {
     let (quest_id, verifier, creator) = register_quest(&ctx, symbol_short!("q008"));
 
     ctx.token_admin.mint(&verifier, &500);
-    ctx.client.deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &500_u128);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &500_u128);
 
     let tok = token::Client::new(&ctx.env, &ctx.token_addr);
     assert_eq!(tok.balance(&verifier), 0); // all staked
 
     // Creator returns stake — no dispute occurred
-    ctx.client.return_verifier_stake(&quest_id, &verifier, &creator);
+    ctx.client
+        .return_verifier_stake(&quest_id, &verifier, &creator);
 
     assert_eq!(tok.balance(&verifier), 500); // fully returned
 }
