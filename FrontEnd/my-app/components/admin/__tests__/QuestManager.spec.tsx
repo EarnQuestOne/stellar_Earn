@@ -138,7 +138,9 @@ describe('QuestManager', () => {
   });
 
   it('calls onBulkOperation for bulk actions', async () => {
-    render(<QuestManager {...defaultProps} selectedQuests={new Set(['1', '2'])} />);
+    render(
+      <QuestManager {...defaultProps} selectedQuests={new Set(['1', '2'])} />
+    );
 
     const bulkActionsButton = screen.getByText('Bulk Actions');
     fireEvent.click(bulkActionsButton);
@@ -158,7 +160,9 @@ describe('QuestManager', () => {
     fireEvent.click(deleteButtons[0]);
 
     expect(screen.getByText('Delete Quest')).toBeInTheDocument();
-    expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This action cannot be undone.')
+    ).toBeInTheDocument();
   });
 
   it('calls onDelete when delete is confirmed', async () => {
@@ -187,7 +191,7 @@ describe('QuestManager', () => {
 
     const editButtons = screen.getAllByText('Edit');
     expect(editButtons[0].tagName).toBe('BUTTON');
-    
+
     fireEvent.click(editButtons[0]);
     expect(onEdit).toHaveBeenCalledWith(mockQuests[0]);
   });
