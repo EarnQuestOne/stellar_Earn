@@ -3,44 +3,69 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { WalletProvider } from './WalletContext';
 
-// ── Mocks ──────────────────────────────────────────────────────────────────
+// ── Hoisted mocks ──────────────────────────────────────────────────────────
+// vitest 3.x hoists vi.mock calls above all user code.  Variables referenced
+// inside factory functions are only auto-hoisted when their name starts with
+// "mock".  Everything else must go through vi.hoisted().
 
-const mockGetAddress = vi.fn();
-const mockSetWallet = vi.fn();
-const mockDisconnectKit = vi.fn();
-const mockLogout = vi.fn().mockResolvedValue({ message: 'ok' });
+const {
+  mockGetAddress,
+  mockSetWallet,
+  mockDisconnectKit,
+  mockLogout,
+  mockStoreActions,
+  mockStoreState,
+  mockUseStore,
+} = vi.hoisted(() => {
+  const mockGetAddress = vi.fn();
+  const mockSetWallet = vi.fn();
+  const mockDisconnectKit = vi.fn();
+  const mockLogout = vi.fn().mockResolvedValue({ message: 'ok' });
 
-// Mutable store state that the WalletProvider reads via useStore(selector)
-// and useStore.getState() inside the verification effect.
-let storeState: Record<string, any> = {};
+  const mockStoreState: Record<string, any> = {};
 
-const mockStoreActions = {
-  setWalletAddress: vi.fn(),
-  setIsConnecting: vi.fn(),
-  setIsVerifyingWallet: vi.fn(),
-  setSelectedWalletId: vi.fn(),
-  setWalletModalOpen: vi.fn(),
-  setWalletError: vi.fn(),
-  disconnectWallet: vi.fn(),
-};
+  const mockStoreActions = {
+    setWalletAddress: vi.fn(),
+    setIsConnecting: vi.fn(),
+    setIsVerifyingWallet: vi.fn(),
+    setSelectedWalletId: vi.fn(),
+    setWalletModalOpen: vi.fn(),
+    setWalletError: vi.fn(),
+    disconnectWallet: vi.fn(),
+  };
 
-// Build the useStore mock: call as useStore(selector) or useStore.getState()
-function useStoreMock(selector?: any) {
-  if (typeof selector === 'function') return selector(storeState);
-  return storeState;
-}
-useStoreMock.getState = () => storeState;
+  const mockUseStore = Object.assign(
+    (selector?: any) => {
+      if (typeof selector === 'function') return selector(mockStoreState);
+      return mockStoreState;
+    },
+    {
+      getState: () => mockStoreState,
+      persist: {
+        hasHydrated: () => true,
+        onFinishHydration: (fn: any) => {
+          fn(mockStoreState);
+          return () => {};
+        },
+      },
+    }
+  );
+
+  return {
+    mockGetAddress,
+    mockSetWallet,
+    mockDisconnectKit,
+    mockLogout,
+    mockStoreActions,
+    mockStoreState,
+    mockUseStore,
+  };
+});
+
+// ── vi.mock calls (hoisted by vitest) ──────────────────────────────────────
 
 vi.mock('../lib/store', () => ({
-  useStore: Object.assign(useStoreMock, {
-    persist: {
-      hasHydrated: () => true,
-      onFinishHydration: (fn: any) => {
-        fn(storeState);
-        return () => {};
-      },
-    },
-  }),
+  useStore: mockUseStore,
 }));
 
 vi.mock('../lib/hooks/useHydrated', () => ({
@@ -78,7 +103,7 @@ describe('WalletProvider — reconnection verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: no persisted session
-    storeState = {
+    Object.assign(mockStoreState, {
       address: null,
       isConnected: false,
       isConnecting: false,
@@ -86,8 +111,8 @@ describe('WalletProvider — reconnection verification', () => {
       selectedWalletId: null,
       isModalOpen: false,
       walletError: null,
-      ...mockStoreActions,
-    };
+    });
+    Object.assign(mockStoreState, mockStoreActions);
   });
 
   afterEach(() => {
@@ -95,8 +120,8 @@ describe('WalletProvider — reconnection verification', () => {
   });
 
   it('skips verification when no persisted session exists', async () => {
-    storeState.address = null;
-    storeState.selectedWalletId = null;
+    mockStoreState.address = null;
+    mockStoreState.selectedWalletId = null;
 
     renderProvider();
 
@@ -109,9 +134,9 @@ describe('WalletProvider — reconnection verification', () => {
 
   it('maintains session when verification succeeds (address matches)', async () => {
     const persistedAddr = 'GABCDEF1234567890';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
     mockGetAddress.mockResolvedValue({ address: persistedAddr });
 
     renderProvider();
@@ -129,9 +154,9 @@ describe('WalletProvider — reconnection verification', () => {
   it('clears session and calls backend logout on address mismatch', async () => {
     const persistedAddr = 'GABCDEF1234567890';
     const liveAddr = 'GDIFFERENT_ADDRESS_XYZ';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
     mockGetAddress.mockResolvedValue({ address: liveAddr });
 
     renderProvider();
@@ -146,9 +171,9 @@ describe('WalletProvider — reconnection verification', () => {
 
   it('clears session when getAddress throws (extension unavailable)', async () => {
     const persistedAddr = 'GABCDEF1234567890';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
     mockGetAddress.mockRejectedValue(new Error('Extension not found'));
 
     renderProvider();
@@ -162,9 +187,9 @@ describe('WalletProvider — reconnection verification', () => {
 
   it('clears session on verification timeout', { timeout: 15000 }, async () => {
     const persistedAddr = 'GABCDEF1234567890';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
 
     // Never-resolving promise — will trigger the 5s timeout
     mockGetAddress.mockReturnValue(new Promise(() => {}));
@@ -184,9 +209,9 @@ describe('WalletProvider — reconnection verification', () => {
 
   it('sets isVerifyingWallet during verification', async () => {
     const persistedAddr = 'GABCDEF1234567890';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
 
     // Deferred promise so we can observe the intermediate state
     let resolveGetAddress: (v: any) => void;
@@ -213,9 +238,9 @@ describe('WalletProvider — reconnection verification', () => {
 
   it('sets isVerifyingWallet(false) even when logout fails', async () => {
     const persistedAddr = 'GABCDEF1234567890';
-    storeState.address = persistedAddr;
-    storeState.isConnected = true;
-    storeState.selectedWalletId = 'freighter';
+    mockStoreState.address = persistedAddr;
+    mockStoreState.isConnected = true;
+    mockStoreState.selectedWalletId = 'freighter';
     mockGetAddress.mockRejectedValue(new Error('Extension not found'));
     mockLogout.mockRejectedValueOnce(new Error('Network error'));
 
