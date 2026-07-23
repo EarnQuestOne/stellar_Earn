@@ -100,6 +100,8 @@ pub fn register_quest_with_category_and_grace_period(
     grace_period_seconds: Option<u64>,
     category: u32,
 ) -> Result<(), Error> {
+    crate::gas_budget::reset_call_budget(env);
+    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("reg_qst"))?;
     validation::validate_symbol_length(id)?;
 
     if storage::has_quest(env, id) {
@@ -216,10 +218,15 @@ pub fn register_quests_batch(
     creator: &Address,
     quests: &Vec<BatchQuestInput>,
 ) -> Result<(), Error> {
+    crate::gas_budget::reset_call_budget(env);
     let len = quests.len();
     validation::validate_batch_quest_size(len)?;
 
+    let ep = soroban_sdk::symbol_short!("reg_btch");
+    crate::gas_budget::enforce_budget(env, &ep)?;
+
     for i in 0u32..len {
+        crate::gas_budget::enforce_budget(env, &ep)?;
         let q = quests.get(i).ok_or(Error::IndexOutOfBounds)?;
         register_quest_with_category_and_grace_period(
             env,
@@ -234,6 +241,7 @@ pub fn register_quests_batch(
         )?;
     }
 
+    crate::gas_budget::enforce_budget(env, &ep)?;
     Ok(())
 }
 

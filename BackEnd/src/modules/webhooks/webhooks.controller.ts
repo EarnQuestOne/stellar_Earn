@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Headers,
   HttpCode,
@@ -8,7 +9,10 @@ import {
   Logger,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
   Param,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +20,11 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   WebhooksService,
   WebhookEvent,
@@ -25,7 +33,10 @@ import {
 import {
   WebhookResponseDto,
   WebhookHealthResponseDto,
+  FailedWebhookEventResponseDto,
+  RetryWebhookResponseDto,
 } from './dto/webhook-response.dto';
+import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 import { TraceService } from '../trace/trace.service';
 import { TraceIdUtil } from '../trace/trace-id.util';
 import {
@@ -33,9 +44,20 @@ import {
   TraceContext,
 } from '../trace/trace-context.storage';
 import { TraceStatus } from '../trace/trace.types';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
+
+/** Explicit allowlist of supported generic webhook services and their secret env var keys. */
+const WEBHOOK_SERVICE_ALLOWLIST: Record<string, string> = {
+  github: 'GITHUB_WEBHOOK_SECRET',
+  api: 'API_WEBHOOK_SECRET',
+};
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
@@ -282,6 +304,18 @@ export class WebhooksController {
     @Headers('x-event-type') eventType: string,
     @Param('service') service: string,
   ): Promise<WebhookResponse> {
+    const secretEnvKey = WEBHOOK_SERVICE_ALLOWLIST[service.toLowerCase()];
+    if (!secretEnvKey) {
+      throw new BadRequestException(`Unknown webhook service: ${service}`);
+    }
+
+    const secret = process.env[secretEnvKey];
+    if (!secret) {
+      throw new BadRequestException(
+        `Webhook secret not configured for service: ${service}`,
+      );
+    }
+
     const eventId = this.generateEventId();
     const traceId = TraceIdUtil.generate(eventId);
     const traceCtx: TraceContext = { traceId, webhookEventId: eventId };
@@ -306,7 +340,7 @@ export class WebhooksController {
           timestamp: new Date(),
           source: service,
           signature,
-          secret: process.env[`${service.toUpperCase()}_WEBHOOK_SECRET`],
+          secret,
         };
 
         const response = await this.webhooksService.processWebhook(event);
@@ -353,6 +387,80 @@ export class WebhooksController {
         throw error;
       }
     });
+  }
+
+  /**
+   * List persisted failed webhook events (admin only)
+   */
+  @Get('admin/failed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List failed webhook events (Admin only)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: FailedWebhookStatus,
+    description: 'Filter by retry lifecycle status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook events retrieved successfully',
+    type: [FailedWebhookEventResponseDto],
+  })
+  async listFailedWebhooks(
+    @Query('status') status?: FailedWebhookStatus,
+  ): Promise<FailedWebhookEventResponseDto[]> {
+    return this.webhooksService.listFailedWebhooks(status);
+  }
+
+  /**
+   * Inspect a single failed webhook event (admin only)
+   */
+  @Get('admin/failed/:eventId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook event retrieved successfully',
+    type: FailedWebhookEventResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'No failed webhook found' })
+  async getFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<FailedWebhookEventResponseDto> {
+    const record = await this.webhooksService.getFailedWebhook(eventId);
+    if (!record) {
+      throw new NotFoundException(
+        `No failed webhook found for event ${eventId}`,
+      );
+    }
+    return record;
+  }
+
+  /**
+   * Manually trigger a retry of a failed webhook event (admin only)
+   */
+  @Post('admin/failed/:eventId/retry')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Retry a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retry attempted',
+    type: RetryWebhookResponseDto,
+  })
+  async retryFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<RetryWebhookResponseDto> {
+    const success = await this.webhooksService.retryFailedWebhook(eventId);
+    return { success, eventId };
   }
 
   /**

@@ -18,6 +18,7 @@ import { QuotaConfig } from '../modules/quota/entities/quota-config.entity';
 import { QuotaUsage } from '../modules/quota/entities/quota-usage.entity';
 import { EventStore } from '../events/entities/event-store.entity';
 import { PoisonMessage } from '../events/entities/poison-message.entity';
+import { FailedWebhookEvent } from '../modules/webhooks/entities/failed-webhook-event.entity';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -107,6 +108,7 @@ export const dataSourceOptions: DataSourceOptions = {
     QuotaUsage,
     EventStore,
     PoisonMessage,
+    FailedWebhookEvent,
   ],
 
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],

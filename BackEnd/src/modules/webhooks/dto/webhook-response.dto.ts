@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { FailedWebhookStatus } from '../entities/failed-webhook-event.entity';
 
 export class WebhookResponseDto {
   @ApiProperty({
@@ -121,4 +122,57 @@ export class WebhookEventResponseDto {
     example: '2026-01-23T12:34:56.000Z',
   })
   createdAt: Date;
+}
+
+export class FailedWebhookEventResponseDto {
+  @ApiProperty({ description: 'Failed-webhook record ID (UUID)' })
+  id: string;
+
+  @ApiProperty({ description: 'Original webhook event/delivery ID' })
+  eventId: string;
+
+  @ApiProperty({ description: 'Event type', example: 'push' })
+  type: string;
+
+  @ApiProperty({
+    description: 'Event source (github, api, etc.)',
+    example: 'github',
+  })
+  source: string;
+
+  @ApiProperty({ description: 'Most recent failure reason' })
+  failureReason: string;
+
+  @ApiProperty({
+    description: 'Number of processing attempts made so far',
+    example: 2,
+  })
+  attempts: number;
+
+  @ApiProperty({ description: 'Maximum attempts before dead-lettering' })
+  maxAttempts: number;
+
+  @ApiProperty({
+    enum: FailedWebhookStatus,
+    description: 'Current retry lifecycle status',
+  })
+  status: FailedWebhookStatus;
+
+  @ApiProperty({
+    description: 'When the next automatic retry is scheduled, if any',
+    required: false,
+    nullable: true,
+  })
+  nextRetryAt: Date | null;
+
+  @ApiProperty({ description: 'When the record was first created' })
+  createdAt: Date;
+}
+
+export class RetryWebhookResponseDto {
+  @ApiProperty({ description: 'Whether the retry succeeded' })
+  success: boolean;
+
+  @ApiProperty({ description: 'The original webhook event ID' })
+  eventId: string;
 }

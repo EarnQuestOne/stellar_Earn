@@ -759,6 +759,12 @@
                         },
                         {
                           "key": {
+                            "symbol": "grace_period_seconds"
+                          },
+                          "val": "void"
+                        },
+                        {
+                          "key": {
                             "symbol": "id"
                           },
                           "val": {
@@ -894,6 +900,12 @@
                               "val": {
                                 "u64": 10059
                               }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grace_period_seconds"
+                              },
+                              "val": "void"
                             },
                             {
                               "key": {
