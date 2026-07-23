@@ -511,6 +511,8 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
+        gas_budget::reset_call_budget(&env);
+        gas_budget::enforce_budget(&env, &soroban_sdk::symbol_short!("clm_rwd"))?;
         submitter.require_auth();
 
         // Single read of quest and submission for all subsequent operations
