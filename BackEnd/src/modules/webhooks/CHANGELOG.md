@@ -7,6 +7,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Rate-limiting configuration (@Throttle) applied to WebhooksController endpoints.
 - Persisted `failed_webhook_events` table for webhook processing failures (payload,
   source, failure reason, attempt history).
 - Real `retryFailedWebhook` implementation: exponential backoff, configurable max
