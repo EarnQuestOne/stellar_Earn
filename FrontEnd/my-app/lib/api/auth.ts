@@ -1,32 +1,24 @@
 /**
  * Auth API – Stellar wallet-based challenge/sign-in flow with JWT tokens.
  *
+ * Tokens are stored as httpOnly cookies set by the backend. The frontend
+ * never reads or writes token values directly.
+ *
  * Endpoints (all under /api/v1/auth):
  *  POST /challenge      – generate a one-time signing challenge
- *  POST /login          – verify signature and receive JWT pair
- *  POST /refresh        – exchange refresh token for new pair
+ *  POST /login          – verify signature, receive JWT pair as httpOnly cookies
+ *  POST /refresh        – exchange refresh cookie for new pair
  *  GET  /profile        – get current authenticated user
- *  POST /logout         – revoke current session
- *  POST /logout-all     – revoke all sessions
+ *  POST /logout         – revoke current session and clear cookies
+ *  POST /logout-all     – revoke all sessions and clear cookies
  */
 
-import {
-  get,
-  post,
-  withRetry,
-  createCancelToken,
-  type CancelToken,
-} from './client';
-import { tokenManager } from './client';
+import { get, post, type CancelToken } from './client';
 import type {
   ChallengeRequest,
   ChallengeResponse,
   LoginRequest,
-  LoginResponse,
-  RefreshRequest,
-  RefreshResponse,
   AuthUserProfile,
-  AuthTokens,
 } from '@/lib/types/api.types';
 
 // ---------------------------------------------------------------------------
@@ -50,13 +42,15 @@ export async function generateChallenge(
 // ---------------------------------------------------------------------------
 
 /**
- * Verify the wallet signature and exchange it for a JWT access + refresh token pair.
- * Tokens are automatically persisted via `tokenManager`.
+ * Verify the wallet signature and exchange it for a JWT pair.
+ * The backend sets httpOnly cookies (auth_token, refresh_token) via
+ * Set-Cookie headers. The response body contains user info only.
  */
-export async function login(payload: LoginRequest): Promise<LoginResponse> {
-  const tokens = await post<LoginResponse>('/auth/login', payload);
-  tokenManager.setTokens(tokens);
-  return tokens;
+export async function login(payload: LoginRequest): Promise<{
+  success: boolean;
+  user: { id?: string; stellarAddress: string; role: string };
+}> {
+  return post('/auth/login', payload);
 }
 
 // ---------------------------------------------------------------------------
@@ -64,21 +58,13 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 // ---------------------------------------------------------------------------
 
 /**
- * Manually exchange a refresh token for a new JWT pair.
- * Under normal circumstances the Axios response interceptor handles this
- * automatically; call this directly only when you need explicit control.
+ * Manually trigger a token refresh. The refresh token is carried via
+ * httpOnly cookie automatically. Under normal circumstances the Axios
+ * response interceptor handles this automatically; call this directly
+ * only when you need explicit control.
  */
-export async function refreshTokens(
-  refreshToken?: string
-): Promise<RefreshResponse> {
-  const token = refreshToken ?? tokenManager.getRefreshToken();
-  if (!token) {
-    throw new Error('No refresh token available. Please log in again.');
-  }
-  const payload: RefreshRequest = { refreshToken: token };
-  const tokens = await post<RefreshResponse>('/auth/refresh', payload);
-  tokenManager.setTokens(tokens);
-  return tokens;
+export async function refreshTokens(): Promise<void> {
+  await post('/auth/refresh', {});
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +72,8 @@ export async function refreshTokens(
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch the currently authenticated user's profile (requires access token).
+ * Fetch the currently authenticated user's profile.
+ * The access token is carried via httpOnly cookie automatically.
  */
 export async function getAuthProfile(
   cancelToken?: CancelToken
@@ -101,42 +88,32 @@ export async function getAuthProfile(
 // ---------------------------------------------------------------------------
 
 /**
- * Revoke the current session token and clear local storage.
+ * Revoke the current session and clear auth cookies (set by the backend).
  */
 export async function logout(): Promise<{ message: string }> {
-  try {
-    const result = await post<{ message: string }>('/auth/logout');
-    return result;
-  } finally {
-    tokenManager.clearTokens();
-  }
+  return post<{ message: string }>('/auth/logout');
 }
 
 /**
- * Revoke all active sessions for the current user and clear local storage.
+ * Revoke all active sessions for the current user and clear auth cookies.
  */
 export async function logoutAll(): Promise<{ message: string }> {
-  try {
-    const result = await post<{ message: string }>('/auth/logout-all');
-    return result;
-  } finally {
-    tokenManager.clearTokens();
-  }
+  return post<{ message: string }>('/auth/logout-all');
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Returns true when an access token is present in storage. */
-export function isAuthenticated(): boolean {
-  return tokenManager.getAccessToken() !== null;
-}
-
-/** Returns the stored tokens (or null if not logged in). */
-export function getStoredTokens(): AuthTokens | null {
-  const accessToken = tokenManager.getAccessToken();
-  const refreshToken = tokenManager.getRefreshToken();
-  if (!accessToken || !refreshToken) return null;
-  return { accessToken, refreshToken };
+/**
+ * Check whether the user is authenticated by attempting to fetch the profile.
+ * Returns the user profile if authenticated, null otherwise.
+ * Note: this makes a network request and should be used sparingly.
+ */
+export async function checkAuthStatus(): Promise<AuthUserProfile | null> {
+  try {
+    return await getAuthProfile();
+  } catch {
+    return null;
+  }
 }

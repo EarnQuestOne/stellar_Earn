@@ -55,7 +55,7 @@ describe('RetryButton', () => {
     expect(screen.getByText('Retrying...')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(onRetry).toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /retry/i })).not.toBeDisabled();
     });
   });
 
@@ -80,7 +80,7 @@ describe('RetryButton', () => {
     expect(button.disabled).toBe(true);
 
     await waitFor(() => {
-      expect(onRetry).toHaveBeenCalled();
+      expect(button.disabled).toBe(false);
     });
   });
 

@@ -239,11 +239,6 @@ export async function uploadProofFile(
   file: File,
   onProgress?: (pct: number) => void
 ): Promise<UploadProofResponse> {
-  const token = (await import('./client')).tokenManager.getAccessToken();
-  if (!token) {
-    throw new Error('Authentication required. Please connect your wallet.');
-  }
-
   const formData = new FormData();
   formData.append('file', file);
   formData.append('questId', questId);
@@ -282,7 +277,7 @@ export async function uploadProofFile(
     xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
     xhr.open('POST', `${baseURL}/api/v1/submissions/upload`);
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.withCredentials = true;
     xhr.send(formData);
   });
 }
