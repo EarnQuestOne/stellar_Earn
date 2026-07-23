@@ -26,8 +26,6 @@ import {
   LoginDto,
   RefreshTokenDto,
 } from './dto/auth.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
 import {
   serializeCookie,
   parseCookies,
