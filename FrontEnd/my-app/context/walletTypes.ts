@@ -35,6 +35,13 @@ export interface WalletContextType {
   isConnecting: boolean;
 
   /**
+   * Whether the wallet extension is being verified on session reconnect.
+   * While true the UI should not render connected OR disconnected state
+   * to avoid flashing stale data before verification completes.
+   */
+  isVerifyingWallet: boolean;
+
+  /**
    * The ID of the currently selected wallet
    */
   selectedWalletId: string | null;

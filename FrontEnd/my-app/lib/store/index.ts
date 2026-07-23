@@ -41,6 +41,7 @@ export const useStore = create<StoreState>()(
           theme: state.theme,
           address: state.address,
           isConnected: state.isConnected,
+          isVerifyingWallet: state.isVerifyingWallet,
           selectedWalletId: state.selectedWalletId,
           notifications: state.notifications,
           notificationSettings: state.notificationSettings,
