@@ -23,7 +23,8 @@ const ArrowDownIcon = () => (
 );
 
 export function ConnectButton() {
-  const { isConnected, address, openModal, disconnect } = useWallet();
+  const { isConnected, address, isVerifyingWallet, openModal, disconnect } =
+    useWallet();
   const { isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -50,6 +51,11 @@ export function ConnectButton() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Don't flash connected or disconnected UI while verifying the persisted
+  // session — wait until we know whether the wallet extension still
+  // authorizes the stored address.
+  if (isVerifyingWallet) return null;
 
   if (isAuthenticated && address) {
     return (
