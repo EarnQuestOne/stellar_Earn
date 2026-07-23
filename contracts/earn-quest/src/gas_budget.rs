@@ -6,6 +6,9 @@
 use crate::errors::Error;
 use soroban_sdk::{contracttype, symbol_short, Env, Symbol};
 
+#[cfg(any(test, feature = "testutils"))]
+use soroban_sdk::testutils::budget::Budget;
+
 /// Maximum allowed instructions per named entrypoint.
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -72,16 +75,30 @@ pub fn within_budget(entrypoint: &Symbol, measured: u64) -> bool {
 
 /// Resets the invocation CPU instruction budget counter to default.
 pub fn reset_call_budget(env: &Env) {
-    env.budget().reset_default();
+    #[cfg(any(test, feature = "testutils"))]
+    {
+        env.budget().reset_default();
+    }
+    #[cfg(not(any(test, feature = "testutils")))]
+    {
+        let _ = env;
+    }
 }
 
 /// Enforces the gas budget at runtime. Checks measured CPU instructions against entrypoint target ceiling.
 ///
 /// Returns `Ok(())` if within budget, or `Err(Error::GasBudgetExceeded)` if the budget ceiling is exceeded.
 pub fn enforce_budget(env: &Env, entrypoint: &Symbol) -> Result<(), Error> {
-    let measured = env.budget().cpu_instruction_cost();
-    if !within_budget(entrypoint, measured) {
-        return Err(Error::GasBudgetExceeded);
+    #[cfg(any(test, feature = "testutils"))]
+    {
+        let measured = env.budget().cpu_instruction_cost();
+        if !within_budget(entrypoint, measured) {
+            return Err(Error::GasBudgetExceeded);
+        }
+    }
+    #[cfg(not(any(test, feature = "testutils")))]
+    {
+        let _ = (env, entrypoint);
     }
     Ok(())
 }
