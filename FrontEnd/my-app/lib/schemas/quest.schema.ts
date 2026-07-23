@@ -12,6 +12,12 @@ export type RewardAssetType = 'XLM' | 'USDC' | 'AQUA' | 'yXLM';
 
 export type VerificationMode = 'auto' | 'manual';
 
+export type QuestDifficulty =
+  | 'beginner'
+  | 'intermediate'
+  | 'advanced'
+  | 'expert';
+
 export interface DeliverableItem {
   id: string;
   title: string;
@@ -51,6 +57,16 @@ export interface QuestWizardData {
     instructions: string;
     autoCriteria: string;
   };
+  /**
+   * Settings that are only editable from the admin entry point. The user-facing
+   * flow keeps the defaults, which match the values the wizard previously
+   * hard-coded when building its create payload.
+   */
+  advanced: {
+    difficulty: QuestDifficulty;
+    maxParticipants: number;
+    tags: string[];
+  };
 }
 
 export const QUEST_CATEGORIES: QuestCategory[] = [
@@ -61,6 +77,17 @@ export const QUEST_CATEGORIES: QuestCategory[] = [
   'Testing',
   'Community',
 ];
+
+export const QUEST_DIFFICULTIES: QuestDifficulty[] = [
+  'beginner',
+  'intermediate',
+  'advanced',
+  'expert',
+];
+
+/** Defaults the user-facing flow uses; previously hard-coded in QuestWizard. */
+export const DEFAULT_QUEST_DIFFICULTY: QuestDifficulty = 'intermediate';
+export const DEFAULT_QUEST_MAX_PARTICIPANTS = 200;
 
 export const REWARD_ASSETS: Array<{
   value: RewardAssetType;
@@ -167,6 +194,11 @@ export const defaultQuestWizardData: QuestWizardData = {
     instructions: '',
     autoCriteria: '',
   },
+  advanced: {
+    difficulty: DEFAULT_QUEST_DIFFICULTY,
+    maxParticipants: DEFAULT_QUEST_MAX_PARTICIPANTS,
+    tags: [],
+  },
 };
 
 export function validateStep(
@@ -242,6 +274,15 @@ export function validateStep(
       errors.push({
         field: 'reward.xpReward',
         message: 'XP reward must be zero or greater.',
+      });
+    }
+    if (
+      !Number.isFinite(data.advanced.maxParticipants) ||
+      data.advanced.maxParticipants < 1
+    ) {
+      errors.push({
+        field: 'advanced.maxParticipants',
+        message: 'Max participants must be at least 1.',
       });
     }
   }
@@ -393,5 +434,64 @@ export function sanitizeWizardData(data: QuestWizardData): QuestWizardData {
       instructions: data.verification.instructions.trim(),
       autoCriteria: data.verification.autoCriteria.trim(),
     },
+    advanced: {
+      difficulty: data.advanced.difficulty,
+      maxParticipants: Number(data.advanced.maxParticipants),
+      tags: Array.from(
+        new Set(
+          data.advanced.tags
+            .map((tag) => tag.trim().toLowerCase())
+            .filter(Boolean)
+        )
+      ),
+    },
+  };
+}
+
+/**
+ * Flattens wizard data into the shape the admin quest API expects.
+ *
+ * The admin endpoint takes a single flat form payload rather than the
+ * `CreateQuestRequest` used by the public endpoint, so the admin entry point
+ * converts here instead of maintaining a second creation UI.
+ */
+export function questWizardDataToFormData(data: QuestWizardData): {
+  title: string;
+  description: string;
+  shortDescription: string;
+  category: QuestCategory;
+  difficulty: QuestDifficulty;
+  reward: number;
+  xpReward: number;
+  deadline: string;
+  maxParticipants: number;
+  requirements: string[];
+  tags: string[];
+} {
+  const requirements = [
+    ...data.requirements.skills.map((skill) => `Skill: ${skill}`),
+    ...data.requirements.deliverables.map(
+      (item) =>
+        `Deliverable: ${item.title}${item.details ? ` (${item.details})` : ''}${
+          item.required ? ' [required]' : ''
+        }`
+    ),
+  ];
+
+  return {
+    title: data.basics.title,
+    description: data.basics.description,
+    shortDescription: data.basics.shortDescription,
+    category: data.basics.category,
+    difficulty: data.advanced.difficulty,
+    reward: data.reward.amount,
+    xpReward: data.reward.xpReward,
+    deadline: data.timeline.deadline
+      ? (zonedDateTimeToIso(data.timeline.deadline, data.timeline.timezone) ??
+        '')
+      : '',
+    maxParticipants: data.advanced.maxParticipants,
+    requirements,
+    tags: data.advanced.tags,
   };
 }

@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import { UserRole } from '../modules/auth/enums/user-role.enum';
 
 export interface PerUserRateLimitConfig {
@@ -14,6 +15,7 @@ export interface PerUserRateLimitConfig {
  * Per-user rate limit configuration based on user roles
  * Allows different rate limiting tiers for different user types
  */
+@Injectable()
 export class PerUserRateLimitConfigService {
   private readonly config: PerUserRateLimitConfig;
 

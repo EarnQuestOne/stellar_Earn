@@ -24,6 +24,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   WebhooksService,
   WebhookEvent,
@@ -48,8 +49,15 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
 
+/** Explicit allowlist of supported generic webhook services and their secret env var keys. */
+const WEBHOOK_SERVICE_ALLOWLIST: Record<string, string> = {
+  github: 'GITHUB_WEBHOOK_SECRET',
+  api: 'API_WEBHOOK_SECRET',
+};
+
 @ApiTags('Webhooks')
 @Controller('webhooks')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
@@ -296,6 +304,18 @@ export class WebhooksController {
     @Headers('x-event-type') eventType: string,
     @Param('service') service: string,
   ): Promise<WebhookResponse> {
+    const secretEnvKey = WEBHOOK_SERVICE_ALLOWLIST[service.toLowerCase()];
+    if (!secretEnvKey) {
+      throw new BadRequestException(`Unknown webhook service: ${service}`);
+    }
+
+    const secret = process.env[secretEnvKey];
+    if (!secret) {
+      throw new BadRequestException(
+        `Webhook secret not configured for service: ${service}`,
+      );
+    }
+
     const eventId = this.generateEventId();
     const traceId = TraceIdUtil.generate(eventId);
     const traceCtx: TraceContext = { traceId, webhookEventId: eventId };
@@ -320,7 +340,7 @@ export class WebhooksController {
           timestamp: new Date(),
           source: service,
           signature,
-          secret: process.env[`${service.toUpperCase()}_WEBHOOK_SECRET`],
+          secret,
         };
 
         const response = await this.webhooksService.processWebhook(event);

@@ -83,8 +83,22 @@ export class WebhooksService {
         `Processing webhook event ${event.id} of type ${event.type} from ${event.source}`,
       );
 
-      // Verify signature if present
-      if (event.signature && event.secret) {
+      // When a secret is configured, a valid signature is required.
+      // Fail closed: missing signature is rejected, not silently skipped.
+      if (event.secret) {
+        if (!event.signature) {
+          this.logger.warn(
+            `Missing signature for webhook ${event.id} from ${event.source}`,
+          );
+          return {
+            success: false,
+            eventId: event.id,
+            message: 'Webhook signature is required',
+            processedAt: new Date(),
+            traceId: currentTraceId(),
+          };
+        }
+
         const isValid = verifyWebhookSignature(
           event.payload,
           event.signature,

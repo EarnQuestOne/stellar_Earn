@@ -205,14 +205,15 @@ describe('WebhooksService', () => {
       expect(handleEventSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should skip verification when a secret is configured but no signature is sent', async () => {
+    it('should reject when a secret is configured but no signature is sent', async () => {
       const event = buildEvent({ secret: GITHUB_SECRET }); // signature omitted
       const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
 
       const result = await service.processWebhook(event);
 
-      expect(result.success).toBe(true);
-      expect(handleEventSpy).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Webhook signature is required');
+      expect(handleEventSpy).not.toHaveBeenCalled();
     });
   });
 

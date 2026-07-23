@@ -53,21 +53,36 @@ export class AppThrottlerGuard extends ThrottlerGuard {
   }
 
   /**
-   * Extract user identity and role information for per-user rate limiting
+   * Extract user identity and role information for per-user rate limiting.
+   * The JWT payload does not contain a `role` claim, so we derive the role
+   * by checking the stellarAddress against the ADMIN_ADDRESSES env var.
    */
   private extractUserRole(req: ThrottlerRequest): string | undefined {
-    // Check if user is in request (from auth guard)
+    // Check if user is already populated by a preceding auth guard
     if (req.user?.role) {
       return req.user.role;
     }
 
-    // Try to extract role from JWT token
+    // Try to extract stellarAddress from JWT and derive role
     const authHeader = this.getHeader(req, 'authorization');
     if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
       try {
-        const payload = this.jwtService.verify<{ role?: string }>(token);
-        return payload.role;
+        const payload = this.jwtService.verify<{ stellarAddress?: string; role?: string }>(token);
+        if (payload.role) {
+          return payload.role;
+        }
+        // Derive role from ADMIN_ADDRESSES
+        if (payload.stellarAddress) {
+          const adminAddresses = (process.env.ADMIN_ADDRESSES || '')
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean);
+          if (adminAddresses.includes(payload.stellarAddress)) {
+            return UserRole.ADMIN;
+          }
+          return UserRole.USER;
+        }
       } catch {
         // ignore invalid tokens
       }
@@ -138,21 +153,8 @@ export class AppThrottlerGuard extends ThrottlerGuard {
       >('throttler', [context.getHandler(), context.getClass()]) ??
       this.getDefaultMetadata();
 
-    // Extract user role for per-user limiting
-    let userRole = req.user?.role;
-
-    if (!userRole) {
-      const authHeader = this.getHeader(req, 'authorization');
-      if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        try {
-          const payload = this.jwtService.verify<{ role?: string }>(token);
-          userRole = payload.role;
-        } catch {
-          // ignore invalid tokens
-        }
-      }
-    }
+    // Extract user role for per-user limiting (reuse extractUserRole)
+    const userRole = this.extractUserRole(req);
 
     // Determine the limit key based on role
     let limitKey: string = UserRole.USER; // default for authenticated users
