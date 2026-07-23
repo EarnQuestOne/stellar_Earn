@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { headers } from 'next/headers';
 import '../globals.css';
 import { RootProviders } from '@/app/providers/RootProviders';
 import { I18nProvider } from '@/app/providers/I18nProvider';
@@ -59,12 +60,13 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Render-blocking script prevents flash of unstyled theme on first paint */}
-        <script src="/theme-init.js" />
+        <script src="/theme-init.js" nonce={nonce} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

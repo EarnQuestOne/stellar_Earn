@@ -15,8 +15,8 @@ import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
  * Covers:
  *  - Route guards: required-header validation on each webhook endpoint,
  *    rejecting malformed requests before the service layer is invoked
- *  - Generic webhook handler's source allowlist behavior, as surfaced
- *    through the controller (unsupported sources are rejected with 401)
+ *  - Generic webhook handler's source allowlist behavior, enforced in the
+ *    controller before the service layer is reached
  *  - Successful processing paths for GitHub, API, and generic webhooks
  */
 describe('WebhooksController', () => {
@@ -62,7 +62,9 @@ describe('WebhooksController', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
+    delete process.env.GITHUB_WEBHOOK_SECRET;
+    delete process.env.API_WEBHOOK_SECRET;
   });
 
   // ─── POST /webhooks/github ──────────────────────────────────────────────
@@ -243,31 +245,49 @@ describe('WebhooksController', () => {
 
   // ─── POST /webhooks/generic/:service ────────────────────────────────────
 
-  describe('POST /webhooks/generic/:service — allowlist behavior', () => {
-    it('should forward the :service param as the event source to the service layer', async () => {
-      webhooksService.processWebhook.mockResolvedValue(successResponse());
-
-      await controller.handleGenericWebhook(
-        {},
-        {},
-        'sig',
-        'custom_event',
-        'someUnregisteredVendor',
-      );
-
-      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
-        expect.objectContaining({
-          source: 'someUnregisteredVendor',
-          type: 'custom_event',
-        }),
-      );
+  describe('POST /webhooks/generic/:service — allowlist enforcement', () => {
+    it('should reject an unknown service name with BadRequestException', async () => {
+      await expect(
+        controller.handleGenericWebhook({}, {}, 'sig', 'push', 'unknown'),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException when the service rejects a source outside its allowlist', async () => {
+    it('should reject arbitrary env-var-probing service names', async () => {
+      process.env.AWS_SECRET_ACCESS_KEY = 'should-not-be-reachable';
+      await expect(
+        controller.handleGenericWebhook(
+          {},
+          {},
+          'sig',
+          'push',
+          'aws_secret_access_key',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a known service whose secret env var is not set', async () => {
+      await expect(
+        controller.handleGenericWebhook({}, {}, 'sig', 'push', 'github'),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a known service whose secret env var is empty', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = '';
+      await expect(
+        controller.handleGenericWebhook({}, {}, 'sig', 'push', 'github'),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException and log a FAILED trace when the service rejects', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
       webhooksService.processWebhook.mockResolvedValue(
         successResponse({
           success: false,
-          message: 'Unsupported webhook source: someUnregisteredVendor',
+          message: 'Invalid webhook signature',
         }),
       );
 
@@ -275,20 +295,21 @@ describe('WebhooksController', () => {
         controller.handleGenericWebhook(
           {},
           {},
-          'sig',
-          'custom_event',
-          'someUnregisteredVendor',
+          'sha256=invalidsig',
+          'push',
+          'github',
         ),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(traceService.appendEvent).toHaveBeenCalledWith(
         expect.any(String),
         'FAILED',
-        'Unsupported webhook source: someUnregisteredVendor',
+        'Invalid webhook signature',
       );
     });
 
-    it('should succeed and link on-chain when the service accepts an allowlisted source', async () => {
+    it('should succeed and link on-chain when the service accepts the webhook', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
       webhooksService.processWebhook.mockResolvedValue(
         successResponse({ txHash: '0xdef' }),
       );
@@ -297,17 +318,39 @@ describe('WebhooksController', () => {
         {},
         {},
         'sig',
-        'custom_event',
+        'push',
         'github',
       );
 
       expect(result.success).toBe(true);
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'github', secret: 'test-secret' }),
+      );
       expect(traceService.linkOnchain).toHaveBeenCalledWith(
         expect.objectContaining({ txHash: '0xdef' }),
       );
     });
 
+    it('should accept service names case-insensitively', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      const result = await controller.handleGenericWebhook(
+        {},
+        {},
+        'sig',
+        'push',
+        'GITHUB',
+      );
+
+      expect(result.success).toBe(true);
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ secret: 'test-secret' }),
+      );
+    });
+
     it('should default the event type to "unknown" when no X-Event-Type header is sent', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
       webhooksService.processWebhook.mockResolvedValue(successResponse());
 
       await controller.handleGenericWebhook(

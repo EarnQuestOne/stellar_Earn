@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { cspHeaders } from './next.config.csp';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 
@@ -9,9 +8,8 @@ const withAnalyzer = withBundleAnalyzer({
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
-  async headers() {
-    return cspHeaders;
-  },
+  // Security headers (CSP, HSTS, X-Content-Type-Options, etc.) are set
+  // dynamically per-request in middleware.ts with a per-request nonce.
 };
 
 export default withSentryConfig(withAnalyzer(nextConfig), {

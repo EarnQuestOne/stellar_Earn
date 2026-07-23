@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Wallet } from 'lucide-react';
 import DraftManager from '@/components/quest/DraftManager';
+import AdminSettingsPanel from '@/components/quest/steps/AdminSettingsPanel';
 import QuestBasicsStep from '@/components/quest/steps/QuestBasicsStep';
 import RequirementsCriteriaStep from '@/components/quest/steps/RequirementsCriteriaStep';
 import RewardConfigurationStep from '@/components/quest/steps/RewardConfigurationStep';
@@ -24,7 +25,19 @@ import {
   type QuestWizardData,
   type QuestWizardStepIndex,
 } from '@/lib/schemas/quest.schema';
-import type { CreateQuestRequest } from '@/lib/types/api.types';
+import type {
+  CreateQuestRequest,
+  QuestDifficulty as ApiQuestDifficulty,
+} from '@/lib/types/api.types';
+
+// The public quests endpoint accepts a narrower difficulty set than the admin
+// flow (no "expert"). The user-facing wizard never surfaces the difficulty
+// control, so this only maps the theoretical "expert" case down to "advanced".
+function toApiDifficulty(
+  difficulty: QuestWizardData['advanced']['difficulty']
+): ApiQuestDifficulty {
+  return difficulty === 'expert' ? 'advanced' : difficulty;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -81,13 +94,13 @@ function toQuestCreatePayload(
       .filter(Boolean)
       .join(''),
     category: data.basics.category,
-    difficulty: 'intermediate',
+    difficulty: toApiDifficulty(data.advanced.difficulty),
     rewardAsset: data.reward.assetType,
     rewardAmount: data.reward.amount,
     xpReward: data.reward.xpReward,
     verifierAddress,
     deadline: deadline ?? undefined,
-    maxParticipants: 200,
+    maxParticipants: data.advanced.maxParticipants,
     requirements: [
       ...data.requirements.skills.map((skill) => `Skill: ${skill}`),
       ...data.requirements.deliverables.map(
@@ -100,6 +113,7 @@ function toQuestCreatePayload(
       `asset-${data.reward.assetType.toLowerCase()}`,
       `verification-${data.verification.mode}`,
       `timezone-${data.timeline.timezone.toLowerCase().replaceAll('/', '-')}`,
+      ...data.advanced.tags,
     ],
   };
 }
@@ -111,10 +125,39 @@ function parseErrors(errorList: Array<{ field: string; message: string }>) {
   }, {});
 }
 
-const QuestWizard = () => {
+export interface QuestWizardProps {
+  /**
+   * `admin` exposes the admin-only settings panel and skips the verifier
+   * requirement, since the admin endpoint assigns the verifier server-side.
+   */
+  mode?: 'user' | 'admin';
+  /**
+   * Overrides the default submission. When provided, the wizard hands over the
+   * sanitized wizard data instead of posting to the public quests endpoint,
+   * which lets the admin entry point use the admin API without duplicating the
+   * creation UI.
+   */
+  onSubmit?: (
+    data: QuestWizardData
+  ) => Promise<{ success: boolean; error?: string }>;
+  /** External submitting state, used when `onSubmit` is supplied. */
+  isSubmitting?: boolean;
+}
+
+const QuestWizard = ({
+  mode = 'user',
+  onSubmit,
+  isSubmitting = false,
+}: QuestWizardProps = {}) => {
   const router = useRouter();
   const { create, isCreating, verifierAddress } = useQuestCreation();
   const { openModal } = useWallet();
+
+  const isAdmin = mode === 'admin';
+  // Admin quests are created through the admin endpoint, which resolves the
+  // verifier server-side, so a connected wallet is not required there.
+  const requiresVerifier = !isAdmin;
+  const submitting = onSubmit ? isSubmitting : isCreating;
 
   const [wizardData, setWizardData] = useState(defaultQuestWizardData);
   const [stepIndex, setStepIndex] = useState<QuestWizardStepIndex>(0);
@@ -128,7 +171,11 @@ const QuestWizard = () => {
   ) => {
     const errors = [...validateStep(currentStep, data)];
 
-    if ((currentStep === 4 || currentStep === 5) && !verifierAddress) {
+    if (
+      requiresVerifier &&
+      (currentStep === 4 || currentStep === 5) &&
+      !verifierAddress
+    ) {
       errors.push({
         field: 'verification.verifierAddress',
         message:
@@ -176,7 +223,7 @@ const QuestWizard = () => {
     }
 
     if (stepIndex === 5) {
-      if (!verifierAddress) {
+      if (requiresVerifier && !verifierAddress) {
         setFieldErrors(
           parseErrors([
             {
@@ -190,11 +237,10 @@ const QuestWizard = () => {
         return;
       }
 
-      const payload = toQuestCreatePayload(
-        sanitizeWizardData(wizardData),
-        verifierAddress
-      );
-      const result = await create(payload);
+      const sanitized = sanitizeWizardData(wizardData);
+      const result = onSubmit
+        ? await onSubmit(sanitized)
+        : await create(toQuestCreatePayload(sanitized, verifierAddress ?? ''));
       if (!result.success) {
         setSubmitError(result.error ?? 'Failed to create quest.');
         setStepIndex(6);
@@ -257,13 +303,24 @@ const QuestWizard = () => {
     }
     if (stepIndex === 2) {
       return (
-        <RewardConfigurationStep
-          data={wizardData}
-          errors={fieldErrors}
-          onChange={(next) =>
-            applyStepUpdate((prev) => ({ ...prev, reward: next }))
-          }
-        />
+        <>
+          <RewardConfigurationStep
+            data={wizardData}
+            errors={fieldErrors}
+            onChange={(next) =>
+              applyStepUpdate((prev) => ({ ...prev, reward: next }))
+            }
+          />
+          {isAdmin && (
+            <AdminSettingsPanel
+              data={wizardData}
+              errors={fieldErrors}
+              onChange={(next) =>
+                applyStepUpdate((prev) => ({ ...prev, advanced: next }))
+              }
+            />
+          )}
+        </>
       );
     }
     if (stepIndex === 3) {
@@ -403,21 +460,24 @@ const QuestWizard = () => {
         aria-label={`Step ${stepIndex + 1}: ${QUEST_WIZARD_STEPS[stepIndex]}`}
         aria-live="polite"
       >
-        {!verifierAddress && stepIndex >= 4 && stepIndex <= 5 && (
-          <div
-            role="alert"
-            className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
-          >
-            <Wallet className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Verifier address required</p>
-              <p className="mt-1">
-                Connect a wallet or sign in before publishing so the backend can
-                assign a verifier address to the quest.
-              </p>
+        {requiresVerifier &&
+          !verifierAddress &&
+          stepIndex >= 4 &&
+          stepIndex <= 5 && (
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+            >
+              <Wallet className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="font-semibold">Verifier address required</p>
+                <p className="mt-1">
+                  Connect a wallet or sign in before publishing so the backend
+                  can assign a verifier address to the quest.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         {currentStepContent}
       </div>
 
@@ -466,18 +526,18 @@ const QuestWizard = () => {
             <button
               type="button"
               onClick={goNext}
-              disabled={isCreating}
+              disabled={submitting}
               aria-label={
-                isCreating
+                submitting
                   ? 'Publishing quest, please wait'
                   : stepIndex === 5
                     ? 'Publish quest'
                     : `Continue to step ${stepIndex + 2}: ${QUEST_WIZARD_STEPS[stepIndex + 1]}`
               }
-              aria-busy={isCreating}
+              aria-busy={submitting}
               className="rounded-xl bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isCreating
+              {submitting
                 ? 'Publishing...'
                 : stepIndex === 5
                   ? 'Publish Quest'
