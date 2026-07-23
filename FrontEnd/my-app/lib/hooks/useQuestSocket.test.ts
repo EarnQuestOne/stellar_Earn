@@ -4,12 +4,6 @@ import { useQuestSocket } from './useQuestSocket';
 import { io } from 'socket.io-client';
 
 // Mock dependency imports
-vi.mock('@/lib/api/client', () => ({
-  tokenManager: {
-    getAccessToken: vi.fn(() => 'test-jwt-token'),
-  },
-}));
-
 vi.mock('@/lib/config/env', () => ({
   env: {
     apiBaseUrl: vi.fn(() => 'http://localhost:3000'),
@@ -24,7 +18,6 @@ const mockSocket = {
   on: vi.fn().mockReturnThis(),
   off: vi.fn().mockReturnThis(),
   connected: false,
-  auth: {},
 };
 
 vi.mock('socket.io-client', () => ({
@@ -35,14 +28,13 @@ describe('useQuestSocket', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSocket.connected = false;
-    mockSocket.auth = {};
   });
 
   afterEach(() => {
     vi.resetModules();
   });
 
-  it('establishes a connection with auth token', () => {
+  it('establishes a connection with withCredentials (cookie-based auth)', () => {
     renderHook(() =>
       useQuestSocket({
         questId: 'quest-123',
@@ -51,10 +43,12 @@ describe('useQuestSocket', () => {
 
     expect(io).toHaveBeenCalledWith(
       'http://localhost:3000',
-      expect.any(Object)
+      expect.objectContaining({
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+      })
     );
     expect(mockSocket.connect).toHaveBeenCalled();
-    expect(mockSocket.auth).toEqual({ token: 'Bearer test-jwt-token' });
   });
 
   it('subscribes to channels on connect', () => {

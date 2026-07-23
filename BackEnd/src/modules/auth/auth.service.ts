@@ -109,9 +109,12 @@ export class AuthService {
     return { accessToken, expiresIn: 3600 };
   }
 
-  async verifyAndLogin(
-    dto: LoginDto,
-  ): Promise<{ accessToken: string; expiresIn: number }> {
+  async verifyAndLogin(dto: LoginDto): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    user: AuthUser;
+  }> {
     const { stellarAddress, challenge, signature } = dto;
 
     const timestamp = extractTimestampFromChallenge(challenge);
@@ -121,9 +124,32 @@ export class AuthService {
 
     verifyStellarSignature(stellarAddress, signature, challenge);
 
-    const payload = { stellarAddress, sub: stellarAddress };
-    const accessToken = this.jwtService.sign(payload);
-    return { accessToken, expiresIn: 3600 };
+    let user = await this.usersService.findByAddress(stellarAddress);
+    if (!user) {
+      user = await this.usersService.create({
+        stellarAddress,
+        username: stellarAddress,
+        role: Role.USER,
+      });
+    }
+
+    const tokens = await this.generateTokens(
+      user.id,
+      user.id,
+      user.stellarAddress,
+      user.role,
+    );
+
+    const authUser: AuthUser = {
+      id: user.id,
+      stellarAddress: user.stellarAddress ?? '',
+      role: user.role,
+    };
+
+    return {
+      ...tokens,
+      user: authUser,
+    };
   }
 
   async generateTokens(
@@ -307,7 +333,7 @@ export class AuthService {
       user.id,
       user.id,
       user.stellarAddress,
-      user.role as Role,
+      user.role,
     );
 
     return {

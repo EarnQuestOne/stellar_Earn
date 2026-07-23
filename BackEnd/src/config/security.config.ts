@@ -35,6 +35,15 @@ export interface SecurityReputationConfig {
   trustedProxyHeaders: string[];
 }
 
+export interface CookieConfig {
+  accessTokenName: string;
+  refreshTokenName: string;
+  sameSite: 'Strict' | 'Lax' | 'None';
+  secure: boolean;
+  accessMaxAgeMs: number;
+  refreshMaxAgeMs: number;
+}
+
 export interface ApplicationSecurityConfig {
   environment: string;
   secrets: {
@@ -46,6 +55,7 @@ export interface ApplicationSecurityConfig {
   limits: SecurityLimitsConfig;
   detection: SecurityDetectionConfig;
   reputation: SecurityReputationConfig;
+  cookies: CookieConfig;
   excludedPaths: {
     csrf: string[];
     audit: string[];
@@ -57,6 +67,19 @@ const toList = (value?: string): string[] =>
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
+
+const parseDurationToMs = (value: string, fallbackMs: number): number => {
+  const match = value.trim().match(/^(\d+)([smhd])$/);
+  if (!match) return fallbackMs;
+  const num = parseInt(match[1], 10);
+  const multipliers: Record<string, number> = {
+    s: 1000,
+    m: 60_000,
+    h: 3_600_000,
+    d: 86_400_000,
+  };
+  return num * (multipliers[match[2]] ?? 1000);
+};
 
 const toBytes = (value: string, fallback: number): number => {
   const match = value.trim().match(/^(\d+)(b|kb|mb)?$/i);
@@ -178,6 +201,29 @@ export const getApplicationSecurityConfig = (
       blockedIps: toList(configService.get<string>('SECURITY_BLOCKED_IPS')),
       trustedIps: toList(configService.get<string>('SECURITY_TRUSTED_IPS')),
       trustedProxyHeaders: ['x-forwarded-for', 'x-real-ip'],
+    },
+    cookies: {
+      accessTokenName: configService.get<string>(
+        'COOKIE_ACCESS_TOKEN_NAME',
+        'auth_token',
+      ),
+      refreshTokenName: configService.get<string>(
+        'COOKIE_REFRESH_TOKEN_NAME',
+        'refresh_token',
+      ),
+      sameSite: configService.get<'Strict' | 'Lax' | 'None'>(
+        'COOKIE_SAMESITE',
+        'Lax',
+      ),
+      secure: environment === 'production',
+      accessMaxAgeMs: parseDurationToMs(
+        configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION', '15m'),
+        15 * 60_000,
+      ),
+      refreshMaxAgeMs: parseDurationToMs(
+        configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION', '7d'),
+        7 * 86_400_000,
+      ),
     },
     excludedPaths: {
       csrf: ['/api/v1/webhooks', '/api/webhooks', '/api/docs'],
