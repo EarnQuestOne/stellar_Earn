@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
 import { useQuestMutations } from '@/hooks/useQuestMutations';
 import { Quest } from '@/types/quest';
 
@@ -19,18 +20,19 @@ describe('useQuestMutations (Optimistic Updates)', () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
     queryClient.setQueryData(['quests'], initialQuests);
-    global.fetch = jest.fn();
+    global.fetch = vi.fn(); // Changed jest.fn() -> vi.fn()
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks(); // Changed jest.clearAllMocks() -> vi.clearAllMocks()
   });
 
   it('optimistically updates quest status on completion', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    // Changed (global.fetch as jest.Mock) -> ReturnType<typeof vi.fn> or vi.mocked
+    vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ...initialQuests[0], status: 'completed', progress: 100 }),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useQuestMutations(), { wrapper });
 
@@ -38,14 +40,13 @@ describe('useQuestMutations (Optimistic Updates)', () => {
       result.current.completeQuest('q1');
     });
 
-    // Check optimistic state before network response resolves
     const optimisticData = queryClient.getQueryData<Quest[]>(['quests']);
     expect(optimisticData?.[0].status).toBe('completed');
     expect(optimisticData?.[0].progress).toBe(100);
   });
 
   it('rolls back to previous state if API call fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useQuestMutations(), { wrapper });
 
