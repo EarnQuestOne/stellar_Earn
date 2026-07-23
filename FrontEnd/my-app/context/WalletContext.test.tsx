@@ -116,7 +116,7 @@ describe('WalletProvider — reconnection verification', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('skips verification when no persisted session exists', async () => {
