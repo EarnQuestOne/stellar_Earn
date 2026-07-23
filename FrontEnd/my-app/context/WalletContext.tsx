@@ -11,6 +11,7 @@ interface WalletContextType {
   address: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  isVerifyingWallet: boolean;
   selectedWalletId: string | null;
   openModal: () => void;
   closeModal: () => void;

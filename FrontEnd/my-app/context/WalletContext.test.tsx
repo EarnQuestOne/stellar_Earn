@@ -31,7 +31,7 @@ function useStoreMock(selector?: any) {
 }
 useStoreMock.getState = () => storeState;
 
-vi.mock('../../lib/store', () => ({
+vi.mock('../lib/store', () => ({
   useStore: Object.assign(useStoreMock, {
     persist: {
       hasHydrated: () => true,
@@ -43,11 +43,11 @@ vi.mock('../../lib/store', () => ({
   }),
 }));
 
-vi.mock('../../lib/hooks/useHydrated', () => ({
+vi.mock('../lib/hooks/useHydrated', () => ({
   useHydrated: () => true,
 }));
 
-vi.mock('../../lib/api/auth', () => ({
+vi.mock('../lib/api/auth', () => ({
   logout: (...args: any[]) => mockLogout(...args),
 }));
 
@@ -160,7 +160,7 @@ describe('WalletProvider — reconnection verification', () => {
     expect(mockStoreActions.disconnectWallet).toHaveBeenCalledTimes(1);
   });
 
-  it('clears session on verification timeout', async () => {
+  it('clears session on verification timeout', { timeout: 15000 }, async () => {
     const persistedAddr = 'GABCDEF1234567890';
     storeState.address = persistedAddr;
     storeState.isConnected = true;
