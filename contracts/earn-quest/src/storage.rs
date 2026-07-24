@@ -5,6 +5,7 @@ use crate::types::{
     Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
 };
 
+use crate::ttl;
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
@@ -169,6 +170,12 @@ pub fn set_quest(env: &Env, id: &Symbol, quest: &Quest) {
     env.storage()
         .instance()
         .set(&DataKey::Quest(id.clone()), quest);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Quest(id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Checks if metadata exists for a quest.
@@ -297,6 +304,12 @@ pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submiss
         &DataKey::Submission(quest_id.clone(), submitter.clone()),
         submission,
     );
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Submission(quest_id.clone(), submitter.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 //================================================================================
@@ -323,6 +336,12 @@ pub fn set_user_stats(env: &Env, user: &Address, stats: &UserCore) {
     env.storage()
         .instance()
         .set(&DataKey::UserStats(user.clone()), stats);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::UserStats(user.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Retrieves user badges — cold path (loaded only for badge operations).
@@ -340,6 +359,12 @@ pub fn set_user_badges(env: &Env, user: &Address, badges: &UserBadges) {
     env.storage()
         .instance()
         .set(&DataKey::UserBadges(user.clone()), badges);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::UserBadges(user.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 //================================================================================
@@ -995,6 +1020,12 @@ pub fn set_escrow_balances(env: &Env, quest_id: &Symbol, balances: &EscrowBalanc
     env.storage()
         .instance()
         .set(&DataKey::Escrow(quest_id.clone()), balances);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Escrow(quest_id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Get escrow cold-path metadata (depositor, token, created_at).
@@ -1011,6 +1042,12 @@ pub fn set_escrow_meta(env: &Env, quest_id: &Symbol, meta: &EscrowMeta) {
     env.storage()
         .instance()
         .set(&DataKey::EscrowMeta(quest_id.clone()), meta);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::EscrowMeta(quest_id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Assemble full EscrowInfo view from the two split entries.

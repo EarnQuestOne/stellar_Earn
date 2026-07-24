@@ -246,4 +246,17 @@ export class AuthController {
       role: user.role,
     };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfile(@CurrentUser() user: AuthUser) {
+    return {
+      stellarAddress: user.stellarAddress,
+      role: user.role,
+    };
+  }
 }
