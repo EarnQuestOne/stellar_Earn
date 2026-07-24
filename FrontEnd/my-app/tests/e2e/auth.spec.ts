@@ -23,7 +23,9 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should persist session on reload', async () => {
-    // Placeholder for session persistence coverage once wallet mocking is available.
+    // With httpOnly cookies, session persistence is handled by the browser
+    // automatically sending cookies with requests. The profile endpoint
+    // will return user data if valid cookies exist.
   });
 
   test('should logout correctly', async () => {
@@ -44,12 +46,6 @@ test.describe('Session Expired Flow', () => {
   test('should show session expired modal when session-expired event is dispatched', async ({
     page,
   }) => {
-    // Inject stale tokens to simulate an authenticated session
-    await page.addInitScript(() => {
-      localStorage.setItem('stellar_earn_access_token', 'expired.header.sig');
-      localStorage.setItem('stellar_earn_refresh_token', 'expired.header.sig');
-    });
-
     await page.goto('/');
 
     // Dispatch the session-expired event as the interceptor would

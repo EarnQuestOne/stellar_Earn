@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { tokenManager } from '@/lib/api/client';
 import { env } from '@/lib/config/env';
 
 export interface QuestUpdatedEvent {
@@ -35,13 +34,11 @@ const globalCallbackRegistry = new Set<UseQuestSocketOptions>();
 function getSharedSocket(): Socket {
   if (!sharedSocket) {
     const apiBaseUrl = env.apiBaseUrl();
-    const token = tokenManager.getAccessToken();
 
+    // Auth is handled via httpOnly cookies sent automatically with the handshake
     sharedSocket = io(apiBaseUrl, {
-      auth: {
-        token: token ? `Bearer ${token}` : undefined,
-      },
       transports: ['websocket', 'polling'],
+      withCredentials: true,
       autoConnect: false,
       reconnection: true,
       reconnectionDelay: 1000,
@@ -192,10 +189,7 @@ export function useQuestSocket(options: UseQuestSocketOptions): {
         resourceId: questId,
       });
     } else {
-      const token = tokenManager.getAccessToken();
-      socket.auth = {
-        token: token ? `Bearer ${token}` : undefined,
-      };
+      // Auth is handled via httpOnly cookies sent automatically with the handshake
       socket.connect();
     }
 
