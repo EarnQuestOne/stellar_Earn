@@ -6,10 +6,6 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
-
-- Removed duplicate `getProfile` method definition in `auth.controller.ts` that caused TypeScript compilation error (TS2393).
-
 ### Added
 
 - Restored `GET /auth/profile` endpoint and configured `PassportStrategy` for `JwtStrategy`.
