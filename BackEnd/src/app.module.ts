@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -15,6 +15,7 @@ import { StartupReadinessService } from './common/services/startup-readiness.ser
 import { FileUploadModule } from './common/upload/file-upload.module';
 import { ApiVersionGuard } from './common/guards/versioning.guard';
 import { VersioningInterceptor } from './common/interceptors/versioning.interceptor';
+import { BodySizeLimitMiddleware } from './common/middleware/body-size-limit.middleware';
 
 import { AdminModule } from './modules/admin/admin.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -121,4 +122,10 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(BodySizeLimitMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

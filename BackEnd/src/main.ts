@@ -84,6 +84,9 @@ async function bootstrap() {
 
     const appSecurityConfig = getApplicationSecurityConfig(configService);
 
+    // Body parsing is now handled per-controller by BodySizeLimitMiddleware
+    // Global defaults: 1mb JSON / 256kb urlencoded
+    // See src/common/middleware/body-size-limit.middleware.ts
     app.use(
       express.json({
         limit: appSecurityConfig.limits.jsonBodyLimit,
