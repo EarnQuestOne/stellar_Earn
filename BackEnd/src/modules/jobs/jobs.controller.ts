@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { JobsService } from './jobs.service';
 import { DeadLetterQueueService } from './services/dead-letter-queue.service';
+import { JobArchivalService } from './services/job-archival.service';
 
 @ApiTags('Jobs')
 @Controller('jobs')
@@ -25,6 +26,7 @@ export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
     private readonly dlqService: DeadLetterQueueService,
+    private readonly archivalService: JobArchivalService,
   ) {}
 
   @Get('health')
@@ -118,5 +120,53 @@ export class JobsController {
   @ApiResponse({ status: 200, description: 'DLQ purged' })
   async purgeDlq() {
     return this.dlqService.purge();
+  }
+
+  // ── Archival endpoints ──────────────────────────────────────────────
+
+  @Get('archival/metrics')
+  @ApiOperation({
+    summary: 'Get job archival metrics (active vs archived counts)',
+  })
+  @ApiResponse({ status: 200, description: 'Archival metrics' })
+  async getArchivalMetrics() {
+    return this.archivalService.getMetrics();
+  }
+
+  @Post('archival/archive')
+  @ApiOperation({
+    summary: 'Archive completed/failed jobs older than retention window',
+  })
+  @ApiQuery({ name: 'retentionDays', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Archival result' })
+  async archiveOldJobs(@Param('retentionDays') retentionDays?: string) {
+    const days = retentionDays ? parseInt(retentionDays, 10) : undefined;
+    return this.archivalService.archiveOldJobs(days);
+  }
+
+  @Post('archival/purge')
+  @ApiOperation({
+    summary: 'Permanently delete archived jobs older than archive retention',
+  })
+  @ApiQuery({ name: 'retentionDays', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Purge result' })
+  async purgeOldArchives(@Param('retentionDays') retentionDays?: string) {
+    const days = retentionDays ? parseInt(retentionDays, 10) : undefined;
+    return this.archivalService.purgeOldArchives(days);
+  }
+
+  @Post('archival/run')
+  @ApiOperation({ summary: 'Run full archival maintenance (archive + purge)' })
+  @ApiQuery({ name: 'activeRetentionDays', required: false, type: Number })
+  @ApiQuery({ name: 'archiveRetentionDays', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Maintenance result' })
+  async runMaintenance(
+    @Param('activeRetentionDays') activeDays?: string,
+    @Param('archiveRetentionDays') archiveDays?: string,
+  ) {
+    return this.archivalService.runMaintenance(
+      activeDays ? parseInt(activeDays, 10) : undefined,
+      archiveDays ? parseInt(archiveDays, 10) : undefined,
+    );
   }
 }
