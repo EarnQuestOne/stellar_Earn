@@ -11,6 +11,8 @@ import {
 } from 'stellar-sdk';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
+import { RetryService } from '../../common/services/retry.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 export interface OnChainQuestState {
   id: string;
@@ -38,6 +40,8 @@ export class SorobanQuestReaderService {
     private readonly configService: ConfigService,
     private readonly tracing: TracingService,
     private readonly metrics: MetricsService,
+    private readonly retryService: RetryService,
+    private readonly circuitBreaker: CircuitBreakerService,
   ) {
     const rpcUrl =
       this.configService.get<string>('SOROBAN_RPC_URL') ||
@@ -108,7 +112,12 @@ export class SorobanQuestReaderService {
             .setTimeout(0)
             .build();
 
-          const sim = await this.rpcServer.simulateTransaction(tx);
+          const sim = await this.retryService.executeWithRetry(
+            () => this.circuitBreaker.callWithBreaker(
+              'stellar.rpc.simulate',
+              () => this.rpcServer.simulateTransaction(tx),
+            ),
+          );
 
           const duration = Date.now() - startTime;
           this.metrics.observeHistogram(

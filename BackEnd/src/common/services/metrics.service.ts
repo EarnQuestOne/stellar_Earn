@@ -227,6 +227,18 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
       'Cumulative system-mode CPU time in microseconds',
     );
     this.registerCounter(
+      'stellar_circuit_breaker_state_changes_total',
+      'Total circuit breaker state transitions',
+    );
+    this.registerCounter(
+      'stellar_retry_attempts_total',
+      'Total retry attempts for Soroban RPC calls',
+    );
+    this.registerCounter(
+      'stellar_retry_exhausted_total',
+      'Total RPC calls that exhausted all retry attempts',
+    );
+    this.registerCounter(
       'auth_attempts_total',
       'Total authentication attempts',
     );

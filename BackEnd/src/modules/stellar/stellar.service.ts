@@ -23,6 +23,8 @@ import * as StellarSdk from 'stellar-sdk';
 import { Repository } from 'typeorm';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
+import { RetryService } from '../../common/services/retry.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 import { EventStore } from '../../events/entities/event-store.entity';
 
 export interface ApproveSubmissionResult {
@@ -65,6 +67,8 @@ export class StellarService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly tracing: TracingService,
     private readonly metrics: MetricsService,
+    private readonly retryService: RetryService,
+    private readonly circuitBreaker: CircuitBreakerService,
     @InjectRepository(EventStore)
     private readonly eventStoreRepository: Repository<EventStore>,
   ) {}
@@ -187,7 +191,12 @@ export class StellarService implements OnModuleInit {
 
         // Simulate first to surface contract-level errors (wrong
         // verifier, quest full, etc.) as 400s rather than burning fees.
-        const sim = await this.rpcServer.simulateTransaction(tx);
+        const sim = await this.retryService.executeWithRetry(
+          () => this.circuitBreaker.callWithBreaker(
+            'stellar.rpc.simulate',
+            () => this.rpcServer.simulateTransaction(tx),
+          ),
+        );
         if (rpc.Api.isSimulationError(sim)) {
           const errorMsg =
             typeof sim.error === 'string' ? sim.error : 'simulation failed';
@@ -256,7 +265,12 @@ export class StellarService implements OnModuleInit {
       this.configService.get<string>('STELLAR_EVENT_PAGE_SIZE') || '200',
     );
 
-    const latestLedgerResponse = await this.rpcServer.getLatestLedger();
+    const latestLedgerResponse = await this.retryService.executeWithRetry(
+      () => this.circuitBreaker.callWithBreaker(
+        'stellar.rpc.get_latest_ledger',
+        () => this.rpcServer.getLatestLedger(),
+      ),
+    );
     const finalLedger = Math.max(
       1,
       latestLedgerResponse.sequence - this.eventReorgBufferLedgers,
@@ -293,7 +307,12 @@ export class StellarService implements OnModuleInit {
             limit: pageSize,
           };
 
-      const response: any = await this.rpcServer.getEvents(request);
+      const response: any = await this.retryService.executeWithRetry(
+        () => this.circuitBreaker.callWithBreaker(
+          'stellar.rpc.get_events',
+          () => this.rpcServer.getEvents(request),
+        ),
+      );
       const events = Array.isArray(response?.events) ? response.events : [];
 
       for (const event of events) {
@@ -383,8 +402,12 @@ export class StellarService implements OnModuleInit {
           const signer = StellarSdk.Keypair.fromSecret(secretKey);
           transaction.sign(signer);
 
-          const result =
-            await this.horizonServer.submitTransaction(transaction);
+          const result = await this.retryService.executeWithRetry(
+            () => this.circuitBreaker.callWithBreaker(
+              'stellar.horizon.submit',
+              () => this.horizonServer.submitTransaction(transaction),
+            ),
+          );
 
           const duration = Date.now() - startTime;
           this.metrics.observeHistogram(
