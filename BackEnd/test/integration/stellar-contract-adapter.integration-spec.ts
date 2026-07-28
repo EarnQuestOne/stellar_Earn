@@ -71,6 +71,8 @@ describe('Stellar contract adapter integration', () => {
             registerCounter: jest.fn(),
             registerGauge: jest.fn(),
             registerHistogram: jest.fn(),
+            incrementCounter: jest.fn(),
+            observeHistogram: jest.fn(),
             increment: jest.fn(),
             gauge: jest.fn(),
             histogram: jest.fn(),
