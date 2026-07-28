@@ -24,6 +24,7 @@ import { Repository } from 'typeorm';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+import { SorobanContractReadCacheService } from './soroban-contract-read-cache.service';
 
 export interface ApproveSubmissionResult {
   transactionHash: string;
@@ -65,6 +66,7 @@ export class StellarService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly tracing: TracingService,
     private readonly metrics: MetricsService,
+    private readonly sorobanReadCache: SorobanContractReadCacheService,
     @InjectRepository(EventStore)
     private readonly eventStoreRepository: Repository<EventStore>,
   ) {}
@@ -224,6 +226,12 @@ export class StellarService implements OnModuleInit {
 
         this.logger.log(
           `approve_submission completed for quest=${questContractId} submitter=${submitterAddress} tx=${result.hash}`,
+        );
+
+        await this.sorobanReadCache.invalidateAfterWrite(
+          contractId,
+          questContractId,
+          submitterAddress,
         );
 
         return {
@@ -508,6 +516,12 @@ export class StellarService implements OnModuleInit {
           reorgBufferLedgers: this.eventReorgBufferLedgers,
         },
       }),
+    );
+
+    await this.sorobanReadCache.invalidateFromContractEvent(
+      contractId,
+      eventName,
+      nativeTopics,
     );
 
     return true;

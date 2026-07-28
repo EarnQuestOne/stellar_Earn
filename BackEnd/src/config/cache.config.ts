@@ -39,11 +39,13 @@ export const CACHE_KEYS = {
   USER_DETAIL: 'user_detail',
   ANALYTICS: 'analytics',
   NOTIFICATIONS: 'notifications',
+  SOROBAN_CONTRACT_READ: 'soroban_contract_read',
 } as const;
 
 export const CACHE_TTL = {
   DEFAULT: 300, // 5 minutes
   SHORT: 60, // 1 minute
+  SOROBAN_READ: 15, // Soroban idempotent contract reads
   MEDIUM: 600, // 10 minutes
   LONG: 3600, // 1 hour
   VERY_LONG: 86400, // 24 hours

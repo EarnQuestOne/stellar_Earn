@@ -444,6 +444,17 @@ describe('Service with Cache', () => {
    curl /cache/stats | jq '.[] | select(.hitRate < 50)'
    ```
 
+## Soroban contract read cache
+
+Idempotent earn-quest simulations (`get_quest` / legacy `get_task`, `get_user_stats`)
+are cached with a short TTL (default **15s**, `SOROBAN_READ_CACHE_TTL_SECONDS`).
+Keys follow `stellar_earn:v1:soroban_read:<contractId>:<function>:<args>`.
+
+- **Service**: `SorobanContractReadCacheService` + `SorobanQuestReaderService`
+- **Invalidation**: `approve_submission` success and ingested on-chain quest/user events
+- **Metrics**: `soroban_contract_read_cache_*` counters (see `SOROBAN_READ_CACHE.md`)
+- **Benchmark**: `npm run benchmark:soroban-read-cache`
+
 ## Future Enhancements
 
 1. **Cache Warming**: Pre-load frequently used data on startup

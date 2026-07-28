@@ -24,4 +24,9 @@ export const CacheKeys = {
     redisKey('submission', questId, userId),
   leaderboard: (page: number) => redisKey('leaderboard', page),
   session: (token: string) => redisKey('session', token),
+  sorobanRead: (
+    contractId: string,
+    functionName: string,
+    argsKey: string,
+  ) => redisKey('soroban_read', contractId, functionName, argsKey),
 } as const;
