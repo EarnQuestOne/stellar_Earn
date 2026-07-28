@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { AdminService } from './admin.module';
+import { AdminService } from './admin.service';
 import { User } from '../users/entities/user.entity';
 import { ForbiddenException } from '@nestjs/common';
 import { Role } from '../../common/enums/role.enum';

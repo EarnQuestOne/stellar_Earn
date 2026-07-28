@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
-import { AdminController, AdminService } from './admin.module';
+import { AdminController } from './admin.controller';
+import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { IpWhitelistGuard } from '../../common/guards/ip-whitelist.guard';
