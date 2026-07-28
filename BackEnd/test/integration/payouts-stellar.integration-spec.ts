@@ -1,5 +1,4 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
-import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -42,12 +41,8 @@ describe('Payouts-Stellar Integration', () => {
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           entities: [Payout, User],
           autoLoadEntities: true,
-          synchronize: false,
+          synchronize: true,
           dropSchema: true,
-          migrationsRun: true,
-          migrations: [
-            join(__dirname, '../../src/database/migrations/*.{ts,js}'),
-          ],
         }),
         PayoutsModule,
         StellarModule,

@@ -61,17 +61,23 @@ describe('JOB_RETRY_POLICIES', () => {
     },
   );
 
-  it.each(allJobTypes)('policy for %s has a valid backoff type', (type) => {
-    expect(['exponential', 'fixed']).toContain(
-      JOB_RETRY_POLICIES[type as JobType].backoff.type,
-    );
-  });
+  it.each(allJobTypes)(
+    'policy for %s has a valid backoff type',
+    (type) => {
+      expect(['exponential', 'fixed']).toContain(
+        JOB_RETRY_POLICIES[type as JobType].backoff.type,
+      );
+    },
+  );
 
-  it.each(allJobTypes)('policy for %s has a positive backoff delay', (type) => {
-    expect(JOB_RETRY_POLICIES[type as JobType].backoff.delay).toBeGreaterThan(
-      0,
-    );
-  });
+  it.each(allJobTypes)(
+    'policy for %s has a positive backoff delay',
+    (type) => {
+      expect(
+        JOB_RETRY_POLICIES[type as JobType].backoff.delay,
+      ).toBeGreaterThan(0);
+    },
+  );
 
   // Payout jobs should have more attempts than low-priority jobs
   it('PAYOUT_PROCESS has more attempts than METRICS_COLLECT', () => {
@@ -81,9 +87,7 @@ describe('JOB_RETRY_POLICIES', () => {
   });
 
   it('WEBHOOK_DELIVER attempts >= 5 (must be resilient to transient failures)', () => {
-    expect(
-      JOB_RETRY_POLICIES[JobType.WEBHOOK_DELIVER].attempts,
-    ).toBeGreaterThanOrEqual(5);
+    expect(JOB_RETRY_POLICIES[JobType.WEBHOOK_DELIVER].attempts).toBeGreaterThanOrEqual(5);
   });
 });
 
@@ -272,9 +276,9 @@ describe('isNonRetryableError()', () => {
 
   describe('unknown job type', () => {
     it('returns false (falls back to DEFAULT_RETRY_POLICY which has empty list)', () => {
-      expect(isNonRetryableError('unknown:type' as JobType, 'any error')).toBe(
-        false,
-      );
+      expect(
+        isNonRetryableError('unknown:type' as JobType, 'any error'),
+      ).toBe(false);
     });
   });
 

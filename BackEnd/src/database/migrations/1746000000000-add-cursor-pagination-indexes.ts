@@ -14,8 +14,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Safe to run on live data — CREATE INDEX CONCURRENTLY does not lock the
  * table. Rollback drops all indexes added by this migration.
  */
-export class AddCursorPaginationIndexes1770000000000 implements MigrationInterface {
-  name = 'AddCursorPaginationIndexes1770000000000';
+export class AddCursorPaginationIndexes1746000000000 implements MigrationInterface {
+  name = 'AddCursorPaginationIndexes1746000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // ── quests ──────────────────────────────────────────────────────────────

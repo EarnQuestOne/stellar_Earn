@@ -402,14 +402,6 @@ describe('WebhooksService', () => {
 
       try {
         const record = buildRecord({ attempts: 1, maxAttempts: 5 });
-        // The service fails closed when a secret is configured but the signature is
-        // missing — the retry therefore needs a valid signature on the record so
-        // verifyWebhookSignature can succeed and the handler is actually invoked.
-        record.signature = generateWebhookSignature(
-          record.payload,
-          GITHUB_SECRET,
-          'github',
-        );
         repo.findOne.mockResolvedValueOnce(record);
         const handleEventSpy = jest
           .spyOn(githubHandler, 'handleEvent')

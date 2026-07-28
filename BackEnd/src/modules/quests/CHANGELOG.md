@@ -7,8 +7,6 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-
-- Partial indexes (`WHERE "deletedAt" IS NULL`) on `Quest` for `status` and `createdBy` columns to speed up active-quest queries (#2000).
 - `QuestMapper` class with `toDto`, `toDtoArray` static methods for explicit DTO mapping
 - Unit tests for `QuestMapper` covering entity-to-DTO transformation
 

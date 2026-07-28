@@ -74,11 +74,7 @@ export class QuotaService {
         .createQueryBuilder()
         .insert()
         .into(QuotaUsage)
-        .values({
-          tenantId,
-          resourceType: QuotaResourceType.QUEST,
-          periodStart,
-        })
+        .values({ tenantId, resourceType: QuotaResourceType.QUEST, periodStart })
         .orIgnore()
         .execute();
 

@@ -82,19 +82,13 @@ describe('PayloadStorageService', () => {
   describe('buildLightweightData', () => {
     it('should preserve __trace and __jobType', () => {
       const data = {
-        heavyObject: {
-          rows: Array.from({ length: 1000 }, (_, i) => ({ id: i })),
-        },
+        heavyObject: { rows: Array.from({ length: 1000 }, (_, i) => ({ id: i })) },
         userId: 'u1',
         __trace: { traceId: 'abc', spanId: 'def' },
         __jobType: 'payout:process',
       };
 
-      const result = service.buildLightweightData(
-        data,
-        'job-1',
-        'job_payload:job-1',
-      );
+      const result = service.buildLightweightData(data, 'job-1', 'job_payload:job-1');
 
       expect(result.__trace).toEqual(data.__trace);
       expect(result.__jobType).toBe('payout:process');
@@ -112,11 +106,7 @@ describe('PayloadStorageService', () => {
         __jobType: 'email:send',
       };
 
-      const result = service.buildLightweightData(
-        data,
-        'job-2',
-        'job_payload:job-2',
-      );
+      const result = service.buildLightweightData(data, 'job-2', 'job_payload:job-2');
 
       expect(result.name).toBe('test');
       expect(result.count).toBe(42);

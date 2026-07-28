@@ -34,7 +34,3 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Updated `WebhooksController` and unit tests to enforce `WebhookPayloadDto` validation.
-
-### Changed
-
-- Webhook event DTO and controller refinements for improved request validation.

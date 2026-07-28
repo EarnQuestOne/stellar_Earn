@@ -1,5 +1,4 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
-import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -52,12 +51,8 @@ describe('Moderation-Health Integration', () => {
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           entities: [User, Quest, Submission],
           autoLoadEntities: true,
-          synchronize: false,
+          synchronize: true,
           dropSchema: true,
-          migrationsRun: true,
-          migrations: [
-            join(__dirname, '../../src/database/migrations/*.{ts,js}'),
-          ],
         }),
         UsersModule,
       ],

@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  Index,
 } from 'typeorm';
 
 export enum PayoutStatus {
@@ -24,12 +23,6 @@ export enum PayoutType {
   REFERRAL = 'referral',
 }
 
-@Index('idx_payout_active_status', ['status'], {
-  where: '"deletedAt" IS NULL',
-})
-@Index('idx_payout_active_type_status', ['type', 'status'], {
-  where: '"deletedAt" IS NULL',
-})
 @Entity('payouts')
 export class Payout {
   @PrimaryGeneratedColumn('uuid')

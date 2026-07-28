@@ -136,12 +136,7 @@ describe('WebhooksController', () => {
     it('should append a CONFIRMED event when no on-chain tx hash is returned', async () => {
       webhooksService.processWebhook.mockResolvedValue(successResponse());
 
-      await controller.handleGithubWebhook(
-        mockPayload,
-        'push',
-        'delivery-1',
-        'sig',
-      );
+      await controller.handleGithubWebhook(mockPayload, 'push', 'delivery-1', 'sig');
 
       expect(traceService.linkOnchain).not.toHaveBeenCalled();
       expect(traceService.appendEvent).toHaveBeenCalledWith(
@@ -160,12 +155,7 @@ describe('WebhooksController', () => {
       );
 
       await expect(
-        controller.handleGithubWebhook(
-          mockPayload,
-          'push',
-          'delivery-1',
-          'bad-sig',
-        ),
+        controller.handleGithubWebhook(mockPayload, 'push', 'delivery-1', 'bad-sig'),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(traceService.appendEvent).toHaveBeenCalledWith(
@@ -262,13 +252,7 @@ describe('WebhooksController', () => {
   describe('POST /webhooks/generic/:service — allowlist enforcement', () => {
     it('should reject an unknown service name with BadRequestException', async () => {
       await expect(
-        controller.handleGenericWebhook(
-          mockPayload,
-          {},
-          'sig',
-          'push',
-          'unknown',
-        ),
+        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'unknown'),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
@@ -289,13 +273,7 @@ describe('WebhooksController', () => {
 
     it('should reject a known service whose secret env var is not set', async () => {
       await expect(
-        controller.handleGenericWebhook(
-          mockPayload,
-          {},
-          'sig',
-          'push',
-          'github',
-        ),
+        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'github'),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
@@ -303,13 +281,7 @@ describe('WebhooksController', () => {
     it('should reject a known service whose secret env var is empty', async () => {
       process.env.GITHUB_WEBHOOK_SECRET = '';
       await expect(
-        controller.handleGenericWebhook(
-          mockPayload,
-          {},
-          'sig',
-          'push',
-          'github',
-        ),
+        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'github'),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });

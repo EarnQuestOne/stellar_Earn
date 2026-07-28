@@ -18,9 +18,3 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
   - `POST /v1/process/heap/snapshot` — write a `.heapsnapshot` file to `PROFILING_DIR`
   - `GET /v1/process/profiling/sessions` — list heap snapshot sessions taken this process lifetime
 - Environment variables: `RESOURCE_MAX_HEAP_MB`, `RESOURCE_MAX_RSS_MB`, `RESOURCE_HEAP_WARN_PERCENT`, `RESOURCE_HEAP_CRITICAL_PERCENT`, `RESOURCE_EXIT_ON_HEAP_CRITICAL`, `RESOURCE_MONITOR_INTERVAL_MS`, `PROFILING_ENABLED`, `PROFILING_DIR`, `PROFILING_MAX_DURATION_MS`
-
-### Changed
-
-- Improved `ResourceLimitsService` threshold validation and monitoring interval handling.
-- Refactored `ProfilingService` session lifecycle management.
-- Updated controller response types and `ProcessResourceTypes` definitions.

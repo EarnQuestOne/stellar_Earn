@@ -201,9 +201,7 @@ describe('QuotaService', () => {
     });
 
     it('runs check-and-increment inside a transaction', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 3 }));
 
       await service.enforceQuestCreationQuota('TENANT_A');
@@ -212,9 +210,7 @@ describe('QuotaService', () => {
     });
 
     it('increments quest count inside the transaction when under limit', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       const usage = makeUsage({ questCount: 3 });
       mockManager.findOne.mockResolvedValue(usage);
 
@@ -229,9 +225,7 @@ describe('QuotaService', () => {
     });
 
     it('acquires a pessimistic_write lock on the usage row', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 0 }));
 
       await service.enforceQuestCreationQuota('TENANT_A');
@@ -243,9 +237,7 @@ describe('QuotaService', () => {
     });
 
     it('throws ForbiddenException when quest limit is reached', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 5 }));
 
       await expect(
@@ -255,9 +247,7 @@ describe('QuotaService', () => {
     });
 
     it('throws ForbiddenException when quest limit is exceeded', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 6 }));
 
       await expect(
@@ -266,9 +256,7 @@ describe('QuotaService', () => {
     });
 
     it('creates a new usage row before locking (orIgnore insert)', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 0 }));
 
       await service.enforceQuestCreationQuota('TENANT_A');
@@ -287,9 +275,7 @@ describe('QuotaService', () => {
     // questCount.
 
     it('issues each concurrent call through a separate transaction', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 10 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 10 }));
       mockManager.findOne.mockResolvedValue(makeUsage({ questCount: 0 }));
 
       const N = 5;
@@ -303,9 +289,7 @@ describe('QuotaService', () => {
     });
 
     it('rejects requests that see a locked row already at the limit', async () => {
-      configRepo.findOne.mockResolvedValue(
-        makeConfig({ maxQuestsPerPeriod: 5 }),
-      );
+      configRepo.findOne.mockResolvedValue(makeConfig({ maxQuestsPerPeriod: 5 }));
 
       let served = 0;
       mockManager.findOne.mockImplementation(async () =>
@@ -341,9 +325,9 @@ describe('QuotaService', () => {
       configRepo.findOne.mockResolvedValue(
         makeConfig({ maxSinglePayoutAmount: 200 }),
       );
-      await expect(service.enforcePayoutQuota('TENANT_A', 201)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.enforcePayoutQuota('TENANT_A', 201),
+      ).rejects.toThrow(ForbiddenException);
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
 
@@ -362,16 +346,10 @@ describe('QuotaService', () => {
 
     it('runs period check-and-increment inside a transaction', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 500,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 500 }),
       );
 
       await service.enforcePayoutQuota('TENANT_A', 300);
@@ -381,10 +359,7 @@ describe('QuotaService', () => {
 
     it('acquires a pessimistic_write lock on the payout usage row', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
         makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 0 }),
@@ -400,16 +375,10 @@ describe('QuotaService', () => {
 
     it('increments payout amount when under period limit', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 500,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 500 }),
       );
 
       await service.enforcePayoutQuota('TENANT_A', 300);
@@ -422,35 +391,23 @@ describe('QuotaService', () => {
 
     it('throws ForbiddenException when period payout limit would be exceeded', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 800,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 800 }),
       );
 
-      await expect(service.enforcePayoutQuota('TENANT_A', 300)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.enforcePayoutQuota('TENANT_A', 300),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('allows payout exactly at the period limit', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 700,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 700 }),
       );
 
       await expect(
@@ -462,10 +419,7 @@ describe('QuotaService', () => {
 
     it('issues each concurrent payout call through a separate transaction', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 10000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 10000 }),
       );
       mockManager.findOne.mockResolvedValue(
         makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 0 }),
@@ -483,36 +437,24 @@ describe('QuotaService', () => {
 
     it('rejects a payout that would exceed the period limit under the lock', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       // Simulate the locked row showing the period already full
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 900,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 900 }),
       );
 
-      await expect(service.enforcePayoutQuota('TENANT_A', 200)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.enforcePayoutQuota('TENANT_A', 200),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('uses bound parameters and does not interpolate amount into SQL string with adversarial/boundary values', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 100,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 100 }),
       );
 
       const adversarialAmount = '1 OR 1=1' as unknown as number;
@@ -536,16 +478,10 @@ describe('QuotaService', () => {
 
     it('handles numeric boundary amount values safely with bound parameters', async () => {
       configRepo.findOne.mockResolvedValue(
-        makeConfig({
-          maxSinglePayoutAmount: null,
-          maxPayoutAmountPerPeriod: 1000,
-        }),
+        makeConfig({ maxSinglePayoutAmount: null, maxPayoutAmountPerPeriod: 1000 }),
       );
       mockManager.findOne.mockResolvedValue(
-        makeUsage({
-          resourceType: QuotaResourceType.PAYOUT,
-          payoutAmount: 100,
-        }),
+        makeUsage({ resourceType: QuotaResourceType.PAYOUT, payoutAmount: 100 }),
       );
 
       const boundaryAmount = 0.00000001;

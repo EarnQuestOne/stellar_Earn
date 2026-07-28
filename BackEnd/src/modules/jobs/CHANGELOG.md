@@ -28,7 +28,3 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 - `DependencyFreshnessService` now uses `PooledHttpClientService` (keep-alive connection pool, 15 s `long` timeout budget) instead of a raw `axios` call for GitHub API requests. `HttpClientModule` added to `JobsModule` imports.
 - `addJob()` signature extended: `addJob(name, data, opts?, jobType?)` — fully backward-compatible; callers that omit `jobType` continue to use `DEFAULT_JOB_OPTIONS`.
-
-### Changed
-
-- `jobs.constants.ts` updated with refined job configuration constants.
