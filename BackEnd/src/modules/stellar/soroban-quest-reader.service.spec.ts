@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { SorobanQuestReaderService } from './soroban-quest-reader.service';
+import { SorobanContractReadCacheService } from './soroban-contract-read-cache.service';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import * as StellarSdk from '@stellar/stellar-sdk';
@@ -52,6 +53,18 @@ describe('SorobanQuestReaderService', () => {
     observeHistogram: jest.fn(),
   };
 
+  const mockReadCache = {
+    buildKey: jest.fn(
+      (contractId: string, fn: string, args: string[]) =>
+        `cache:${contractId}:${fn}:${args.join('|')}`,
+    ),
+    getEnvelope: jest.fn().mockResolvedValue(undefined),
+    setEnvelope: jest.fn().mockResolvedValue(undefined),
+    recordHit: jest.fn(),
+    recordMiss: jest.fn(),
+    recordRpcCall: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,6 +72,7 @@ describe('SorobanQuestReaderService', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: TracingService, useValue: mockTracing },
         { provide: MetricsService, useValue: mockMetrics },
+        { provide: SorobanContractReadCacheService, useValue: mockReadCache },
       ],
     }).compile();
 
@@ -245,5 +259,61 @@ describe('SorobanQuestReaderService', () => {
         status: 'failure',
       },
     );
+  });
+
+  it('should serve getQuest from cache without RPC on hit', async () => {
+    mockReadCache.getEnvelope.mockResolvedValueOnce({
+      kind: 'quest',
+      missing: false,
+      data: {
+        id: 'quest_1',
+        creator: 'GABC',
+        reward_asset: 'XLM',
+        reward_amount: '1000',
+        verifier: 'GVERIFIER',
+        deadline: '123456',
+        status: 'Active',
+        total_claims: 2,
+      },
+    });
+
+    const result = await service.getQuest(validContractId, 'quest_1');
+
+    expect(result?.id).toBe('quest_1');
+    expect(mockRpcServer.simulateTransaction).not.toHaveBeenCalled();
+    expect(mockReadCache.recordHit).toHaveBeenCalledWith('get_quest');
+    expect(mockReadCache.recordMiss).not.toHaveBeenCalled();
+  });
+
+  it('should cache getUserStats after RPC fetch', async () => {
+    const mockRetval = { _type: 'struct' };
+    mockRpcServer.simulateTransaction.mockResolvedValue({
+      result: { retval: mockRetval },
+    });
+
+    const originalIsSimulationError = StellarSdk.rpc.Api.isSimulationError;
+    const originalIsSimulationSuccess = StellarSdk.rpc.Api.isSimulationSuccess;
+    StellarSdk.rpc.Api.isSimulationError = jest.fn().mockReturnValue(false);
+    StellarSdk.rpc.Api.isSimulationSuccess = jest.fn().mockReturnValue(true);
+
+    mockScValToNative.mockReturnValue({
+      xp: 100n,
+      level: 2,
+      quests_completed: 3,
+    });
+
+    const stats = await service.getUserStats(
+      validContractId,
+      'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+    );
+
+    expect(stats.level).toBe(2);
+    expect(mockReadCache.setEnvelope).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ kind: 'user_stats' }),
+    );
+
+    StellarSdk.rpc.Api.isSimulationError = originalIsSimulationError;
+    StellarSdk.rpc.Api.isSimulationSuccess = originalIsSimulationSuccess;
   });
 });

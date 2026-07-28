@@ -9,6 +9,7 @@ import { StellarService } from './stellar.service';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+import { SorobanContractReadCacheService } from './soroban-contract-read-cache.service';
 import * as StellarSdk from 'stellar-sdk';
 
 describe('StellarService (Security)', () => {
@@ -54,6 +55,11 @@ describe('StellarService (Security)', () => {
     observeHistogram: jest.fn(),
   };
 
+  const mockSorobanReadCache = {
+    invalidateAfterWrite: jest.fn().mockResolvedValue(undefined),
+    invalidateFromContractEvent: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     eventStoreRepository = {
       findOne: jest.fn().mockResolvedValue(null),
@@ -67,6 +73,10 @@ describe('StellarService (Security)', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: TracingService, useValue: mockTracing },
         { provide: MetricsService, useValue: mockMetrics },
+        {
+          provide: SorobanContractReadCacheService,
+          useValue: mockSorobanReadCache,
+        },
         {
           provide: getRepositoryToken(EventStore),
           useValue: eventStoreRepository,

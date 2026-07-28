@@ -11,6 +11,7 @@ import { Submission } from '../../src/modules/submissions/entities/submission.en
 import { Payout } from '../../src/modules/payouts/entities/payout.entity';
 import { EventStore } from '../../src/events/entities/event-store.entity';
 import { SorobanQuestReaderService } from '../../src/modules/stellar/soroban-quest-reader.service';
+import { SorobanContractReadCacheService } from '../../src/modules/stellar/soroban-contract-read-cache.service';
 
 describe('Stellar contract adapter integration', () => {
   let module: TestingModule;
@@ -106,6 +107,17 @@ describe('Stellar contract adapter integration', () => {
         {
           provide: getRepositoryToken(EventStore),
           useValue: { find: jest.fn().mockResolvedValue([]) },
+        },
+        {
+          provide: SorobanContractReadCacheService,
+          useValue: {
+            buildKey: jest.fn(),
+            getEnvelope: jest.fn(),
+            setEnvelope: jest.fn(),
+            recordHit: jest.fn(),
+            recordMiss: jest.fn(),
+            recordRpcCall: jest.fn(),
+          },
         },
         SorobanQuestReaderService,
       ],

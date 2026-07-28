@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { TracingService } from '../../src/common/tracing/tracing.service';
 import { MetricsService } from '../../src/common/services/metrics.service';
 import { SorobanQuestReaderService } from '../../src/modules/stellar/soroban-quest-reader.service';
+import { SorobanContractReadCacheService } from '../../src/modules/stellar/soroban-contract-read-cache.service';
 
 describe('SorobanQuestReaderService (integration)', () => {
   let module: TestingModule;
@@ -57,6 +58,20 @@ describe('SorobanQuestReaderService (integration)', () => {
                 return 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
               return undefined;
             }),
+          },
+        },
+        {
+          provide: SorobanContractReadCacheService,
+          useValue: {
+            buildKey: jest.fn(
+              (contractId: string, fn: string, args: string[]) =>
+                `${contractId}:${fn}:${args.join('|')}`,
+            ),
+            getEnvelope: jest.fn().mockResolvedValue(undefined),
+            setEnvelope: jest.fn().mockResolvedValue(undefined),
+            recordHit: jest.fn(),
+            recordMiss: jest.fn(),
+            recordRpcCall: jest.fn(),
           },
         },
       ],
