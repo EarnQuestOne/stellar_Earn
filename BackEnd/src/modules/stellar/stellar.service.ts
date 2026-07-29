@@ -60,6 +60,9 @@ export class StellarService implements OnModuleInit {
   private networkPassphrase: string;
   private readonly eventReorgBufferLedgers = 5;
   private readonly eventInitialLookbackLedgers = 50;
+  private feeEstimateTtlMs: number;
+  private feeEstimateCache: { value: number; expiresAt: number } | null = null;
+  private feeEstimateRefreshPromise: Promise<number> | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -67,7 +70,11 @@ export class StellarService implements OnModuleInit {
     private readonly metrics: MetricsService,
     @InjectRepository(EventStore)
     private readonly eventStoreRepository: Repository<EventStore>,
-  ) {}
+  ) {
+    this.feeEstimateTtlMs = Number(
+      this.configService.get<string>('STELLAR_FEE_ESTIMATE_TTL_MS') || '5000',
+    );
+  }
 
   onModuleInit() {
     this.initializeStellarComponents();
@@ -92,6 +99,92 @@ export class StellarService implements OnModuleInit {
         : StellarSdk.Networks.TESTNET;
 
     this.logger.log(`Stellar Service initialized on ${network}`);
+  }
+
+  private async getTransactionFeeEstimate(): Promise<number> {
+    const now = Date.now();
+    const cached = this.feeEstimateCache;
+
+    if (cached && cached.expiresAt > now) {
+      this.metrics.incrementCounter('stellar_fee_estimate_cache_hits_total', {
+        source: 'memory',
+      });
+      return cached.value;
+    }
+
+    if (this.feeEstimateRefreshPromise) {
+      if (cached) {
+        this.metrics.incrementCounter('stellar_fee_estimate_cache_hits_total', {
+          source: 'stale',
+        });
+        return cached.value;
+      }
+      return this.feeEstimateRefreshPromise;
+    }
+
+    this.metrics.incrementCounter('stellar_fee_estimate_requests_total', {
+      source: 'network',
+    });
+    this.feeEstimateRefreshPromise = this.refreshTransactionFeeEstimate();
+
+    try {
+      return await this.feeEstimateRefreshPromise;
+    } finally {
+      this.feeEstimateRefreshPromise = null;
+    }
+  }
+
+  private async refreshTransactionFeeEstimate(): Promise<number> {
+    try {
+      const feeStatsClient = this.rpcServer as unknown as {
+        getFeeStats?: () => Promise<any>;
+      };
+      if (typeof feeStatsClient.getFeeStats !== 'function') {
+        throw new Error('Fee stats endpoint unavailable');
+      }
+
+      const rawStats = await feeStatsClient.getFeeStats();
+      const feeEstimate = this.extractFeeEstimate(rawStats);
+      const ttlMs = Number.isFinite(this.feeEstimateTtlMs)
+        ? this.feeEstimateTtlMs
+        : 5000;
+
+      this.feeEstimateCache = {
+        value: feeEstimate,
+        expiresAt: Date.now() + ttlMs,
+      };
+
+      return feeEstimate;
+    } catch {
+      const fallbackFee = this.feeEstimateCache?.value ?? 100;
+      this.logger.warn(
+        `Falling back to cached transaction fee estimate: ${fallbackFee}`,
+      );
+      this.metrics.incrementCounter('stellar_fee_estimate_fallbacks_total', {
+        source: 'network_error',
+      });
+      this.feeEstimateCache = {
+        value: fallbackFee,
+        expiresAt: Date.now() + 1000,
+      };
+      return fallbackFee;
+    }
+  }
+
+  private extractFeeEstimate(
+    stats: Record<string, unknown> | undefined,
+  ): number {
+    const feeValue =
+      (stats?.p95_fee as string | number | undefined) ??
+      (stats?.mode_fee as string | number | undefined) ??
+      (stats?.min_accepted_fee as string | number | undefined) ??
+      (stats?.last_ledger_base_fee as string | number | undefined) ??
+      '100';
+
+    const parsedFee = Number(feeValue);
+    return Number.isFinite(parsedFee)
+      ? Math.max(100, Math.round(parsedFee))
+      : 100;
   }
 
   /**
@@ -166,9 +259,10 @@ export class StellarService implements OnModuleInit {
         const accountResponse =
           await this.horizonServer.loadAccount(sourcePubKey);
         const source = new Account(sourcePubKey, accountResponse.sequence);
+        const fee = await this.getTransactionFeeEstimate();
 
         const tx = new TransactionBuilder(source, {
-          fee: '100',
+          fee: fee.toString(),
           networkPassphrase: this.networkPassphrase,
         })
           .addOperation(
@@ -607,17 +701,22 @@ export class StellarService implements OnModuleInit {
     }
 
     const sourceKeypair = Keypair.fromSecret(secretKey);
-    const sourceAccount = await this.horizonServer.loadAccount(
+    const sourceAccountResponse = await this.horizonServer.loadAccount(
       sourceKeypair.publicKey(),
+    );
+    const sourceAccount = new StellarSdk.Account(
+      sourceKeypair.publicKey(),
+      sourceAccountResponse.sequence,
     );
 
     const paymentAsset =
       asset === 'XLM'
         ? StellarSdk.Asset.native()
         : new StellarSdk.Asset(asset, sourceKeypair.publicKey());
+    const fee = await this.getTransactionFeeEstimate();
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: '100',
+      fee: fee.toString(),
       networkPassphrase: this.networkPassphrase,
     })
       .addOperation(
