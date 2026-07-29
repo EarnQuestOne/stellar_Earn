@@ -6,20 +6,23 @@ import {
   useCreateQuest,
   useNotificationState,
 } from '@/lib/hooks/useAdmin';
-import {
-  AdminLayout,
-  CreateQuestForm,
-  Notifications,
-} from '@/components/admin';
+import { AdminLayout, Notifications } from '@/components/admin';
+import QuestWizard from '@/components/quest/QuestWizard';
 import { NotificationContext } from '@/lib/hooks/useAdmin';
-import type { QuestFormData } from '@/lib/types/admin';
+import {
+  questWizardDataToFormData,
+  type QuestWizardData,
+} from '@/lib/schemas/quest.schema';
 
 function NewQuestContent() {
   const router = useRouter();
   const { create, isCreating } = useCreateQuest();
   const notificationState = useNotificationState();
 
-  const handleSubmit = async (data: QuestFormData) => {
+  const handleSubmit = async (wizardData: QuestWizardData) => {
+    // The admin API takes the flat form payload, so the shared wizard data is
+    // converted here rather than maintaining a second creation UI.
+    const data = questWizardDataToFormData(wizardData);
     const result = await create(data);
 
     if (result.success) {
@@ -70,7 +73,11 @@ function NewQuestContent() {
 
         {/* Form */}
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <CreateQuestForm onSubmit={handleSubmit} isSubmitting={isCreating} />
+          <QuestWizard
+            mode="admin"
+            onSubmit={handleSubmit}
+            isSubmitting={isCreating}
+          />
         </div>
       </div>
       <Notifications

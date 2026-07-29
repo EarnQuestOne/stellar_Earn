@@ -3,6 +3,7 @@ import { DataSource, DataSourceOptions, Logger } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { AppLoggerService } from '../common/logger/logger.service';
+import { buildPoolExtra } from '../config/database-pool.config';
 
 import { RefreshToken } from '../modules/auth/entities/refresh-token.entity';
 
@@ -127,20 +128,7 @@ export const dataSourceOptions: DataSourceOptions = {
     10,
   ),
 
-  extra: {
-    max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
-    min: parseInt(process.env.DB_POOL_MIN ?? '2', 10),
-
-    connectionTimeoutMillis: parseInt(
-      process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000',
-      10,
-    ),
-
-    idleTimeoutMillis: parseInt(
-      process.env.DB_POOL_IDLE_TIMEOUT ?? '30000',
-      10,
-    ),
-  },
+  extra: buildPoolExtra(),
 };
 
 const AppDataSource = new DataSource(dataSourceOptions);

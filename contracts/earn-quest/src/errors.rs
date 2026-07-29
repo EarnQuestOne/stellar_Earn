@@ -166,4 +166,8 @@ pub enum Error {
     // Token Errors (SEP-41)
     /// Spender's allowance is lower than the requested transfer/burn amount.
     InsufficientAllowance = 153,
+
+    // Gas / Resource Errors
+    /// Instruction or resource limit exceeded for entrypoint.
+    GasBudgetExceeded = 160,
 }

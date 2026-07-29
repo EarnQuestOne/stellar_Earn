@@ -9,6 +9,7 @@ import {
   AggregationResult,
 } from './base-aggregator';
 import { SnapshotType } from '../entities/analytics-snapshot.entity';
+import { SubmissionAggregatesService } from '../../submissions/submission-aggregates.service';
 
 export interface QuestMetrics {
   totalQuests: number;
@@ -32,6 +33,7 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
     protected questRepository: Repository<Quest>,
     @InjectRepository(Submission)
     protected submissionRepository: Repository<Submission>,
+    private submissionAggregatesService: SubmissionAggregatesService,
   ) {
     super(
       undefined as any,
@@ -202,17 +204,28 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
       throw new Error(`Quest with ID ${questId} not found`);
     }
 
-    // Get submission statistics for this quest
-    const [totalSubmissions, approvedSubmissions, rejectedSubmissions] =
-      await Promise.all([
-        this.submissionRepository.count({ where: conditions }),
-        this.submissionRepository.count({
-          where: { ...conditions, status: SubmissionStatus.APPROVED },
-        }),
-        this.submissionRepository.count({
-          where: { ...conditions, status: SubmissionStatus.REJECTED },
-        }),
-      ]);
+    let totalSubmissions = 0;
+    let approvedSubmissions = 0;
+    let rejectedSubmissions = 0;
+
+    // Use cached aggregates if no date range filters are applied
+    if (!options.startDate && !options.endDate) {
+      const aggregates = await this.submissionAggregatesService.getAggregates(questId);
+      totalSubmissions = aggregates.pendingCount + aggregates.approvedCount + aggregates.rejectedCount;
+      approvedSubmissions = aggregates.approvedCount;
+      rejectedSubmissions = aggregates.rejectedCount;
+    } else {
+      [totalSubmissions, approvedSubmissions, rejectedSubmissions] =
+        await Promise.all([
+          this.submissionRepository.count({ where: conditions }),
+          this.submissionRepository.count({
+            where: { ...conditions, status: SubmissionStatus.APPROVED },
+          }),
+          this.submissionRepository.count({
+            where: { ...conditions, status: SubmissionStatus.REJECTED },
+          }),
+        ]);
+    }
 
     // Calculate rates
     const approvalRate =

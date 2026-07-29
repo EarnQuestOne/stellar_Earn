@@ -18,6 +18,9 @@ export class CacheService {
     { value: any; expiresAt?: number }
   >();
 
+  // Stale-while-revalidate: tracks in-flight background revalidations
+  private readonly inflightRevalidations = new Set<string>();
+
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly analyticsService: CacheAnalyticsService,
@@ -286,6 +289,79 @@ export class CacheService {
     const result = await fn();
     await this.set(finalKey, result, ttl, tags);
     return result;
+  }
+
+  // ─── Stale-While-Revalidate ──────────────────────────────────────────────
+
+  /**
+   * Stale-while-revalidate caching pattern.
+   *
+   * @param key      Cache key
+   * @param fn       Async function to compute the value
+   * @param hardTTL  Hard expiry in seconds — after this, compute synchronously
+   * @param softTTL  Soft expiry in seconds — after this but before hardTTL,
+   *                 return stale data immediately and revalidate in background
+   * @param tags     Optional cache tags
+   * @returns        The cached or freshly computed value
+   */
+  async wrapSWR<T>(
+    key: string,
+    fn: () => Promise<T>,
+    hardTTL: number,
+    softTTL: number,
+    tags?: string[],
+  ): Promise<T> {
+    const raw = await this.get<{ value: T; cachedAt: number }>(key);
+
+    if (raw !== undefined) {
+      const ageSeconds = (Date.now() - raw.cachedAt) / 1000;
+
+      if (ageSeconds < softTTL) {
+        // Fresh — return immediately
+        return raw.value;
+      }
+
+      if (ageSeconds < hardTTL) {
+        // Stale but not expired — return stale + trigger async revalidation
+        this.triggerBackgroundRevalidation(key, fn, hardTTL, tags);
+        return raw.value;
+      }
+    }
+
+    // Expired or missing — compute synchronously
+    const value = await fn();
+    await this.set(key, { value, cachedAt: Date.now() }, hardTTL, tags);
+    return value;
+  }
+
+  private triggerBackgroundRevalidation<T>(
+    key: string,
+    fn: () => Promise<T>,
+    hardTTL: number,
+    tags?: string[],
+  ): void {
+    // Dedup: only one in-flight revalidation per key
+    if (this.inflightRevalidations.has(key)) return;
+
+    this.inflightRevalidations.add(key);
+
+    // Fire and forget — errors are logged but don't affect the caller
+    void (async () => {
+      try {
+        const value = await fn();
+        await this.set(key, { value, cachedAt: Date.now() }, hardTTL, tags);
+        this.logger.debug(
+          `SWR background revalidation complete for key: ${key}`,
+        );
+      } catch (err) {
+        this.logger.error(
+          `SWR background revalidation failed for key: ${key}`,
+          err,
+        );
+      } finally {
+        this.inflightRevalidations.delete(key);
+      }
+    })();
   }
 
   async invalidatePrefix(prefix: string): Promise<void> {

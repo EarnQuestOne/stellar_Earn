@@ -96,7 +96,7 @@ A NestJS application with ⇆O 20+ feature modules. Persistence via TypeORM + Po
 - Sentry — error tracking
 - OTel — distributed tracing
 
-### 2.3 Smart Contract — `Contract_archived/earn-quest/` *(canonical Rust)*
+### 2.3 Smart Contract — `contracts/earn-quest/` *(canonical Rust)*
 
 A `#![no_std]` Soroban contract compiled to Wasm. It implements the quest lifecycle: register → submit proof → approve/reject (with escrow payout + reputation grant on approval) → expire/cancel/pause/upgrade. Lifecycle emissions drive the subgraph.
 
@@ -547,8 +547,8 @@ bash scripts/validate-env-parity.sh FrontEnd/my-app/.env.example FrontEnd/my-app
 3. **`executeStellarPayment` is mocked in dev / unimplemented in prod.**
    `PayoutsService.executeStellarPayment` returns `mock_tx_${now}_${id}` plus a random ledger in dev/test, and throws `Stellar payment not implemented for production` outside of those. The settlement-finality state machine, cron jobs, retry logic, and admin retry endpoint are all correctly modeled — only the actual Stellar SDK call needs wiring.
 
-4. **The contract is in `Contract_archived/earn-quest/`.**
-   The README and CODEOWNERS suggest a separate `Contract/` directory; the canonical Rust source currently lives under `Contract_archived/`. If you change the contract, update the canonical path.
+4. **The contract is in `contracts/earn-quest/`.**
+   `contracts/earn-quest/` is the single canonical source of truth for Soroban contract development.
 
 5. **`scripts/migrate-contract-storage.mjs` does schema-version migration offline.**
    The tool reads `state.json` (exported from `soroban contract dump`), splits legacy `metadata → metadata_core + metadata_extended`, splits `escrow → escrow_balances + escrow_meta`, normalizes `platform_stats → platform_counters`, and bumps `schema_version: 1 → 2`. **No on-chain auto-migration** is wired — running it without first exporting state will silently drop fields.
@@ -572,7 +572,7 @@ bash scripts/validate-env-parity.sh FrontEnd/my-app/.env.example FrontEnd/my-app
 - `BackEnd/ReadMe Backend.md` — NestJS quickstart, module list, env vars, deployment
 - `FrontEnd/ReadMe Frontend.md` — Next.js quickstart, hooks, components, deployment
 - `FrontEnd/my-app/README.md` — Next.js dev details, env validation, test commands
-- `Contract_archived/earn-quest/README.md` — contract API, build/test/deploy
+- `contracts/earn-quest/README.md` — contract API, build/test/deploy
 - `BackEnd/src/database/migrations/` — TypeORM migration history + `data-source.ts`
 - `script-inventory.md` — repo-maintained scripts (deploy, audit, monitor)
 - `docs/backend/data-flow.md` — backend-only data flow with module relationships

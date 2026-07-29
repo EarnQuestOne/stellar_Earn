@@ -407,3 +407,46 @@ For issues or questions:
 - [Soroban SDK Testing Guide](https://soroban.stellar.org/docs/how-to-guides/testing)
 - [Contract README](./README.md)
 - [Migration Guide](./MIGRATION_GUIDE.md)
+
+## TTL / Rent-Bumping Management (Issue #1923)
+
+This contract stores ALL state via `env.storage().instance()`. In Soroban, instance
+storage is a single logical entry whose TTL applies to every key written through it.
+A single instance-TTL bump keeps all instance-stored data alive together.
+
+### Implementation
+
+- `src/ttl.rs` provides TTL helpers and constants:
+  - `DEFAULT_TTL_THRESHOLD = 518_400` ledgers (~30 days)
+  - `DEFAULT_TTL_EXTEND_TO = 2_073_600` ledgers (~120 days)
+  - `extend_entry_ttl(env, key, threshold, extend_to)` — extends instance storage TTL after writes
+  - `extend_contract_instance_ttl(env, contract_id)` — extends contract instance + code TTL
+
+- `src/storage.rs` setter functions call `ttl::extend_entry_ttl(...)` after every write
+  for hot-tier data (Quest, Submission, UserStats, Escrow, etc.).
+
+### Access Pattern Classification
+
+| Tier | Key Examples | Extension Strategy |
+|------|-------------|-------------------|
+| Hot | Quest, UserStats, Submission, Escrow | Extend on every write |
+| Warm | CreatorStats, OracleConfig, ContractAdmin | Extend on write |
+| Cold | BadgeType, QuestMetadataExt | Lazy bump on read |
+
+### Ledger ↔ Time Conversion (assuming ~5s ledger close)
+
+- 1 day ≈ 17,280 ledgers
+- 30 days ≈ 518,400 ledgers
+- 120 days ≈ 2,073,600 ledgers
+- Maximum TTL is network-defined, accessible via `env.storage().max_ttl()`.
+
+### Tests
+
+TTL extension is covered by `contracts/earn-quest/tests/test_storage.rs`:
+- `test_ttl_constants_are_valid` — verifies constants are sane
+- `test_extend_instance_entry_ttl_no_panic` — verifies extension in contract context
+- `test_extend_contract_instance_ttl_no_panic` — verifies instance extension
+- `test_quest_ttl_extension_does_not_break_flow` — quest storage after TTL extension
+- `test_submission_ttl_extension_does_not_break_flow` — submission + commit/reveal
+- `test_user_stats_ttl_extension_on_badge` — badge grant TTL extension
+- `test_multiple_storage_keys_with_ttl_extension` — multiple storage keys

@@ -1,4 +1,5 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
+import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -26,8 +27,12 @@ describe('Analytics-Cache Integration', () => {
           password: process.env.DB_PASSWORD || 'password',
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
           dropSchema: true,
+          migrationsRun: true,
+          migrations: [
+            join(__dirname, '../../src/database/migrations/*.{ts,js}'),
+          ],
         }),
         AnalyticsModule,
         CacheModule,

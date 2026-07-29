@@ -1,4 +1,5 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
+import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -21,6 +22,7 @@ import { UsersService } from '#src/modules/users/users.service';
 import { QuestsService } from '#src/modules/quests/quests.service';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
 import { PayoutsService } from '#src/modules/payouts/payouts.service';
+import { JobResultStatusCacheService } from '#src/modules/jobs/services/job-result-status-cache.service';
 import { StellarService } from '#src/modules/stellar/stellar.service';
 
 // Import entities
@@ -33,6 +35,7 @@ import { RefreshToken } from '#src/modules/auth/entities/refresh-token.entity';
 
 describe('Full Application Integration', () => {
   let module: TestingModule;
+  let payoutStatusCache: JobResultStatusCacheService;
   let authService: AuthService;
   let usersService: UsersService;
   let questsService: QuestsService;
@@ -62,8 +65,12 @@ describe('Full Application Integration', () => {
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           entities: [User, Quest, Submission, Payout, RefreshToken],
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
           dropSchema: true,
+          migrationsRun: true,
+          migrations: [
+            join(__dirname, '../../src/database/migrations/*.{ts,js}'),
+          ],
         }),
         // Import all modules for full integration
         AuthModule,
@@ -103,8 +110,17 @@ describe('Full Application Integration', () => {
     questsService = module.get<QuestsService>(QuestsService);
     submissionsService = module.get<SubmissionsService>(SubmissionsService);
     payoutsService = module.get<PayoutsService>(PayoutsService);
+    payoutStatusCache = module.get(JobResultStatusCacheService);
     _stellarService = module.get<StellarService>(StellarService);
   });
+
+  async function setPayoutStatusProcessingInDb(payoutId: string): Promise<void> {
+    const ds = module.get(DataSource);
+    await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
+      payoutId,
+    ]);
+    await payoutStatusCache.invalidatePayout(payoutId);
+  }
 
   afterAll(async () => {
     await module.close();
@@ -194,11 +210,7 @@ describe('Full Application Integration', () => {
       expect(payout.amount).toBe(quest.rewardAmount);
 
       // Step 7: Complete Payout Process
-      await module
-        .get(DataSource)
-        .query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
-          payout.id,
-        ]);
+      await setPayoutStatusProcessingInDb(payout.id);
       await payoutsService.processPayout(payout.id);
       const completedPayout = await payoutsService.getPayoutById(payout.id);
 
@@ -293,12 +305,8 @@ describe('Full Application Integration', () => {
       expect(payouts).toHaveLength(3);
 
       // Process all payouts
-      const ds = module.get(DataSource);
       for (const payout of payouts) {
-        await ds.query(
-          `UPDATE payouts SET status = 'processing' WHERE id = $1`,
-          [payout.id],
-        );
+        await setPayoutStatusProcessingInDb(payout.id);
         await payoutsService.processPayout(payout.id);
       }
 
@@ -357,10 +365,7 @@ describe('Full Application Integration', () => {
         transactionHash: 'tx-hash-events',
       });
 
-      const ds = module.get(DataSource);
-      await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
-        payout.id,
-      ]);
+      await setPayoutStatusProcessingInDb(payout.id);
       await payoutsService.processPayout(payout.id);
 
       // Verify the complete flow worked without errors

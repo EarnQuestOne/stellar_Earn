@@ -205,14 +205,15 @@ describe('WebhooksService', () => {
       expect(handleEventSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should skip verification when a secret is configured but no signature is sent', async () => {
+    it('should reject when a secret is configured but no signature is sent', async () => {
       const event = buildEvent({ secret: GITHUB_SECRET }); // signature omitted
       const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
 
       const result = await service.processWebhook(event);
 
-      expect(result.success).toBe(true);
-      expect(handleEventSpy).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Webhook signature is required');
+      expect(handleEventSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -401,6 +402,14 @@ describe('WebhooksService', () => {
 
       try {
         const record = buildRecord({ attempts: 1, maxAttempts: 5 });
+        // The service fails closed when a secret is configured but the signature is
+        // missing — the retry therefore needs a valid signature on the record so
+        // verifyWebhookSignature can succeed and the handler is actually invoked.
+        record.signature = generateWebhookSignature(
+          record.payload,
+          GITHUB_SECRET,
+          'github',
+        );
         repo.findOne.mockResolvedValueOnce(record);
         const handleEventSpy = jest
           .spyOn(githubHandler, 'handleEvent')

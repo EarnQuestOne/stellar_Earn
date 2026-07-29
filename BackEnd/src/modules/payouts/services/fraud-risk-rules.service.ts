@@ -121,15 +121,18 @@ export class FraudRiskRulesService {
       },
     });
 
-    const assessments: FraudRiskAssessment[] = [];
+    // #2033: Analyze all payouts in parallel instead of sequential for-loop
+    const analysisResults = await Promise.allSettled(
+      recentPayouts.map((payout) => this.analyzePayout(payout.id)),
+    );
 
-    for (const payout of recentPayouts) {
-      try {
-        const assessment = await this.analyzePayout(payout.id);
-        assessments.push(assessment);
-      } catch (error) {
+    const assessments: FraudRiskAssessment[] = [];
+    for (const result of analysisResults) {
+      if (result.status === 'fulfilled') {
+        assessments.push(result.value);
+      } else {
         this.logger.error(
-          `Failed to analyze payout ${payout.id}: ${error.message}`,
+          `Failed to analyze payout: ${result.reason?.message}`,
         );
       }
     }
@@ -161,27 +164,32 @@ export class FraudRiskRulesService {
     averagePayoutAmount: number;
     uniqueAddresses: number;
   }> {
-    const totalPayouts = await this.payoutRepository.count();
-
-    const highRiskPayouts = await this.payoutRepository
-      .createQueryBuilder('payout')
-      .where('payout.amount > :threshold', { threshold: 10000 })
-      .getCount();
-
-    const criticalRiskPayouts = await this.payoutRepository
-      .createQueryBuilder('payout')
-      .where('payout.amount > :threshold', { threshold: 50000 })
-      .getCount();
-
-    const avgAmountResult = await this.payoutRepository
-      .createQueryBuilder('payout')
-      .select('AVG(payout.amount)', 'avg')
-      .getRawOne();
-
-    const uniqueAddressesResult = await this.payoutRepository
-      .createQueryBuilder('payout')
-      .select('COUNT(DISTINCT payout.stellarAddress)', 'count')
-      .getRawOne();
+    // #2033: Run all risk statistics queries in parallel
+    const [
+      totalPayouts,
+      highRiskPayouts,
+      criticalRiskPayouts,
+      avgAmountResult,
+      uniqueAddressesResult,
+    ] = await Promise.all([
+      this.payoutRepository.count(),
+      this.payoutRepository
+        .createQueryBuilder('payout')
+        .where('payout.amount > :threshold', { threshold: 10000 })
+        .getCount(),
+      this.payoutRepository
+        .createQueryBuilder('payout')
+        .where('payout.amount > :threshold', { threshold: 50000 })
+        .getCount(),
+      this.payoutRepository
+        .createQueryBuilder('payout')
+        .select('AVG(payout.amount)', 'avg')
+        .getRawOne(),
+      this.payoutRepository
+        .createQueryBuilder('payout')
+        .select('COUNT(DISTINCT payout.stellarAddress)', 'count')
+        .getRawOne(),
+    ]);
 
     return {
       totalPayouts,

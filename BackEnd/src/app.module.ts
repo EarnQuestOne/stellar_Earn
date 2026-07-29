@@ -8,10 +8,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AppLoggerService } from './common/logger/logger.service';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 import { dataSourceOptions } from './database/data-source';
 import { HttpClientModule } from './common/http-client/http-client.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { StartupReadinessService } from './common/services/startup-readiness.service';
+import { GracefulShutdownService } from './common/services/graceful-shutdown.service';
+import { HealthCacheService } from './common/services/health-cache.service';
 import { FileUploadModule } from './common/upload/file-upload.module';
 import { ApiVersionGuard } from './common/guards/versioning.guard';
 import { VersioningInterceptor } from './common/interceptors/versioning.interceptor';
@@ -55,7 +58,9 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
         useFactory: () =>
           new DataSource({
             type: 'postgres',
-            url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres',
+            url:
+              process.env.DATABASE_URL ||
+              'postgresql://postgres:postgres@localhost:5432/postgres',
             entities: [],
             synchronize: false,
             logging: false,
@@ -103,7 +108,10 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     AppService,
     AppLoggerService,
     SecurityMiddleware,
+    RequestTimeoutMiddleware,
     StartupReadinessService,
+    GracefulShutdownService,
+    HealthCacheService,
     ...dataSourceProvider,
     {
       provide: APP_GUARD,

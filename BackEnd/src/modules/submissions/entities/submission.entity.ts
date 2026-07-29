@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum SubmissionStatus {
@@ -17,6 +18,12 @@ export enum SubmissionStatus {
   PAID = 'PAID',
 }
 
+@Index('idx_submission_active_quest_status', ['questId', 'status'], {
+  where: '"deletedAt" IS NULL',
+})
+@Index('idx_submission_active_user_status', ['userId', 'status'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')

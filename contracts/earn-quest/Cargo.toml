@@ -8,8 +8,15 @@ license = "MIT"
 crate-type = ["cdylib", "rlib"]
 doctest = false
 
+[[test]]
+name = "audit_tests"
+path = "audit/tests/audit_tests.rs"
+
 [dependencies]
 soroban-sdk = "21.7.4"
+
+[features]
+testutils = ["soroban-sdk/testutils"]
 
 [dev-dependencies]
 proptest = "1.4"

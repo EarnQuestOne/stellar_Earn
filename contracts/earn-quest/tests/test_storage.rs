@@ -17,6 +17,17 @@ fn setup_contract(env: &Env) -> (Address, EarnQuestContractClient<'_>) {
     (contract_id, client)
 }
 
+fn setup_contract_and_token(env: &Env) -> (Address, EarnQuestContractClient<'_>, Address) {
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(env, &contract_id);
+
+    let admin = Address::generate(env);
+    let token_contract_obj = env.register_stellar_asset_contract_v2(admin.clone());
+    let token_contract = token_contract_obj.address();
+
+    (contract_id, client, token_contract)
+}
+
 //================================================================================
 // Quest Storage Tests (Through Contract)
 //================================================================================
@@ -373,4 +384,140 @@ fn test_storage_documentation_exists() {
 
     // This test passes if the module compiles with all documentation
     // No runtime assertion needed - compile-time check
+}
+
+//================================================================================
+//================================================================================
+// TTL / Rent-Bumping Tests (issue #1923)
+//================================================================================
+
+fn make_commitment(
+    env: &Env,
+    proof: &BytesN<32>,
+    salt: &BytesN<32>,
+    submitter: &Address,
+) -> BytesN<32> {
+    use soroban_sdk::{xdr::ToXdr, Bytes};
+    let mut data = Bytes::new(env);
+    data.append(&proof.clone().into());
+    data.append(&salt.clone().into());
+    data.append(&submitter.to_xdr(env));
+    BytesN::from(env.crypto().sha256(&data))
+}
+
+#[test]
+fn test_ttl_constants_are_valid() {
+    use earn_quest::ttl;
+    const { assert!(ttl::DEFAULT_TTL_THRESHOLD > 0) };
+    const { assert!(ttl::DEFAULT_TTL_EXTEND_TO > ttl::DEFAULT_TTL_THRESHOLD) };
+}
+
+#[test]
+fn test_extend_instance_entry_ttl_no_panic() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+    env.as_contract(&contract_id, || {
+        let key = symbol_short!("ttl_test");
+        env.storage().instance().set(&key, &42u32);
+        earn_quest::ttl::extend_entry_ttl(
+            &env,
+            &key,
+            earn_quest::ttl::DEFAULT_TTL_THRESHOLD,
+            earn_quest::ttl::DEFAULT_TTL_EXTEND_TO,
+        );
+        let val: u32 = env.storage().instance().get(&key).unwrap();
+        assert_eq!(val, 42);
+    });
+    let _ = client;
+}
+
+#[test]
+fn test_extend_contract_instance_ttl_no_panic() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    earn_quest::ttl::extend_contract_instance_ttl(&env, &contract_id);
+}
+
+#[test]
+fn test_quest_ttl_extension_does_not_break_flow() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _) = setup_contract_and_token(&env);
+
+    let admin = Address::generate(&env);
+    let creator = Address::generate(&env);
+    let token_addr = Address::generate(&env);
+    let verifier = Address::generate(&env);
+
+    client.initialize(&admin);
+    let quest_id = symbol_short!("Q_TTL2");
+    client.register_quest(&quest_id, &creator, &token_addr, &500, &verifier, &10000);
+
+    let quest = client.get_quest(&quest_id);
+    assert!(quest.id == quest_id);
+}
+
+#[test]
+fn test_submission_ttl_extension_does_not_break_flow() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _) = setup_contract_and_token(&env);
+
+    let admin = Address::generate(&env);
+    let creator = Address::generate(&env);
+    let token_addr = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let submitter = Address::generate(&env);
+
+    client.initialize(&admin);
+    let quest_id = symbol_short!("Q_TTL3");
+    client.register_quest(&quest_id, &creator, &token_addr, &500, &verifier, &10000);
+
+    let proof: BytesN<32> = BytesN::from_array(&env, &[7u8; 32]);
+    let salt: BytesN<32> = BytesN::from_array(&env, &[9u8; 32]);
+    let commitment = make_commitment(&env, &proof, &salt, &submitter);
+    client.commit_submission(&quest_id, &submitter, &commitment);
+    client.reveal_submission(&quest_id, &submitter, &proof, &salt);
+
+    let submission = client.get_submission(&quest_id, &submitter);
+    assert!(matches!(
+        submission.status,
+        earn_quest::types::SubmissionStatus::Pending
+    ));
+}
+
+#[test]
+fn test_user_stats_ttl_extension_on_badge() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _) = setup_contract_and_token(&env);
+
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+
+    client.initialize(&admin);
+    client.grant_badge(&admin, &user, &earn_quest::Badge::Rookie);
+
+    let badges = client.get_user_badges(&user);
+    assert!(!badges.badges.is_empty());
+}
+
+#[test]
+fn test_multiple_storage_keys_with_ttl_extension() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _) = setup_contract_and_token(&env);
+
+    let admin = Address::generate(&env);
+    let creator = Address::generate(&env);
+    let token_addr = Address::generate(&env);
+    let verifier = Address::generate(&env);
+
+    client.initialize(&admin);
+    let quest_id = symbol_short!("Q_TTL4");
+    client.register_quest(&quest_id, &creator, &token_addr, &999, &verifier, &50000);
+
+    let quest = client.get_quest(&quest_id);
+    assert!(quest.id == quest_id);
 }

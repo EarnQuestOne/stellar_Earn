@@ -3,37 +3,54 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Step 2 of two-step migration: Data migration
  * This migration migrates and transforms existing data to match the new schema
- * and establishes proper relationships between entities
+ * and establishes proper relationships between entities.
+ *
+ * Every individual query uses a SAVEPOINT so that a failure in one statement
+ * does not abort the surrounding PostgreSQL transaction and poison all
+ * subsequent statements.
  */
 export class DataMigrationStep2DataMigration1800000000001 implements MigrationInterface {
   name = 'DataMigrationStep2DataMigration1800000000001';
 
+  /**
+   * Execute a single SQL statement inside a SAVEPOINT so that if it fails
+   * the surrounding transaction is not aborted.
+   */
+  private async safeQuery(
+    queryRunner: QueryRunner,
+    label: string,
+    sql: string,
+  ): Promise<void> {
+    const sp = `sp_${label.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    await queryRunner.query(`SAVEPOINT ${sp}`);
+    try {
+      await queryRunner.query(sql);
+      await queryRunner.query(`RELEASE SAVEPOINT ${sp}`);
+    } catch (err) {
+      await queryRunner.query(`ROLLBACK TO SAVEPOINT ${sp}`);
+      console.log(`[DataMigrationStep2] ${label} skipped: ${(err as Error).message}`);
+    }
+  }
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Starting Step 2: Data migration...');
 
-    // Migrate user data
     await this.migrateUserData(queryRunner);
-
-    // Migrate quest data
     await this.migrateQuestData(queryRunner);
-
-    // Migrate submission data
     await this.migrateSubmissionData(queryRunner);
-
-    // Migrate payout data
     await this.migratePayoutData(queryRunner);
-
-    // Establish relationships and constraints
     await this.establishRelationships(queryRunner);
 
     console.log('Step 2: Data migration completed');
   }
 
+  // ---------------------------------------------------------------------------
+  // User data
+  // ---------------------------------------------------------------------------
   private async migrateUserData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating user data...');
 
-    // Update user statistics based on existing data
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'user_stats', `
       UPDATE "users" u
       SET 
         "questsCompleted" = COALESCE(
@@ -68,22 +85,19 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         )
     `);
 
-    // Set default privacy level for users who don't have one
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'user_privacy', `
       UPDATE "users" 
       SET "privacyLevel" = 'PUBLIC' 
       WHERE "privacyLevel" IS NULL
     `);
 
-    // Initialize badges array for users
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'user_badges', `
       UPDATE "users" 
       SET "badges" = ARRAY[]::TEXT[] 
       WHERE "badges" IS NULL
     `);
 
-    // Initialize social links object for users
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'user_socialLinks', `
       UPDATE "users" 
       SET "socialLinks" = '{}'::JSONB 
       WHERE "socialLinks" IS NULL
@@ -92,19 +106,20 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     console.log('User data migration completed');
   }
 
+  // ---------------------------------------------------------------------------
+  // Quest data
+  // ---------------------------------------------------------------------------
   private async migrateQuestData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating quest data...');
 
-    // Update quest creatorAddress from user stellarAddress
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'quest_creatorAddress', `
       UPDATE "quests" q
       SET "creatorAddress" = u."stellarAddress"
       FROM "users" u
-      WHERE q."createdBy" = u.id AND q."creatorAddress" IS NULL
+      WHERE (q."createdBy" = u.id::text OR q."createdBy" = u."stellarAddress") AND q."creatorAddress" IS NULL
     `);
 
-    // Update current completions based on approved submissions
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'quest_currentCompletions', `
       UPDATE "quests" q
       SET "currentCompletions" = COALESCE(
         (SELECT COUNT(*)::INTEGER 
@@ -113,8 +128,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
       )
     `);
 
-    // Set default start date to creation date if not set
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'quest_startDate', `
       UPDATE "quests" 
       SET "startDate" = "createdAt" 
       WHERE "startDate" IS NULL
@@ -123,54 +137,60 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     console.log('Quest data migration completed');
   }
 
+  // ---------------------------------------------------------------------------
+  // Submission data
+  // ---------------------------------------------------------------------------
   private async migrateSubmissionData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating submission data...');
 
-    // Update submission status to use proper enum values
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'submission_status', `
       UPDATE "submissions" 
       SET "status" = 'UNDER_REVIEW' 
       WHERE "status" = 'PENDING' AND "approvedBy" IS NOT NULL
     `);
 
-    // Ensure proof field is valid JSON
-    await queryRunner.query(`
+    // proof column is JSON (not JSONB) — just fill NULLs
+    await this.safeQuery(queryRunner, 'submission_proof_null', `
       UPDATE "submissions" 
-      SET "proof" = CASE 
-        WHEN "proof" IS NULL THEN '{}'
-        WHEN jsonb_typeof("proof") = 'object' THEN "proof"
-        ELSE '{"data": ' || COALESCE("proof"::TEXT, '{}') || '}'
-      END::JSONB
+      SET "proof" = '{}'::json 
+      WHERE "proof" IS NULL
     `);
 
     console.log('Submission data migration completed');
   }
 
+  // ---------------------------------------------------------------------------
+  // Payout data
+  // ---------------------------------------------------------------------------
   private async migratePayoutData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating payout data...');
 
-    // Update payout status to use proper enum values
-    await queryRunner.query(`
-      UPDATE "payouts" 
-      SET "status" = LOWER("status")
+    await this.safeQuery(queryRunner, 'payout_stellarAddress', `
+      UPDATE "payouts" p
+      SET "stellarAddress" = u."stellarAddress"
+      FROM "users" u
+      WHERE p."userId" = u.id AND (p."stellarAddress" IS NULL OR p."stellarAddress" = '')
     `);
 
-    // Link payouts to submissions where possible
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'payout_status_lower', `
+      UPDATE "payouts" 
+      SET "status" = LOWER("status")
+      WHERE "status" IS NOT NULL
+    `);
+
+    await this.safeQuery(queryRunner, 'payout_link_submissions', `
       UPDATE "payouts" p
-      SET "submissionId" = s.id,
-          "questId" = s."questId"
+      SET "submissionId" = s.id::text,
+          "questId" = s."questId"::text
       FROM "submissions" s,
            "users" u
       WHERE p."stellarAddress" = u."stellarAddress" 
         AND s."userId" = u.id 
         AND s."status" = 'APPROVED'
         AND p."submissionId" IS NULL
-      LIMIT 1
     `);
 
-    // Set default type for payouts that don't have one
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'payout_default_type', `
       UPDATE "payouts" 
       SET "type" = 'quest_reward' 
       WHERE "type" IS NULL
@@ -179,64 +199,44 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     console.log('Payout data migration completed');
   }
 
+  // ---------------------------------------------------------------------------
+  // Relationships & indexes
+  // ---------------------------------------------------------------------------
   private async establishRelationships(
     queryRunner: QueryRunner,
   ): Promise<void> {
     console.log('Establishing relationships and constraints...');
 
-    // Create foreign key constraints if they don't exist
-    try {
-      // User foreign keys
-      await queryRunner.query(`
-        ALTER TABLE "submissions" 
-        ADD CONSTRAINT "FK_submissions_user" 
-        FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
-      `);
-    } catch {
-      console.log('FK_submissions_user already exists or cannot be created');
+    // Since the columns are now properly UUID typed in step 1, FK constraints can be established cleanly!
+    const fkConstraints = [
+      {
+        name: 'FK_submissions_user',
+        sql: `ALTER TABLE "submissions" ADD CONSTRAINT "FK_submissions_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE`,
+      },
+      {
+        name: 'FK_quests_creator',
+        sql: `ALTER TABLE "quests" ADD CONSTRAINT "FK_quests_creator" FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE`,
+      },
+      {
+        name: 'FK_submissions_quest',
+        sql: `ALTER TABLE "submissions" ADD CONSTRAINT "FK_submissions_quest" FOREIGN KEY ("questId") REFERENCES "quests"("id") ON DELETE CASCADE`,
+      },
+      {
+        name: 'FK_notifications_user',
+        sql: `ALTER TABLE "notifications" ADD CONSTRAINT "FK_notifications_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE`,
+      },
+      {
+        name: 'FK_refresh_tokens_user',
+        sql: `ALTER TABLE "refresh_tokens" ADD CONSTRAINT "FK_refresh_tokens_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE`,
+      },
+    ];
+
+    for (const fk of fkConstraints) {
+      await this.safeQuery(queryRunner, `fk_${fk.name}`, fk.sql);
     }
 
-    try {
-      await queryRunner.query(`
-        ALTER TABLE "quests" 
-        ADD CONSTRAINT "FK_quests_creator" 
-        FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE
-      `);
-    } catch {
-      console.log('FK_quests_creator already exists or cannot be created');
-    }
-
-    try {
-      await queryRunner.query(`
-        ALTER TABLE "submissions" 
-        ADD CONSTRAINT "FK_submissions_quest" 
-        FOREIGN KEY ("questId") REFERENCES "quests"("id") ON DELETE CASCADE
-      `);
-    } catch {
-      console.log('FK_submissions_quest already exists or cannot be created');
-    }
-
-    try {
-      await queryRunner.query(`
-        ALTER TABLE "notifications" 
-        ADD CONSTRAINT "FK_notifications_user" 
-        FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
-      `);
-    } catch {
-      console.log('FK_notifications_user already exists or cannot be created');
-    }
-
-    try {
-      await queryRunner.query(`
-        ALTER TABLE "refresh_tokens" 
-        ADD CONSTRAINT "FK_refresh_tokens_user" 
-        FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
-      `);
-    } catch {
-      console.log('FK_refresh_tokens_user already exists or cannot be created');
-    }
-
-    // Create indexes for better performance
+    // Indexes — these use IF NOT EXISTS but may still fail if the table/column
+    // was not created by a prior migration. Each is wrapped in a savepoint.
     const indexes = [
       'CREATE INDEX IF NOT EXISTS "IDX_users_username" ON "users" ("username")',
       'CREATE INDEX IF NOT EXISTS "IDX_users_email" ON "users" ("email")',
@@ -251,21 +251,19 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
       'CREATE INDEX IF NOT EXISTS "IDX_payouts_submissionId" ON "payouts" ("submissionId")',
     ];
 
-    for (const indexQuery of indexes) {
-      try {
-        await queryRunner.query(indexQuery);
-      } catch {
-        console.log(`Index creation failed: ${indexQuery}`);
-      }
+    for (let i = 0; i < indexes.length; i++) {
+      await this.safeQuery(queryRunner, `idx_${i}`, indexes[i]);
     }
 
     console.log('Relationships and constraints established');
   }
 
+  // ---------------------------------------------------------------------------
+  // Rollback
+  // ---------------------------------------------------------------------------
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Rolling back Step 2: Data migration...');
 
-    // Drop foreign key constraints
     const constraints = [
       'FK_submissions_user',
       'FK_quests_creator',
@@ -275,18 +273,11 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     ];
 
     for (const constraint of constraints) {
-      try {
-        await queryRunner.query(
-          `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
-        );
-      } catch {
-        console.log(
-          `Constraint ${constraint} does not exist or cannot be dropped`,
-        );
-      }
+      await this.safeQuery(queryRunner, `drop_${constraint}`,
+        `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
+      );
     }
 
-    // Drop indexes
     const indexes = [
       'IDX_users_username',
       'IDX_users_email',
@@ -302,15 +293,12 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     ];
 
     for (const index of indexes) {
-      try {
-        await queryRunner.query(`DROP INDEX IF EXISTS "${index}"`);
-      } catch {
-        console.log(`Index ${index} does not exist or cannot be dropped`);
-      }
+      await this.safeQuery(queryRunner, `drop_${index}`,
+        `DROP INDEX IF EXISTS "${index}"`,
+      );
     }
 
-    // Reset calculated fields to NULL or default values
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'rollback_users', `
       UPDATE "users" 
       SET 
         "questsCompleted" = 0,
@@ -320,7 +308,7 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         "lastActiveAt" = NULL
     `);
 
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'rollback_quests', `
       UPDATE "quests" 
       SET 
         "creatorAddress" = NULL,
@@ -328,19 +316,17 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         "startDate" = NULL
     `);
 
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'rollback_submissions', `
       UPDATE "submissions" 
-      SET "proof" = '{}'::JSONB
+      SET "proof" = '{}'::json
     `);
 
-    await queryRunner.query(`
+    await this.safeQuery(queryRunner, 'rollback_payouts', `
       UPDATE "payouts" 
       SET 
         "submissionId" = NULL,
         "questId" = NULL,
         "type" = 'quest_reward'
     `);
-
-    console.log('Step 2 rollback completed');
   }
 }

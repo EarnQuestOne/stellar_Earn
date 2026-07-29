@@ -11,8 +11,8 @@ export const TIMEOUT_BUDGETS = {
 
 export type TimeoutBudget = keyof typeof TIMEOUT_BUDGETS;
 
-const POOL_MAX_SOCKETS = 50;
-const POOL_MAX_FREE_SOCKETS = 10;
+const POOL_MAX_SOCKETS = 100;
+const POOL_MAX_FREE_SOCKETS = 20;
 
 @Injectable()
 export class PooledHttpClientService implements OnModuleDestroy {
@@ -23,13 +23,17 @@ export class PooledHttpClientService implements OnModuleDestroy {
   constructor() {
     this.httpAgent = new http.Agent({
       keepAlive: true,
+      keepAliveMsecs: 30_000,
       maxSockets: POOL_MAX_SOCKETS,
       maxFreeSockets: POOL_MAX_FREE_SOCKETS,
+      family: 4, // Force IPv4 to avoid happy-eyeballs delay
     });
     this.httpsAgent = new https.Agent({
       keepAlive: true,
+      keepAliveMsecs: 30_000,
       maxSockets: POOL_MAX_SOCKETS,
       maxFreeSockets: POOL_MAX_FREE_SOCKETS,
+      family: 4,
     });
 
     for (const budget of Object.keys(TIMEOUT_BUDGETS) as TimeoutBudget[]) {

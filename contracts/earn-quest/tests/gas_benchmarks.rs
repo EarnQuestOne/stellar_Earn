@@ -99,6 +99,7 @@ fn benchmark_register_quest() {
     env.ledger().with_mut(|l| l.timestamp = 1_000);
 
     let (client, token, admin, creator, verifier, _) = setup(&env);
+    env.budget().reset_default();
     client.initialize(&admin);
 
     let quest_id = symbol_short!("q1");
@@ -123,9 +124,11 @@ fn benchmark_submit_proof() {
     env.ledger().with_mut(|l| l.timestamp = 1_000);
 
     let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    env.budget().reset_default();
     client.initialize(&admin);
 
     let quest_id = symbol_short!("q1");
+    env.budget().reset_default();
     client.register_quest(&quest_id, &creator, &token, &1_000i128, &verifier, &99_999);
 
     let proof = BytesN::from_array(&env, &[1u8; 32]);
@@ -147,12 +150,15 @@ fn benchmark_approve_submission() {
     env.ledger().with_mut(|l| l.timestamp = 1_000);
 
     let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    env.budget().reset_default();
     client.initialize(&admin);
 
     let quest_id = symbol_short!("q1");
+    env.budget().reset_default();
     client.register_quest(&quest_id, &creator, &token, &1_000i128, &verifier, &99_999);
 
     let proof = BytesN::from_array(&env, &[1u8; 32]);
+    env.budget().reset_default();
     client.submit_proof(&quest_id, &submitter, &proof);
 
     let mut budget = env.budget();
@@ -172,14 +178,18 @@ fn benchmark_claim_reward() {
     env.ledger().with_mut(|l| l.timestamp = 1_000);
 
     let (client, token, admin, creator, verifier, submitter) = setup(&env);
+    env.budget().reset_default();
     client.initialize(&admin);
 
     let quest_id = symbol_short!("q1");
     let reward = 1_000i128;
+    env.budget().reset_default();
     client.register_quest(&quest_id, &creator, &token, &reward, &verifier, &99_999);
 
     let proof = BytesN::from_array(&env, &[1u8; 32]);
+    env.budget().reset_default();
     client.submit_proof(&quest_id, &submitter, &proof);
+    env.budget().reset_default();
     client.approve_submission(&quest_id, &submitter, &verifier);
 
     let mut budget = env.budget();

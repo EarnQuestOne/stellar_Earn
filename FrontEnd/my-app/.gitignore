@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Ignore generated npm audit output
 audit.json
+
+# Stray dev console-dump artifacts (see #1920)
+output.txt

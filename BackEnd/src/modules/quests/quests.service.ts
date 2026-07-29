@@ -271,9 +271,11 @@ export class QuestsService {
       new QuestUpdatedEvent(id, updateQuestDto.title || 'Untitled', 'system'),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
 
     // Emit quest updated event
     this.eventEmitter.emit('quest.updated', {
@@ -308,9 +310,11 @@ export class QuestsService {
       new QuestDeletedEvent(id, quest.createdBy),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
   }
 
   validateStatusTransition(currentStatus: string, newStatus: string): void {

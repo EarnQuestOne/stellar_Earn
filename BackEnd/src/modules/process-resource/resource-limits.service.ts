@@ -64,8 +64,9 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
       heapTotal: m.heapTotal,
       external: m.external,
       arrayBuffers: m.arrayBuffers,
-      heapUsedPercent:
-        this.config ? Math.round((m.heapUsed / (this.config.maxHeapUsedMb * MB)) * 100) : 0,
+      heapUsedPercent: this.config
+        ? Math.round((m.heapUsed / (this.config.maxHeapUsedMb * MB)) * 100)
+        : 0,
     };
   }
 
@@ -93,7 +94,8 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
     }
     return {
       triggered: false,
-      message: 'GC not exposed. Start Node with --expose-gc to enable manual GC.',
+      message:
+        'GC not exposed. Start Node with --expose-gc to enable manual GC.',
     };
   }
 
@@ -101,12 +103,28 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
 
   private loadConfig(): ResourceLimitsConfig {
     return {
-      maxHeapUsedMb: this.configService.get<number>('RESOURCE_MAX_HEAP_MB', 512),
+      maxHeapUsedMb: this.configService.get<number>(
+        'RESOURCE_MAX_HEAP_MB',
+        512,
+      ),
       maxRssMb: this.configService.get<number>('RESOURCE_MAX_RSS_MB', 768),
-      heapWarningPercent: this.configService.get<number>('RESOURCE_HEAP_WARN_PERCENT', 75),
-      heapCriticalPercent: this.configService.get<number>('RESOURCE_HEAP_CRITICAL_PERCENT', 90),
-      exitOnHeapCritical: this.configService.get<string>('RESOURCE_EXIT_ON_HEAP_CRITICAL', 'false') === 'true',
-      monitorIntervalMs: this.configService.get<number>('RESOURCE_MONITOR_INTERVAL_MS', 30_000),
+      heapWarningPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_WARN_PERCENT',
+        75,
+      ),
+      heapCriticalPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_CRITICAL_PERCENT',
+        90,
+      ),
+      exitOnHeapCritical:
+        this.configService.get<string>(
+          'RESOURCE_EXIT_ON_HEAP_CRITICAL',
+          'false',
+        ) === 'true',
+      monitorIntervalMs: this.configService.get<number>(
+        'RESOURCE_MONITOR_INTERVAL_MS',
+        30_000,
+      ),
     };
   }
 
@@ -138,8 +156,10 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
 
   private evaluateViolations(mem: MemorySnapshot): ResourceViolation[] {
     const violations: ResourceViolation[] = [];
-    const warnThreshold = this.config.maxHeapUsedMb * (this.config.heapWarningPercent / 100);
-    const criticalThreshold = this.config.maxHeapUsedMb * (this.config.heapCriticalPercent / 100);
+    const warnThreshold =
+      this.config.maxHeapUsedMb * (this.config.heapWarningPercent / 100);
+    const criticalThreshold =
+      this.config.maxHeapUsedMb * (this.config.heapCriticalPercent / 100);
     const heapUsedMb = mem.heapUsed / MB;
     const rssMb = mem.rss / MB;
 

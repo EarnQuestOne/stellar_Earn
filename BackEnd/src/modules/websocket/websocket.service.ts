@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Server, Socket } from 'socket.io';
 import { WsSubscription, WsChannel } from './entities/ws-subscription.entity';
 import { WsMessage } from './entities/ws-message.entity';
+import { ConfigService } from '@nestjs/config';
 
 interface ConnectedClient {
   socket: Socket;
@@ -30,13 +31,57 @@ export class WebsocketService {
 
   private readonly RATE_LIMIT_WINDOW_MS = 60_000;
   private readonly RATE_LIMIT_MAX_MESSAGES = 60;
+  private readonly COALESCE_WINDOW_MS = 500;
+
+  private coalesceTimers = new Map<
+    string,
+    { timeout: ReturnType<typeof setTimeout>; latestPayload: any }
+  >();
 
   constructor(
     @InjectRepository(WsSubscription)
     private readonly subscriptionRepo: Repository<WsSubscription>,
     @InjectRepository(WsMessage)
     private readonly messageRepo: Repository<WsMessage>,
+    private readonly configService: ConfigService,
   ) {}
+
+  async initializeRedisAdapter(server: Server): Promise<void> {
+    const redisUrl = this.configService.get<string>(
+      'REDIS_URL',
+      'redis://localhost:6379',
+    );
+
+    try {
+      const adapterModule = await this.loadOptionalModule(
+        '@socket.io/redis-adapter',
+      );
+      const redisModule = await this.loadOptionalModule('redis');
+
+      if (!adapterModule || !redisModule) {
+        throw new Error('Redis adapter dependencies are not available');
+      }
+
+      const { createAdapter } = adapterModule as { createAdapter?: any };
+      const { createClient } = redisModule as { createClient?: any };
+
+      if (!createAdapter || !createClient) {
+        throw new Error('Redis adapter dependencies are incomplete');
+      }
+
+      const pubClient = createClient({ url: redisUrl });
+      const subClient = pubClient.duplicate();
+
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+
+      server.adapter(createAdapter(pubClient, subClient));
+      this.logger.log('Redis adapter initialized for horizontal scaling');
+    } catch (error: any) {
+      this.logger.warn(
+        `Redis adapter not available, using in-memory mode: ${error?.message}`,
+      );
+    }
+  }
 
   setServer(server: Server) {
     this.server = server;
@@ -342,10 +387,66 @@ export class WebsocketService {
     return true;
   }
 
+  // --- Coalesced Emit ---
+
+  /**
+   * Buffers rapid state changes for the same entityId and emits at most once
+   * per 500 ms window.  Only the latest payload within the window is emitted.
+   */
+  coalesceAndEmit(entityId: string, event: string, payload: any): void {
+    const existing = this.coalesceTimers.get(entityId);
+
+    if (existing) {
+      existing.latestPayload = { event, payload, timestamp: new Date().toISOString() };
+      return;
+    }
+
+    const entry: { timeout: ReturnType<typeof setTimeout>; latestPayload: any } =
+      {
+        timeout: setTimeout(() => {
+          this.coalesceTimers.delete(entityId);
+          const data = entry.latestPayload;
+          this.server?.to(`entity:${entityId}`).emit(data.event, {
+            data: data.payload,
+            timestamp: data.timestamp,
+          });
+        }, this.COALESCE_WINDOW_MS),
+        latestPayload: { event, payload, timestamp: new Date().toISOString() },
+      };
+
+    this.coalesceTimers.set(entityId, entry);
+  }
+
+  /**
+   * Immediately flushes any pending coalesced event for the given entityId
+   * without waiting for the timer to fire.
+   */
+  flushCoalesced(entityId: string): void {
+    const entry = this.coalesceTimers.get(entityId);
+    if (!entry) return;
+
+    clearTimeout(entry.timeout);
+    this.coalesceTimers.delete(entityId);
+
+    const data = entry.latestPayload;
+    this.server?.to(`entity:${entityId}`).emit(data.event, {
+      data: data.payload,
+      timestamp: data.timestamp,
+    });
+  }
+
   // --- Helpers ---
 
   private buildRoomName(channel: WsChannel, resourceId?: string): string {
     return resourceId ? `${channel}:${resourceId}` : channel;
+  }
+
+  private async loadOptionalModule(moduleName: string): Promise<any> {
+    try {
+      return await import(moduleName);
+    } catch {
+      return null;
+    }
   }
 
   getStats() {

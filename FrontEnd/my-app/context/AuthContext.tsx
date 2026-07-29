@@ -7,9 +7,8 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { AuthUserProfile, AuthTokens } from '@/lib/types/api.types';
+import { AuthUserProfile } from '@/lib/types/api.types';
 import * as authApi from '@/lib/api/auth';
-import { tokenManager } from '@/lib/api/client';
 
 interface AuthContextType {
   user: AuthUserProfile | null;
@@ -41,24 +40,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const refreshProfile = useCallback(async () => {
-    if (!tokenManager.getAccessToken()) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       const profile = await authApi.getAuthProfile();
       setUser(profile);
       setError(null);
-    } catch (err: any) {
-      console.error('Failed to fetch auth profile:', err);
-      // If profile fetch fails with 401, tokenManager might have cleared tokens
-      if (!tokenManager.getAccessToken()) {
-        setUser(null);
-      }
-      setError(err?.message || 'Failed to load user profile');
+    } catch {
+      // Profile fetch failed — user is not authenticated (no valid cookies)
+      setUser(null);
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -76,12 +66,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Login sets httpOnly cookies via Set-Cookie headers.
+      // The response body contains user info.
       await authApi.login({
         stellarAddress,
         signature,
         challenge,
-        publicKey: stellarAddress, // In this context, publicKey is the same as stellarAddress
+        publicKey: stellarAddress,
       });
+      // Fetch full profile to populate user state
       await refreshProfile();
     } catch (err: any) {
       setError(err?.message || 'Login failed');

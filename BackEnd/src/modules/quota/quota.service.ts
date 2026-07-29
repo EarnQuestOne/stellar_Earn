@@ -8,10 +8,12 @@ import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { QuotaConfig } from './entities/quota-config.entity';
 import { QuotaUsage, QuotaResourceType } from './entities/quota-usage.entity';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class QuotaService {
   private readonly logger = new Logger(QuotaService.name);
+  private static readonly QUOTA_CACHE_TTL_SECONDS = 60;
 
   constructor(
     @InjectRepository(QuotaConfig)
@@ -20,6 +22,7 @@ export class QuotaService {
     private readonly usageRepo: Repository<QuotaUsage>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly cacheService: CacheService,
   ) {}
 
   /** Returns the quota config for a tenant, or null if none configured. */
@@ -74,7 +77,11 @@ export class QuotaService {
         .createQueryBuilder()
         .insert()
         .into(QuotaUsage)
-        .values({ tenantId, resourceType: QuotaResourceType.QUEST, periodStart })
+        .values({
+          tenantId,
+          resourceType: QuotaResourceType.QUEST,
+          periodStart,
+        })
         .orIgnore()
         .execute();
 
@@ -101,6 +108,12 @@ export class QuotaService {
 
       await manager.increment(QuotaUsage, { id: usage.id }, 'questCount', 1);
     });
+
+    await this.updateCachedQuotaUsage(
+      tenantId,
+      QuotaResourceType.QUEST,
+      periodStart,
+    );
   }
 
   /**
@@ -171,9 +184,90 @@ export class QuotaService {
         .createQueryBuilder()
         .update(QuotaUsage)
         .set({ payoutAmount: () => '"payoutAmount" + :amount' })
-        .where('id = :id', { id: usage.id })
+        .where('id::text = :id', { id: usage.id })
         .setParameter('amount', amount)
         .execute();
     });
+
+    await this.updateCachedQuotaUsage(
+      tenantId,
+      QuotaResourceType.PAYOUT,
+      periodStart,
+    );
+  }
+
+  // ─── Redis-backed quota cache ──────────────────────────────────────────────
+
+  /**
+   * Build the Redis key for a specific quota period.
+   */
+  private buildQuotaCacheKey(
+    tenantId: string,
+    resourceType: QuotaResourceType,
+    periodStart: Date,
+  ): string {
+    return `quota:${tenantId}:${resourceType}:${periodStart.getTime()}`;
+  }
+
+  /**
+   * Check Redis for cached quota usage before falling back to DB.
+   * Returns the cached usage row (with questCount / payoutAmount) or null.
+   */
+  async getCachedQuotaUsage(
+    tenantId: string,
+    resourceType: QuotaResourceType,
+    periodStart: Date,
+  ): Promise<QuotaUsage | null> {
+    const key = this.buildQuotaCacheKey(tenantId, resourceType, periodStart);
+    const cached = await this.cacheService.get<QuotaUsage>(key);
+    if (cached) {
+      this.logger.debug(`Quota cache hit for ${key}`);
+      return cached;
+    }
+
+    this.logger.debug(`Quota cache miss for ${key}, falling back to DB`);
+    const usage = await this.usageRepo.findOne({
+      where: { tenantId, resourceType, periodStart },
+    });
+
+    if (usage) {
+      await this.cacheService.set(
+        key,
+        usage,
+        QuotaService.QUOTA_CACHE_TTL_SECONDS,
+      );
+    }
+
+    return usage;
+  }
+
+  /**
+   * Write-through: after a successful enforce, refresh the cached usage
+   * so subsequent reads within the TTL window see the updated count.
+   */
+  private async updateCachedQuotaUsage(
+    tenantId: string,
+    resourceType: QuotaResourceType,
+    periodStart: Date,
+  ): Promise<void> {
+    try {
+      const usage = await this.usageRepo.findOne({
+        where: { tenantId, resourceType, periodStart },
+      });
+      if (usage) {
+        const key = this.buildQuotaCacheKey(
+          tenantId,
+          resourceType,
+          periodStart,
+        );
+        await this.cacheService.set(
+          key,
+          usage,
+          QuotaService.QUOTA_CACHE_TTL_SECONDS,
+        );
+      }
+    } catch (err) {
+      this.logger.warn('Failed to update quota cache after enforce', err);
+    }
   }
 }

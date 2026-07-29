@@ -24,4 +24,7 @@ export const CacheKeys = {
     redisKey('submission', questId, userId),
   leaderboard: (page: number) => redisKey('leaderboard', page),
   session: (token: string) => redisKey('session', token),
+  payoutPoll: (payoutId: string, viewerScope: string) =>
+    redisKey('payout_poll', payoutId, viewerScope),
+  jobStatus: (jobId: string) => redisKey('job_status', jobId),
 } as const;

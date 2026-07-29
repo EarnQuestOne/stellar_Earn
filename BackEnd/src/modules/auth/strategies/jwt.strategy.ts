@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
@@ -38,42 +39,41 @@ function extractJwtFromCookie(req: Request): string | null {
 }
 
 @Injectable()
-export class JwtStrategy extends Strategy {
+export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {
     const publicKeys = getJwtPublicKeys(configService);
 
-    super(
-      {
-        jwtFromRequest: (req) => {
-          const fromCookie = extractJwtFromCookie(req);
-          if (fromCookie) {
-            return fromCookie;
-          }
-          return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-        },
-        ignoreExpiration: false,
-        secretOrKeyProvider: (_req, rawJwtToken, done) => {
-          const token = String(rawJwtToken);
-
-          for (const key of publicKeys) {
-            try {
-              verify(token, key, { algorithms: ['RS256'] });
-              done(null, key);
-              return;
-            } catch {
-              // try next key
-            }
-          }
-
-          done(new Error('Invalid token signature'));
-        },
+    super({
+      jwtFromRequest: (req) => {
+        const fromCookie = extractJwtFromCookie(req);
+        if (fromCookie) {
+          return fromCookie;
+        }
+        return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
       },
-      async (payload: JwtPayload) => {
-        return this.authService.validate(payload);
+      ignoreExpiration: false,
+      secretOrKeyProvider: (_req, rawJwtToken, done) => {
+        const token = String(rawJwtToken);
+
+        for (const key of publicKeys) {
+          try {
+            verify(token, key, { algorithms: ['RS256'] });
+            done(null, key);
+            return;
+          } catch {
+            // try next key
+          }
+        }
+
+        done(new Error('Invalid token signature'));
       },
-    );
+    });
+  }
+
+  async validate(payload: JwtPayload) {
+    return this.authService.validate(payload);
   }
 }

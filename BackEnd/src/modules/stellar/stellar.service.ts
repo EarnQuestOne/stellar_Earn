@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   BadRequestException,
   ServiceUnavailableException,
+  Optional,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
@@ -24,6 +25,8 @@ import { Repository } from 'typeorm';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+import { StellarAccountCacheService } from './stellar-account-cache.service';
+import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
 
 export interface ApproveSubmissionResult {
   transactionHash: string;
@@ -60,6 +63,8 @@ export class StellarService implements OnModuleInit {
   private networkPassphrase: string;
   private readonly eventReorgBufferLedgers = 5;
   private readonly eventInitialLookbackLedgers = 50;
+  private accountCache: StellarAccountCacheService;
+  private clientPool: SorobanRpcClientPoolService;
 
   constructor(
     private readonly configService: ConfigService,
@@ -67,25 +72,24 @@ export class StellarService implements OnModuleInit {
     private readonly metrics: MetricsService,
     @InjectRepository(EventStore)
     private readonly eventStoreRepository: Repository<EventStore>,
-  ) {}
+    @Optional() accountCache?: StellarAccountCacheService,
+    @Optional() clientPool?: SorobanRpcClientPoolService,
+  ) {
+    this.accountCache =
+      accountCache ?? new StellarAccountCacheService(this.configService);
+    this.clientPool =
+      clientPool ?? new SorobanRpcClientPoolService(this.configService);
+  }
 
   onModuleInit() {
     this.initializeStellarComponents();
   }
 
   private initializeStellarComponents() {
-    const horizonUrl =
-      this.configService.get<string>('STELLAR_HORIZON_URL') ||
-      'https://horizon-testnet.stellar.org';
-    const rpcUrl =
-      this.configService.get<string>('SOROBAN_RPC_URL') ||
-      'https://soroban-testnet.stellar.org';
     const network = this.configService.get<string>('STELLAR_NETWORK');
 
-    this.horizonServer = new StellarSdk.Horizon.Server(horizonUrl);
-    this.rpcServer = new rpc.Server(rpcUrl, {
-      allowHttp: rpcUrl.startsWith('http://'),
-    });
+    this.horizonServer = this.clientPool.getHorizonServer();
+    this.rpcServer = this.clientPool.getRpcServer();
     this.networkPassphrase =
       network === 'PUBLIC'
         ? StellarSdk.Networks.PUBLIC
@@ -163,8 +167,10 @@ export class StellarService implements OnModuleInit {
 
         const adminKeypair = Keypair.fromSecret(secret);
         const sourcePubKey = adminKeypair.publicKey();
-        const accountResponse =
-          await this.horizonServer.loadAccount(sourcePubKey);
+        const accountResponse = await this.accountCache.loadAccount(
+          sourcePubKey,
+          () => this.horizonServer.loadAccount(sourcePubKey),
+        );
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
@@ -607,14 +613,16 @@ export class StellarService implements OnModuleInit {
     }
 
     const sourceKeypair = Keypair.fromSecret(secretKey);
-    const sourceAccount = await this.horizonServer.loadAccount(
-      sourceKeypair.publicKey(),
+    const sourcePublicKey = sourceKeypair.publicKey();
+    const sourceAccount = await this.accountCache.loadAccount(
+      sourcePublicKey,
+      () => this.horizonServer.loadAccount(sourcePublicKey),
     );
 
     const paymentAsset =
       asset === 'XLM'
         ? StellarSdk.Asset.native()
-        : new StellarSdk.Asset(asset, sourceKeypair.publicKey());
+        : new StellarSdk.Asset(asset, sourcePublicKey);
 
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
@@ -633,6 +641,7 @@ export class StellarService implements OnModuleInit {
     tx.sign(sourceKeypair);
 
     const result = await this.horizonServer.submitTransaction(tx);
+    this.accountCache.invalidateAccount(sourcePublicKey);
 
     return {
       transactionHash: result.hash,

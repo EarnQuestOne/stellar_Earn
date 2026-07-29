@@ -21,6 +21,7 @@ import { Payout } from './entities/payout.entity';
 import { AnalyticsSnapshot } from './entities/analytics-snapshot.entity';
 import { AnalyticsReport } from './entities/analytics-report.entity';
 import { User as AnalyticsUser } from './entities/user.entity';
+import { SubmissionsModule } from '../submissions/submissions.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { User as AnalyticsUser } from './entities/user.entity';
       ttl: 300, // 5 minutes default
       max: 100, // max items in cache
     }),
+    SubmissionsModule,
   ],
   controllers: [AnalyticsController, WebVitalsAnalyticsController],
   providers: [

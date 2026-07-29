@@ -6,6 +6,7 @@ import {
   type SearchResult,
   type SearchFilters,
 } from '@/lib/api/search';
+import { createCancelToken, type CancelToken } from '@/lib/api/client';
 import { debounce } from '@/lib/utils/debounce';
 
 interface UseSearchReturn {
@@ -31,28 +32,29 @@ export function useSearch(
   const [error, setError] = useState<Error | null>(null);
   const [total, setTotal] = useState(0);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const cancelTokenRef = useRef<CancelToken | null>(null);
 
   const performSearch = useCallback(
     async (searchQuery: string) => {
       if (!searchQuery.trim()) {
+        cancelTokenRef.current?.cancel();
         setResults([]);
         setSuggestions([]);
         setTotal(0);
         return;
       }
 
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      abortControllerRef.current = new AbortController();
+      // Cancel any still-in-flight search before starting a new one, so a
+      // slow earlier response can't overwrite results from a later query.
+      cancelTokenRef.current?.cancel();
+      const cancelToken = createCancelToken();
+      cancelTokenRef.current = cancelToken;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await searchGlobal(searchQuery, filters);
+        const response = await searchGlobal(searchQuery, filters, cancelToken);
         setResults(response.results);
         setSuggestions(response.suggestions);
         setTotal(response.total);
@@ -60,14 +62,20 @@ export function useSearch(
         const recent = await getRecentSearches();
         setRecentSearches(recent);
       } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
+        // A cancelled request (superseded by a newer search, or the
+        // component unmounted) isn't a real error.
+        if (cancelToken.signal.aborted) return;
+
+        if (err instanceof Error) {
           setError(err);
           setResults([]);
           setSuggestions([]);
           setTotal(0);
         }
       } finally {
-        setIsLoading(false);
+        if (!cancelToken.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     },
     [filters]
@@ -103,6 +111,14 @@ export function useSearch(
     };
     loadInitial();
   }, [initialQuery, performSearch]);
+
+  // Cancel any in-flight search when the component unmounts, so a slow
+  // response can't resolve into state after there's nothing left to show it.
+  useEffect(() => {
+    return () => {
+      cancelTokenRef.current?.cancel();
+    };
+  }, []);
 
   return {
     results,

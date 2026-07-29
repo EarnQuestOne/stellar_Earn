@@ -19,6 +19,7 @@ export default function NotFound() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
+      <title>Page Not Found - StellarEarn</title>
       <div className="w-full max-w-3xl text-center">
         <div className="mb-7 flex flex-col items-center gap-4">
           <div

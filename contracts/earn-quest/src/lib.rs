@@ -15,6 +15,7 @@ mod security;
 pub mod storage;
 mod submission;
 pub mod token;
+pub mod ttl;
 pub mod types;
 pub mod validation;
 
@@ -35,6 +36,19 @@ pub use crate::types::{
 };
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, U256, Vec};
+
+/// Bumps the contract instance TTL at the start of a state-mutating entrypoint.
+///
+/// All contract data lives in instance storage, so a single instance-TTL bump keeps
+/// every key alive. Called once per write entrypoint where `env` is the active
+/// contract context (issue #1923).
+fn bump_instance_ttl(env: &Env) {
+    let max = env.storage().max_ttl();
+    let target = max.min(crate::ttl::DEFAULT_TTL_EXTEND_TO);
+    env.storage()
+        .instance()
+        .extend_ttl(crate::ttl::DEFAULT_TTL_THRESHOLD, target);
+}
 
 #[contract]
 pub struct EarnQuestContract;
@@ -139,6 +153,8 @@ impl EarnQuestContract {
     /// * `caller` - The address of the caller.
     /// * `new_admin` - The address to be added as an administrator.
     pub fn add_admin(env: Env, caller: Address, new_admin: Address) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::add_admin(&env, &caller, &new_admin)
     }
@@ -151,6 +167,8 @@ impl EarnQuestContract {
     /// * `caller` - The address of the caller.
     /// * `admin_to_remove` - The address to be removed from administrators.
     pub fn remove_admin(env: Env, caller: Address, admin_to_remove: Address) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::remove_admin(&env, &caller, &admin_to_remove)
     }
@@ -169,6 +187,8 @@ impl EarnQuestContract {
         address: Address,
         role: Role,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::grant_role(&env, &caller, &address, role)
     }
@@ -187,6 +207,8 @@ impl EarnQuestContract {
         address: Address,
         role: Role,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::revoke_role(&env, &caller, &address, role)
     }
@@ -258,6 +280,8 @@ impl EarnQuestContract {
         verifier: Address,
         deadline: u64,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         creator.require_auth();
         validation::validate_symbol_length(&id)?;
@@ -290,6 +314,8 @@ impl EarnQuestContract {
         deadline: u64,
         category: u32,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         creator.require_auth();
         validation::validate_symbol_length(&id)?;
@@ -330,6 +356,8 @@ impl EarnQuestContract {
         deadline: u64,
         metadata: QuestMetadata,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         creator.require_auth();
         validation::validate_symbol_length(&id)?;
@@ -360,6 +388,8 @@ impl EarnQuestContract {
         creator: Address,
         quests: Vec<BatchQuestInput>,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         creator.require_auth();
         validation::validate_array_length(quests.len(), validation::MAX_BATCH_QUEST_REGISTRATION)?;
@@ -375,6 +405,8 @@ impl EarnQuestContract {
         caller: Address,
         grace_period_seconds: u64,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         admin::set_quest_grace_period(&env, &caller, grace_period_seconds)
     }
 
@@ -391,6 +423,8 @@ impl EarnQuestContract {
     /// * `caller` - The address of the admin.
     /// * `quest_id` - The symbol of the quest to pause.
     pub fn pause_quest(env: Env, caller: Address, quest_id: Symbol) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::Admin)?;
         quest::pause_quest(&env, &quest_id, &caller)
@@ -404,6 +438,8 @@ impl EarnQuestContract {
     /// * `caller` - The address of the admin.
     /// * `quest_id` - The symbol of the quest to resume.
     pub fn resume_quest(env: Env, caller: Address, quest_id: Symbol) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         admin::require_role(&env, &caller, Role::Admin)?;
         quest::resume_quest(&env, &quest_id, &caller)
@@ -423,6 +459,8 @@ impl EarnQuestContract {
         submitter: Address,
         commitment_hash: BytesN<32>,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         submitter.require_auth();
         submission::commit_submission(&env, &quest_id, &submitter, &commitment_hash)
@@ -444,6 +482,8 @@ impl EarnQuestContract {
         proof_hash: BytesN<32>,
         salt: BytesN<32>,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         submitter.require_auth();
         submission::reveal_submission(&env, &quest_id, &submitter, &proof_hash, &salt)
@@ -463,6 +503,8 @@ impl EarnQuestContract {
         submitter: Address,
         proof_hash: BytesN<32>,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         submitter.require_auth();
         submission::submit_proof(&env, &quest_id, &submitter, &proof_hash)
@@ -482,6 +524,8 @@ impl EarnQuestContract {
         submitter: Address,
         verifier: Address,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         verifier.require_auth();
         submission::approve_submission(&env, &quest_id, &submitter, &verifier)
@@ -499,6 +543,8 @@ impl EarnQuestContract {
         verifier: Address,
         submissions: Vec<BatchApprovalInput>,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         verifier.require_auth();
         submission::approve_submissions_batch(&env, &verifier, &submissions)
@@ -510,8 +556,12 @@ impl EarnQuestContract {
         submitter: Address,
         amount: i128,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         security::nonreentrant_enter(&env)?;
+        gas_budget::reset_call_budget(&env);
+        gas_budget::enforce_budget(&env, &soroban_sdk::symbol_short!("clm_rwd"))?;
         submitter.require_auth();
 
         // Single read of quest and submission for all subsequent operations
@@ -573,6 +623,8 @@ impl EarnQuestContract {
         asset: Address,
         amount: i128,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         payout::initiate_clawback(&env, &caller, &quest_id, &recipient, &asset, amount)
     }
 
@@ -587,6 +639,8 @@ impl EarnQuestContract {
         quest_id: Symbol,
         recipient: Address,
     ) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         payout::execute_clawback(&env, &caller, &quest_id, &recipient)
     }
 
@@ -609,6 +663,8 @@ impl EarnQuestContract {
     /// * `user` - The address of the user receiving the badge.
     /// * `badge` - The badge to be granted.
     pub fn grant_badge(env: Env, admin: Address, user: Address, badge: Badge) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+
         security::require_not_paused(&env)?;
         let user_badges = storage::get_user_badges(&env, &user);
         validation::validate_badge_count(user_badges.badges.len())?;

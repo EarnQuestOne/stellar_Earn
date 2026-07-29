@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
-import * as Sentry from '@sentry/node';
+import { getSentry } from '../../config/sentry.config';
 
 @Catch()
 export class SentryExceptionFilter implements ExceptionFilter {
@@ -22,8 +22,11 @@ export class SentryExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Only capture 5xx errors and unexpected exceptions in Sentry
-    if (status >= 500 || !(exception instanceof HttpException)) {
+    // Only capture 5xx errors and unexpected exceptions in Sentry. getSentry()
+    // returns null when Sentry is disabled (SENTRY_DSN unset), in which case the
+    // SDK was never loaded and there is nothing to report to.
+    const Sentry = getSentry();
+    if (Sentry && (status >= 500 || !(exception instanceof HttpException))) {
       Sentry.addBreadcrumb({
         category: 'http',
         message: `${request.method} ${request.originalUrl}`,

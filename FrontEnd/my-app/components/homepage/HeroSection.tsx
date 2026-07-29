@@ -30,25 +30,14 @@ export default function HeroSection() {
     >
       {/* Background grid */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 hero-background-grid"
         aria-hidden="true"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(34,211,238,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.04) 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
-          maskImage:
-            'radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)',
-        }}
       />
 
       {/* Ambient glow */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 opacity-20"
+        className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 opacity-20 hero-ambient-glow"
         aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, transparent 70%)',
-        }}
       />
 
       <div className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-6">

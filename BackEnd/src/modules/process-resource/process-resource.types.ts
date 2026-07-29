@@ -8,7 +8,7 @@ export interface MemorySnapshot {
 }
 
 export interface CpuSnapshot {
-  user: number;   // microseconds
+  user: number; // microseconds
   system: number; // microseconds
 }
 
@@ -32,8 +32,8 @@ export interface ResourceViolation {
 export interface ResourceLimitsConfig {
   maxHeapUsedMb: number;
   maxRssMb: number;
-  heapWarningPercent: number;    // % of maxHeapUsedMb that triggers a warn
-  heapCriticalPercent: number;   // % that triggers a critical + optional exit
+  heapWarningPercent: number; // % of maxHeapUsedMb that triggers a warn
+  heapCriticalPercent: number; // % that triggers a critical + optional exit
   exitOnHeapCritical: boolean;
   monitorIntervalMs: number;
 }

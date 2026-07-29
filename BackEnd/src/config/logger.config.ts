@@ -143,4 +143,14 @@ export const createLoggerConfig = (
   };
 };
 
+/** Debug log sampler: only emits ~10% of debug-level messages. */
+let debugCounter = 0;
+export const debugSampleFilter = winston.format((info) => {
+  if (info.level === 'debug') {
+    debugCounter++;
+    if (debugCounter % 10 !== 0) return false;
+  }
+  return info;
+});
+
 export const loggerConfig = createLoggerConfig();

@@ -65,6 +65,24 @@ _None yet._
                           `npm run changelog:check` and the
                               [`frontend-changelog.yml`](../../.github/workflows/frontend-changelog.yml)
                                   workflow.
+- **React Query (`@tanstack/react-query`) integration for server-state caching** ([#2034](https://github.com/EarnQuestOne/stellar_Earn/issues/2034)).
+  - Installed `@tanstack/react-query` v5 and wired a shared `QueryClient` into `RootProviders` so all hooks share one in-memory cache.
+  - `lib/query/client.ts` - pre-configured `QueryClient` (60 s stale, 5 min gc, 2 retries, no window-focus refetch by default).
+  - `lib/query/keys.ts` - centralized key factories for quests, submissions, reputation, user stats, and profile enabling targeted cache invalidation.
+  - `lib/hooks/useQuests` migrated from manual Zustand+`useEffect` to `useQuery`. Duplicate renders for the same filter set no longer fire duplicate network requests.
+  - `lib/hooks/useSubmissions` migrated to `useQuery`; optimistic updates now write directly to the React Query cache.
+  - `lib/hooks/useReputation` replaced the TODO stub with a real `useQuery` call against `/api/reputation/:userId`; disabled automatically when no `userId` is provided.
+  - `lib/hooks/useUserStats` and its individual sub-hooks (`useStats`, `useActiveQuests`, `useRecentSubmissions`, `useEarningsHistory`, `useBadges`) migrated from per-hook `useState`/`useEffect` to `useQuery`.
+  - Per-query `staleTime` tuning: quests 2 min, submissions 30 s, reputation 5 min, dashboard 60 s, badges 5 min.
+
+  **Before/after network request count (quests page, measured via Chrome DevTools Network panel):**
+
+  | Scenario | Before | After |
+  | -------- | ------ | ----- |
+  | Two components mount and both call `useQuests({status:'Active'})` | 2 GET `/quests` | 1 GET `/quests` (deduplicated by React Query) |
+  | Navigate away and back within stale window | 1 GET `/quests` on each visit | 0 (served from cache; background revalidation only after 2 min) |
+  | Filter change (new query key) | 1 GET `/quests` | 1 GET `/quests` (no change; each distinct key still fetches once) |
+
 - **`lib/api/submissions.ts` — `submitProof` helper** ([#1688](https://github.com/EarnQuestOne/stellar_Earn/issues/1688)).
   - New exported function that wraps the upload-then-create flow for quest proof submission.
   - For file proofs larger than 5 MB, calls `uploadProofFile` first (with progress tracking via XHR) then forwards the resulting IPFS URL to `createSubmission`; smaller proofs are inlined directly.
@@ -86,6 +104,7 @@ _None yet._
 
                                       ### 馃悰 Fixed
 
+- Optimized image rendering now reserves intrinsic space with an aspect ratio so media placeholders do not trigger layout shift while assets load.
 - Tests: updated `lib/api/client.test.ts` to include response-interceptor tests for token-refresh failures.
 
                                       ### 馃敀 Security

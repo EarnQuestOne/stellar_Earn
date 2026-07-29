@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { headers } from 'next/headers';
 import '../globals.css';
 import { RootProviders } from '@/app/providers/RootProviders';
 import { I18nProvider } from '@/app/providers/I18nProvider';
@@ -59,18 +60,18 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Preload critical CSS for Hero section */}
+        <link rel="preload" href="/styles/HeroSection.css" as="style" />
+        <noscript>
+          <link rel="stylesheet" href="/styles/HeroSection.css" />
+        </noscript>
         {/* Render-blocking script prevents flash of unstyled theme on first paint */}
-        <script src="/theme-init.js" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        <script src="/theme-init.js" nonce={nonce} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

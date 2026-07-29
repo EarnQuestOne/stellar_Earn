@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
 import { useStore } from '@/lib/store';
+import { useHydrated } from '@/lib/hooks/useHydrated';
+import * as authApi from '@/lib/api/auth';
 
 interface WalletContextType {
   connect: (moduleId: string) => Promise<void>;
@@ -9,6 +11,7 @@ interface WalletContextType {
   address: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  isVerifyingWallet: boolean;
   selectedWalletId: string | null;
   openModal: () => void;
   closeModal: () => void;
@@ -24,6 +27,34 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+// ── Lazy, cached wallet kit loader ──────────────────────────────────────────
+// The @creit.tech/stellar-wallets-kit SDK is heavy, so it must not load until
+// it's actually needed (session verification or an explicit connect). A
+// module-level singleton promise ensures the dynamic import + kit
+// instantiation only ever happens once per page session — every caller
+// (verification effect, connect()) awaits and reuses the same instance
+// instead of re-importing/re-constructing it.
+let kitPromise: Promise<any> | null = null;
+
+function loadWalletKit(): Promise<any> {
+  if (!kitPromise) {
+    kitPromise = import('@creit.tech/stellar-wallets-kit')
+      .then((walletKitModule) => {
+        return new walletKitModule.StellarWalletsKit({
+          network: walletKitModule.WalletNetwork.TESTNET,
+          selectedWalletId: walletKitModule.FREIGHTER_ID,
+          modules: walletKitModule.allowAllModules(),
+        });
+      })
+      .catch((err) => {
+        // Don't cache a failed load — let the next caller retry.
+        kitPromise = null;
+        throw err;
+      });
+  }
+  return kitPromise;
+}
+
 export const useWallet = () => {
   const context = useContext(WalletContext);
   if (!context)
@@ -36,12 +67,14 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const address = useStore((s) => s.address);
   const isConnecting = useStore((s) => s.isConnecting);
   const isConnected = useStore((s) => s.isConnected);
+  const isVerifyingWallet = useStore((s) => s.isVerifyingWallet);
   const selectedWalletId = useStore((s) => s.selectedWalletId);
   const isModalOpen = useStore((s) => s.isModalOpen);
   const walletError = useStore((s) => s.walletError);
 
   const setWalletAddress = useStore((s) => s.setWalletAddress);
   const setIsConnecting = useStore((s) => s.setIsConnecting);
+  const setIsVerifyingWallet = useStore((s) => s.setIsVerifyingWallet);
   const setSelectedWalletId = useStore((s) => s.setSelectedWalletId);
   const setWalletModalOpen = useStore((s) => s.setWalletModalOpen);
   const setWalletError = useStore((s) => s.setWalletError);
@@ -50,26 +83,106 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   // kit lives outside the store (not serialisable)
   const [kit, setKit] = React.useState<any>(null);
 
-  useEffect(() => {
-    const initKit = async () => {
-      try {
-        const walletKitModule = await import('@creit.tech/stellar-wallets-kit');
-        const kitInstance = new walletKitModule.StellarWalletsKit({
-          network: walletKitModule.WalletNetwork.TESTNET,
-          selectedWalletId: walletKitModule.FREIGHTER_ID,
-          modules: walletKitModule.allowAllModules(),
-        });
-        setKit(kitInstance);
+  const hydrated = useHydrated();
 
-        // Rehydrate from store (already persisted by Zustand)
-        // Nothing extra needed — store handles it via persist middleware
+  // Guards against duplicate verification runs if this effect fires more
+  // than once for the same mount (e.g. React 18 StrictMode's dev-only
+  // double-invoke of effects) — without it, the address/network query
+  // below could fire twice for a single page load.
+  const verificationStartedRef = React.useRef(false);
+
+  useEffect(() => {
+    // Wait until Zustand's persist middleware has rehydrated from
+    // localStorage so we know whether there is a session to verify.
+    // Without this gate the effect races against async rehydration
+    // and could skip verification on a cold load (address would still
+    // be the default null).
+    if (!hydrated) return;
+
+    const persistedAddress = useStore.getState().address;
+    const persistedWalletId = useStore.getState().selectedWalletId;
+
+    if (!persistedAddress || !persistedWalletId) {
+      // No previously-connected session — nothing to verify, and no
+      // reason to pay the cost of loading the wallet kit SDK until the
+      // user actually initiates a connection.
+      return;
+    }
+
+    if (verificationStartedRef.current) return;
+    verificationStartedRef.current = true;
+
+    const verify = async () => {
+      // Mark verifying so UI renders neither connected nor disconnected
+      // until we know whether the session is still valid.
+      setIsVerifyingWallet(true);
+
+      try {
+        // Loading the kit itself is part of "can we verify this session" —
+        // a failed/slow load fails closed the same way an extension query
+        // failure does, below.
+        const kitInstance = await loadWalletKit();
+        setKit(kitInstance);
+        kitInstance.setWallet(persistedWalletId);
+
+        // Query the wallet extension for the current address *without*
+        // triggering a popup (skipRequestAccess).  If the extension was
+        // uninstalled, frozen, or the user revoked permissions, this
+        // will throw or return a different address.
+        const verifyPromise = kitInstance.getAddress({
+          skipRequestAccess: true,
+        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Wallet verification timed out')),
+            5000
+          )
+        );
+
+        const { address: liveAddress } = await Promise.race([
+          verifyPromise,
+          timeoutPromise,
+        ]);
+
+        if (liveAddress !== persistedAddress) {
+          // Identity-boundary violation: the wallet extension now controls
+          // a *different* account than the one the backend session was
+          // issued for.  Full logout is the only safe response — the
+          // backend does not re-verify wallet ownership on API calls, so
+          // leaving the session alive would let the UI show account B
+          // while the backend authenticates every write as account A.
+          console.warn(
+            'Wallet verification: address mismatch —',
+            `persisted ${persistedAddress}, got ${liveAddress}.`,
+            'Clearing session.'
+          );
+          await authApi.logout();
+          disconnectWallet();
+        }
+        // Address matches — session is still valid, no action needed.
       } catch (err) {
-        console.error('Failed to initialize wallet kit:', err);
-        setWalletError('Failed to load wallet kit');
+        // Fail-closed: if the kit fails to load, we cannot reach the wallet
+        // extension at all (uninstalled, frozen, permissions revoked), OR
+        // verification times out, we clear both the wallet state and the
+        // backend session.  This is conservative — "can't verify" and
+        // "verified as wrong" are distinguishable in code but not obviously
+        // distinguishable in security posture.  The backend never
+        // re-verifies wallet ownership after login, so there is no
+        // independent safety net if we leave the session alive.
+        console.error('Wallet verification failed:', err);
+        try {
+          await authApi.logout();
+        } catch {
+          // Logout call itself failed — best-effort, still clear
+          // the local wallet state below so the UI is not stuck.
+        }
+        disconnectWallet();
+      } finally {
+        setIsVerifyingWallet(false);
       }
     };
-    initKit();
-  }, []);
+    verify();
+  }, [hydrated]);
 
   const supportedWallets = [
     { id: 'freighter', name: 'Freighter', icon: '/icons/freighter.png' },
@@ -80,17 +193,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   ];
 
   const connect = async (moduleId: string) => {
-    if (!kit) {
-      setWalletError('Wallet kit not loaded yet');
-      return;
-    }
-
     setIsConnecting(true);
     setWalletError(null);
 
     try {
-      kit.setWallet(moduleId);
-      const { address: walletAddress } = await kit.getAddress();
+      // Loads the kit on first use if the mount-time verification effect
+      // never ran (no persisted session) — otherwise reuses the same
+      // cached instance it already loaded.
+      const kitInstance = kit ?? (await loadWalletKit());
+      if (!kit) setKit(kitInstance);
+
+      kitInstance.setWallet(moduleId);
+      const { address: walletAddress } = await kitInstance.getAddress();
       setWalletAddress(walletAddress);
       setSelectedWalletId(moduleId);
       setWalletModalOpen(false);
@@ -145,11 +259,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     if (!kit) {
       throw new Error('Wallet kit not loaded');
     }
-    const { signedTxXdr } = await kit.signTransaction(xdr, {
-      networkPassphrase: opts.networkPassphrase,
-      address: opts.address,
-    });
-    return signedTxXdr;
+    try {
+      const { signedTxXdr } = await kit.signTransaction(xdr, {
+        networkPassphrase: opts.networkPassphrase,
+        address: opts.address,
+      });
+      return signedTxXdr;
+    } catch (err: any) {
+      console.error('Transaction signing failed:', err);
+      const message = err?.message || 'Transaction signing failed';
+      setWalletError(message);
+      throw new Error(message);
+    }
   };
 
   return (
@@ -160,6 +281,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         address,
         isConnected,
         isConnecting,
+        isVerifyingWallet,
         selectedWalletId,
         openModal: () => {
           setWalletError(null);

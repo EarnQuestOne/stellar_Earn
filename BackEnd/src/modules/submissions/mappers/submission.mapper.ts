@@ -1,9 +1,13 @@
 import { Submission } from '../entities/submission.entity';
-import { SubmissionDataDto, SubmissionQuestInfoDto, SubmissionUserInfoDto } from '../dto/submission-response.dto';
+import {
+  SubmissionDataDto,
+  SubmissionQuestInfoDto,
+  SubmissionUserInfoDto,
+} from '../dto/submission-response.dto';
 
 /**
  * Submission Mapper
- * 
+ *
  * Explicit mapper functions to convert between Submission entities and DTOs.
  * This provides a clean separation of concerns and makes mapping logic testable.
  */
@@ -22,13 +26,13 @@ export class SubmissionMapper {
     dto.rejectedAt = submission.rejectedAt ?? undefined;
     dto.rejectedBy = submission.rejectedBy ?? undefined;
     dto.rejectionReason = submission.rejectionReason ?? undefined;
-    
+
     // Map quest info
     dto.quest = this.toQuestInfoDto(submission.quest);
-    
+
     // Map user info
     dto.user = this.toUserInfoDto(submission.user);
-    
+
     return dto;
   }
 
@@ -38,7 +42,7 @@ export class SubmissionMapper {
    * @returns Array of submission data DTOs
    */
   static toDtoArray(submissions: Submission[]): SubmissionDataDto[] {
-    return submissions.map(submission => this.toDto(submission));
+    return submissions.map((submission) => this.toDto(submission));
   }
 
   /**
