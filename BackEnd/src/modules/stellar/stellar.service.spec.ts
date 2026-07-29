@@ -444,6 +444,61 @@ describe('StellarService.approveSubmission (Soroban contract call)', () => {
     );
   });
 
+  it('reuses cached fee estimates across repeated payments', async () => {
+    mockConfig.get.mockImplementation((key: string, defaultValue?: any) => {
+      if (key === 'STELLAR_ADMIN_SECRET') return adminKeypair.secret();
+      if (key === 'SOROBAN_SECRET_KEY') return null;
+      if (key === 'STELLAR_NETWORK') return 'TESTNET';
+      if (key === 'STELLAR_HORIZON_URL')
+        return 'https://horizon-testnet.stellar.org';
+      if (key === 'SOROBAN_RPC_URL')
+        return 'https://soroban-testnet.stellar.org';
+      if (key === 'CONTRACT_ID') return APPROVE_CONTRACT_ID;
+      return defaultValue ?? null;
+    });
+
+    jest
+      .spyOn((service as any).horizonServer, 'loadAccount')
+      .mockResolvedValue({
+        sequence: '1',
+        accountId: adminKeypair.publicKey(),
+        balances: [],
+        signers: [],
+        thresholds: {
+          low_threshold: 0,
+          med_threshold: 0,
+          high_threshold: 0,
+        },
+        flags: {
+          auth_required: false,
+          auth_revocable: false,
+          auth_immutable: false,
+        },
+      } as any);
+    jest.spyOn((service as any).rpcServer, 'getFeeStats').mockResolvedValue({
+      min_accepted_fee: '100',
+      mode_fee: '120',
+      p95_fee: '130',
+      last_ledger_base_fee: '100',
+    } as any);
+    jest
+      .spyOn((service as any).horizonServer, 'submitTransaction')
+      .mockResolvedValue({ hash: 'txhash-001', ledger: 999 } as any);
+
+    const recipient = StellarSdk.Keypair.random().publicKey();
+
+    await service.sendPayment(recipient, 1, 'XLM');
+    await service.sendPayment(recipient, 1, 'XLM');
+
+    expect((service as any).rpcServer.getFeeStats).toHaveBeenCalledTimes(1);
+    const firstTx = (service as any).horizonServer.submitTransaction.mock
+      .calls[0][0];
+    const secondTx = (service as any).horizonServer.submitTransaction.mock
+      .calls[1][0];
+    expect(firstTx.fee).toBe('130');
+    expect(secondTx.fee).toBe('130');
+  });
+
   it('throws BadRequestException for missing argument values', async () => {
     await expect(
       service.approveSubmission('', SUBMITTER, VERIFIER),
