@@ -32,7 +32,8 @@ describe('StreamExportService', () => {
     it('should set headers and stream CSV data', async () => {
       const mockResponse = {
         setHeader: jest.fn(),
-        write: jest.fn(),
+        write: jest.fn().mockReturnValue(true),
+        once: jest.fn(),
         end: jest.fn(),
       } as unknown as Response;
 
@@ -68,7 +69,8 @@ describe('StreamExportService', () => {
     it('should set headers and stream NDJSON/JSONL data', async () => {
       const mockResponse = {
         setHeader: jest.fn(),
-        write: jest.fn(),
+        write: jest.fn().mockReturnValue(true),
+        once: jest.fn(),
         end: jest.fn(),
       } as unknown as Response;
 
@@ -101,7 +103,8 @@ describe('StreamExportService', () => {
     it('should stream standard arrays', async () => {
       const mockResponse = {
         setHeader: jest.fn(),
-        write: jest.fn(),
+        write: jest.fn().mockReturnValue(true),
+        once: jest.fn(),
         end: jest.fn(),
       } as unknown as Response;
 
@@ -122,7 +125,8 @@ describe('StreamExportService', () => {
     it('should stream AsyncIterables as JSON array', async () => {
       const mockResponse = {
         setHeader: jest.fn(),
-        write: jest.fn(),
+        write: jest.fn().mockReturnValue(true),
+        once: jest.fn(),
         end: jest.fn(),
       } as unknown as Response;
 

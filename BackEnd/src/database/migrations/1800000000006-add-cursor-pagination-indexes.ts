@@ -90,6 +90,17 @@ export class AddCursorPaginationIndexes1800000000006 implements MigrationInterfa
 
     // ── payouts ─────────────────────────────────────────────────────────────
 
+    const hasStellarAddress = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'payouts' AND column_name = 'stellarAddress'`
+    );
+
+    if (hasStellarAddress.length > 0) {
+      // History per address: newest first
+      await queryRunner.query(`
+        CREATE INDEX IF NOT EXISTS "idx_payouts_address_created_at_id"
+        ON "payouts" ("stellarAddress", "createdAt" DESC, "id" DESC)
+      `);
+
     const hasStellarAddress = await queryRunner.query(`
       SELECT 1 FROM information_schema.columns WHERE table_name = 'payouts' AND column_name = 'stellarAddress'
     `);
@@ -113,6 +124,12 @@ export class AddCursorPaginationIndexes1800000000006 implements MigrationInterfa
       ON "payouts" ("createdAt" DESC, "id" DESC)
     `);
 
+    const hasNextRetryAt = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'payouts' AND column_name = 'nextRetryAt'`
+    );
+
+    if (hasNextRetryAt.length > 0) {
+      // Cron job: retries due for processing
     // Cron job: retries due for processing
     const hasNextRetryAt = await queryRunner.query(`
       SELECT 1 FROM information_schema.columns WHERE table_name = 'payouts' AND column_name = 'nextRetryAt'
