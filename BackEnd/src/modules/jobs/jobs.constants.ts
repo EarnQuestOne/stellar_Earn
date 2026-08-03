@@ -27,6 +27,10 @@ export const DEFAULT_JOB_OPTIONS = policyToBullMQOptions(DEFAULT_RETRY_POLICY);
 export const JOB_QUEUE_CONFIG = {
   [QUEUES.PAYOUTS]: {
     concurrency: 10,
+    limiter: {
+      max: 25,
+      duration: 1000,
+    },
     priority: 'HIGH',
     timeout: 60000,
   },

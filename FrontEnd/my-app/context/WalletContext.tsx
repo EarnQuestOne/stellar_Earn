@@ -259,11 +259,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     if (!kit) {
       throw new Error('Wallet kit not loaded');
     }
-    const { signedTxXdr } = await kit.signTransaction(xdr, {
-      networkPassphrase: opts.networkPassphrase,
-      address: opts.address,
-    });
-    return signedTxXdr;
+    try {
+      const { signedTxXdr } = await kit.signTransaction(xdr, {
+        networkPassphrase: opts.networkPassphrase,
+        address: opts.address,
+      });
+      return signedTxXdr;
+    } catch (err: any) {
+      console.error('Transaction signing failed:', err);
+      const message = err?.message || 'Transaction signing failed';
+      setWalletError(message);
+      throw new Error(message);
+    }
   };
 
   return (

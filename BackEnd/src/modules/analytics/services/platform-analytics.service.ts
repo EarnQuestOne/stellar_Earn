@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Quest } from '../entities/quest.entity';
 import { Submission, SubmissionStatus } from '../entities/submission.entity';
 import { Payout } from '../entities/payout.entity';
@@ -13,9 +14,13 @@ import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
 import { User as AnalyticsUser } from '../entities/user.entity';
+import { AnalyticsSnapshot, SnapshotType } from '../entities/analytics-snapshot.entity';
+import { MetricsService } from '../../../common/services/metrics.service';
 
 @Injectable()
 export class PlatformAnalyticsService {
+  private readonly logger = new Logger(PlatformAnalyticsService.name);
+
   constructor(
     @InjectRepository(AnalyticsUser)
     private userRepository: Repository<AnalyticsUser>,
@@ -25,12 +30,12 @@ export class PlatformAnalyticsService {
     private submissionRepository: Repository<Submission>,
     @InjectRepository(Payout)
     private payoutRepository: Repository<Payout>,
+    @InjectRepository(AnalyticsSnapshot)
+    private snapshotRepository: Repository<AnalyticsSnapshot>,
     private cacheService: CacheService,
+    private metricsService: MetricsService,
   ) {}
 
-  /**
-   * Get platform-wide statistics
-   */
   async getPlatformStats(query: AnalyticsQueryDto): Promise<PlatformStatsDto> {
     const { startDate, endDate } = DateRangeUtil.parseDateRange(
       query.startDate,
@@ -38,73 +43,110 @@ export class PlatformAnalyticsService {
     );
     DateRangeUtil.validateMaxRange(startDate, endDate);
 
-    const cacheKey = this.cacheService.generateKey('platform', {
-      start: startDate.toISOString(),
-      end: endDate.toISOString(),
-      granularity: query.granularity,
+    const snapshot = await this.snapshotRepository.findOne({
+      where: {
+        type: SnapshotType.PLATFORM,
+        date: MoreThanOrEqual(new Date(Date.now() - 5 * 60 * 1000)),
+      },
+      order: { date: 'DESC' },
     });
 
-    return this.cacheService.wrap(
-      cacheKey,
-      async () => {
-        const [
-          totalUsers,
-          totalQuests,
-          totalSubmissions,
-          approvedSubmissions,
-          totalPayouts,
-          totalRewardsDistributed,
-          activeUsers,
-          questsByStatus,
-          submissionsByStatus,
-          allSubmissions,
-          timeSeries,
-        ] = await Promise.all([
-          this.getTotalUsers(startDate, endDate),
-          this.getTotalQuests(startDate, endDate),
-          this.getTotalSubmissions(startDate, endDate),
-          this.getApprovedSubmissions(startDate, endDate),
-          this.getTotalPayouts(startDate, endDate),
-          this.getTotalRewardsDistributed(startDate, endDate),
-          this.getActiveUsers(startDate, endDate),
-          this.getQuestsByStatus(startDate, endDate),
-          this.getSubmissionsByStatus(startDate, endDate),
-          this.getAllSubmissions(startDate, endDate),
-          this.getTimeSeries(
-            startDate,
-            endDate,
-            query.granularity || Granularity.DAY,
-          ),
-        ]);
+    if (snapshot) {
+      this.metricsService.incrementCounter('analytics_computation_total', { source: 'snapshot' });
+      return snapshot.metrics as unknown as PlatformStatsDto;
+    }
 
-        const approvalRate = ConversionUtil.calculateApprovalRate(
-          approvedSubmissions,
-          totalSubmissions,
-        );
+    this.metricsService.incrementCounter('analytics_computation_total', { source: 'live' });
+    return this.computeAndStorePlatformStats(startDate, endDate, query.granularity || Granularity.DAY);
+  }
 
-        const avgApprovalTime = ConversionUtil.calculateAverageTime(
-          allSubmissions.filter((s) => s.status === SubmissionStatus.APPROVED),
-          'submittedAt', // Using submittedAt
-          'reviewedAt', // Using reviewedAt
-        );
+  async computeAndStorePlatformStats(
+    startDate: Date,
+    endDate: Date,
+    granularity: Granularity,
+  ): Promise<PlatformStatsDto> {
+    const startTime = Date.now();
 
-        return {
-          totalUsers,
-          totalQuests,
-          totalSubmissions,
-          approvedSubmissions,
-          totalPayouts,
-          totalRewardsDistributed,
-          approvalRate,
-          avgApprovalTime,
-          activeUsers,
-          timeSeries,
-          questsByStatus,
-          submissionsByStatus,
-        };
-      },
-      300, // 5 minutes TTL
+    const [
+      totalUsers,
+      totalQuests,
+      totalSubmissions,
+      approvedSubmissions,
+      totalPayouts,
+      totalRewardsDistributed,
+      activeUsers,
+      questsByStatus,
+      submissionsByStatus,
+      allSubmissions,
+      timeSeries,
+    ] = await Promise.all([
+      this.getTotalUsers(startDate, endDate),
+      this.getTotalQuests(startDate, endDate),
+      this.getTotalSubmissions(startDate, endDate),
+      this.getApprovedSubmissions(startDate, endDate),
+      this.getTotalPayouts(startDate, endDate),
+      this.getTotalRewardsDistributed(startDate, endDate),
+      this.getActiveUsers(startDate, endDate),
+      this.getQuestsByStatus(startDate, endDate),
+      this.getSubmissionsByStatus(startDate, endDate),
+      this.getAllSubmissions(startDate, endDate),
+      this.getTimeSeries(startDate, endDate, granularity),
+    ]);
+
+    const approvalRate = ConversionUtil.calculateApprovalRate(
+      approvedSubmissions,
+      totalSubmissions,
     );
+
+    const avgApprovalTime = ConversionUtil.calculateAverageTime(
+      allSubmissions.filter((s) => s.status === SubmissionStatus.APPROVED),
+      'submittedAt',
+      'reviewedAt',
+    );
+
+    const stats: PlatformStatsDto = {
+      totalUsers,
+      totalQuests,
+      totalSubmissions,
+      approvedSubmissions,
+      totalPayouts,
+      totalRewardsDistributed,
+      approvalRate,
+      avgApprovalTime,
+      activeUsers,
+      timeSeries,
+      questsByStatus,
+      submissionsByStatus,
+    };
+
+    await this.snapshotRepository.upsert(
+      {
+        type: SnapshotType.PLATFORM,
+        date: new Date(),
+        metrics: stats as unknown as Record<string, any>,
+      },
+      ['type', 'date'],
+    );
+
+    this.metricsService.observeHistogram(
+      'analytics_computation_duration_seconds',
+      (Date.now() - startTime) / 1000,
+    );
+
+    return stats;
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async computePlatformAnalytics(): Promise<void> {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+    const endDate = now;
+    try {
+      await this.computeAndStorePlatformStats(startDate, endDate, Granularity.DAY);
+      this.logger.log('Background platform analytics computation completed');
+    } catch (error) {
+      this.logger.error('Background platform analytics computation failed', error);
+    }
   }
 
   private async getTotalUsers(startDate: Date, endDate: Date): Promise<number> {

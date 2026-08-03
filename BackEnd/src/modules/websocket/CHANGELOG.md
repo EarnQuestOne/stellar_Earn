@@ -8,3 +8,4 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Migrated JWT signing to RS256 with key rotation support via `getJwtPrivateKey`
+- Added optional Redis adapter for horizontal scaling (dynamic import with in-memory fallback)

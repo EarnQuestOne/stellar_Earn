@@ -8,7 +8,11 @@ import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { QuotaService } from '../quota/quota.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { JobsService } from '../jobs/jobs.service';
+import { StellarService } from '../stellar/stellar.service';
+import { BulkheadService } from '../../common/services/bulkhead.service';
 import { QUEUES } from '../jobs/jobs.constants';
+import { BulkheadService } from '../../common/services/bulkhead.service';
+import { JobResultStatusCacheService } from '../jobs/services/job-result-status-cache.service';
 
 const mockRepo = () => ({
   create: jest.fn(),
@@ -53,6 +57,7 @@ describe('PayoutsService settlement finality', () => {
   let emitter: { emit: jest.Mock };
   let metrics: { incrementCounter: jest.Mock };
   let jobs: { addJob: jest.Mock };
+  let stellarService: { sendPayment: jest.Mock; sendBatchPayments: jest.Mock };
 
   beforeEach(async () => {
     repo = mockRepo();
@@ -67,8 +72,12 @@ describe('PayoutsService settlement finality', () => {
       }),
     };
     emitter = { emit: jest.fn() };
-    metrics = { incrementCounter: jest.fn() };
+    metrics = { incrementCounter: jest.fn(), registerCounter: jest.fn() };
     jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
+    stellarService = {
+      sendPayment: jest.fn(),
+      sendBatchPayments: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -80,6 +89,20 @@ describe('PayoutsService settlement finality', () => {
         { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: jobs },
+        {
+          provide: BulkheadService,
+          useValue: {
+            runWithBulkhead: (_n: string, fn: () => Promise<unknown>) => fn(),
+          },
+        },
+        {
+          provide: JobResultStatusCacheService,
+          useValue: {
+            getPayoutPoll: jest.fn(),
+            setPayoutPoll: jest.fn(),
+            invalidatePayout: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -250,6 +273,188 @@ describe('PayoutsService settlement finality', () => {
     expect(metrics.incrementCounter).toHaveBeenCalledWith(
       'payout_dead_letter_total',
       { asset: 'XLM' },
+    );
+  });
+});
+
+describe('PayoutsService.processBatchPayouts', () => {
+  let service: PayoutsService;
+  let repo: ReturnType<typeof mockRepo>;
+  let config: { get: jest.Mock };
+  let emitter: { emit: jest.Mock };
+  let metrics: { incrementCounter: jest.Mock; observeHistogram: jest.Mock };
+  let jobs: { addJob: jest.Mock };
+  let stellarService: { sendPayment: jest.Mock; sendBatchPayments: jest.Mock };
+
+  beforeEach(async () => {
+    repo = mockRepo();
+    repo.save.mockImplementation(async (payout) => payout);
+    config = {
+      get: jest.fn((key: string, defaultValue?: unknown) => {
+        const values: Record<string, unknown> = {
+          NODE_ENV: 'test',
+          STELLAR_FINALITY_CONFIRMATIONS: 3,
+        };
+        return values[key] ?? defaultValue;
+      }),
+    };
+    emitter = { emit: jest.fn() };
+    metrics = { incrementCounter: jest.fn(), observeHistogram: jest.fn() };
+    jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
+    stellarService = {
+      sendPayment: jest.fn(),
+      sendBatchPayments: jest
+        .fn()
+        .mockResolvedValue([
+          {
+            transactionHash: 'batch-tx-hash',
+            ledger: 42,
+            operations: [
+              { destination: 'G'.padEnd(56, 'A'), amount: 10, success: true },
+            ],
+          },
+        ]),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PayoutsService,
+        { provide: getRepositoryToken(Payout), useValue: repo },
+        { provide: ConfigService, useValue: config },
+        { provide: EventEmitter2, useValue: emitter },
+        { provide: FraudRiskRulesService, useValue: {} },
+        { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
+        { provide: MetricsService, useValue: metrics },
+        { provide: JobsService, useValue: jobs },
+        { provide: StellarService, useValue: stellarService },
+        { provide: BulkheadService, useValue: { runWithBulkhead: jest.fn((_name, fn) => fn()) } },
+      ],
+    }).compile();
+
+    service = module.get<PayoutsService>(PayoutsService);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('groups payouts by asset and processes them in batches', async () => {
+    const xlmPayout1 = buildPayout({
+      id: 'p1',
+      stellarAddress: 'G'.padEnd(56, 'A'),
+      amount: 10,
+      asset: 'XLM',
+      status: PayoutStatus.PENDING,
+    });
+    const xlmPayout2 = buildPayout({
+      id: 'p2',
+      stellarAddress: 'G'.padEnd(56, 'B'),
+      amount: 20,
+      asset: 'XLM',
+      status: PayoutStatus.PENDING,
+    });
+    const usdcPayout = buildPayout({
+      id: 'p3',
+      stellarAddress: 'G'.padEnd(56, 'C'),
+      amount: 5,
+      asset: 'USDC',
+      status: PayoutStatus.PENDING,
+    });
+
+    repo.find
+      .mockResolvedValueOnce([xlmPayout1, xlmPayout2, usdcPayout])
+      .mockResolvedValueOnce([]);
+
+    await service.processBatchPayouts();
+
+    expect(stellarService.sendBatchPayments).toHaveBeenCalledTimes(2);
+
+    const xlmCall = stellarService.sendBatchPayments.mock.calls.find(
+      (c: any) => c[0][0].asset === 'XLM',
+    );
+    const usdcCall = stellarService.sendBatchPayments.mock.calls.find(
+      (c: any) => c[0][0].asset === 'USDC',
+    );
+    expect(xlmCall).toBeDefined();
+    expect(xlmCall[0]).toHaveLength(2);
+    expect(usdcCall).toBeDefined();
+    expect(usdcCall[0]).toHaveLength(1);
+  });
+
+  it('respects the 100-operation limit by chunking large groups', async () => {
+    const payouts = Array.from({ length: 150 }, (_, i) =>
+      buildPayout({
+        id: `p${i}`,
+        stellarAddress: `G${String(i).padStart(55, '0')}`,
+        amount: i + 1,
+        asset: 'XLM',
+        status: PayoutStatus.PENDING,
+      }),
+    );
+
+    repo.find.mockResolvedValueOnce(payouts).mockResolvedValueOnce([]);
+
+    const txResult = { transactionHash: 'tx', ledger: 1, operations: [] };
+    stellarService.sendBatchPayments.mockImplementation(
+      async (payments: any[]) => {
+        const ops = payments.map((p: any) => ({
+          destination: p.destination,
+          amount: p.amount,
+          success: true,
+        }));
+        return [{ transactionHash: 'tx-hash', ledger: 42, operations: ops }];
+      },
+    );
+
+    await service.processBatchPayouts();
+
+    expect(stellarService.sendBatchPayments).toHaveBeenCalledTimes(2);
+    const firstBatch = stellarService.sendBatchPayments.mock.calls[0][0];
+    const secondBatch = stellarService.sendBatchPayments.mock.calls[1][0];
+    expect(firstBatch).toHaveLength(100);
+    expect(secondBatch).toHaveLength(50);
+  });
+
+  it('handles partial failures by marking failed payouts through handlePayoutFailure', async () => {
+    const payout1 = buildPayout({
+      id: 'p1',
+      stellarAddress: 'G'.padEnd(56, 'A'),
+      amount: 10,
+      asset: 'XLM',
+      status: PayoutStatus.PENDING,
+    });
+    const payout2 = buildPayout({
+      id: 'p2',
+      stellarAddress: 'G'.padEnd(56, 'B'),
+      amount: 20,
+      asset: 'XLM',
+      status: PayoutStatus.PENDING,
+    });
+
+    repo.find.mockResolvedValueOnce([payout1, payout2]).mockResolvedValueOnce([]);
+
+    stellarService.sendBatchPayments.mockRejectedValue(
+      new Error('Horizon timeout'),
+    );
+
+    await service.processBatchPayouts();
+
+    expect(repo.save).toHaveBeenCalledTimes(2);
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'p1',
+        status: PayoutStatus.RETRY_SCHEDULED,
+        retryCount: 1,
+      }),
+    );
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'p2',
+        status: PayoutStatus.RETRY_SCHEDULED,
+        retryCount: 1,
+      }),
+    );
+    expect(metrics.incrementCounter).toHaveBeenCalledWith(
+      'payout_failures_total',
+      expect.objectContaining({ outcome: 'retry_scheduled' }),
     );
   });
 });

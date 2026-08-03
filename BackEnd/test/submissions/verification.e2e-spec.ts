@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
-import { StellarService } from '#src/modules/stellar/stellar.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
 import { NotificationsService } from '#src/modules/notifications/notifications.service';
 import { SubmissionsController } from '#src/modules/submissions/submissions.controller';
 import { JwtAuthGuard } from '#src/modules/auth/guards/jwt-auth.guard';
@@ -122,7 +122,7 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
       providers: [
         SubmissionsService,
         {
-          provide: StellarService,
+          provide: StellarSubmissionService,
           useValue: mockStellarService,
         },
         {

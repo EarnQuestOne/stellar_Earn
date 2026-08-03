@@ -7,7 +7,7 @@ import { LoggerModule } from '#src/common/logger/logger.module';
 import { QuestsModule } from '#src/modules/quests/quests.module';
 import { SubmissionsModule } from '#src/modules/submissions/submissions.module';
 import { UsersModule } from '#src/modules/users/users.module';
-import { StellarService } from '#src/modules/stellar/stellar.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
 import { QuestsService } from '#src/modules/quests/quests.service';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
 import { UsersService } from '#src/modules/users/users.service';
@@ -54,12 +54,11 @@ describe('Quests-Submissions Integration', () => {
         UsersModule,
       ],
     })
-      .overrideProvider(StellarService)
+      .overrideProvider(StellarSubmissionService)
       .useValue({
         approveSubmission: jest
           .fn()
           .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
-        getContractId: jest.fn().mockReturnValue('mock-contract-id'),
       })
       .compile();
 

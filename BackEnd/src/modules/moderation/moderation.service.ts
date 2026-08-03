@@ -201,8 +201,51 @@ export class ModerationService {
     return { page: safePage, limit: safeLimit };
   }
 
-  async listPending(page = 1, limit = 20) {
+  async listPending(
+    page = 1,
+    limit = 20,
+    cursor?: string,
+  ): Promise<{
+    items: ModerationItem[];
+    total: number;
+    page?: number;
+    limit: number;
+    nextCursor?: string;
+  }> {
     ({ page, limit } = this.clampPagination(page, limit));
+
+    // Keyset (cursor) pagination when a cursor is provided.
+    if (cursor) {
+      const [cursorPriority, cursorCreatedAt, cursorId] =
+        cursor.split('::').map(Number);
+      const items = await this.itemRepo
+        .createQueryBuilder('item')
+        .where('item.status = :status', {
+          status: ModerationItemStatus.MANUAL_REVIEW,
+        })
+        .andWhere(
+          '(item.priority < :cp OR (item.priority = :cp AND item.createdAt > :cra))',
+          {
+            cp: cursorPriority,
+            cra: new Date(cursorCreatedAt),
+          },
+        )
+        .orderBy('item.priority', 'DESC')
+        .addOrderBy('item.createdAt', 'ASC')
+        .take(limit + 1) // fetch one extra to detect if there's a next page
+        .getMany();
+
+      const hasMore = items.length > limit;
+      const pageItems = hasMore ? items.slice(0, limit) : items;
+      const lastItem = pageItems[pageItems.length - 1];
+      const nextCursor = hasMore
+        ? `${lastItem.priority}::${lastItem.createdAt.getTime()}::${lastItem.id}`
+        : undefined;
+
+      return { items: pageItems, total: pageItems.length, limit, nextCursor };
+    }
+
+    // Fallback to offset pagination.
     const [items, total] = await this.itemRepo.findAndCount({
       where: { status: ModerationItemStatus.MANUAL_REVIEW },
       order: { priority: 'DESC', createdAt: 'ASC' },

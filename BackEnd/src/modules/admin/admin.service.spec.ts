@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AdminService } from './admin.module';
 import { User } from '../users/entities/user.entity';
-import { ForbiddenException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { Role } from '../../common/enums/role.enum';
 
 describe('AdminService', () => {
@@ -67,13 +67,13 @@ describe('AdminService', () => {
       });
     });
 
-    it('should throw ForbiddenException if user not found', async () => {
+    it('should throw NotFoundException (404) if user not found', async () => {
       const userId = '1';
       mockUserRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.getUserById(userId)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.getUserById(userId)).rejects.toMatchObject({
+        status: HttpStatus.NOT_FOUND,
+      });
     });
   });
 

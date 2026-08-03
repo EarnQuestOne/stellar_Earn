@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AsyncLocalStorage } from 'async_hooks';
 import {
   FeatureFlag,
   RolloutStrategy,
@@ -19,6 +20,9 @@ import {
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+
+/** Per-request flag evaluation cache stored in AsyncLocalStorage. */
+const requestFlagCache = new AsyncLocalStorage<Map<string, boolean>>();
 
 @Injectable()
 export class FeatureFlagsService {
@@ -52,10 +56,18 @@ export class FeatureFlagsService {
     },
   ): Promise<boolean> {
     try {
-      // Check cache first
+      // Check request-scoped cache first (zero-cost lookup within same request)
+      const reqCache = requestFlagCache.getStore();
+      const reqCacheKey = userId ? `${flagKey}:${userId}` : flagKey;
+      if (reqCache?.has(reqCacheKey)) {
+        return reqCache.get(reqCacheKey)!;
+      }
+
+      // Check shared Redis cache
       const cacheKey = userId ? `ff:${flagKey}:${userId}` : `ff:${flagKey}`;
       const cached = await this.cacheManager.get<boolean>(cacheKey);
       if (cached !== undefined) {
+        reqCache?.set(reqCacheKey, cached);
         return cached;
       }
 
@@ -71,6 +83,7 @@ export class FeatureFlagsService {
       // Check if flag is globally disabled
       if (!flag.enabled || flag.status !== FlagStatus.ACTIVE) {
         await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
 
@@ -78,10 +91,12 @@ export class FeatureFlagsService {
       const now = new Date();
       if (flag.scheduledActivationAt && now < flag.scheduledActivationAt) {
         await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
       if (flag.scheduledDeactivationAt && now > flag.scheduledDeactivationAt) {
         await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
 
@@ -116,6 +131,7 @@ export class FeatureFlagsService {
       }
 
       await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+      reqCache?.set(reqCacheKey, result);
       return result;
     } catch (error) {
       this.logger.error(`Error checking flag "${flagKey}": ${error.message}`);

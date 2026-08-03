@@ -36,6 +36,15 @@ export class AppWebsocketGateway
   @WebSocketServer()
   server: Server;
 
+  /** Per-socket heartbeat and idle tracking. */
+  private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
+  private lastActivity = new Map<string, number>();
+
+  private readonly HEARTBEAT_INTERVAL_MS = 30_000; // 30s
+  private readonly PONG_TIMEOUT_MS = 10_000; // 10s
+  private readonly IDLE_TIMEOUT_MS = 5 * 60_000; // 5 minutes
+  private readonly IDLE_CHECK_INTERVAL_MS = 60_000; // 1 min
+
   constructor(
     private readonly wsService: WebsocketService,
     private readonly wsAuthGuard: WsAuthGuard,
@@ -58,6 +67,26 @@ export class AppWebsocketGateway
       this.wsService.registerClient(client);
       await this.wsService.restoreSubscriptions(client);
 
+      // Start heartbeat: ping every 30s, disconnect if no pong within 10s.
+      this.lastActivity.set(client.id, Date.now());
+      const interval = setInterval(() => {
+        let pongReceived = false;
+        client.once('pong', () => {
+          pongReceived = true;
+          this.lastActivity.set(client.id, Date.now());
+        });
+        client.ping();
+        setTimeout(() => {
+          if (!pongReceived) {
+            this.logger.warn(
+              `Socket ${client.id} missed pong — disconnecting`,
+            );
+            client.disconnect(true);
+          }
+        }, this.PONG_TIMEOUT_MS);
+      }, this.HEARTBEAT_INTERVAL_MS);
+      this.heartbeatIntervals.set(client.id, interval);
+
       client.emit('connected', {
         message: 'Connected to StellarEarn WebSocket',
         socketId: client.id,
@@ -71,6 +100,14 @@ export class AppWebsocketGateway
   }
 
   handleDisconnect(client: Socket) {
+    // Clean up heartbeat timer.
+    const interval = this.heartbeatIntervals.get(client.id);
+    if (interval) {
+      clearInterval(interval);
+      this.heartbeatIntervals.delete(client.id);
+    }
+    this.lastActivity.delete(client.id);
+
     this.wsService.removeClient(client.id);
   }
 

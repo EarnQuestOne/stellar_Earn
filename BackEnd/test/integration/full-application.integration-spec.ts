@@ -22,6 +22,9 @@ import { UsersService } from '#src/modules/users/users.service';
 import { QuestsService } from '#src/modules/quests/quests.service';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
 import { PayoutsService } from '#src/modules/payouts/payouts.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
+import { StellarPaymentService } from '#src/modules/stellar/stellar-payment.service';
+import { JobResultStatusCacheService } from '#src/modules/jobs/services/job-result-status-cache.service';
 import { StellarService } from '#src/modules/stellar/stellar.service';
 
 // Import entities
@@ -34,6 +37,7 @@ import { RefreshToken } from '#src/modules/auth/entities/refresh-token.entity';
 
 describe('Full Application Integration', () => {
   let module: TestingModule;
+  let payoutStatusCache: JobResultStatusCacheService;
   let authService: AuthService;
   let usersService: UsersService;
   let questsService: QuestsService;
@@ -90,16 +94,17 @@ describe('Full Application Integration', () => {
           .mockResolvedValue({ stellarAddress: 'test', sub: 'test' }),
         decode: jest.fn(),
       })
-      .overrideProvider(StellarService)
+      .overrideProvider(StellarSubmissionService)
       .useValue({
         approveSubmission: jest
           .fn()
           .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
+      })
+      .overrideProvider(StellarPaymentService)
+      .useValue({
         sendPayment: jest
           .fn()
           .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
-        getContractId: jest.fn().mockReturnValue('mock-contract-id'),
-        getServer: jest.fn(),
       })
       .compile();
 
@@ -108,8 +113,17 @@ describe('Full Application Integration', () => {
     questsService = module.get<QuestsService>(QuestsService);
     submissionsService = module.get<SubmissionsService>(SubmissionsService);
     payoutsService = module.get<PayoutsService>(PayoutsService);
+    payoutStatusCache = module.get(JobResultStatusCacheService);
     _stellarService = module.get<StellarService>(StellarService);
   });
+
+  async function setPayoutStatusProcessingInDb(payoutId: string): Promise<void> {
+    const ds = module.get(DataSource);
+    await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
+      payoutId,
+    ]);
+    await payoutStatusCache.invalidatePayout(payoutId);
+  }
 
   afterAll(async () => {
     await module.close();
@@ -199,11 +213,7 @@ describe('Full Application Integration', () => {
       expect(payout.amount).toBe(quest.rewardAmount);
 
       // Step 7: Complete Payout Process
-      await module
-        .get(DataSource)
-        .query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
-          payout.id,
-        ]);
+      await setPayoutStatusProcessingInDb(payout.id);
       await payoutsService.processPayout(payout.id);
       const completedPayout = await payoutsService.getPayoutById(payout.id);
 
@@ -298,12 +308,8 @@ describe('Full Application Integration', () => {
       expect(payouts).toHaveLength(3);
 
       // Process all payouts
-      const ds = module.get(DataSource);
       for (const payout of payouts) {
-        await ds.query(
-          `UPDATE payouts SET status = 'processing' WHERE id = $1`,
-          [payout.id],
-        );
+        await setPayoutStatusProcessingInDb(payout.id);
         await payoutsService.processPayout(payout.id);
       }
 
@@ -362,10 +368,7 @@ describe('Full Application Integration', () => {
         transactionHash: 'tx-hash-events',
       });
 
-      const ds = module.get(DataSource);
-      await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
-        payout.id,
-      ]);
+      await setPayoutStatusProcessingInDb(payout.id);
       await payoutsService.processPayout(payout.id);
 
       // Verify the complete flow worked without errors

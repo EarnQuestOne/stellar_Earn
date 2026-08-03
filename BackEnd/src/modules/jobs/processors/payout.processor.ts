@@ -3,7 +3,7 @@ import { Job } from 'bullmq';
 import { PayoutProcessPayload, JobResult, JobType } from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 import { JobIdempotencyService } from '../services/job-idempotency.service';
-import { StellarService } from '../../stellar/stellar.service';
+import { StellarPaymentService } from '../../stellar/stellar-payment.service';
 
 /**
  * Payout Processor
@@ -34,7 +34,7 @@ export class PayoutProcessor {
   constructor(
     private readonly jobLogService: JobLogService,
     private readonly jobIdempotencyService: JobIdempotencyService,
-    private readonly stellarService: StellarService,
+    private readonly stellarPaymentService: StellarPaymentService,
   ) {}
 
   /**
@@ -113,7 +113,7 @@ export class PayoutProcessor {
       await job.updateProgress(50);
 
       // Execute the Stellar payment transaction
-      const stellarResult = await this.stellarService.sendPayment(
+      const stellarResult = await this.stellarPaymentService.sendPayment(
         recipientAddress,
         amount,
       );

@@ -59,3 +59,29 @@ boundary to stream the list.
 **Measuring:** compare the client JS bundle (via `npm run analyze`) and the
 time-to-content for a server-rendered quests list versus the client-fetched
 path.
+
+## 5. Quest socket selective subscription + coalescing (#2059)
+
+`lib/hooks/useQuestSocket.ts` keeps a single shared Socket.IO client but now:
+
+- **Selective subscription:** each hook registers only the channels it needs
+  (`quest:updated` when `onQuestUpdated` is passed, `submission:status` when
+  `onSubmissionUpdated` is passed). Reference counts per quest/channel avoid
+  duplicate server subscriptions when several components listen to the same
+  quest.
+- **Coalesced dispatch:** burst socket events for the same quest or submission
+  are merged and flushed once per animation frame via `requestAnimationFrame`,
+  so React state updates from handlers such as `QuestCard` / `SubmissionDetail`
+  do not run once per raw packet.
+
+**Before/after (unit regression, Vitest):** three `quest:updated` payloads in
+one frame invoked the consumer callback **3× without coalescing** vs **1×**
+with coalescing (`useQuestSocket.test.ts`). Selective subscription cuts
+subscribe emits from **2 channels** to **1** when a component only listens for
+quest or submission updates (e.g. quest cards no longer subscribe to
+`submission:status`).
+
+**Measuring in the app:** open React Profiler, trigger several rapid submission
+status events (or replay socket traffic), and compare commit count with the
+previous behaviour; network tab should show fewer redundant `subscribe` frames
+on quest list pages that only refresh quest metadata.

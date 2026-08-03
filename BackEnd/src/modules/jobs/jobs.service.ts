@@ -18,6 +18,10 @@ import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
+import {
+  resolveWorkerConcurrency,
+  resolveWorkerLimiter,
+} from './utils/worker-concurrency.util';
 import { PayloadStorageService } from './services/payload-storage.service';
 
 export interface QueueMetrics {
@@ -358,6 +362,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
    * forwarded to the dead-letter queue immediately.
    */
   private createWorker(name: string, processor: (job: Job) => Promise<any>) {
+    const concurrency = resolveWorkerConcurrency(name);
+    const limiter = resolveWorkerLimiter(name);
+
     const worker = new Worker(
       name,
       async (job: Job) => {
@@ -389,7 +396,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
         return processJob();
       },
-      redisConnection(),
+      {
+        ...redisConnection(),
+        concurrency,
+        ...(limiter ? { limiter } : {}),
+      },
     );
 
     worker.on('failed', (job, err) => {

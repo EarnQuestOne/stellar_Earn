@@ -6,6 +6,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Applied code-style formatting across `process-resource.controller.ts`, `process-resource.types.ts`, `profiling.service.ts`, and `resource-limits.service.ts` (no logic change).
+
 ### Added
 - `ProcessResourceModule` — NestJS module exposing real-time process resource monitoring and profiling endpoints
 - `ResourceLimitsService` — configurable heap/RSS thresholds with periodic violation monitoring, manual GC trigger, and structured `ResourceSnapshot` responses

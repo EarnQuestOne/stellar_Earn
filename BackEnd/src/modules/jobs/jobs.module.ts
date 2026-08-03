@@ -10,6 +10,7 @@ import { JobIdempotencyService } from './services/job-idempotency.service';
 import { DeadLetterQueueService } from './services/dead-letter-queue.service';
 import { JobArchivalService } from './services/job-archival.service';
 import { PayloadStorageService } from './services/payload-storage.service';
+import { JobResultStatusCacheService } from './services/job-result-status-cache.service';
 import { PayoutProcessor } from './processors/payout.processor';
 import { PayoutReconciliationProcessor } from './processors/payout-reconciliation.processor';
 import { EmailProcessor } from './processors/email.processor';
@@ -79,6 +80,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     DeadLetterQueueService,
     JobArchivalService,
     PayloadStorageService,
+    JobResultStatusCacheService,
     PayoutProcessor,
     PayoutReconciliationProcessor,
     EmailProcessor,
@@ -101,6 +103,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     DeadLetterQueueService,
     JobArchivalService,
     PayloadStorageService,
+    JobResultStatusCacheService,
     PayoutProcessor,
     PayoutReconciliationProcessor,
     EmailProcessor,

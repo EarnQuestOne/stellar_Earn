@@ -6,6 +6,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Applied code-style formatting to `jobs.constants.ts` import block (no logic change).
+
 ### Added
 
 - Per-job-type retry and backoff policies via `JobRetryPolicy` map (`job-retry-policy.ts`). Every `JobType` enum value now has an explicit policy (attempts, backoff type/delay, non-retryable error patterns, Redis retention limits).
@@ -23,6 +26,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - REST endpoints under `/jobs/archival/*` for archival metrics, archive, purge, and maintenance.
 - `PayloadStorageService` for offloading large job payloads (>50 KB) to cache with 24h TTL.
 - `JobsService.resolvePayload()` for workers to retrieve offloaded payloads from cache.
+- `JobResultStatusCacheService` for Redis-cached job/payout status snapshots used by payout status polling (#1983).
 
 ### Changed
 
@@ -31,4 +35,5 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `PayoutProcessor` now depends on `StellarPaymentService` (was `StellarService`) — aligns with the stellar module refactor that split the monolithic service into focused services (#1912).
 - `jobs.constants.ts` updated with refined job configuration constants.

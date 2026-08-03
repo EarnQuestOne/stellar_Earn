@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   Account,
@@ -18,6 +18,8 @@ import {
   CachedUserStatsPayload,
   SorobanContractReadCacheService,
 } from './soroban-contract-read-cache.service';
+
+import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
 
 export interface OnChainQuestState {
   id: string;
@@ -46,16 +48,20 @@ export class SorobanQuestReaderService {
 
   private readonly rpcServer: rpc.Server;
   private readonly networkPassphrase: string;
+  private readonly clientPool: SorobanRpcClientPoolService;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly tracing: TracingService,
     private readonly metrics: MetricsService,
+<<<<<<< HEAD
     private readonly readCache: SorobanContractReadCacheService,
+=======
+    @Optional() clientPool?: SorobanRpcClientPoolService,
+>>>>>>> origin/main
   ) {
-    const rpcUrl =
-      this.configService.get<string>('SOROBAN_RPC_URL') ||
-      'https://soroban-testnet.stellar.org';
+    this.clientPool =
+      clientPool ?? new SorobanRpcClientPoolService(this.configService);
 
     const network =
       this.configService.get<string>('STELLAR_NETWORK') ||
@@ -68,9 +74,7 @@ export class SorobanQuestReaderService {
         ? Networks.PUBLIC
         : Networks.TESTNET;
 
-    this.rpcServer = new rpc.Server(rpcUrl, {
-      allowHttp: rpcUrl.startsWith('http://'),
-    });
+    this.rpcServer = this.clientPool.getRpcServer();
   }
 
   /** Legacy alias for `get_quest` (issue/docs refer to get_task). */
@@ -396,5 +400,51 @@ export class SorobanQuestReaderService {
       },
       traceAttributes,
     );
+  }
+
+  /**
+   * Batch fetch multiple quest states concurrently with bounded concurrency.
+   */
+  async getQuestsBatch(
+    contractId: string,
+    questIds: string[],
+    options?: { concurrency?: number },
+  ): Promise<(OnChainQuestState | null)[]> {
+    if (!contractId) throw new Error('Missing contractId');
+    if (!questIds || questIds.length === 0) return [];
+
+    const defaultConcurrency = parseInt(
+      this.configService.get<string>('SOROBAN_BATCH_READ_CONCURRENCY') || '10',
+      10,
+    );
+    const concurrencyLimit = Math.max(
+      1,
+      options?.concurrency ?? defaultConcurrency,
+    );
+
+    const startTime = Date.now();
+    const results: (OnChainQuestState | null)[] = new Array(
+      questIds.length,
+    ).fill(null);
+
+    for (let i = 0; i < questIds.length; i += concurrencyLimit) {
+      const chunkIds = questIds.slice(i, i + concurrencyLimit);
+      const chunkPromises = chunkIds.map((id) => this.getQuest(contractId, id));
+      const chunkResults = await Promise.all(chunkPromises);
+      for (let j = 0; j < chunkResults.length; j++) {
+        results[i + j] = chunkResults[j];
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    this.metrics.observeHistogram(
+      'stellar_contract_batch_read_duration_ms',
+      duration,
+      {
+        contract_id: contractId,
+      },
+    );
+
+    return results;
   }
 }

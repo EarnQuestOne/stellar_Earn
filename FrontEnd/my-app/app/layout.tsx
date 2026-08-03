@@ -1,7 +1,11 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+
 import { getSiteUrl } from '@/lib/seo';
+import { WebVitals } from '@/components/web-vitals';
+import { QueryProvider } from '@/providers/query-provider';
+
 import './globals.css';
 
 const geistSans = Geist({
@@ -27,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -36,10 +40,14 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <QueryProvider>
+          <WebVitals />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

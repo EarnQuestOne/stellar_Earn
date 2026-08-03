@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@source "../app";
+@source "../components";
+@source "../lib";
 @import '../styles/themes.css';
 @import '../styles/homepage.css';
 

@@ -1,3 +1,4 @@
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   Injectable,
   Logger,
@@ -5,26 +6,22 @@ import {
   InternalServerErrorException,
   BadRequestException,
   ServiceUnavailableException,
+  Optional,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Account,
-  Address,
-  Keypair,
-  Operation,
-  rpc,
-  TransactionBuilder,
-  nativeToScVal,
-  scValToNative,
-} from 'stellar-sdk';
+import { rpc } from 'stellar-sdk';
 import * as StellarSdk from 'stellar-sdk';
 import { Repository } from 'typeorm';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
+<<<<<<< HEAD
 import { SorobanContractReadCacheService } from './soroban-contract-read-cache.service';
+=======
+import { StellarAccountCacheService } from './stellar-account-cache.service';
+import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
+>>>>>>> origin/main
 
 export interface ApproveSubmissionResult {
   transactionHash: string;
@@ -33,25 +30,18 @@ export interface ApproveSubmissionResult {
 }
 
 /**
- * Outline of how a Soroban contract call flows through this service:
+ * Shared Stellar infrastructure service.
  *
- *   approveSubmission(...)
- *     │  validate args + read CONTRACT_ID
- *     │  tracing.trace('stellar.contract.approve_submission')
- *     │      │  build tx (Operation.invokeContractFunction)
- *     │      │  simulateTransaction → if error: throw BadRequestException
- *     │      └► _signAndSubmitContract(tx, contractId, functionName)
- *     │              │  load account, sign tx, submit via Horizon
- *     │              │  tracing.trace('stellar.contract.submit') — once
- *     │              │  metrics emitted once with correct labels
- *     │              └► return { hash, ledger }
- *     └► return { transactionHash, ledger, success: true }
+ * Initializes and provides access to the configured Horizon server, Soroban
+ * RPC server, and network passphrase. Focused business-logic services
+ * ({@link StellarSubmissionService}, {@link StellarPaymentService},
+ * {@link StellarEventIngestionService}) depend on this service for the
+ * low-level Stellar SDK clients.
  *
- * `_signAndSubmitContract` takes the contract id + function name
- * explicitly because the SDK's operation object doesn't expose them at
- * the top level for `invokeContractFunction` operations — extracting
- * `op.contract` / `op.function` (the old `signAndSubmit` heuristic)
- * returns `undefined` and forces metric labels to "unknown".
+ * Backward-compatibility note: this service retains delegating wrappers
+ * for `approveSubmission`, `signAndSubmit`, `sendPayment`, and
+ * `ingestContractEvents` so that existing consumers are not broken by the
+ * refactor. New code should inject the focused services directly.
  */
 @Injectable()
 export class StellarService implements OnModuleInit {
@@ -59,8 +49,12 @@ export class StellarService implements OnModuleInit {
   private horizonServer: StellarSdk.Horizon.Server;
   private rpcServer: rpc.Server;
   private networkPassphrase: string;
+
+  constructor(private readonly configService: ConfigService) {}
   private readonly eventReorgBufferLedgers = 5;
   private readonly eventInitialLookbackLedgers = 50;
+  private accountCache: StellarAccountCacheService;
+  private clientPool: SorobanRpcClientPoolService;
 
   constructor(
     private readonly configService: ConfigService,
@@ -69,25 +63,24 @@ export class StellarService implements OnModuleInit {
     private readonly sorobanReadCache: SorobanContractReadCacheService,
     @InjectRepository(EventStore)
     private readonly eventStoreRepository: Repository<EventStore>,
-  ) {}
+    @Optional() accountCache?: StellarAccountCacheService,
+    @Optional() clientPool?: SorobanRpcClientPoolService,
+  ) {
+    this.accountCache =
+      accountCache ?? new StellarAccountCacheService(this.configService);
+    this.clientPool =
+      clientPool ?? new SorobanRpcClientPoolService(this.configService);
+  }
 
   onModuleInit() {
     this.initializeStellarComponents();
   }
 
   private initializeStellarComponents() {
-    const horizonUrl =
-      this.configService.get<string>('STELLAR_HORIZON_URL') ||
-      'https://horizon-testnet.stellar.org';
-    const rpcUrl =
-      this.configService.get<string>('SOROBAN_RPC_URL') ||
-      'https://soroban-testnet.stellar.org';
     const network = this.configService.get<string>('STELLAR_NETWORK');
 
-    this.horizonServer = new StellarSdk.Horizon.Server(horizonUrl);
-    this.rpcServer = new rpc.Server(rpcUrl, {
-      allowHttp: rpcUrl.startsWith('http://'),
-    });
+    this.horizonServer = this.clientPool.getHorizonServer();
+    this.rpcServer = this.clientPool.getRpcServer();
     this.networkPassphrase =
       network === 'PUBLIC'
         ? StellarSdk.Networks.PUBLIC
@@ -96,6 +89,9 @@ export class StellarService implements OnModuleInit {
     this.logger.log(`Stellar Service initialized on ${network}`);
   }
 
+  /** Returns the configured Horizon server instance. */
+  getHorizon(): StellarSdk.Horizon.Server {
+    return this.horizonServer;
   /**
    * Build, simulate, sign, and submit a Soroban contract call to
    * `approve_submission(quest_id, submitter, verifier)` on the configured
@@ -165,8 +161,10 @@ export class StellarService implements OnModuleInit {
 
         const adminKeypair = Keypair.fromSecret(secret);
         const sourcePubKey = adminKeypair.publicKey();
-        const accountResponse =
-          await this.horizonServer.loadAccount(sourcePubKey);
+        const accountResponse = await this.accountCache.loadAccount(
+          sourcePubKey,
+          () => this.horizonServer.loadAccount(sourcePubKey),
+        );
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
@@ -544,58 +542,12 @@ export class StellarService implements OnModuleInit {
     return latestEvent?.ledger ?? null;
   }
 
-  private safeToNative(value: any): any {
-    try {
-      return scValToNative(value);
-    } catch {
-      return value;
-    }
+  /** Returns the configured Soroban RPC server instance. */
+  getRpc(): rpc.Server {
+    return this.rpcServer;
   }
 
-  private normalizeContractEventName(topics: any[], nativeValue: any): string {
-    const candidate =
-      this.extractEventLabel(topics[0]) || this.extractEventLabel(nativeValue);
-
-    if (!candidate) {
-      return 'stellar.contract.event';
-    }
-
-    return `stellar.contract.event.${candidate}`;
-  }
-
-  private extractEventLabel(value: any): string {
-    if (typeof value === 'string') {
-      return this.sanitizeEventSegment(value);
-    }
-
-    if (typeof value === 'object' && value !== null) {
-      const keys = ['event', 'eventName', 'name', 'type', 'status', 'action'];
-
-      for (const key of keys) {
-        const candidate = value[key];
-        if (typeof candidate === 'string' && candidate.trim()) {
-          return this.sanitizeEventSegment(candidate);
-        }
-      }
-    }
-
-    return '';
-  }
-
-  private sanitizeEventSegment(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '.')
-      .replace(/^\.+|\.+$/g, '')
-      .slice(0, 80);
-  }
-
-  private parseEventTimestamp(value: any): Date {
-    const timestamp = new Date(value);
-    return Number.isNaN(timestamp.getTime()) ? new Date() : timestamp;
-  }
-
+  /** Returns the Stellar network passphrase for the configured network. */
   getNetworkPassphrase(): string {
     return this.networkPassphrase;
   }
@@ -621,14 +573,16 @@ export class StellarService implements OnModuleInit {
     }
 
     const sourceKeypair = Keypair.fromSecret(secretKey);
-    const sourceAccount = await this.horizonServer.loadAccount(
-      sourceKeypair.publicKey(),
+    const sourcePublicKey = sourceKeypair.publicKey();
+    const sourceAccount = await this.accountCache.loadAccount(
+      sourcePublicKey,
+      () => this.horizonServer.loadAccount(sourcePublicKey),
     );
 
     const paymentAsset =
       asset === 'XLM'
         ? StellarSdk.Asset.native()
-        : new StellarSdk.Asset(asset, sourceKeypair.publicKey());
+        : new StellarSdk.Asset(asset, sourcePublicKey);
 
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
@@ -647,10 +601,82 @@ export class StellarService implements OnModuleInit {
     tx.sign(sourceKeypair);
 
     const result = await this.horizonServer.submitTransaction(tx);
+    this.accountCache.invalidateAccount(sourcePublicKey);
 
     return {
       transactionHash: result.hash,
       ledger: (result as any).ledger ?? 0,
     };
+  }
+
+  async sendBatchPayments(
+    payments: Array<{ destination: string; amount: number; asset: string }>,
+  ): Promise<
+    Array<{
+      transactionHash: string;
+      ledger: number;
+      operations: Array<{ destination: string; amount: number; success: boolean }>;
+    }>
+  > {
+    const secretKey =
+      this.configService.get<string>('SOROBAN_SECRET_KEY') ||
+      this.configService.get<string>('STELLAR_ADMIN_SECRET');
+
+    if (!secretKey) {
+      throw new Error('No Stellar secret key configured for payments');
+    }
+
+    const sourceKeypair = Keypair.fromSecret(secretKey);
+    const sourceAccount = await this.horizonServer.loadAccount(
+      sourceKeypair.publicKey(),
+    );
+
+    const maxOpsPerTx = 100;
+    const results: Array<{
+      transactionHash: string;
+      ledger: number;
+      operations: Array<{ destination: string; amount: number; success: boolean }>;
+    }> = [];
+
+    for (let i = 0; i < payments.length; i += maxOpsPerTx) {
+      const chunk = payments.slice(i, i + maxOpsPerTx);
+
+      const builder = new TransactionBuilder(sourceAccount, {
+        fee: '100',
+        networkPassphrase: this.networkPassphrase,
+      });
+
+      for (const payment of chunk) {
+        const paymentAsset =
+          payment.asset === 'XLM'
+            ? StellarSdk.Asset.native()
+            : new StellarSdk.Asset(payment.asset, sourceKeypair.publicKey());
+
+        builder.addOperation(
+          Operation.payment({
+            destination: payment.destination,
+            asset: paymentAsset,
+            amount: payment.amount.toFixed(7),
+          }),
+        );
+      }
+
+      const tx = builder.setTimeout(30).build();
+      tx.sign(sourceKeypair);
+
+      const result = await this.horizonServer.submitTransaction(tx);
+
+      results.push({
+        transactionHash: result.hash,
+        ledger: (result as any).ledger ?? 0,
+        operations: chunk.map((p) => ({
+          destination: p.destination,
+          amount: p.amount,
+          success: true,
+        })),
+      });
+    }
+
+    return results;
   }
 }

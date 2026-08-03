@@ -4,13 +4,13 @@ import { SorobanQuestReaderService } from './soroban-quest-reader.service';
 import { SorobanContractReadCacheService } from './soroban-contract-read-cache.service';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
-import * as StellarSdk from '@stellar/stellar-sdk';
+import * as StellarSdk from 'stellar-sdk';
 
 const mockScValToNative = jest.fn();
 
 // Mock only scValToNative, leaving other StellarSdk functions intact
-jest.mock('@stellar/stellar-sdk', () => {
-  const original = jest.requireActual('@stellar/stellar-sdk');
+jest.mock('stellar-sdk', () => {
+  const original = jest.requireActual('stellar-sdk');
   return {
     ...original,
     scValToNative: (val: any) => mockScValToNative(val),
@@ -261,6 +261,7 @@ describe('SorobanQuestReaderService', () => {
     );
   });
 
+<<<<<<< HEAD
   it('should serve getQuest from cache without RPC on hit', async () => {
     mockReadCache.getEnvelope.mockResolvedValueOnce({
       kind: 'quest',
@@ -315,5 +316,36 @@ describe('SorobanQuestReaderService', () => {
 
     StellarSdk.rpc.Api.isSimulationError = originalIsSimulationError;
     StellarSdk.rpc.Api.isSimulationSuccess = originalIsSimulationSuccess;
+=======
+  describe('getQuestsBatch', () => {
+    it('should return empty array for empty questIds', async () => {
+      const res = await service.getQuestsBatch(validContractId, []);
+      expect(res).toEqual([]);
+    });
+
+    it('should fetch multiple quests concurrently in batches', async () => {
+      jest.spyOn(service, 'getQuest').mockImplementation(async (_, id) => ({
+        id,
+        creator: 'GACC',
+        reward_asset: 'XLM',
+        reward_amount: BigInt(100),
+        verifier: 'GVER',
+        deadline: BigInt(1000),
+        status: 'Active',
+        total_claims: 0,
+      }));
+
+      const questIds = ['q1', 'q2', 'q3'];
+      const res = await service.getQuestsBatch(validContractId, questIds, {
+        concurrency: 2,
+      });
+
+      expect(res).toHaveLength(3);
+      expect(res[0]?.id).toBe('q1');
+      expect(res[1]?.id).toBe('q2');
+      expect(res[2]?.id).toBe('q3');
+      expect(service.getQuest).toHaveBeenCalledTimes(3);
+    });
+>>>>>>> origin/main
   });
 });

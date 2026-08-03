@@ -12,6 +12,7 @@ import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
 import { QuotaModule } from '../quota/quota.module';
 import { JobsModule } from '../jobs/jobs.module';
 import { BulkheadService } from '../../common/services/bulkhead.service';
+import { StellarModule } from '../stellar/stellar.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BulkheadService } from '../../common/services/bulkhead.service';
     EventEmitterModule,
     QuotaModule,
     JobsModule,
+    StellarModule,
   ],
   controllers: [PayoutsController],
   providers: [

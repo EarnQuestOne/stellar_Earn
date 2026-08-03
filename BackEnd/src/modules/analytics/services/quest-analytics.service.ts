@@ -14,6 +14,7 @@ import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { TimeSeriesDataPoint } from '../dto/platform-stats.dto';
 import { CacheService } from './cache.service';
+import { SubmissionAggregatesService } from '../../submissions/submission-aggregates.service';
 
 @Injectable()
 export class QuestAnalyticsService {
@@ -25,6 +26,7 @@ export class QuestAnalyticsService {
     @InjectRepository(Payout)
     private payoutRepository: Repository<Payout>,
     private cacheService: CacheService,
+    private submissionAggregatesService: SubmissionAggregatesService,
   ) {}
 
   /**
@@ -99,12 +101,9 @@ export class QuestAnalyticsService {
     const approvedSubmissions = submissions.filter(
       (s) => s.status === SubmissionStatus.APPROVED,
     );
-    const rejectedSubmissions = submissions.filter(
-      (s) => s.status === SubmissionStatus.REJECTED,
-    );
-    const pendingSubmissions = submissions.filter(
-      (s) => s.status === SubmissionStatus.PENDING,
-    );
+
+    const aggregates = await this.submissionAggregatesService.getAggregates(quest.id);
+
 
     const approvalRate = ConversionUtil.calculateApprovalRate(
       approvedSubmissions.length,
@@ -146,10 +145,10 @@ export class QuestAnalyticsService {
       title: quest.title,
       status: quest.status,
       createdAt: quest.createdAt,
-      totalSubmissions: submissions.length,
-      approvedSubmissions: approvedSubmissions.length,
-      rejectedSubmissions: rejectedSubmissions.length,
-      pendingSubmissions: pendingSubmissions.length,
+      totalSubmissions: aggregates.pendingCount + aggregates.approvedCount + aggregates.rejectedCount,
+      approvedSubmissions: aggregates.approvedCount,
+      rejectedSubmissions: aggregates.rejectedCount,
+      pendingSubmissions: aggregates.pendingCount,
       approvalRate,
       avgSubmissionToApprovalTime,
       totalRewardsPaid,

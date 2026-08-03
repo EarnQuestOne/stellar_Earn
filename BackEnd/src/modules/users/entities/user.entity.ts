@@ -29,6 +29,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  /**
+   * Covered by a unique index that powers the auth lookup hot path:
+   *   WHERE stellarAddress = :addr AND deletedAt IS NULL
+   * The index also supports the partial unique constraint, so lookups
+   * by Stellar address for login / token verification hit the index
+   * exclusively without a sequential scan.
+   */
   @Column({
     type: 'varchar',
     length: 56,

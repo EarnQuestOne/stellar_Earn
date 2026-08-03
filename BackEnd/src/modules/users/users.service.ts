@@ -141,6 +141,49 @@ export class UsersService {
   }
 
   /**
+   * Batch-fetch reputation / stats for multiple users in a single query,
+   * eliminating the N+1 pattern on user-list endpoints.
+   *
+   * Returns a Map keyed by userId for O(1) lookups.
+   */
+  async getBatchUserStats(
+    userIds: string[],
+  ): Promise<Map<string, any>> {
+    if (userIds.length === 0) return new Map();
+
+    const rows = await this.usersRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id AS id',
+        'user.xp AS xp',
+        'user.level AS level',
+        'user.questsCompleted AS "questsCompleted"',
+        'user.failedQuests AS "failedQuests"',
+        'user.successRate AS "successRate"',
+        'user.totalEarned AS "totalEarned"',
+        'user.lastActiveAt AS "lastActiveAt"',
+      ])
+      .where('user.id IN (:...ids)', { ids: userIds })
+      .getRawMany();
+
+    const statsMap = new Map<string, any>();
+    for (const row of rows) {
+      statsMap.set(row.id, {
+        id: row.id,
+        xp: row.xp,
+        level: row.level,
+        questsCompleted: row.questsCompleted,
+        failedQuests: row.failedQuests,
+        successRate: row.successRate,
+        totalEarned: row.totalEarned,
+        lastActiveAt: row.lastActiveAt,
+      });
+    }
+
+    return statsMap;
+  }
+
+  /**
    * Compensating transaction for workflows that fail after DB update but before
    * all downstream side effects complete.
    */

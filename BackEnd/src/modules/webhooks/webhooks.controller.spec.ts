@@ -473,3 +473,100 @@ describe('WebhooksController', () => {
     });
   });
 });
+
+
+describe('WebhooksController Validation', () => {
+  let app: INestApplication;
+  let webhooksService: Partial<Record<keyof WebhooksService, jest.Mock>>;
+
+  beforeEach(async () => {
+    webhooksService = {
+      processEvent: jest.fn().mockResolvedValue({ status: 'PROCESSED' }),
+    };
+
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      controllers: [WebhooksController],
+      providers: [
+        {
+          provide: WebhooksService,
+          useValue: webhooksService,
+        },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  const validPayload = {
+    eventId: 'evt_123456789',
+    eventType: WebhookEventType.PAYMENT_RECEIVED,
+    data: {
+      transactionHash: '0xabc1234567890',
+      sourceAccount: 'GABCD1234567890',
+      amount: '100.00',
+    },
+  };
+
+  it('POST /webhooks/events - should accept valid payload and return 200 OK', async () => {
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(validPayload)
+      .expect(HttpStatus.OK);
+
+    expect(webhooksService.processEvent).toHaveBeenCalledWith(validPayload);
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when required fields are missing', async () => {
+    const invalidPayload = {
+      eventType: WebhookEventType.PAYMENT_RECEIVED,
+      // missing eventId and data
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request on unknown event type', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      eventType: 'INVALID_EVENT_TYPE',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when extra unwhitelisted properties exist', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      unsupportedField: 'malicious_input',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+});
