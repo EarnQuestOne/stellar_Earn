@@ -59,7 +59,9 @@ export class AddStellarEventStoreColumns1800000000001 implements MigrationInterf
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_TIMESTAMP"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_EVENT_NAME"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_EVENT_STORE_EVENT_NAME"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE"`);
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_EVENT_STORE_SOURCE_CONTRACT_LEDGER"`,

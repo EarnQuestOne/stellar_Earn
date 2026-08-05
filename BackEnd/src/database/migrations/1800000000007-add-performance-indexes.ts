@@ -10,7 +10,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class AddPerformanceIndexes1800000000007 implements MigrationInterface {
   name = 'AddPerformanceIndexes1800000000007';
 
-  private async hasColumn(queryRunner: QueryRunner, table: string, column: string): Promise<boolean> {
+  private async hasColumn(
+    queryRunner: QueryRunner,
+    table: string,
+    column: string,
+  ): Promise<boolean> {
     const res = await queryRunner.query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
       [table, column],
@@ -371,14 +375,20 @@ export class AddPerformanceIndexes1800000000007 implements MigrationInterface {
     // NOTIFICATION PREFERENCE TABLE INDEXES
     // ============================================
 
-    if (await this.hasColumn(queryRunner, 'notification_preferences', 'enabled')) {
+    if (
+      await this.hasColumn(queryRunner, 'notification_preferences', 'enabled')
+    ) {
       await queryRunner.query(
         `CREATE INDEX IF NOT EXISTS "IDX_NOTIFICATION_PREF_ENABLED" ON "notification_preferences" ("enabled")`,
       );
     }
 
     if (
-      (await this.hasColumn(queryRunner, 'notification_preferences', 'userId')) &&
+      (await this.hasColumn(
+        queryRunner,
+        'notification_preferences',
+        'userId',
+      )) &&
       (await this.hasColumn(queryRunner, 'notification_preferences', 'enabled'))
     ) {
       await queryRunner.query(

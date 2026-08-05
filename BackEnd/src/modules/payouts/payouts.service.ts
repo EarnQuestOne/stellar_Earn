@@ -52,7 +52,6 @@ export class PayoutsService {
     private readonly jobsService: JobsService,
     private readonly bulkheadService: BulkheadService,
     private readonly stellarService: StellarService,
-  ) {}
     private readonly jobResultStatusCache: JobResultStatusCacheService,
   ) {
     this.metricsService.registerCounter(
@@ -624,10 +623,14 @@ export class PayoutsService {
       viewerScope,
     );
     if (cached) {
-      this.metricsService.incrementCounter('payout_status_poll_cache_hits_total');
+      this.metricsService.incrementCounter(
+        'payout_status_poll_cache_hits_total',
+      );
       return cached;
     }
-    this.metricsService.incrementCounter('payout_status_poll_cache_misses_total');
+    this.metricsService.incrementCounter(
+      'payout_status_poll_cache_misses_total',
+    );
 
     const whereClause: Record<string, unknown> = { id: payoutId };
     if (userAddress) whereClause.stellarAddress = userAddress;

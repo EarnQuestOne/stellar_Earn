@@ -117,7 +117,9 @@ describe('Full Application Integration', () => {
     _stellarService = module.get<StellarService>(StellarService);
   });
 
-  async function setPayoutStatusProcessingInDb(payoutId: string): Promise<void> {
+  async function setPayoutStatusProcessingInDb(
+    payoutId: string,
+  ): Promise<void> {
     const ds = module.get(DataSource);
     await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
       payoutId,

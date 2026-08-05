@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Converted `submissions/index.ts` from a corrupted UTF-16 encoding to UTF-8 and removed a duplicated export line.
+
 ### Changed
 - Applied code-style formatting to `submission.mapper.ts` import block and arrow functions (no logic change).
 

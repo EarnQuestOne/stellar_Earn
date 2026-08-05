@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
-  UseGuards,
 } from '@nestjs/common';
 import { QuestsService } from './quests.service';
 import { CreateQuestDto } from './dto/create-quest.dto';

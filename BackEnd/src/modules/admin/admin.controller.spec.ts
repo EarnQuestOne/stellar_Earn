@@ -148,15 +148,10 @@ describe('AdminController', () => {
 
   describe('guards', () => {
     it('should protect the controller with the admin guard stack', () => {
-      const guards =
-        Reflect.getMetadata('__guards__', AdminController) ?? [];
+      const guards = Reflect.getMetadata('__guards__', AdminController) ?? [];
 
       expect(guards).toEqual(
-        expect.arrayContaining([
-          JwtAuthGuard,
-          RolesGuard,
-          IpWhitelistGuard,
-        ]),
+        expect.arrayContaining([JwtAuthGuard, RolesGuard, IpWhitelistGuard]),
       );
     });
   });

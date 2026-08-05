@@ -41,4 +41,3 @@ export class WebhookPayloadDto {
   @Type(() => WebhookDataDto)
   data!: WebhookDataDto;
 }
-}

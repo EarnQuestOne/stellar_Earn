@@ -1,4 +1,3 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   Injectable,
   Logger,
@@ -8,9 +7,19 @@ import {
   ServiceUnavailableException,
   Optional,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { rpc } from 'stellar-sdk';
+import {
+  Account,
+  Address,
+  Keypair,
+  Operation,
+  rpc,
+  TransactionBuilder,
+  nativeToScVal,
+  scValToNative,
+} from 'stellar-sdk';
 import * as StellarSdk from 'stellar-sdk';
 import { Repository } from 'typeorm';
 import { TracingService } from '../../common/tracing/tracing.service';
@@ -45,8 +54,6 @@ export class StellarService implements OnModuleInit {
   private horizonServer: StellarSdk.Horizon.Server;
   private rpcServer: rpc.Server;
   private networkPassphrase: string;
-
-  constructor(private readonly configService: ConfigService) {}
   private readonly eventReorgBufferLedgers = 5;
   private readonly eventInitialLookbackLedgers = 50;
   private accountCache: StellarAccountCacheService;
@@ -87,6 +94,8 @@ export class StellarService implements OnModuleInit {
   /** Returns the configured Horizon server instance. */
   getHorizon(): StellarSdk.Horizon.Server {
     return this.horizonServer;
+  }
+
   /**
    * Build, simulate, sign, and submit a Soroban contract call to
    * `approve_submission(quest_id, submitter, verifier)` on the configured
@@ -525,6 +534,58 @@ export class StellarService implements OnModuleInit {
     return latestEvent?.ledger ?? null;
   }
 
+  private safeToNative(value: any): any {
+    try {
+      return scValToNative(value);
+    } catch {
+      return value;
+    }
+  }
+
+  private normalizeContractEventName(topics: any[], nativeValue: any): string {
+    const candidate =
+      this.extractEventLabel(topics[0]) || this.extractEventLabel(nativeValue);
+
+    if (!candidate) {
+      return 'stellar.contract.event';
+    }
+
+    return `stellar.contract.event.${candidate}`;
+  }
+
+  private extractEventLabel(value: any): string {
+    if (typeof value === 'string') {
+      return this.sanitizeEventSegment(value);
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      const keys = ['event', 'eventName', 'name', 'type', 'status', 'action'];
+
+      for (const key of keys) {
+        const candidate = value[key];
+        if (typeof candidate === 'string' && candidate.trim()) {
+          return this.sanitizeEventSegment(candidate);
+        }
+      }
+    }
+
+    return '';
+  }
+
+  private sanitizeEventSegment(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '')
+      .slice(0, 80);
+  }
+
+  private parseEventTimestamp(value: any): Date {
+    const timestamp = new Date(value);
+    return Number.isNaN(timestamp.getTime()) ? new Date() : timestamp;
+  }
+
   /** Returns the configured Soroban RPC server instance. */
   getRpc(): rpc.Server {
     return this.rpcServer;
@@ -598,7 +659,11 @@ export class StellarService implements OnModuleInit {
     Array<{
       transactionHash: string;
       ledger: number;
-      operations: Array<{ destination: string; amount: number; success: boolean }>;
+      operations: Array<{
+        destination: string;
+        amount: number;
+        success: boolean;
+      }>;
     }>
   > {
     const secretKey =
@@ -618,7 +683,11 @@ export class StellarService implements OnModuleInit {
     const results: Array<{
       transactionHash: string;
       ledger: number;
-      operations: Array<{ destination: string; amount: number; success: boolean }>;
+      operations: Array<{
+        destination: string;
+        amount: number;
+        success: boolean;
+      }>;
     }> = [];
 
     for (let i = 0; i < payments.length; i += maxOpsPerTx) {

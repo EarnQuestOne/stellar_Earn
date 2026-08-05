@@ -102,8 +102,9 @@ export class QuestAnalyticsService {
       (s) => s.status === SubmissionStatus.APPROVED,
     );
 
-    const aggregates = await this.submissionAggregatesService.getAggregates(quest.id);
-
+    const aggregates = await this.submissionAggregatesService.getAggregates(
+      quest.id,
+    );
 
     const approvalRate = ConversionUtil.calculateApprovalRate(
       approvedSubmissions.length,
@@ -145,7 +146,10 @@ export class QuestAnalyticsService {
       title: quest.title,
       status: quest.status,
       createdAt: quest.createdAt,
-      totalSubmissions: aggregates.pendingCount + aggregates.approvedCount + aggregates.rejectedCount,
+      totalSubmissions:
+        aggregates.pendingCount +
+        aggregates.approvedCount +
+        aggregates.rejectedCount,
       approvedSubmissions: aggregates.approvedCount,
       rejectedSubmissions: aggregates.rejectedCount,
       pendingSubmissions: aggregates.pendingCount,

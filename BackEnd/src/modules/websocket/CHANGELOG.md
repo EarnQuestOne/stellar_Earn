@@ -7,5 +7,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+
+- Removed the non-functional manual socket heartbeat (`client.ping()` does not exist on socket.io sockets; engine.io already handles ping/pong heartbeats natively).
+
+### Changed
 - Migrated JWT signing to RS256 with key rotation support via `getJwtPrivateKey`
 - Added optional Redis adapter for horizontal scaling (dynamic import with in-memory fallback)

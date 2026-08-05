@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Applied code-style formatting to `users.service.ts` (no logic change).
+
 ### Added
 
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `User` for the `role` column to speed up active-user role-based queries (#2000).

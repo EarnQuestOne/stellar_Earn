@@ -216,8 +216,7 @@ export class ModerationService {
 
     // Keyset (cursor) pagination when a cursor is provided.
     if (cursor) {
-      const [cursorPriority, cursorCreatedAt, cursorId] =
-        cursor.split('::').map(Number);
+      const [cursorPriority, cursorCreatedAt] = cursor.split('::').map(Number);
       const items = await this.itemRepo
         .createQueryBuilder('item')
         .where('item.status = :status', {

@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { Observable } from 'rxjs';
 
 import { Role } from '../../common/enums/role.enum';
@@ -119,33 +119,6 @@ const buildFraudServiceMock = () => ({
 
 // ─── Module builder helper ─────────────────────────────────────────────────────
 
-async function buildModule(opts?: {
-  payoutsService?: Partial<ReturnType<typeof buildPayoutsServiceMock>>;
-  fraudService?: Partial<ReturnType<typeof buildFraudServiceMock>>;
-}): Promise<TestingModule> {
-  return Test.createTestingModule({
-    controllers: [PayoutsController],
-    providers: [
-      {
-        provide: PayoutsService,
-        useValue: { ...buildPayoutsServiceMock(), ...opts?.payoutsService },
-      },
-      {
-        provide: FraudRiskRulesService,
-        useValue: { ...buildFraudServiceMock(), ...opts?.fraudService },
-      },
-      Reflector,
-    ],
-  })
-    .overrideInterceptor(IdempotencyInterceptor)
-    .useClass(NoopInterceptor)
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: jest.fn().mockReturnValue(true) })
-    .overrideGuard(RolesGuard)
-    .useValue({ canActivate: jest.fn().mockReturnValue(true) })
-    .compile();
-}
-
 // ─── Test suites ──────────────────────────────────────────────────────────────
 
 describe('PayoutsController', () => {
@@ -209,9 +182,9 @@ describe('PayoutsController', () => {
     });
 
     it('applies RolesGuard on getAllPayouts (GET admin/all)', () => {
-      expect(getGuardNames(PayoutsController.prototype.getAllPayouts)).toContain(
-        'RolesGuard',
-      );
+      expect(
+        getGuardNames(PayoutsController.prototype.getAllPayouts),
+      ).toContain('RolesGuard');
     });
 
     it('applies RolesGuard on getGlobalPayoutStats (GET admin/stats)', () => {
@@ -379,18 +352,18 @@ describe('PayoutsController', () => {
       payoutsService.claimPayout.mockRejectedValueOnce(
         new NotFoundException('Payout not found'),
       );
-      await expect(
-        controller.claimPayout(validDto, USER_AUTH),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.claimPayout(validDto, USER_AUTH)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('propagates BadRequestException (400) when payout cannot be claimed', async () => {
       payoutsService.claimPayout.mockRejectedValueOnce(
         new BadRequestException('Payout cannot be claimed'),
       );
-      await expect(
-        controller.claimPayout(validDto, USER_AUTH),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.claimPayout(validDto, USER_AUTH)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -639,9 +612,9 @@ describe('PayoutsController', () => {
       payoutsService.getPayoutById.mockRejectedValueOnce(
         new NotFoundException('Payout not found'),
       );
-      await expect(
-        controller.getAnyPayoutById('unknown-id'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getAnyPayoutById('unknown-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -841,7 +814,10 @@ describe('PayoutsController', () => {
       const customResponse = { ...PAYOUT_RESPONSE, amount: 99.9 };
       payoutsService.claimPayout.mockResolvedValueOnce(customResponse as any);
       const result = await controller.claimPayout(
-        { submissionId: '123e4567-e89b-12d3-a456-426614174000', stellarAddress: STELLAR_ADDRESS },
+        {
+          submissionId: '123e4567-e89b-12d3-a456-426614174000',
+          stellarAddress: STELLAR_ADDRESS,
+        },
         USER_AUTH,
       );
       expect(result).toEqual(customResponse);
@@ -849,7 +825,9 @@ describe('PayoutsController', () => {
 
     it('getMyPayoutHistory passes through the service response unchanged', async () => {
       const customHistory = { data: [], total: 0, cursor: null };
-      payoutsService.getPayoutHistory.mockResolvedValueOnce(customHistory as any);
+      payoutsService.getPayoutHistory.mockResolvedValueOnce(
+        customHistory as any,
+      );
       const result = await controller.getMyPayoutHistory({}, USER_AUTH);
       expect(result).toEqual(customHistory);
     });

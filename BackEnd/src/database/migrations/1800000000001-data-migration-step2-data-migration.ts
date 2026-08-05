@@ -28,7 +28,9 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
       await queryRunner.query(`RELEASE SAVEPOINT ${sp}`);
     } catch (err) {
       await queryRunner.query(`ROLLBACK TO SAVEPOINT ${sp}`);
-      console.log(`[DataMigrationStep2] ${label} skipped: ${(err as Error).message}`);
+      console.log(
+        `[DataMigrationStep2] ${label} skipped: ${(err as Error).message}`,
+      );
     }
   }
 
@@ -50,7 +52,10 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
   private async migrateUserData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating user data...');
 
-    await this.safeQuery(queryRunner, 'user_stats', `
+    await this.safeQuery(
+      queryRunner,
+      'user_stats',
+      `
       UPDATE "users" u
       SET 
         "questsCompleted" = COALESCE(
@@ -83,25 +88,38 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
            FROM "submissions" s 
            WHERE s."userId" = u.id), u."updatedAt"
         )
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'user_privacy', `
+    await this.safeQuery(
+      queryRunner,
+      'user_privacy',
+      `
       UPDATE "users" 
       SET "privacyLevel" = 'PUBLIC' 
       WHERE "privacyLevel" IS NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'user_badges', `
+    await this.safeQuery(
+      queryRunner,
+      'user_badges',
+      `
       UPDATE "users" 
       SET "badges" = ARRAY[]::TEXT[] 
       WHERE "badges" IS NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'user_socialLinks', `
+    await this.safeQuery(
+      queryRunner,
+      'user_socialLinks',
+      `
       UPDATE "users" 
       SET "socialLinks" = '{}'::JSONB 
       WHERE "socialLinks" IS NULL
-    `);
+    `,
+    );
 
     console.log('User data migration completed');
   }
@@ -112,27 +130,39 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
   private async migrateQuestData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating quest data...');
 
-    await this.safeQuery(queryRunner, 'quest_creatorAddress', `
+    await this.safeQuery(
+      queryRunner,
+      'quest_creatorAddress',
+      `
       UPDATE "quests" q
       SET "creatorAddress" = u."stellarAddress"
       FROM "users" u
       WHERE (q."createdBy" = u.id::text OR q."createdBy" = u."stellarAddress") AND q."creatorAddress" IS NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'quest_currentCompletions', `
+    await this.safeQuery(
+      queryRunner,
+      'quest_currentCompletions',
+      `
       UPDATE "quests" q
       SET "currentCompletions" = COALESCE(
         (SELECT COUNT(*)::INTEGER 
          FROM "submissions" s 
          WHERE s."questId" = q.id AND s."status" = 'APPROVED'), 0
       )
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'quest_startDate', `
+    await this.safeQuery(
+      queryRunner,
+      'quest_startDate',
+      `
       UPDATE "quests" 
       SET "startDate" = "createdAt" 
       WHERE "startDate" IS NULL
-    `);
+    `,
+    );
 
     console.log('Quest data migration completed');
   }
@@ -143,18 +173,26 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
   private async migrateSubmissionData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating submission data...');
 
-    await this.safeQuery(queryRunner, 'submission_status', `
+    await this.safeQuery(
+      queryRunner,
+      'submission_status',
+      `
       UPDATE "submissions" 
       SET "status" = 'UNDER_REVIEW' 
       WHERE "status" = 'PENDING' AND "approvedBy" IS NOT NULL
-    `);
+    `,
+    );
 
     // proof column is JSON (not JSONB) — just fill NULLs
-    await this.safeQuery(queryRunner, 'submission_proof_null', `
+    await this.safeQuery(
+      queryRunner,
+      'submission_proof_null',
+      `
       UPDATE "submissions" 
       SET "proof" = '{}'::json 
       WHERE "proof" IS NULL
-    `);
+    `,
+    );
 
     console.log('Submission data migration completed');
   }
@@ -165,20 +203,31 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
   private async migratePayoutData(queryRunner: QueryRunner): Promise<void> {
     console.log('Migrating payout data...');
 
-    await this.safeQuery(queryRunner, 'payout_stellarAddress', `
+    await this.safeQuery(
+      queryRunner,
+      'payout_stellarAddress',
+      `
       UPDATE "payouts" p
       SET "stellarAddress" = u."stellarAddress"
       FROM "users" u
       WHERE p."userId" = u.id AND (p."stellarAddress" IS NULL OR p."stellarAddress" = '')
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'payout_status_lower', `
+    await this.safeQuery(
+      queryRunner,
+      'payout_status_lower',
+      `
       UPDATE "payouts" 
       SET "status" = LOWER("status")
       WHERE "status" IS NOT NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'payout_link_submissions', `
+    await this.safeQuery(
+      queryRunner,
+      'payout_link_submissions',
+      `
       UPDATE "payouts" p
       SET "submissionId" = s.id::text,
           "questId" = s."questId"::text
@@ -188,13 +237,18 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         AND s."userId" = u.id 
         AND s."status" = 'APPROVED'
         AND p."submissionId" IS NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'payout_default_type', `
+    await this.safeQuery(
+      queryRunner,
+      'payout_default_type',
+      `
       UPDATE "payouts" 
       SET "type" = 'quest_reward' 
       WHERE "type" IS NULL
-    `);
+    `,
+    );
 
     console.log('Payout data migration completed');
   }
@@ -273,7 +327,9 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     ];
 
     for (const constraint of constraints) {
-      await this.safeQuery(queryRunner, `drop_${constraint}`,
+      await this.safeQuery(
+        queryRunner,
+        `drop_${constraint}`,
         `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
       );
     }
@@ -293,12 +349,17 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
     ];
 
     for (const index of indexes) {
-      await this.safeQuery(queryRunner, `drop_${index}`,
+      await this.safeQuery(
+        queryRunner,
+        `drop_${index}`,
         `DROP INDEX IF EXISTS "${index}"`,
       );
     }
 
-    await this.safeQuery(queryRunner, 'rollback_users', `
+    await this.safeQuery(
+      queryRunner,
+      'rollback_users',
+      `
       UPDATE "users" 
       SET 
         "questsCompleted" = 0,
@@ -306,27 +367,40 @@ export class DataMigrationStep2DataMigration1800000000001 implements MigrationIn
         "successRate" = 0,
         "totalEarned" = '0',
         "lastActiveAt" = NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'rollback_quests', `
+    await this.safeQuery(
+      queryRunner,
+      'rollback_quests',
+      `
       UPDATE "quests" 
       SET 
         "creatorAddress" = NULL,
         "currentCompletions" = 0,
         "startDate" = NULL
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'rollback_submissions', `
+    await this.safeQuery(
+      queryRunner,
+      'rollback_submissions',
+      `
       UPDATE "submissions" 
       SET "proof" = '{}'::json
-    `);
+    `,
+    );
 
-    await this.safeQuery(queryRunner, 'rollback_payouts', `
+    await this.safeQuery(
+      queryRunner,
+      'rollback_payouts',
+      `
       UPDATE "payouts" 
       SET 
         "submissionId" = NULL,
         "questId" = NULL,
         "type" = 'quest_reward'
-    `);
+    `,
+    );
   }
 }

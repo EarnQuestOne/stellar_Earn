@@ -40,9 +40,15 @@ export class SubmissionAggregatesService {
 
   private async recompute(questId: string): Promise<SubmissionAggregates> {
     const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
-      this.submissionRepository.count({ where: { questId, status: SubmissionStatus.PENDING } }),
-      this.submissionRepository.count({ where: { questId, status: SubmissionStatus.APPROVED } }),
-      this.submissionRepository.count({ where: { questId, status: SubmissionStatus.REJECTED } }),
+      this.submissionRepository.count({
+        where: { questId, status: SubmissionStatus.PENDING },
+      }),
+      this.submissionRepository.count({
+        where: { questId, status: SubmissionStatus.APPROVED },
+      }),
+      this.submissionRepository.count({
+        where: { questId, status: SubmissionStatus.REJECTED },
+      }),
     ]);
     return { pendingCount, approvedCount, rejectedCount };
   }
@@ -51,7 +57,11 @@ export class SubmissionAggregatesService {
   async handleSubmissionCreated(event: SubmissionCreatedEvent) {
     const aggregates = await this.getAggregates(event.questId);
     aggregates.pendingCount++;
-    await this.cacheService.set(this.getCacheKey(event.questId), aggregates, 86400);
+    await this.cacheService.set(
+      this.getCacheKey(event.questId),
+      aggregates,
+      86400,
+    );
   }
 
   @OnEvent('submission.approved')
@@ -76,6 +86,10 @@ export class SubmissionAggregatesService {
     const aggregates = await this.getAggregates(submission.questId);
     if (aggregates.pendingCount > 0) aggregates.pendingCount--;
     aggregates.rejectedCount++;
-    await this.cacheService.set(this.getCacheKey(submission.questId), aggregates, 86400);
+    await this.cacheService.set(
+      this.getCacheKey(submission.questId),
+      aggregates,
+      86400,
+    );
   }
 }

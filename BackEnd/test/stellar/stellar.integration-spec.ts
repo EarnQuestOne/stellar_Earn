@@ -42,6 +42,10 @@ describe('StellarService Integration', () => {
     service = module.get<StellarService>(StellarService);
     configService = module.get<ConfigService>(ConfigService);
 
+    // compile() does not fire lifecycle hooks; trigger onModuleInit so the
+    // Horizon/RPC servers and network passphrase are initialized.
+    service.onModuleInit();
+
     // Check config availability from ConfigService, which correctly loads .env
     const rpcUrl = configService.get<string>('stellar.rpcUrl');
     const contractId = configService.get<string>('stellar.contractId');

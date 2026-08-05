@@ -607,7 +607,8 @@ export class SubmissionsService {
     query?: QuerySubmissionsDto,
   ): Promise<PaginatedResponseDto<Submission>> {
     const limit = query?.limit ?? 10;
-    const qb = this.submissionsRepository.createQueryBuilder('submission')
+    const qb = this.submissionsRepository
+      .createQueryBuilder('submission')
       .leftJoinAndSelect('submission.quest', 'quest')
       .leftJoinAndSelect('submission.user', 'user')
       .where('submission.questId = :questId', { questId });
@@ -641,9 +642,10 @@ export class SubmissionsService {
     const data = hasMore ? rows.slice(0, limit) : rows;
 
     const last = data[data.length - 1];
-    const nextCursor = hasMore && last
-      ? encodeCursor({ createdAt: last.createdAt, id: last.id })
-      : null;
+    const nextCursor =
+      hasMore && last
+        ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+        : null;
 
     return new PaginatedResponseDto<Submission>(data, nextCursor);
   }

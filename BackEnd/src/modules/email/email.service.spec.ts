@@ -14,7 +14,11 @@ describe('EmailService', () => {
 
   it('should dispatch email notification', async () => {
     const spy = jest.spyOn(service, 'sendEmail').mockResolvedValue(true);
-    const sent = await service.sendEmail('user@stellar.org', 'Quest Completed', 'You earned 10 XLM');
+    const sent = await service.sendEmail(
+      'user@stellar.org',
+      'Quest Completed',
+      'You earned 10 XLM',
+    );
     expect(spy).toHaveBeenCalled();
     expect(sent).toBe(true);
   });
