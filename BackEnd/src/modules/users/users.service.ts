@@ -146,9 +146,7 @@ export class UsersService {
    *
    * Returns a Map keyed by userId for O(1) lookups.
    */
-  async getBatchUserStats(
-    userIds: string[],
-  ): Promise<Map<string, any>> {
+  async getBatchUserStats(userIds: string[]): Promise<Map<string, any>> {
     if (userIds.length === 0) return new Map();
 
     const rows = await this.usersRepository

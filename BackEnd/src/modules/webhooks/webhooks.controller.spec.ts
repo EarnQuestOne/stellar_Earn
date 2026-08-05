@@ -474,7 +474,6 @@ describe('WebhooksController', () => {
   });
 });
 
-
 describe('WebhooksController Validation', () => {
   let app: INestApplication;
   let webhooksService: Partial<Record<keyof WebhooksService, jest.Mock>>;

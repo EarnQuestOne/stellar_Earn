@@ -102,7 +102,10 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
   // ─── Private ─────────────────────────────────────────────────────────────
 
   private loadConfig(): ResourceLimitsConfig {
-    const rawInterval = this.configService.get<number>('RESOURCE_MONITOR_INTERVAL_MS', 60_000);
+    const rawInterval = this.configService.get<number>(
+      'RESOURCE_MONITOR_INTERVAL_MS',
+      60_000,
+    );
     const monitorIntervalMs = Math.max(rawInterval, 10_000); // Minimum 10s to prevent CPU thrash
     return {
       maxHeapUsedMb: this.configService.get<number>(
@@ -110,9 +113,19 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
         512,
       ),
       maxRssMb: this.configService.get<number>('RESOURCE_MAX_RSS_MB', 768),
-      heapWarningPercent: this.configService.get<number>('RESOURCE_HEAP_WARN_PERCENT', 75),
-      heapCriticalPercent: this.configService.get<number>('RESOURCE_HEAP_CRITICAL_PERCENT', 90),
-      exitOnHeapCritical: this.configService.get<string>('RESOURCE_EXIT_ON_HEAP_CRITICAL', 'false') === 'true',
+      heapWarningPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_WARN_PERCENT',
+        75,
+      ),
+      heapCriticalPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_CRITICAL_PERCENT',
+        90,
+      ),
+      exitOnHeapCritical:
+        this.configService.get<string>(
+          'RESOURCE_EXIT_ON_HEAP_CRITICAL',
+          'false',
+        ) === 'true',
       monitorIntervalMs,
     };
   }

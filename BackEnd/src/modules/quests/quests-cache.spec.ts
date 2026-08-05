@@ -39,7 +39,12 @@ describe('QuestsService list caching', () => {
 
   it('queries the DB and populates the cache on a miss', async () => {
     cache.get.mockResolvedValue(null);
-    const qb = { andWhere: jest.fn().mockReturnThis(), orderBy: jest.fn().mockReturnThis(), take: jest.fn().mockReturnThis(), getMany: jest.fn().mockResolvedValue([]) };
+    const qb = {
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
     repo.createQueryBuilder.mockReturnValue(qb);
     await service.findAll({ limit: 10 } as any);
     expect(cache.set).toHaveBeenCalled();

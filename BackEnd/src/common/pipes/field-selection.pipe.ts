@@ -1,8 +1,4 @@
-import {
-  PipeTransform,
-  Injectable,
-  ArgumentMetadata,
-} from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
 import { Request } from 'express';
 
 /**
@@ -20,7 +16,7 @@ export class FieldSelectionPipe implements PipeTransform {
   transform(value: any, { type }: ArgumentMetadata): any {
     if (type !== 'query') return value;
 
-    const fieldsParam = (value as any)?.fields;
+    const fieldsParam = value?.fields;
     if (typeof fieldsParam !== 'string' || !fieldsParam.trim()) return value;
 
     const allowedFields = new Set(
@@ -31,7 +27,7 @@ export class FieldSelectionPipe implements PipeTransform {
     );
 
     // Attach to the query object so controllers / interceptors can read it.
-    (value as any).__allowedFields = allowedFields;
+    value.__allowedFields = allowedFields;
     return value;
   }
 }

@@ -43,7 +43,9 @@ describe('QuestsController (Validation)', () => {
         .get(`/quests/${invalidUuid}`)
         .expect(HttpStatus.BAD_REQUEST);
 
-      expect(response.body.message).toContain('Validation failed (uuid is expected)');
+      expect(response.body.message).toContain(
+        'Validation failed (uuid is expected)',
+      );
       expect(questsService.findOne).not.toHaveBeenCalled();
     });
 
@@ -65,7 +67,10 @@ describe('QuestsController (Validation)', () => {
     });
 
     it('GET /quests/:id - should delegate to QuestsService when UUID is valid', async () => {
-      questsService.findOne.mockResolvedValue({ id: validUuid, title: 'Sample Quest' });
+      questsService.findOne.mockResolvedValue({
+        id: validUuid,
+        title: 'Sample Quest',
+      });
 
       await request(app.getHttpServer())
         .get(`/quests/${validUuid}`)

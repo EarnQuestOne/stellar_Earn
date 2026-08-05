@@ -57,7 +57,6 @@ describe('PayoutsService settlement finality', () => {
   let emitter: { emit: jest.Mock };
   let metrics: { incrementCounter: jest.Mock };
   let jobs: { addJob: jest.Mock };
-  let stellarService: { sendPayment: jest.Mock; sendBatchPayments: jest.Mock };
 
   beforeEach(async () => {
     repo = mockRepo();
@@ -303,17 +302,15 @@ describe('PayoutsService.processBatchPayouts', () => {
     jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
     stellarService = {
       sendPayment: jest.fn(),
-      sendBatchPayments: jest
-        .fn()
-        .mockResolvedValue([
-          {
-            transactionHash: 'batch-tx-hash',
-            ledger: 42,
-            operations: [
-              { destination: 'G'.padEnd(56, 'A'), amount: 10, success: true },
-            ],
-          },
-        ]),
+      sendBatchPayments: jest.fn().mockResolvedValue([
+        {
+          transactionHash: 'batch-tx-hash',
+          ledger: 42,
+          operations: [
+            { destination: 'G'.padEnd(56, 'A'), amount: 10, success: true },
+          ],
+        },
+      ]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -327,7 +324,10 @@ describe('PayoutsService.processBatchPayouts', () => {
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: jobs },
         { provide: StellarService, useValue: stellarService },
-        { provide: BulkheadService, useValue: { runWithBulkhead: jest.fn((_name, fn) => fn()) } },
+        {
+          provide: BulkheadService,
+          useValue: { runWithBulkhead: jest.fn((_name, fn) => fn()) },
+        },
       ],
     }).compile();
 
@@ -392,7 +392,6 @@ describe('PayoutsService.processBatchPayouts', () => {
 
     repo.find.mockResolvedValueOnce(payouts).mockResolvedValueOnce([]);
 
-    const txResult = { transactionHash: 'tx', ledger: 1, operations: [] };
     stellarService.sendBatchPayments.mockImplementation(
       async (payments: any[]) => {
         const ops = payments.map((p: any) => ({
@@ -429,7 +428,9 @@ describe('PayoutsService.processBatchPayouts', () => {
       status: PayoutStatus.PENDING,
     });
 
-    repo.find.mockResolvedValueOnce([payout1, payout2]).mockResolvedValueOnce([]);
+    repo.find
+      .mockResolvedValueOnce([payout1, payout2])
+      .mockResolvedValueOnce([]);
 
     stellarService.sendBatchPayments.mockRejectedValue(
       new Error('Horizon timeout'),

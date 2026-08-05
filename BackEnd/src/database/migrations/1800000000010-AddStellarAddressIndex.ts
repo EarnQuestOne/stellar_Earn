@@ -11,9 +11,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * The index includes commonly-selected columns so the query can be served
  * entirely from the index (index-only scan), avoiding heap fetches.
  */
-export class AddStellarAddressIndex1800000000010
-  implements MigrationInterface
-{
+export class AddStellarAddressIndex1800000000010 implements MigrationInterface {
   name = 'AddStellarAddressIndex1800000000010';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

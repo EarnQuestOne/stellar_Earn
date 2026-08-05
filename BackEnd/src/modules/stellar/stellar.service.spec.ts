@@ -85,7 +85,6 @@ describe('StellarService (Infrastructure)', () => {
 describe('StellarService.sendBatchPayments', () => {
   let service: StellarService;
   let metrics: { incrementCounter: jest.Mock; observeHistogram: jest.Mock };
-  let mockLoadAccount: jest.SpyInstance;
   let mockSubmitTransaction: jest.SpyInstance;
 
   const adminKeypair = StellarSdk.Keypair.random();
@@ -104,11 +103,13 @@ describe('StellarService.sendBatchPayments', () => {
 
   const mockSpan = { attributes: {} as Record<string, any>, status: 'ok' };
   const mockTracing = {
-    trace: jest.fn().mockImplementation(async (_name: string, fn: any, _attrs?: any) => {
-      mockSpan.attributes = { ...(_attrs ?? {}) };
-      mockSpan.status = 'ok';
-      return fn(mockSpan);
-    }),
+    trace: jest
+      .fn()
+      .mockImplementation(async (_name: string, fn: any, _attrs?: any) => {
+        mockSpan.attributes = { ...(_attrs ?? {}) };
+        mockSpan.status = 'ok';
+        return fn(mockSpan);
+      }),
   };
   const mockMetricsFactory = () => ({
     incrementCounter: jest.fn(),
@@ -139,10 +140,6 @@ describe('StellarService.sendBatchPayments', () => {
     service = module.get<StellarService>(StellarService);
     service.onModuleInit();
 
-    mockLoadAccount = jest
-      .spyOn((service as any).horizonServer, 'loadAccount')
-      .mockResolvedValue(new StellarSdk.Account(adminKeypair.publicKey(), '1'));
-
     mockSubmitTransaction = jest
       .spyOn((service as any).horizonServer, 'submitTransaction')
       .mockResolvedValue({ hash: 'batch-tx-hash', ledger: 42 } as any);
@@ -154,9 +151,21 @@ describe('StellarService.sendBatchPayments', () => {
 
   it('builds a transaction with multiple payment operations', async () => {
     const payments = [
-      { destination: StellarSdk.Keypair.random().publicKey(), amount: 10, asset: 'XLM' },
-      { destination: StellarSdk.Keypair.random().publicKey(), amount: 20, asset: 'XLM' },
-      { destination: StellarSdk.Keypair.random().publicKey(), amount: 30, asset: 'XLM' },
+      {
+        destination: StellarSdk.Keypair.random().publicKey(),
+        amount: 10,
+        asset: 'XLM',
+      },
+      {
+        destination: StellarSdk.Keypair.random().publicKey(),
+        amount: 20,
+        asset: 'XLM',
+      },
+      {
+        destination: StellarSdk.Keypair.random().publicKey(),
+        amount: 30,
+        asset: 'XLM',
+      },
     ];
 
     const results = await service.sendBatchPayments(payments);

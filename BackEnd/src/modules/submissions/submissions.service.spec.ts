@@ -35,7 +35,9 @@ const buildUpdateBuilder = (affected = 1) => {
  * existing approval-flow tests work without modification.
  */
 const createMockDedup = () => ({
-  executeWithDedup: jest.fn((_key: string, operation: () => Promise<any>) => operation()),
+  executeWithDedup: jest.fn((_key: string, operation: () => Promise<any>) =>
+    operation(),
+  ),
   clear: jest.fn(),
   clearAll: jest.fn(),
   inflightCount: jest.fn().mockReturnValue(0),
@@ -133,7 +135,10 @@ describe('SubmissionsService (N+1 prevention)', () => {
         SubmissionsService,
         { provide: getRepositoryToken(Submission), useValue: submissionsRepo },
         { provide: getRepositoryToken(User), useValue: usersRepo },
-        { provide: getRepositoryToken(Quest), useValue: { findOne: jest.fn() } },
+        {
+          provide: getRepositoryToken(Quest),
+          useValue: { findOne: jest.fn() },
+        },
         { provide: NotificationsService, useValue: notifications },
         { provide: StellarSubmissionService, useValue: stellarService },
         { provide: EventEmitter2, useValue: { emit: jest.fn() } },
@@ -509,19 +514,13 @@ describe('SubmissionsService (N+1 prevention)', () => {
         buildUpdateBuilder().createQueryBuilder;
 
       // Override the mock dedup to simulate caching
-      let capturedOp: (() => Promise<any>) | null = null;
       mockDedup.executeWithDedup = jest.fn(
         (_key: string, operation: () => Promise<any>) => {
-          capturedOp = operation;
           return operation();
         },
       );
 
-      await service.approveSubmission(
-        'sub-1',
-        { notes: 'first' },
-        VERIFIER_ID,
-      );
+      await service.approveSubmission('sub-1', { notes: 'first' }, VERIFIER_ID);
 
       expect(stellarService.approveSubmission).toHaveBeenCalledTimes(1);
     });

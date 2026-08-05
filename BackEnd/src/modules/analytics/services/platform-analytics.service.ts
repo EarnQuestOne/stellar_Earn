@@ -14,7 +14,10 @@ import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
 import { User as AnalyticsUser } from '../entities/user.entity';
-import { AnalyticsSnapshot, SnapshotType } from '../entities/analytics-snapshot.entity';
+import {
+  AnalyticsSnapshot,
+  SnapshotType,
+} from '../entities/analytics-snapshot.entity';
 import { MetricsService } from '../../../common/services/metrics.service';
 
 @Injectable()
@@ -52,12 +55,20 @@ export class PlatformAnalyticsService {
     });
 
     if (snapshot) {
-      this.metricsService.incrementCounter('analytics_computation_total', { source: 'snapshot' });
+      this.metricsService.incrementCounter('analytics_computation_total', {
+        source: 'snapshot',
+      });
       return snapshot.metrics as unknown as PlatformStatsDto;
     }
 
-    this.metricsService.incrementCounter('analytics_computation_total', { source: 'live' });
-    return this.computeAndStorePlatformStats(startDate, endDate, query.granularity || Granularity.DAY);
+    this.metricsService.incrementCounter('analytics_computation_total', {
+      source: 'live',
+    });
+    return this.computeAndStorePlatformStats(
+      startDate,
+      endDate,
+      query.granularity || Granularity.DAY,
+    );
   }
 
   async computeAndStorePlatformStats(
@@ -139,13 +150,24 @@ export class PlatformAnalyticsService {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async computePlatformAnalytics(): Promise<void> {
     const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 30,
+    );
     const endDate = now;
     try {
-      await this.computeAndStorePlatformStats(startDate, endDate, Granularity.DAY);
+      await this.computeAndStorePlatformStats(
+        startDate,
+        endDate,
+        Granularity.DAY,
+      );
       this.logger.log('Background platform analytics computation completed');
     } catch (error) {
-      this.logger.error('Background platform analytics computation failed', error);
+      this.logger.error(
+        'Background platform analytics computation failed',
+        error,
+      );
     }
   }
 

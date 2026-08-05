@@ -22,8 +22,11 @@ import { User } from '../users/entities/user.entity';
     CacheModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionAggregatesService, VerificationDedupService],
+  providers: [
+    SubmissionsService,
+    SubmissionAggregatesService,
+    VerificationDedupService,
+  ],
   exports: [SubmissionsService, SubmissionAggregatesService],
-
 })
 export class SubmissionsModule {}

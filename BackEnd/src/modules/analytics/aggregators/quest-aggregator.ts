@@ -210,8 +210,12 @@ export class QuestAnalyticsAggregator extends BaseAnalyticsAggregator {
 
     // Use cached aggregates if no date range filters are applied
     if (!options.startDate && !options.endDate) {
-      const aggregates = await this.submissionAggregatesService.getAggregates(questId);
-      totalSubmissions = aggregates.pendingCount + aggregates.approvedCount + aggregates.rejectedCount;
+      const aggregates =
+        await this.submissionAggregatesService.getAggregates(questId);
+      totalSubmissions =
+        aggregates.pendingCount +
+        aggregates.approvedCount +
+        aggregates.rejectedCount;
       approvedSubmissions = aggregates.approvedCount;
       rejectedSubmissions = aggregates.rejectedCount;
     } else {
