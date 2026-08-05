@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Repaired `StellarService` and `StellarModule` damaged by a merge conflict resolution: removed a duplicate constructor and duplicated imports, restored the `eventReorgBufferLedgers`/`eventInitialLookbackLedgers` properties and contract-event helper methods, and deduplicated `StellarModule` providers/exports.
+
 ### Changed
 
 - **Refactored `StellarService` (588 lines) into focused services** following the pattern established by `SorobanQuestReaderService`.

@@ -8,6 +8,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Applied code-style formatting to `quest-aggregator.ts`, `platform-analytics.service.ts`, and `quest-analytics.service.ts` (no logic change).
+
+### Changed
+
 - Replaced offset-based chunking with true database streaming cursors (`.stream()`) for data exports.
 - Implemented network backpressure in stream exports (CSV, JSON, JSONL) to prevent memory spikes on large quests.
 

@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Repaired the `PayoutsService` constructor that was mangled by a merge conflict resolution — the `JobResultStatusCacheService` dependency is injected correctly again.
+
 ### Added
 
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `Payout` for `status` and `[type, status]` columns to speed up active-payout queries (#2000).
