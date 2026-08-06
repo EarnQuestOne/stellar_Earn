@@ -1,4 +1,4 @@
-use crate::errors::Error;
+﻿use crate::errors::Error;
 use crate::escrow;
 use crate::storage;
 use soroban_sdk::{token, Address, Env, Symbol};
@@ -46,9 +46,7 @@ pub fn transfer_reward(
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // ADD below the existing transfer_reward function
-// ═══════════════════════════════════════════════════════════════
 
 /// Transfer reward with escrow tracking.
 ///
@@ -82,9 +80,7 @@ pub fn transfer_reward_from_escrow(
     transfer_reward(env, reward_asset, to, amount)
 }
 
-// ═══════════════════════════════════════════════════════════════
 // 2-of-2 SuperAdmin Clawback
-// ═══════════════════════════════════════════════════════════════
 
 /// First SuperAdmin flags a post-payout payment for clawback.
 ///

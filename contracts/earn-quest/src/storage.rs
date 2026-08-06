@@ -112,9 +112,7 @@ pub enum DataKey {
     DefaultQuestGracePeriodSeconds,
 }
 
-//================================================================================
 // Quest Storage Functions
-//================================================================================
 
 /// Checks if a quest exists in storage.
 ///
@@ -236,9 +234,7 @@ pub fn set_quest_metadata(env: &Env, id: &Symbol, metadata: &QuestMetadata) {
         .set(&DataKey::QuestMetadataExt(id.clone()), &ext);
 }
 
-//================================================================================
 // Submission Storage Functions
-//================================================================================
 
 /// Checks if a submission exists for a specific quest and submitter.
 ///
@@ -312,9 +308,7 @@ pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submiss
     );
 }
 
-//================================================================================
 // UserStats Storage Functions (split: UserCore hot-path + UserBadges cold-path)
-//================================================================================
 
 /// Checks if user core stats exist for a specific user.
 pub fn has_user_stats(env: &Env, user: &Address) -> bool {
@@ -367,9 +361,7 @@ pub fn set_user_badges(env: &Env, user: &Address, badges: &UserBadges) {
     );
 }
 
-//================================================================================
 // Deletion Utilities
-//================================================================================
 
 /// Safely deletes a quest from storage.
 ///
@@ -445,9 +437,7 @@ pub fn delete_user_stats(env: &Env, user: &Address) {
         .remove(&DataKey::UserStats(user.clone()));
 }
 
-//================================================================================
 // Partial Update Helpers (Gas Optimization)
-//================================================================================
 
 /// Updates only the status field of a quest (gas-optimized).
 ///
@@ -577,9 +567,7 @@ pub fn add_user_xp(env: &Env, user: &Address, xp_delta: u64) -> Result<UserCore,
     Ok(stats)
 }
 
-//================================================================================
 // Convenience Helpers
-//================================================================================
 
 /// Retrieves user stats or returns default stats for new users.
 ///
@@ -639,9 +627,7 @@ pub fn get_submission_if_exists(
     get_submission(env, quest_id, submitter).ok()
 }
 
-//================================================================================
 // Admin Storage Functions
-//================================================================================
 
 /// Checks if an address is an admin.
 ///
@@ -701,9 +687,7 @@ pub fn revoke_role(env: &Env, address: &Address, role: &Role) {
         .remove(&DataKey::Role(*role, address.clone()));
 }
 
-//================================================================================
 // Oracle Storage Functions
-//================================================================================
 
 pub fn get_oracle_config(env: &Env, oracle_address: &Address) -> Result<OracleConfig, Error> {
     env.storage()
@@ -806,9 +790,7 @@ pub fn is_super_admin(env: &Env, address: &Address) -> bool {
     has_role(env, address, &Role::SuperAdmin)
 }
 
-//================================================================================
 // Emergency / Security Storage Helpers
-//================================================================================
 
 /// Set global paused flag
 pub fn set_paused(env: &Env, paused: bool) {
@@ -824,9 +806,7 @@ pub fn is_paused(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Paused)
 }
 
-//================================================================================
 // Reentrancy Guard Storage Helpers
-//================================================================================
 
 /// Returns true while a non-reentrant entry point is executing in the
 /// current invocation. Reads from instance storage so the flag is rolled
@@ -995,9 +975,7 @@ fn dec_unpause_approval_count(env: &Env) {
         .set(&DataKey::UnpauseApprovalCount, &cur);
 }
 
-//================================================================================
 // Escrow Storage Functions (split: EscrowBalances hot-path + EscrowMeta cold-path)
-//================================================================================
 
 /// Check if escrow exists for a quest
 pub fn has_escrow(env: &Env, quest_id: &Symbol) -> bool {
@@ -1068,9 +1046,7 @@ pub fn get_escrow(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
     })
 }
 
-//================================================================================
 // Commitment Storage Functions
-//================================================================================
 
 pub fn has_commitment(env: &Env, quest_id: &Symbol, submitter: &Address) -> bool {
     env.storage()
@@ -1112,9 +1088,7 @@ pub fn delete_escrow(env: &Env, quest_id: &Symbol) {
         .remove(&DataKey::EscrowMeta(quest_id.clone()));
 }
 
-//================================================================================
 // Contract Initialization Storage
-//================================================================================
 
 pub fn is_initialized(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Initialized)
@@ -1124,11 +1098,11 @@ pub fn mark_initialized(env: &Env) {
     env.storage().instance().set(&DataKey::Initialized, &true);
 }
 
-pub fn get_admin(env: &Env) -> Address {
+pub fn get_admin(env: &Env) -> Result<Address, Error> {
     env.storage()
         .instance()
         .get(&DataKey::ContractAdmin)
-        .expect("Contract not initialized")
+        .ok_or(Error::NotInitialized)
 }
 
 pub fn set_contract_admin(env: &Env, address: &Address) {
@@ -1179,7 +1153,6 @@ pub fn set_quest_grace_period(env: &Env, grace_period_seconds: u64) {
 
 //================================================================================
 // Quest Index (for query/filtering support)
-//================================================================================
 
 pub fn get_quest_ids(env: &Env) -> Vec<Symbol> {
     env.storage()
@@ -1239,7 +1212,6 @@ pub fn remove_quest_from_category_index(env: &Env, category: u32, id: &Symbol) {
 // Platform & Creator Stats Storage
 // PlatformStats is split into individual counters for atomic single-field updates.
 // The full PlatformStats struct is assembled on read only.
-//================================================================================
 
 pub fn get_platform_stats(env: &Env) -> PlatformStats {
     PlatformStats {
@@ -1360,9 +1332,7 @@ pub fn set_creator_stats(env: &Env, creator: &Address, stats: &CreatorStats) {
         .set(&DataKey::CreatorStats(creator.clone()), stats);
 }
 
-//================================================================================
 // Dispute Storage Functions
-//================================================================================
 
 /// Checks if a dispute exists for a specific quest and initiator.
 pub fn has_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) -> bool {
@@ -1403,9 +1373,7 @@ pub fn delete_dispute(env: &Env, quest_id: &Symbol, initiator: &Address) {
         .remove(&DataKey::Dispute(quest_id.clone(), initiator.clone()));
 }
 
-//================================================================================
 // Verifier Stake Storage Functions
-//================================================================================
 
 pub fn has_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address) -> bool {
     env.storage()
@@ -1431,9 +1399,7 @@ pub fn set_verifier_stake(env: &Env, quest_id: &Symbol, verifier: &Address, stak
     );
 }
 
-//================================================================================
 // Badge Type Registry Storage
-//================================================================================
 
 pub fn has_badge_type(env: &Env, id: &Symbol) -> bool {
     env.storage()
@@ -1501,9 +1467,7 @@ pub fn list_badge_types(env: &Env) -> Vec<BadgeType> {
     out
 }
 
-//================================================================================
 // Min Creator Level & Whitelist Storage
-//================================================================================
 
 pub fn get_min_creator_level(env: &Env) -> u32 {
     env.storage()
@@ -1697,7 +1661,6 @@ mod layout_tests {
 
 //================================================================================
 // Clawback Storage (2-of-2 SuperAdmin approval)
-//================================================================================
 
 /// Pending clawback state: stores the first signer and how much they want to reclaim.
 #[contracttype]

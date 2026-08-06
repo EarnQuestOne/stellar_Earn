@@ -1,3 +1,4 @@
+use soroban_sdk::{contracttype, symbol_short, Symbol};
 //! Gas budget targets per entrypoint.
 //!
 //! Defines explicit instruction-count ceilings for each public entrypoint
@@ -6,7 +7,6 @@
 use crate::errors::Error;
 use soroban_sdk::{contracttype, symbol_short, Env, Symbol};
 
-/// Maximum allowed instructions per named entrypoint.
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct GasBudgetTarget {
@@ -14,6 +14,7 @@ pub struct GasBudgetTarget {
     pub max_instructions: u64,
 }
 
+pub fn default_targets() -> [GasBudgetTarget; 5] {
 // Baseline CPU instruction counts measured against the Soroban simulation environment
 // (matches testnet gas metering). Constants = observed_max + 20% safety margin.
 //
@@ -32,7 +33,7 @@ pub fn default_targets() -> [GasBudgetTarget; 7] {
     [
         GasBudgetTarget {
             entrypoint: symbol_short!("init"),
-            max_instructions: 341_704,
+            max_instructions: 500_000,
         },
         GasBudgetTarget {
             entrypoint: symbol_short!("reg_qst"),

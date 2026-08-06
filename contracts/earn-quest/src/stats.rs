@@ -1,9 +1,6 @@
-// ============================================================
 // ADD THESE STRUCTS TO contracts/earn-quest/src/types.rs
-// ============================================================
 // Paste both structs at the bottom of the existing types.rs
 // file. They reuse the existing `#[contracttype]` + `#[derive]` pattern.
-// ============================================================
 
 use soroban_sdk::contracttype;
 

@@ -18,11 +18,9 @@
 use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
 use soroban_sdk::{symbol_short, Address, BytesN, Env};
 
-use earn_quest::{EarnQuestContract, EarnQuestContractClient};
+use crate::{EarnQuestContract, EarnQuestContractClient};
 
-// ---------------------------------------------------------------------------
 // Test helpers
-// ---------------------------------------------------------------------------
 
 fn make_env() -> Env {
     let env = Env::default();
@@ -100,9 +98,7 @@ fn full_lifecycle(
     quest_id
 }
 
-// ---------------------------------------------------------------------------
 // 1. Initial state
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_stats_initial_state_all_zero() {
@@ -132,9 +128,7 @@ fn test_creator_stats_initial_state_all_zero() {
     assert_eq!(stats.total_claims_paid, 0);
 }
 
-// ---------------------------------------------------------------------------
 // 2. Quest creation tracking
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_platform_quest_count_increments_on_single_create() {
@@ -205,9 +199,7 @@ fn test_platform_quest_count_is_monotonically_increasing() {
     assert_eq!(client.get_platform_stats().total_quests_created, 2);
 }
 
-// ---------------------------------------------------------------------------
 // 3. Submission / active-user tracking
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_platform_submission_count_increments_on_submit() {
@@ -313,9 +305,7 @@ fn test_submission_count_increments_per_submission_not_per_user() {
     assert_eq!(stats.total_active_users, 1);
 }
 
-// ---------------------------------------------------------------------------
 // 4. Claim / reward-claimed tracking
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_platform_rewards_claimed_increments_on_single_claim() {
@@ -376,9 +366,7 @@ fn test_submission_without_claim_does_not_increment_rewards_claimed() {
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 0);
 }
 
-// ---------------------------------------------------------------------------
 // 5. Per-creator isolation
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_creator_stats_are_isolated_between_creators() {
@@ -445,9 +433,7 @@ fn test_creator_claims_paid_isolated_from_other_creator_claims() {
     assert_eq!(client.get_platform_stats().total_rewards_claimed, 2);
 }
 
-// ---------------------------------------------------------------------------
 // 6. Multi-creator / multi-user scenarios
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_full_platform_lifecycle_all_counters_consistent() {
@@ -480,9 +466,7 @@ fn test_full_platform_lifecycle_all_counters_consistent() {
     assert_eq!(stats.total_rewards_claimed, 0);
 }
 
-// ---------------------------------------------------------------------------
 // 7. Counter integrity
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_minimum_reward_amount_tracked_correctly() {
@@ -510,9 +494,7 @@ fn test_large_reward_amount_tracked_without_overflow() {
     assert_eq!(stats.total_rewards_distributed, big as u128);
 }
 
-// ---------------------------------------------------------------------------
 // 8. Admin-only reset
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_admin_can_reset_platform_stats_to_zero() {
@@ -562,9 +544,7 @@ fn test_stats_accumulate_correctly_after_reset() {
     assert_eq!(stats.total_rewards_distributed, 250);
 }
 
-// ---------------------------------------------------------------------------
 // 9. Public query — no auth required
-// ---------------------------------------------------------------------------
 
 #[test]
 fn test_get_platform_stats_requires_no_auth() {

@@ -22,9 +22,7 @@ pub fn require_not_paused(env: &Env) -> Result<(), Error> {
     Ok(())
 }
 
-//================================================================================
 // Reentrancy Guard
-//================================================================================
 
 /// Acquire the contract-wide reentrancy guard. Returns `Error::ReentrantCall`
 /// if the guard is already held, which is the case when this entry point is
