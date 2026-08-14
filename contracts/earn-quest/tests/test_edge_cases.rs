@@ -16,6 +16,7 @@
 
 extern crate earn_quest;
 
+use earn_quest::errors::Error;
 use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
 use earn_quest::validation;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
@@ -71,8 +72,17 @@ fn register_quest(
 fn test_initialize_sets_admin_and_roles() {
     let (_env, client, admin, _token) = setup();
 
-    assert_eq!(client.get_admin(), admin);
+    assert_eq!(client.get_admin(), Ok(admin.clone()));
     assert!(client.is_admin(&admin));
+}
+
+#[test]
+fn test_get_admin_before_initialize_returns_not_initialized() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+
+    assert_eq!(client.get_admin(), Err(Error::NotInitialized));
 }
 
 #[test]

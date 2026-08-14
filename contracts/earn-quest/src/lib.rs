@@ -125,7 +125,7 @@ impl EarnQuestContract {
     /// ```rust
     /// let admin = client.get_admin();
     /// ```
-    pub fn get_admin(env: Env) -> Address {
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
         storage::get_admin(&env)
     }
 
