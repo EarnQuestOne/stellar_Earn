@@ -8,6 +8,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `WebhooksService.processWebhook` now returns a generic caller-facing processing failure message while keeping internal exception details in server logs.
 - Removed the non-functional `POST /webhooks/events` route (it referenced the nonexistent `WebhooksService.processEvent`), removed a duplicate `WebhookPayloadDto` import, and removed a stray brace in `webhook-event.dto.ts`.
 
 ### Changed
