@@ -15,6 +15,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Composite index `(userId, createdAt, id)` on `submissions` (migration `1820000000200`) backing the user submission-history keyset query.
+- Keyset (cursor) pagination in `SubmissionsService.findByQuest` using a composite row comparison `(sortBy, id) < (:cv, :idv)` so deep pages cost O(limit) instead of scanning and skipping `OFFSET n` rows. Returns an opaque `nextCursor`.
+- Cursor predicate now respects `sortBy` (`createdAt`/`updatedAt`) and `order` (`ASC`/`DESC`); legacy `{ createdAt, id }` cursors remain supported.
+- Benchmark script `scripts/benchmark-submission-pagination.ts` (see `docs/SUBMISSION_KEYSET_PAGINATION.md` for before/after numbers) and regression tests for the keyset behavior.
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `Submission` for `[questId, status]` and `[userId, status]` columns to speed up active-submission queries (#2000).
 - `SubmissionMapper` class with explicit mapper methods for converting submission entities to API DTOs
 
