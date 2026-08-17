@@ -8,6 +8,8 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Consolidated the platform-stats submission aggregates (total, approved, and distinct active users) into a single grouped query in `platform-analytics.service.ts`, replacing three separate COUNT scans over the same window and reducing database round-trips per dashboard load (#2146).
+- Added short-TTL (30s) caching of the aggregated platform-stats result via `CacheService.wrap`, so bursts of dashboard requests for the same window reuse one computation (#2146).
 - Applied code-style formatting to `quest-aggregator.ts`, `platform-analytics.service.ts`, and `quest-analytics.service.ts` (no logic change).
 
 ### Changed

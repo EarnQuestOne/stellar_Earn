@@ -20,6 +20,13 @@ import {
 } from '../entities/analytics-snapshot.entity';
 import { MetricsService } from '../../../common/services/metrics.service';
 
+/**
+ * Short TTL (seconds) for the aggregated platform-stats result. Repeated
+ * dashboard loads within this window are served from cache instead of
+ * re-running the aggregation queries (#2146).
+ */
+const PLATFORM_STATS_CACHE_TTL_SECONDS = 30;
+
 @Injectable()
 export class PlatformAnalyticsService {
   private readonly logger = new Logger(PlatformAnalyticsService.name);
@@ -46,6 +53,28 @@ export class PlatformAnalyticsService {
     );
     DateRangeUtil.validateMaxRange(startDate, endDate);
 
+    const granularity = query.granularity || Granularity.DAY;
+
+    // Short-TTL cache in front of the aggregation so bursts of dashboard
+    // loads for the same window reuse a single computation (#2146).
+    const cacheKey = this.cacheService.generateKey('platform-stats', {
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+      granularity,
+    });
+
+    return this.cacheService.wrap(
+      cacheKey,
+      () => this.resolvePlatformStats(startDate, endDate, granularity),
+      PLATFORM_STATS_CACHE_TTL_SECONDS,
+    );
+  }
+
+  private async resolvePlatformStats(
+    startDate: Date,
+    endDate: Date,
+    granularity: Granularity,
+  ): Promise<PlatformStatsDto> {
     const snapshot = await this.snapshotRepository.findOne({
       where: {
         type: SnapshotType.PLATFORM,
@@ -64,11 +93,7 @@ export class PlatformAnalyticsService {
     this.metricsService.incrementCounter('analytics_computation_total', {
       source: 'live',
     });
-    return this.computeAndStorePlatformStats(
-      startDate,
-      endDate,
-      query.granularity || Granularity.DAY,
-    );
+    return this.computeAndStorePlatformStats(startDate, endDate, granularity);
   }
 
   async computeAndStorePlatformStats(
@@ -81,11 +106,9 @@ export class PlatformAnalyticsService {
     const [
       totalUsers,
       totalQuests,
-      totalSubmissions,
-      approvedSubmissions,
+      submissionAggregates,
       totalPayouts,
       totalRewardsDistributed,
-      activeUsers,
       questsByStatus,
       submissionsByStatus,
       allSubmissions,
@@ -93,16 +116,22 @@ export class PlatformAnalyticsService {
     ] = await Promise.all([
       this.getTotalUsers(startDate, endDate),
       this.getTotalQuests(startDate, endDate),
-      this.getTotalSubmissions(startDate, endDate),
-      this.getApprovedSubmissions(startDate, endDate),
+      // Single grouped query replaces the previous three submission COUNT
+      // scans (total, approved, active users) over the same window (#2146).
+      this.getSubmissionAggregates(startDate, endDate),
       this.getTotalPayouts(startDate, endDate),
       this.getTotalRewardsDistributed(startDate, endDate),
-      this.getActiveUsers(startDate, endDate),
       this.getQuestsByStatus(startDate, endDate),
       this.getSubmissionsByStatus(startDate, endDate),
       this.getAllSubmissions(startDate, endDate),
       this.getTimeSeries(startDate, endDate, granularity),
     ]);
+
+    const {
+      total: totalSubmissions,
+      approved: approvedSubmissions,
+      activeUsers,
+    } = submissionAggregates;
 
     const approvalRate = ConversionUtil.calculateApprovalRate(
       approvedSubmissions,
@@ -190,27 +219,33 @@ export class PlatformAnalyticsService {
     });
   }
 
-  private async getTotalSubmissions(
+  /**
+   * Aggregate submission metrics for a window in a single query instead of the
+   * three separate COUNT scans this previously required (total, approved, and
+   * distinct active users), cutting database round-trips on every dashboard
+   * load (#2146).
+   */
+  private async getSubmissionAggregates(
     startDate: Date,
     endDate: Date,
-  ): Promise<number> {
-    return this.submissionRepository.count({
-      where: {
-        submittedAt: { $gte: startDate, $lte: endDate } as any, // Using submittedAt
-      },
-    });
-  }
+  ): Promise<{ total: number; approved: number; activeUsers: number }> {
+    const raw = await this.submissionRepository
+      .createQueryBuilder('submission')
+      .select('COUNT(*)', 'total')
+      .addSelect(
+        `COUNT(CASE WHEN submission.status = '${SubmissionStatus.APPROVED}' THEN 1 END)`,
+        'approved',
+      )
+      .addSelect('COUNT(DISTINCT submission.userId)', 'activeUsers')
+      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
+      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
+      .getRawOne();
 
-  private async getApprovedSubmissions(
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
-    return this.submissionRepository.count({
-      where: {
-        submittedAt: { $gte: startDate, $lte: endDate } as any, // Using submittedAt
-        status: SubmissionStatus.APPROVED,
-      },
-    });
+    return {
+      total: parseInt(raw?.total || '0'),
+      approved: parseInt(raw?.approved || '0'),
+      activeUsers: parseInt(raw?.activeUsers || '0'),
+    };
   }
 
   private async getTotalPayouts(
@@ -236,20 +271,6 @@ export class PlatformAnalyticsService {
       .getRawOne();
 
     return result?.total?.toString() || '0';
-  }
-
-  private async getActiveUsers(
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
-    const result = await this.submissionRepository
-      .createQueryBuilder('submission')
-      .select('COUNT(DISTINCT submission.userId)', 'count')
-      .where('submission.submittedAt >= :startDate', { startDate }) // Using submittedAt
-      .andWhere('submission.submittedAt <= :endDate', { endDate }) // Using submittedAt
-      .getRawOne();
-
-    return parseInt(result?.count || '0');
   }
 
   private async getQuestsByStatus(startDate: Date, endDate: Date) {
