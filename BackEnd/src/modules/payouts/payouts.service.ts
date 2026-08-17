@@ -2,11 +2,16 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  LessThanOrEqual,
+  OptimisticLockVersionMismatchError,
+} from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
@@ -786,9 +791,25 @@ export class PayoutsService {
   // ─── Mapper ────────────────────────────────────────────────────────────────
 
   private async persistPayout(payout: Payout): Promise<Payout> {
-    const saved = await this.payoutRepository.save(payout);
-    await this.jobResultStatusCache.invalidatePayout(saved.id);
-    return saved;
+    try {
+      const saved = await this.payoutRepository.save(payout);
+      await this.jobResultStatusCache.invalidatePayout(saved.id);
+      return saved;
+    } catch (error) {
+      // A concurrent write bumped the payout's @VersionColumn between load and
+      // save. Reject with a 409 instead of silently overwriting the other
+      // update (lost update), so the caller can re-read and retry (#2157).
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        this.logger.warn(
+          `Optimistic lock conflict persisting payout ${payout.id}; ` +
+            `a concurrent update won — rejecting to prevent a lost update.`,
+        );
+        throw new ConflictException(
+          'Payout was modified concurrently; please retry.',
+        );
+      }
+      throw error;
+    }
   }
 
   private mapToResponse(payout: Payout): PayoutResponseDto {

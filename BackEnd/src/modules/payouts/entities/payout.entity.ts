@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   Index,
+  VersionColumn,
 } from 'typeorm';
 
 export enum PayoutStatus {
@@ -99,6 +100,15 @@ export class Payout {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /**
+   * Optimistic-concurrency token — auto-incremented by TypeORM on each save of
+   * a managed entity. Two concurrent payout state transitions can no longer
+   * silently overwrite each other: the second save fails the version check and
+   * is rejected instead of causing a lost update (#2157).
+   */
+  @VersionColumn()
+  version: number;
 
   @DeleteDateColumn()
   deletedAt: Date;

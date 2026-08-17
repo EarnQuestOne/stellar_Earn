@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Optimistic-concurrency `@VersionColumn` (`version`) on the `Payout` entity plus a backfilling migration; `PayoutsService.persistPayout()` now translates an `OptimisticLockVersionMismatchError` into a `409 ConflictException`, so two concurrent payout state transitions can no longer silently overwrite each other (lost update) (#2157).
+
 ### Fixed
 
 - Repaired the `PayoutsService` constructor that was mangled by a merge conflict resolution — the `JobResultStatusCacheService` dependency is injected correctly again.

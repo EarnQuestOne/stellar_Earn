@@ -8,6 +8,7 @@ import {
   JoinColumn,
   DeleteDateColumn,
   Index,
+  VersionColumn,
 } from 'typeorm';
 
 export enum SubmissionStatus {
@@ -67,6 +68,14 @@ export class Submission {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /**
+   * Optimistic-concurrency token — auto-incremented by TypeORM on each save of
+   * a managed entity; a stale-version save is rejected, preventing lost updates
+   * (e.g. a status transition racing with an edit) (#2157).
+   */
+  @VersionColumn()
+  version: number;
 
   @DeleteDateColumn()
   deletedAt: Date;
