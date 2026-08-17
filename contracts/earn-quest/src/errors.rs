@@ -130,6 +130,7 @@ pub enum Error {
     StaleOracleData = 104,
     InvalidOracleData = 105,
     LowOracleConfidence = 106,
+    RewardDeviationTooHigh = 107,
 
     // Arithmetic
     ArithmeticOverflow = 110,

@@ -25,6 +25,9 @@ mod test_token;
 #[cfg(test)]
 mod test_clawback;
 
+#[cfg(test)]
+mod test_oracle_deviation;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -48,6 +51,37 @@ fn bump_instance_ttl(env: &Env) {
     env.storage()
         .instance()
         .extend_ttl(crate::ttl::DEFAULT_TTL_THRESHOLD, target);
+}
+
+/// Rejects a reward amount that deviates from the oracle-reported fair price by
+/// more than `max_deviation_percent` percent.
+///
+/// The check is integer-only (no floating point): it rejects when
+/// `|reward_amount - oracle_price| * 100 > oracle_price * max_deviation_percent`.
+/// A deviation exactly equal to `max_deviation_percent` is accepted.
+fn check_reward_deviation(
+    reward_amount: i128,
+    oracle_price: i128,
+    max_deviation_percent: u32,
+) -> Result<(), Error> {
+    if reward_amount < 0 {
+        return Err(Error::InvalidRewardAmount);
+    }
+    if oracle_price <= 0 {
+        return Err(Error::InvalidOracleData);
+    }
+
+    let diff = reward_amount.abs_diff(oracle_price);
+    let lhs = diff.checked_mul(100).ok_or(Error::ArithmeticOverflow)?;
+    let rhs = (oracle_price as u128)
+        .checked_mul(u128::from(max_deviation_percent))
+        .ok_or(Error::ArithmeticOverflow)?;
+
+    if lhs > rhs {
+        return Err(Error::RewardDeviationTooHigh);
+    }
+
+    Ok(())
 }
 
 #[contract]
@@ -1391,25 +1425,29 @@ impl EarnQuestContract {
     /// * `reward_asset` - The asset used for rewards.
     /// * `reward_amount` - The reward amount to validate.
     /// * `reference_asset` - The reference asset (e.g., USD stablecoin).
-    /// * `max_deviation_percent` - Maximum allowed deviation from the oracle price.
+    /// * `max_deviation_percent` - Maximum allowed deviation (in percent) of the
+    ///   reward amount from the oracle-reported price.
     pub fn validate_reward_with_oracle(
         env: Env,
         reward_asset: Address,
-        _reward_amount: i128,
+        reward_amount: i128,
         reference_asset: Address,
-        _max_deviation_percent: u32,
+        max_deviation_percent: u32,
     ) -> Result<(), Error> {
         let price = Self::get_price(env, reward_asset, reference_asset, 300)?;
 
-        // Check if price confidence is sufficient
+        // Reject prices the oracle isn't confident enough about.
         if price.confidence_score < 80 {
             return Err(Error::LowOracleConfidence);
         }
 
-        // Additional validation logic could be added here
-        // For example, checking against historical prices, volatility limits, etc.
+        // The oracle-reported fair price, as i128 for comparison.
+        let oracle_price = price
+            .weighted_price
+            .to_u128()
+            .ok_or(Error::AmountTooLarge)? as i128;
 
-        Ok(())
+        check_reward_deviation(reward_amount, oracle_price, max_deviation_percent)
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
