@@ -1,19 +1,19 @@
 import { render } from '@testing-library/react';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useReportWebVitals } from 'next/web-vitals';
 import { WebVitals } from './web-vitals';
 
-jest.mock('next/web-vitals', () => ({
-  useReportWebVitals: jest.fn(),
+vi.mock('next/web-vitals', () => ({
+  useReportWebVitals: vi.fn(),
 }));
 
 describe('WebVitals Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     Object.defineProperty(navigator, 'sendBeacon', {
       writable: true,
-      value: jest.fn().mockReturnValue(true),
+      value: vi.fn().mockReturnValue(true),
     });
   });
 
@@ -25,10 +25,8 @@ describe('WebVitals Component', () => {
   it('should send beacon when metric callback is executed', () => {
     let reportCallback: (metric: unknown) => void = () => {};
 
-    (
-      useReportWebVitals as jest.MockedFunction<typeof useReportWebVitals>
-    ).mockImplementation((cb) => {
-      reportCallback = cb;
+    vi.mocked(useReportWebVitals).mockImplementation((cb) => {
+      reportCallback = cb as (metric: unknown) => void;
     });
 
     render(<WebVitals />);
