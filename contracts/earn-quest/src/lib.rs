@@ -1442,7 +1442,10 @@ impl EarnQuestContract {
         }
 
         // The oracle-reported fair price, as i128 for comparison.
-        let oracle_price = price.weighted_price.to_u128().ok_or(Error::AmountTooLarge)? as i128;
+        let oracle_price = price
+            .weighted_price
+            .to_u128()
+            .ok_or(Error::AmountTooLarge)? as i128;
 
         check_reward_deviation(reward_amount, oracle_price, max_deviation_percent)
     }
