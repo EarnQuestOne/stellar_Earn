@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Optimistic-concurrency `@VersionColumn` (`version`) on the `Submission` entity plus a backfilling migration, so concurrent submission writes (e.g. a status transition racing with an edit) are rejected on stale-version saves instead of causing a lost update (#2157).
+
 ### Fixed
 
 - Converted `submissions/index.ts` from a corrupted UTF-16 encoding to UTF-8 and removed a duplicated export line.
