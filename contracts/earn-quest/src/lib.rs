@@ -38,6 +38,7 @@ pub use crate::types::{
     UserBadges, UserCore, UserStats, VerifierStake,
 };
 
+use soroban_sdk::token::TokenClient;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec, U256};
 
 /// Bumps the contract instance TTL at the start of a state-mutating entrypoint.
@@ -1404,13 +1405,28 @@ impl EarnQuestContract {
             return Ok(amount);
         }
 
-        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
+        let price = Self::get_price(env.clone(), from_asset.clone(), to_asset.clone(), 300)?; // 5 minutes max age
 
-        // Convert amount using price (assuming 7 decimals)
+        // Look up each asset's actual decimals via the SEP-41 token interface
+        // instead of assuming a hardcoded 7-decimal convention.
+        let from_decimals = TokenClient::new(&env, &from_asset).decimals();
+        let to_decimals = TokenClient::new(&env, &to_asset).decimals();
+        let price_decimals = price.decimals;
+
+        // Convert amount using each asset's actual decimals:
+        //   converted = amount * price * 10^to_decimals
+        //                / (10^from_decimals * 10^price_decimals)
         let amount_u256 = U256::from_u128(&env, amount as u128);
-        let converted_amount = amount_u256
-            .mul(&price.weighted_price)
-            .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
+        let scaled_amount = amount_u256.mul(&price.weighted_price);
+
+        let exponent = from_decimals as i32 + price_decimals as i32 - to_decimals as i32;
+        let converted_amount = if exponent > 0 {
+            scaled_amount.div(&U256::from_u32(&env, 10).pow(exponent as u32))
+        } else if exponent < 0 {
+            scaled_amount.mul(&U256::from_u32(&env, 10).pow((-exponent) as u32))
+        } else {
+            scaled_amount
+        };
 
         // Convert back to i128 safely
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
