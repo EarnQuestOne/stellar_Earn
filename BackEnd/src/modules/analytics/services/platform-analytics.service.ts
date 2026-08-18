@@ -12,20 +12,14 @@ import {
 import { AnalyticsQueryDto, Granularity } from '../dto/analytics-query.dto';
 import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
-import { CacheService } from './cache.service';
+import { CacheService as UnifiedCacheService } from '../../cache/cache.service';
+import { CacheKeys, CacheTags, CacheTtl } from '../../cache/cache-tags';
 import { User as AnalyticsUser } from '../entities/user.entity';
 import {
   AnalyticsSnapshot,
   SnapshotType,
 } from '../entities/analytics-snapshot.entity';
 import { MetricsService } from '../../../common/services/metrics.service';
-
-/**
- * Short TTL (seconds) for the aggregated platform-stats result. Repeated
- * dashboard loads within this window are served from cache instead of
- * re-running the aggregation queries (#2146).
- */
-const PLATFORM_STATS_CACHE_TTL_SECONDS = 30;
 
 @Injectable()
 export class PlatformAnalyticsService {
@@ -42,7 +36,7 @@ export class PlatformAnalyticsService {
     private payoutRepository: Repository<Payout>,
     @InjectRepository(AnalyticsSnapshot)
     private snapshotRepository: Repository<AnalyticsSnapshot>,
-    private cacheService: CacheService,
+    private readonly unifiedCache: UnifiedCacheService,
     private metricsService: MetricsService,
   ) {}
 
@@ -55,18 +49,19 @@ export class PlatformAnalyticsService {
 
     const granularity = query.granularity || Granularity.DAY;
 
-    // Short-TTL cache in front of the aggregation so bursts of dashboard
-    // loads for the same window reuse a single computation (#2146).
-    const cacheKey = this.cacheService.generateKey('platform-stats', {
-      start: startDate.toISOString(),
-      end: endDate.toISOString(),
-      granularity,
-    });
-
-    return this.cacheService.wrap(
-      cacheKey,
+    // Unified cache-aside read tagged for platform analytics, so a relevant
+    // write can drop it via `invalidateTag(CacheTags.analyticsPlatform())`
+    // (#2159). This supersedes the earlier `CacheService.wrap` short-TTL cache
+    // from #2146 while keeping the consolidated submission aggregation below.
+    return this.unifiedCache.getOrSet(
+      CacheKeys.platformStats({
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        granularity,
+      }),
+      CacheTtl.platformStats,
+      [CacheTags.analyticsPlatform()],
       () => this.resolvePlatformStats(startDate, endDate, granularity),
-      PLATFORM_STATS_CACHE_TTL_SECONDS,
     );
   }
 
