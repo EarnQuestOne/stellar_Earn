@@ -12,6 +12,7 @@ import { Submission } from '../modules/submissions/entities/submission.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { Notification } from '../modules/notifications/entities/notification.entity';
 import { Payout } from '../modules/payouts/entities/payout.entity';
+import { PayoutOutbox } from '../modules/payouts/entities/payout-outbox.entity';
 import { IdempotencyKey } from '../modules/payouts/entities/idempotency-key.entity';
 import { FeatureFlag } from '../modules/feature-flags/entities/feature-flag.entity';
 import { FeatureFlagAuditLog } from '../modules/feature-flags/entities/feature-flag-audit.entity';
@@ -102,6 +103,7 @@ export const dataSourceOptions: DataSourceOptions = {
     Submission,
     Notification,
     Payout,
+    PayoutOutbox,
     IdempotencyKey,
     FeatureFlag,
     FeatureFlagAuditLog,

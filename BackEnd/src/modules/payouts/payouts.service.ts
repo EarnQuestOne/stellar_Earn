@@ -9,12 +9,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
+  EntityManager,
   LessThanOrEqual,
   OptimisticLockVersionMismatchError,
 } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
+import {
+  PayoutOutbox,
+  PayoutOutboxStatus,
+} from './entities/payout-outbox.entity';
 import { ClaimPayoutDto, CreatePayoutDto } from './dto/claim-payout.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PayoutProcessedEvent } from '../../events/dto/payout-processed.event';
@@ -91,10 +96,53 @@ export class PayoutsService {
           maxRetries: this.maxAutomaticPayoutRetries,
         });
 
-        return this.persistPayout(payout);
+        return this.persistPayoutWithOutbox(payout);
       },
       this.getPayoutBulkheadOptions(),
     );
+  }
+
+  /**
+   * Persist a payout and write its on-chain execution intent to the outbox in
+   * the **same** DB transaction (#2158). Either both land or neither does, so a
+   * crash can never leave a payout without a queued execution (or vice-versa).
+   * The relay worker then submits the payment out-of-band, exactly once.
+   */
+  private async persistPayoutWithOutbox(payout: Payout): Promise<Payout> {
+    const saved = await this.payoutRepository.manager.transaction(
+      async (manager) => {
+        const persisted = await manager.save(payout);
+        await this.enqueuePayoutOutbox(manager, persisted);
+        return persisted;
+      },
+    );
+    await this.jobResultStatusCache.invalidatePayout(saved.id);
+    return saved;
+  }
+
+  /**
+   * Insert the payout's execution intent into the outbox using the supplied
+   * transactional `manager`. Keyed on a deterministic `idempotencyKey` and
+   * `orIgnore()`d, so re-running the enclosing operation never double-queues a
+   * payout (#2158).
+   */
+  async enqueuePayoutOutbox(
+    manager: EntityManager,
+    payout: Payout,
+  ): Promise<void> {
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(PayoutOutbox)
+      .values({
+        payoutId: payout.id,
+        idempotencyKey: `payout-outbox:${payout.id}`,
+        recipientAddress: payout.stellarAddress,
+        amount: payout.amount.toString(),
+        status: PayoutOutboxStatus.PENDING,
+      })
+      .orIgnore()
+      .execute();
   }
 
   // ─── Claim ─────────────────────────────────────────────────────────────────
