@@ -54,12 +54,18 @@ fn full_recompute(awards: &[u64]) -> UserCore {
 fn incremental_counters_equal_full_recompute() {
     let mut state: u64 = 0x9E37_79B9_7F4A_7C15;
 
-    for _ in 0..2_000 {
-        let len = (next_rand(&mut state) % 64) as usize;
-        // Keep XP awards small so summing a full sequence cannot overflow.
-        let awards: Vec<u64> = (0..len).map(|_| next_rand(&mut state) % 500).collect();
+    // Fixed-size buffer keeps this `no_std`-friendly (no heap `Vec`).
+    let mut awards = [0u64; 64];
 
-        assert_eq!(apply_incremental(&awards), full_recompute(&awards));
+    for _ in 0..2_000 {
+        let len = (next_rand(&mut state) % (awards.len() as u64)) as usize;
+        // Keep XP awards small so summing a full sequence cannot overflow.
+        for slot in awards.iter_mut().take(len) {
+            *slot = next_rand(&mut state) % 500;
+        }
+        let seq = &awards[..len];
+
+        assert_eq!(apply_incremental(seq), full_recompute(seq));
     }
 }
 
