@@ -11,6 +11,7 @@ import { StellarSubmissionService } from '../stellar/stellar-submission.service'
 import { SubmissionBuilder } from '../../../test/utils/submission.builder';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
 import { MetricsService } from '../../common/services/metrics.service';
+import { encodeCursor, decodeCursor } from '../../common/dto/pagination.dto';
 
 // Vitest-style fake verifier for User repo mocks. The StellarService call
 // path requires the verifier to have a Stellar public key; tests use a
@@ -425,16 +426,195 @@ describe('SubmissionsService (N+1 prevention)', () => {
   });
 
   describe('findByQuest', () => {
-    it('eager-loads quest and user relations so the controller does not lazy-load per row', async () => {
-      submissionsRepo.find.mockResolvedValue([]);
+    /**
+     * Build a fresh QueryBuilder mock. Each test re-creates it so recorded
+     * invocations from one test never bleed into the next.
+     */
+    const buildQb = (rows: any[] = []) => {
+      const qb: any = {
+        where: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(rows),
+      };
+      return qb;
+    };
 
-      await service.findByQuest('quest-1');
+    const row = (id: string, createdAt: Date, updatedAt?: Date) => ({
+      id,
+      createdAt,
+      updatedAt: updatedAt ?? createdAt,
+      quest: { id: 'quest-1' },
+      user: { id: 'user-1' },
+    });
 
-      expect(submissionsRepo.find).toHaveBeenCalledWith({
-        where: { questId: 'quest-1' },
-        relations: ['quest', 'user'],
-        order: { createdAt: 'DESC' },
+    beforeEach(() => {
+      submissionsRepo.createQueryBuilder = jest.fn();
+    });
+
+    it('eager-loads quest and user relations and orders by createdAt DESC with limit + 1', async () => {
+      const qb = buildQb([]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findByQuest('quest-1', { limit: 10 } as any);
+
+      expect(submissionsRepo.createQueryBuilder).toHaveBeenCalledWith(
+        'submission',
+      );
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        'submission.quest',
+        'quest',
+      );
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        'submission.user',
+        'user',
+      );
+      expect(qb.where).toHaveBeenCalledWith('submission.questId = :questId', {
+        questId: 'quest-1',
       });
+      expect(qb.orderBy).toHaveBeenCalledWith('submission.createdAt', 'DESC');
+      expect(qb.addOrderBy).toHaveBeenCalledWith('submission.id', 'DESC');
+      // One extra row is fetched to detect hasMore without a COUNT(*).
+      expect(qb.take).toHaveBeenCalledWith(11);
+      expect(result).toEqual({ data: [], nextCursor: null, hasMore: false });
+    });
+
+    it('applies the userId filter when provided', async () => {
+      const qb = buildQb([]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findByQuest('quest-1', { userId: 'user-1' } as any);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('submission.userId = :userId', {
+        userId: 'user-1',
+      });
+    });
+
+    it('encodes a nextCursor from the last row when more rows exist', async () => {
+      const rows = [
+        row('1', new Date('2026-01-03T00:00:00.000Z')),
+        row('2', new Date('2026-01-02T00:00:00.000Z')),
+        row('3', new Date('2026-01-01T00:00:00.000Z')),
+      ];
+      const qb = buildQb(rows);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findByQuest('quest-1', { limit: 2 } as any);
+
+      expect(result.data).toHaveLength(2);
+      expect(result.hasMore).toBe(true);
+      expect(result.nextCursor).toBe(
+        encodeCursor({
+          createdAt: rows[1].createdAt,
+          id: rows[1].id,
+        }),
+      );
+    });
+
+    it('omits nextCursor on the last page', async () => {
+      const qb = buildQb([row('1', new Date('2026-01-01T00:00:00.000Z'))]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.findByQuest('quest-1', { limit: 5 } as any);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.hasMore).toBe(false);
+      expect(result.nextCursor).toBeNull();
+    });
+
+    it('applies a DESC keyset predicate — never an offset — when a cursor is provided', async () => {
+      const qb = buildQb([]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const cursor = encodeCursor({
+        createdAt: '2026-01-02T00:00:00.000Z',
+        id: 'abc-123',
+      });
+      await service.findByQuest('quest-1', { cursor, limit: 10 } as any);
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(submission.createdAt, submission.id) < (:cv, :idv)',
+        { cv: '2026-01-02T00:00:00.000Z', idv: 'abc-123' },
+      );
+    });
+
+    it('reverses the keyset predicate direction for ASC ordering', async () => {
+      const qb = buildQb([]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const cursor = encodeCursor({
+        createdAt: '2026-01-02T00:00:00.000Z',
+        id: 'abc-123',
+      });
+      await service.findByQuest('quest-1', {
+        cursor,
+        order: 'ASC',
+      } as any);
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(submission.createdAt, submission.id) > (:cv, :idv)',
+        { cv: '2026-01-02T00:00:00.000Z', idv: 'abc-123' },
+      );
+      expect(qb.orderBy).toHaveBeenCalledWith('submission.createdAt', 'ASC');
+      expect(qb.addOrderBy).toHaveBeenCalledWith('submission.id', 'ASC');
+    });
+
+    it('keysets on the sortBy column and encodes the cursor with it', async () => {
+      const rows = [
+        row('1', new Date('2026-01-01T00:00:00.000Z'), new Date('2026-02-03')),
+        row('2', new Date('2026-01-02T00:00:00.000Z'), new Date('2026-02-02')),
+        row('3', new Date('2026-01-03T00:00:00.000Z'), new Date('2026-02-01')),
+      ];
+      const qb = buildQb(rows);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const cursor = encodeCursor({
+        updatedAt: '2026-02-02T00:00:00.000Z',
+        id: '2',
+      });
+      await service.findByQuest('quest-1', {
+        cursor,
+        sortBy: 'updatedAt',
+        limit: 2,
+      } as any);
+
+      expect(qb.orderBy).toHaveBeenCalledWith('submission.updatedAt', 'DESC');
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(submission.updatedAt, submission.id) < (:cv, :idv)',
+        { cv: '2026-02-02T00:00:00.000Z', idv: '2' },
+      );
+
+      // nextCursor encodes the last visible row's updatedAt, not createdAt.
+      const result = await service.findByQuest('quest-1', {
+        sortBy: 'updatedAt',
+        limit: 2,
+      } as any);
+      expect(result.nextCursor).toBe(
+        encodeCursor({
+          updatedAt: rows[1].updatedAt,
+          id: rows[1].id,
+        }),
+      );
+    });
+
+    it('treats a malformed cursor as "start from the top"', async () => {
+      const qb = buildQb([]);
+      submissionsRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findByQuest('quest-1', {
+        cursor: 'not-a-valid-cursor',
+      } as any);
+
+      // Only the questId where-clause was applied; no keyset predicate.
+      expect(qb.andWhere).not.toHaveBeenCalled();
+    });
+
+    it('round-trips the cursor back to a usable payload', () => {
+      const payload = { createdAt: '2026-01-02T00:00:00.000Z', id: 'abc' };
+      expect(decodeCursor(encodeCursor(payload))).toEqual(payload);
     });
   });
 

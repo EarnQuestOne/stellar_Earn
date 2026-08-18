@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  VersionColumn,
 } from 'typeorm';
 
 @Entity('quests')
@@ -28,4 +29,12 @@ export class Quest {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updatedAt!: Date;
+
+  /**
+   * Optimistic-concurrency token. TypeORM auto-increments this on each save of
+   * a managed entity and rejects a save whose loaded version no longer matches
+   * the row, preventing lost updates from concurrent writes (#2157).
+   */
+  @VersionColumn()
+  version!: number;
 }

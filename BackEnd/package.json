@@ -43,6 +43,7 @@
     "migration:test:performance": "ts-node scripts/test-migrations.ts performance",
     "migration:test:syntax": "ts-node scripts/test-migration-syntax.ts",
     "verify:indexes": "ts-node scripts/verify-indexes.ts",
+    "benchmark:submission-pagination": "ts-node scripts/benchmark-submission-pagination.ts",
     "openapi:generate": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts",
     "schema:sync": "bun run typeorm -- schema:sync",
     "schema:drop": "bun run typeorm -- schema:drop",
