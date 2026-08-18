@@ -9,6 +9,7 @@ import {
   WriteThroughStrategy,
   CacheWarmingStrategy,
 } from './cache-strategies';
+import { CacheableInterceptor } from '../../common/interceptors/cacheable.interceptor';
 
 @Global()
 @Module({
@@ -37,6 +38,7 @@ import {
     CacheAsideStrategy,
     WriteThroughStrategy,
     CacheWarmingStrategy,
+    CacheableInterceptor,
   ],
   exports: [
     CacheService,
@@ -45,6 +47,7 @@ import {
     CacheAsideStrategy,
     WriteThroughStrategy,
     CacheWarmingStrategy,
+    CacheableInterceptor,
   ],
 })
 export class CacheModule {}

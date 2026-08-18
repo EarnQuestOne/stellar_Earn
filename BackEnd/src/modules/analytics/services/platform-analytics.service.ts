@@ -13,6 +13,8 @@ import { AnalyticsQueryDto, Granularity } from '../dto/analytics-query.dto';
 import { DateRangeUtil } from '../utils/date-range.util';
 import { ConversionUtil } from '../utils/conversion.util';
 import { CacheService } from './cache.service';
+import { CacheService as UnifiedCacheService } from '../../cache/cache.service';
+import { CacheKeys, CacheTags, CacheTtl } from '../../cache/cache-tags';
 import { User as AnalyticsUser } from '../entities/user.entity';
 import {
   AnalyticsSnapshot,
@@ -36,6 +38,7 @@ export class PlatformAnalyticsService {
     @InjectRepository(AnalyticsSnapshot)
     private snapshotRepository: Repository<AnalyticsSnapshot>,
     private cacheService: CacheService,
+    private readonly unifiedCache: UnifiedCacheService,
     private metricsService: MetricsService,
   ) {}
 
@@ -46,6 +49,28 @@ export class PlatformAnalyticsService {
     );
     DateRangeUtil.validateMaxRange(startDate, endDate);
 
+    const granularity = query.granularity || Granularity.DAY;
+
+    // Unified cache-aside read tagged for platform analytics, so a relevant
+    // write can drop it via `invalidateTag(CacheTags.analyticsPlatform())`
+    // (#2159).
+    return this.unifiedCache.getOrSet(
+      CacheKeys.platformStats({
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        granularity,
+      }),
+      CacheTtl.platformStats,
+      [CacheTags.analyticsPlatform()],
+      () => this.resolvePlatformStats(startDate, endDate, granularity),
+    );
+  }
+
+  private async resolvePlatformStats(
+    startDate: Date,
+    endDate: Date,
+    granularity: Granularity,
+  ): Promise<PlatformStatsDto> {
     const snapshot = await this.snapshotRepository.findOne({
       where: {
         type: SnapshotType.PLATFORM,
@@ -64,11 +89,7 @@ export class PlatformAnalyticsService {
     this.metricsService.incrementCounter('analytics_computation_total', {
       source: 'live',
     });
-    return this.computeAndStorePlatformStats(
-      startDate,
-      endDate,
-      query.granularity || Granularity.DAY,
-    );
+    return this.computeAndStorePlatformStats(startDate, endDate, granularity);
   }
 
   async computeAndStorePlatformStats(

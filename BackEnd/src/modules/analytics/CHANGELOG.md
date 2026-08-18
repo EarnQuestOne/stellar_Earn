@@ -8,6 +8,8 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `getPlatformStats()` now reads through the unified cache-aside layer (`CacheService.getOrSet`) with a short TTL and the `analytics:platform` tag, so the dashboard aggregation is reused and can be invalidated on relevant writes (#2159).
+
 - Applied code-style formatting to `quest-aggregator.ts`, `platform-analytics.service.ts`, and `quest-analytics.service.ts` (no logic change).
 
 ### Changed
