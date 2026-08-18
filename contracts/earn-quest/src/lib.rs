@@ -28,6 +28,9 @@ mod test_clawback;
 #[cfg(test)]
 mod test_oracle_deviation;
 
+#[cfg(test)]
+mod test_incremental_stats;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
