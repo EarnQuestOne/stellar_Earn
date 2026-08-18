@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol, Vec};
 
 extern crate earn_quest;
 use earn_quest::types::{Badge, BadgeType};
@@ -597,3 +597,99 @@ fn test_non_admin_cannot_register_badge_type() {
     };
     client.register_badge_type(&outsider, &bt);
 }
+
+#[test]
+fn test_award_xp_batch_equivalence_single_user_multiple_grants() {
+    let env1 = Env::default();
+    env1.mock_all_auths();
+    let (_, client1, _, _) = setup_contract_and_token(&env1);
+    let admin1 = Address::generate(&env1);
+    client1.initialize(&admin1);
+    let user1 = Address::generate(&env1);
+
+    // Sequential grants
+    let mut grants1 = Vec::new(&env1);
+    grants1.push_back((user1.clone(), 100u64));
+    grants1.push_back((user1.clone(), 150u64));
+    grants1.push_back((user1.clone(), 100u64));
+
+    for i in 0u32..grants1.len() {
+        let (u, xp) = grants1.get(i).unwrap();
+        let _ = client1.award_xp_batch(&Vec::from_array(&env1, [(u, xp)]));
+    }
+    let stats_sequential = client1.get_user_stats(&user1);
+
+    // Batched grants in single call
+    let env2 = Env::default();
+    env2.mock_all_auths();
+    let (_, client2, _, _) = setup_contract_and_token(&env2);
+    let admin2 = Address::generate(&env2);
+    client2.initialize(&admin2);
+    let user2 = Address::generate(&env2);
+
+    let mut grants2 = Vec::new(&env2);
+    grants2.push_back((user2.clone(), 100u64));
+    grants2.push_back((user2.clone(), 150u64));
+    grants2.push_back((user2.clone(), 100u64));
+
+    client2.award_xp_batch(&grants2);
+    let stats_batched = client2.get_user_stats(&user2);
+
+    assert_eq!(stats_batched.xp, stats_sequential.xp);
+    assert_eq!(stats_batched.level, stats_sequential.level);
+    assert_eq!(stats_batched.quests_completed, stats_sequential.quests_completed);
+    assert_eq!(stats_batched.xp, 350);
+    assert_eq!(stats_batched.level, 2); // 350 XP >= 300 -> Level 2
+    assert_eq!(stats_batched.quests_completed, 3);
+}
+
+#[test]
+fn test_award_xp_batch_equivalence_multiple_users() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    let user_a = Address::generate(&env);
+    let user_b = Address::generate(&env);
+    let user_c = Address::generate(&env);
+
+    let mut grants = Vec::new(&env);
+    grants.push_back((user_a.clone(), 200u64));
+    grants.push_back((user_b.clone(), 400u64));
+    grants.push_back((user_a.clone(), 150u64));
+    grants.push_back((user_c.clone(), 1000u64));
+    grants.push_back((user_b.clone(), 300u64));
+
+    client.award_xp_batch(&grants);
+
+    let stats_a = client.get_user_stats(&user_a);
+    let stats_b = client.get_user_stats(&user_b);
+    let stats_c = client.get_user_stats(&user_c);
+
+    assert_eq!(stats_a.xp, 350);
+    assert_eq!(stats_a.level, 2);
+    assert_eq!(stats_a.quests_completed, 2);
+
+    assert_eq!(stats_b.xp, 700);
+    assert_eq!(stats_b.level, 3); // 700 XP >= 600 -> Level 3
+    assert_eq!(stats_b.quests_completed, 2);
+
+    assert_eq!(stats_c.xp, 1000);
+    assert_eq!(stats_c.level, 4); // 1000 XP >= 1000 -> Level 4
+    assert_eq!(stats_c.quests_completed, 1);
+}
+
+#[test]
+fn test_award_xp_batch_empty_grant_list() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client, _, _) = setup_contract_and_token(&env);
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    let grants = Vec::new(&env);
+    client.award_xp_batch(&grants);
+}
+
