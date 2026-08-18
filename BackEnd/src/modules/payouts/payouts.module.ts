@@ -5,6 +5,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PayoutsController } from './payouts.controller';
 import { PayoutsService } from './payouts.service';
 import { Payout } from './entities/payout.entity';
+import { PayoutOutbox } from './entities/payout-outbox.entity';
 import { IdempotencyKey } from './entities/idempotency-key.entity';
 import { IdempotencyService } from './services/idempotency.service';
 import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
@@ -16,7 +17,7 @@ import { StellarModule } from '../stellar/stellar.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payout, IdempotencyKey]),
+    TypeOrmModule.forFeature([Payout, PayoutOutbox, IdempotencyKey]),
     ScheduleModule.forRoot(),
     EventEmitterModule,
     QuotaModule,
