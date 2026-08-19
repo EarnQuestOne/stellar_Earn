@@ -88,7 +88,9 @@ describe('QuestTable', () => {
   });
 
   it('shows loading skeletons when isLoading is true', () => {
-    const { container } = render(<QuestTable {...defaultProps} isLoading={true} />);
+    const { container } = render(
+      <QuestTable {...defaultProps} isLoading={true} />
+    );
 
     const rows = container.querySelectorAll('tbody tr');
     expect(rows.length).toBe(3);
@@ -136,9 +138,7 @@ describe('QuestTable', () => {
   });
 
   it('renders sort icons', () => {
-    render(
-      <QuestTable {...defaultProps} sortField="title" sortOrder="asc" />
-    );
+    render(<QuestTable {...defaultProps} sortField="title" sortOrder="asc" />);
 
     expect(screen.getByText('↑')).toBeInTheDocument();
   });

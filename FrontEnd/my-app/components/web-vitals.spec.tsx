@@ -47,7 +47,7 @@ describe('WebVitals Component', () => {
         value: '1200',
         label: 'web-vital',
         startTime: 100,
-      }),
+      })
     );
   });
 });

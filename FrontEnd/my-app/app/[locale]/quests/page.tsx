@@ -18,7 +18,7 @@ import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { useQuests } from '@/lib/hooks/useQuests';
 
 function QuestsContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const { isOnline } = useOnlineStatus();

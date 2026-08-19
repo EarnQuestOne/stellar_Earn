@@ -9,12 +9,15 @@ interface QuestCardProps {
 }
 
 export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
-  const { completeQuest, claimQuest, isCompleting, isClaiming } = useQuestMutations();
+  const { completeQuest, claimQuest, isCompleting, isClaiming } =
+    useQuestMutations();
 
   return (
     <div className="p-4 border rounded-xl shadow-sm bg-white dark:bg-gray-900 flex items-center justify-between">
       <div>
-        <h4 className="font-semibold text-gray-900 dark:text-white">{quest.title}</h4>
+        <h4 className="font-semibold text-gray-900 dark:text-white">
+          {quest.title}
+        </h4>
         <p className="text-xs text-gray-500">Reward: {quest.rewardAmount} XP</p>
         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-gray-700">
           <div

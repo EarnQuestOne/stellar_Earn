@@ -12,7 +12,8 @@ export function WebVitals() {
       startTime: metric.startTime,
     });
 
-    const url = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || '/api/analytics/vitals';
+    const url =
+      process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || '/api/analytics/vitals';
 
     if (navigator.sendBeacon) {
       navigator.sendBeacon(url, body);

@@ -3,7 +3,12 @@
 import { useState, useMemo } from 'react';
 import type { Quest, QuestStatus } from '@/lib/types/admin';
 
-export type SortField = 'title' | 'status' | 'reward' | 'deadline' | 'participants';
+export type SortField =
+  | 'title'
+  | 'status'
+  | 'reward'
+  | 'deadline'
+  | 'participants';
 export type SortOrder = 'asc' | 'desc';
 
 export function useQuestFilters(quests: Quest[]) {

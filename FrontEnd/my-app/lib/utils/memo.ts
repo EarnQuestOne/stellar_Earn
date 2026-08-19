@@ -7,7 +7,7 @@ import type { ComponentType } from 'react';
  */
 export function shallowEqualIgnoringCallbacks<P extends object>(
   prev: P,
-  next: P,
+  next: P
 ): boolean {
   const prevKeys = Object.keys(prev) as (keyof P)[];
   const nextKeys = Object.keys(next) as (keyof P)[];

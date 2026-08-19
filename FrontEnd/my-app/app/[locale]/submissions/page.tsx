@@ -17,7 +17,7 @@ import type { Submission } from '@/lib/types/submission';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 function SubmissionsContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const router = useRouter();
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);

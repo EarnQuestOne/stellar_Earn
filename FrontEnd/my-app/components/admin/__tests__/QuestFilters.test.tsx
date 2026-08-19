@@ -56,7 +56,9 @@ describe('QuestFilters', () => {
   it('displays current search query value', () => {
     render(<QuestFilters {...defaultProps} searchQuery="robotics" />);
 
-    const input = screen.getByPlaceholderText('Search quests...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText(
+      'Search quests...'
+    ) as HTMLInputElement;
     expect(input.value).toBe('robotics');
   });
 

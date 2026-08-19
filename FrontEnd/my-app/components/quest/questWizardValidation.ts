@@ -19,7 +19,9 @@ export const questRewardSchema = z.object({
 });
 
 export const questRequirementsSchema = z.object({
-  requirements: z.array(z.string()).min(1, 'At least one requirement is needed'),
+  requirements: z
+    .array(z.string())
+    .min(1, 'At least one requirement is needed'),
 });
 
 export type QuestBasicsInput = z.infer<typeof questBasicsSchema>;
