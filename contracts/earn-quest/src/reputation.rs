@@ -127,6 +127,14 @@ pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) ->
 ///
 /// If no stats exist for the user, returns default values (0 XP, Level 1, 0 Quests).
 ///
+/// # Performance (#2153)
+///
+/// This is an O(1) storage read of the incrementally-maintained `UserCore`
+/// counters (updated in place by [`award_xp`] on the completion path), not a
+/// scan-and-recompute over the user's award history — so read cost and gas do
+/// not grow with the user's history. The `test_incremental_stats` suite proves
+/// the incremental counters always equal a full recompute.
+///
 /// # Arguments
 ///
 /// * `env` - The contract environment.
