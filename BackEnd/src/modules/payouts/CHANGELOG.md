@@ -6,6 +6,11 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Transactional outbox for on-chain payout execution (#2158): new `PayoutOutbox` entity + migration, and `PayoutsService.createPayout()` now writes the payout row and its execution intent in one DB transaction via `persistPayoutWithOutbox()` / `enqueuePayoutOutbox()`. A crash can no longer leave a payout without a queued on-chain execution (or vice-versa); the relay submits each payment exactly once.
+- Optimistic-concurrency `@VersionColumn` (`version`) on the `Payout` entity plus a backfilling migration; `PayoutsService.persistPayout()` now translates an `OptimisticLockVersionMismatchError` into a `409 ConflictException`, so two concurrent payout state transitions can no longer silently overwrite each other (lost update) (#2157).
+
 ### Fixed
 
 - Repaired the `PayoutsService` constructor that was mangled by a merge conflict resolution — the `JobResultStatusCacheService` dependency is injected correctly again.
