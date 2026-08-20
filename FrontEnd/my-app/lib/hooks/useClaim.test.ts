@@ -16,11 +16,15 @@ describe('useClaim', () => {
       address: 'GADDR',
       signTransaction: vi.fn(),
     } as any);
-    vi.mocked(toastModule.useToast).mockReturnValue({ showToast: vi.fn() } as any);
+    vi.mocked(toastModule.useToast).mockReturnValue({
+      showToast: vi.fn(),
+    } as any);
   });
 
   it('claims successfully and reports the success status', async () => {
-    vi.mocked(claimModule.claimReward).mockResolvedValue({ success: true } as any);
+    vi.mocked(claimModule.claimReward).mockResolvedValue({
+      success: true,
+    } as any);
     const { result } = renderHook(() => useClaim());
     await act(async () => {
       await result.current.claim('reward-1', 10);
@@ -29,7 +33,9 @@ describe('useClaim', () => {
   });
 
   it('surfaces an error status when the wallet rejects the claim', async () => {
-    vi.mocked(claimModule.claimReward).mockRejectedValue(new Error('User rejected'));
+    vi.mocked(claimModule.claimReward).mockRejectedValue(
+      new Error('User rejected')
+    );
     const { result } = renderHook(() => useClaim());
     await act(async () => {
       await result.current.claim('reward-1', 10);
@@ -39,7 +45,10 @@ describe('useClaim', () => {
   });
 
   it('rejects the claim when no wallet is connected', async () => {
-    vi.mocked(walletModule.useWallet).mockReturnValue({ address: null, signTransaction: vi.fn() } as any);
+    vi.mocked(walletModule.useWallet).mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+    } as any);
     const { result } = renderHook(() => useClaim());
     const outcome = await act(async () => result.current.claim('reward-1', 10));
     expect(outcome).toBeNull();

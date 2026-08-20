@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -7,7 +8,9 @@ import { useReputation } from './useReputation';
 // Closes #1935: confirms useReputation fetches from the real API endpoint
 // (GET /api/reputation/:userId) rather than the historical stub.
 const wrapper = ({ children }: { children: ReactNode }) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
 
@@ -17,7 +20,10 @@ describe('useReputation', () => {
   });
 
   it('fetches reputation from /api/reputation/:userId', async () => {
-    (global.fetch as any).mockResolvedValue({ ok: true, json: async () => ({ score: 42 }) });
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ score: 42 }),
+    });
     const { result } = renderHook(() => useReputation('user-1'), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(global.fetch).toHaveBeenCalledWith('/api/reputation/user-1');

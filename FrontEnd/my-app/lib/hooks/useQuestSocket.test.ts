@@ -33,13 +33,10 @@ describe('useQuestSocket', () => {
     vi.clearAllMocks();
     eventHandlers.clear();
     mockSocket.connected = false;
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      (cb: FrameRequestCallback) => {
-        cb(0);
-        return 1;
-      }
-    );
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
   });
 
   afterEach(async () => {

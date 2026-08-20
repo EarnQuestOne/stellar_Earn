@@ -2,7 +2,12 @@
 
 import React, { useState } from 'react';
 
-export type BulkAction = 'activate' | 'pause' | 'complete' | 'cancel' | 'delete';
+export type BulkAction =
+  | 'activate'
+  | 'pause'
+  | 'complete'
+  | 'cancel'
+  | 'delete';
 
 export interface QuestBulkActionsProps {
   selectedCount: number;

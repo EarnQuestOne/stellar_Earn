@@ -20,7 +20,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileMenu }: HeaderProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const { navigationItems } = useTranslatedNavigation();
 
   return (

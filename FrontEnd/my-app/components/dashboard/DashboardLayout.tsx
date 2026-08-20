@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const defaultUser = user || { username: 'john.doe', level: 12 };

@@ -14,7 +14,7 @@ export function useSubmissionClaim() {
     (_submissionId: string, rewardId: string, amount: number) => {
       return claim(rewardId, amount);
     },
-    [claim],
+    [claim]
   );
 
   return {

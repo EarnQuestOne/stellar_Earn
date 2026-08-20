@@ -10,7 +10,11 @@ export interface QuestRowActionsProps {
   onDelete: (id: string) => void;
 }
 
-export function QuestRowActions({ quest, onEdit, onDelete }: QuestRowActionsProps) {
+export const QuestRowActions = React.memo(function QuestRowActions({
+  quest,
+  onEdit,
+  onDelete,
+}: QuestRowActionsProps) {
   return (
     <div className="flex gap-2">
       {onEdit ? (
@@ -36,4 +40,4 @@ export function QuestRowActions({ quest, onEdit, onDelete }: QuestRowActionsProp
       </button>
     </div>
   );
-}
+});

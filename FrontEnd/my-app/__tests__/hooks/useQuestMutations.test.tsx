@@ -5,7 +5,13 @@ import { useQuestMutations } from '@/hooks/useQuestMutations';
 import { Quest } from '@/types/quest';
 
 const initialQuests: Quest[] = [
-  { id: 'q1', title: 'Daily Login', status: 'in_progress', progress: 50, rewardAmount: 100 },
+  {
+    id: 'q1',
+    title: 'Daily Login',
+    status: 'in_progress',
+    progress: 50,
+    rewardAmount: 100,
+  },
 ];
 
 describe('useQuestMutations (Optimistic Updates)', () => {
@@ -17,7 +23,10 @@ describe('useQuestMutations (Optimistic Updates)', () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     queryClient.setQueryData(['quests'], initialQuests);
     global.fetch = vi.fn(); // Changed jest.fn() -> vi.fn()
@@ -31,7 +40,11 @@ describe('useQuestMutations (Optimistic Updates)', () => {
     // Changed (global.fetch as jest.Mock) -> ReturnType<typeof vi.fn> or vi.mocked
     vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ ...initialQuests[0], status: 'completed', progress: 100 }),
+      json: async () => ({
+        ...initialQuests[0],
+        status: 'completed',
+        progress: 100,
+      }),
     } as Response);
 
     const { result } = renderHook(() => useQuestMutations(), { wrapper });

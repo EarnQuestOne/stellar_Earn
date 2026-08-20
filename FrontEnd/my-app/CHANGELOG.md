@@ -88,6 +88,21 @@ _None yet._
   - For file proofs larger than 5 MB, calls `uploadProofFile` first (with progress tracking via XHR) then forwards the resulting IPFS URL to `createSubmission`; smaller proofs are inlined directly.
   - Consumed by the new `components/submission/SubmissionForm` multi-step form component.
 
+- **Admin quest table pagination + memoized rows** ([#2166](https://github.com/EarnQuestOne/stellar_Earn/issues/2166)).
+  - `components/admin/QuestTable.tsx` now paginates client-side (10 / 25 / 50 / 100 rows per page) instead of rendering every quest at once, with Previous / Next controls and a page-range readout.
+  - Rows are extracted into a `React.memo`'d `QuestTableRow` and `QuestRowActions` is memoized; row action callbacks are stabilized with `useCallback` so a single checkbox toggle or sort change no longer rebuilds every row.
+  - Added a benchmark harness (`scripts/benchmarks/quest-table.render.bench.tsx`, run via `npm run benchmark:quest-table`) with before/after measurements committed under `scripts/benchmarks/results/`.
+
+  **Before/after (jsdom render benchmark, 3 iterations, min timings):**
+
+  | Dataset | Metric | Before | After | Speed-up |
+  | ------- | ------ | ------ | ----- | -------- |
+  | 200 quests | Mount | 237.84 ms | 22.79 ms | ~10x |
+  | 200 quests | Selection update | 181.18 ms | 7.97 ms | ~23x |
+  | 1000 quests | Mount | 856.12 ms | 15.13 ms | ~57x |
+  | 1000 quests | Selection update | 535.67 ms | 7.31 ms | ~73x |
+  | 1000 quests | Rows mounted | 1000 | 10 | flat (page-size bound) |
+
                                   ### 馃洜 Changed
 
                                   - Updated root [`CONTRIBUTING.md`](../../CONTRIBUTING.md) and the

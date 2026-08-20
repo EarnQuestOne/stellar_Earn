@@ -8,17 +8,23 @@ const PLACEHOLDER_ADDRESS =
 
 export function assertNotPlaceholderAddress(address: string): void {
   if (address === PLACEHOLDER_ADDRESS) {
-    throw new Error('Refusing to use placeholder stellarAddress in a real request');
+    throw new Error(
+      'Refusing to use placeholder stellarAddress in a real request'
+    );
   }
 }
 
 describe('admin API client placeholder guard', () => {
   it('flags the known placeholder literal', () => {
-    expect(() => assertNotPlaceholderAddress(PLACEHOLDER_ADDRESS)).toThrow(/placeholder/i);
+    expect(() => assertNotPlaceholderAddress(PLACEHOLDER_ADDRESS)).toThrow(
+      /placeholder/i
+    );
   });
 
   it('allows a real-looking address through', () => {
-    expect(() => assertNotPlaceholderAddress('GABCDEF1234567890')).not.toThrow();
+    expect(() =>
+      assertNotPlaceholderAddress('GABCDEF1234567890')
+    ).not.toThrow();
   });
 
   it('documents that the mock admin user still carries the placeholder today', async () => {
