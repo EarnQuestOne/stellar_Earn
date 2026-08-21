@@ -156,14 +156,15 @@ impl EarnQuestContract {
     ///
     /// # Returns
     ///
-    /// The `Address` of the current contract administrator.
+    /// `Ok(admin)` with the `Address` of the current contract administrator, or
+    /// `Err(Error::NotInitialized)` if the contract has not been initialized yet.
     ///
     /// # Example
     ///
     /// ```rust
-    /// let admin = client.get_admin();
+    /// let admin = client.try_get_admin()?;
     /// ```
-    pub fn get_admin(env: Env) -> Address {
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
         storage::get_admin(&env)
     }
 
