@@ -10,7 +10,7 @@ import { SubmissionsTable } from '@/components/submission/SubmissionsTable';
 import { SubmissionDetail } from '@/components/submission/SubmissionDetail';
 import { Pagination } from '@/components/ui/Pagination';
 import { Modal } from '@/components/ui/Modal';
-import { SubmissionForm } from '@/components/quest/SubmissionForm';
+import { SubmissionForm } from '@/components/submission/SubmissionForm';
 import { mockSubmissions } from '@/lib/mock/submissions';
 import { SubmissionStatus } from '@/lib/types/submission';
 import type { Submission } from '@/lib/types/submission';
