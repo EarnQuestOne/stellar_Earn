@@ -74,8 +74,7 @@ vi.mock('@/lib/hooks/useSubmission', async () => {
           options.onSuccess?.(fixtureResponse);
           setCurrentStep('success');
         },
-        submissionResponse:
-          currentStep === 'success' ? fixtureResponse : null,
+        submissionResponse: currentStep === 'success' ? fixtureResponse : null,
         submissionError:
           mockState.errorMessage !== null
             ? new Error(mockState.errorMessage)
@@ -172,7 +171,11 @@ describe('SubmissionForm (consolidated component)', () => {
       const onSubmit = vi.fn();
 
       const { rerender } = render(
-        <SubmissionForm questId="quest-1" questTitle="Quest One" onSubmit={onSubmit} />
+        <SubmissionForm
+          questId="quest-1"
+          questTitle="Quest One"
+          onSubmit={onSubmit}
+        />
       );
 
       fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -184,11 +187,17 @@ describe('SubmissionForm (consolidated component)', () => {
 
       await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
 
-      fireEvent.click(screen.getByRole('button', { name: 'Submit another proof' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Submit another proof' })
+      );
       expect(screen.getByText('Submit Proof')).toBeInTheDocument();
 
       rerender(
-        <SubmissionForm questId="quest-1" questTitle="Quest One" onSubmit={onSubmit} />
+        <SubmissionForm
+          questId="quest-1"
+          questTitle="Quest One"
+          onSubmit={onSubmit}
+        />
       );
 
       fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -213,7 +222,9 @@ describe('SubmissionForm (consolidated component)', () => {
         <SubmissionForm questId="q1" questTitle="Quest One" onClose={onClose} />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: 'Cancel submission' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Cancel submission' })
+      );
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
