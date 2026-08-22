@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { PayoutProcessPayload, JobResult } from '../job.types';
+import { PayoutProcessPayload, JobResult, JobMetadata } from '../job.types';
 import { JobLogService } from '../services/job-log.service';
+import { AppLoggerService } from '../../../common/logger/logger.service';
 
 /**
  * Payout Processor
@@ -11,15 +12,21 @@ import { JobLogService } from '../services/job-log.service';
 export class PayoutProcessor {
   private readonly logger = new Logger(PayoutProcessor.name);
 
-  constructor(private readonly jobLogService: JobLogService) {}
+  constructor(
+    private readonly jobLogService: JobLogService,
+  ) {}
 
   /**
    * Process payout job
    */
-  async process(job: Job<PayoutProcessPayload>): Promise<JobResult> {
-    const { payoutId, organizationId, amount, recipientAddress } = job.data;
+  async process(job: Job<PayoutProcessPayload & JobMetadata>): Promise<JobResult> {
+    const { payoutId, organizationId, amount, recipientAddress, __correlationId } = job.data;
 
     try {
+      // Restore correlation ID in logger context if present in job data
+      if (__correlationId) {
+        AppLoggerService.setRequestContext({ correlationId: __correlationId });
+      }
       await job.updateProgress(10);
       this.logger.log(
         `Processing payout job ${job.id}: payoutId=${payoutId}, amount=${amount}`,

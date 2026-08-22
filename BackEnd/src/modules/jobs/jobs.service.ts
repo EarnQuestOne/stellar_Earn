@@ -11,6 +11,7 @@ import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
+import { AppLoggerService } from '../../common/logger/logger.service';
 
 export interface QueueMetrics {
   queue: string;
@@ -23,6 +24,7 @@ export interface QueueMetrics {
 
 interface TraceableJobData {
   __trace?: TraceContext;
+  __correlationId?: string;
 }
 
 const redisConnection = () => {
@@ -173,7 +175,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     if (!queue) throw new Error(`Queue ${name} not found`);
 
     const traceContext = this.tracing.getCurrentContext();
-    const tracedData = this.attachTraceContext(data, traceContext);
+    const correlationId = AppLoggerService.getRequestContext()?.correlationId;
+    const tracedData = this.attachTraceContext(data, traceContext, correlationId);
     const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...opts };
 
     return this.tracing.trace(
@@ -184,6 +187,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         if (traceContext) {
           span.attributes['trace.id'] = traceContext.traceId;
           span.attributes['trace.parent_span_id'] = traceContext.spanId;
+        }
+        if (correlationId) {
+          span.attributes['correlation.id'] = correlationId;
         }
 
         return queue.add(`${name}-job`, tracedData, jobOpts);
@@ -234,6 +240,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         const traceContext = this.extractTraceContext(
           job.data as TraceableJobData,
         );
+        const correlationId = this.extractCorrelationId(
+          job.data as TraceableJobData,
+        );
 
         const processJob = () =>
           this.tracing.trace(
@@ -243,6 +252,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
               span.attributes['job.id'] = String(job.id ?? 'unknown');
               span.attributes['job.name'] = job.name;
               span.attributes['job.attempt'] = job.attemptsMade ?? 0;
+              if (correlationId) {
+                span.attributes['correlation.id'] = correlationId;
+              }
               return await processor(job);
             },
             {
@@ -253,8 +265,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             },
           );
 
-        if (traceContext) {
-          return this.tracing.runInContext(traceContext, processJob);
+        if (traceContext || correlationId) {
+          // Restore correlation ID in logger context
+          if (correlationId) {
+            return AppLoggerService.runWithContext({ correlationId }, () => {
+              if (traceContext) {
+                return this.tracing.runInContext(traceContext, processJob);
+              }
+              return processJob();
+            });
+          }
+          if (traceContext) {
+            return this.tracing.runInContext(traceContext, processJob);
+          }
         }
 
         return processJob();
@@ -323,10 +346,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return { sent: true, messageId };
   }
 
-  private attachTraceContext(data: any, traceContext?: TraceContext): any {
-    if (!traceContext) return data;
+  private attachTraceContext(data: any, traceContext?: TraceContext, correlationId?: string): any {
+    if (!traceContext && !correlationId) return data;
     if (data && typeof data === 'object' && !Array.isArray(data)) {
-      return { ...data, __trace: traceContext };
+      return { 
+        ...data, 
+        ...(traceContext && { __trace: traceContext }),
+        ...(correlationId && { __correlationId: correlationId }),
+      };
     }
     return data;
   }
@@ -346,6 +373,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       return { traceId, spanId };
     }
 
+    return undefined;
+  }
+
+  private extractCorrelationId(
+    data?: TraceableJobData,
+  ): string | undefined {
+    if (!data?.__correlationId) return undefined;
+    if (typeof data.__correlationId === 'string' && data.__correlationId.length > 0) {
+      return data.__correlationId;
+    }
     return undefined;
   }
 }
