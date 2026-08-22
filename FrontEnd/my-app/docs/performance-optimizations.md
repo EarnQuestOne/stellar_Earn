@@ -85,3 +85,15 @@ quest or submission updates (e.g. quest cards no longer subscribe to
 status events (or replay socket traffic), and compare commit count with the
 previous behaviour; network tab should show fewer redundant `subscribe` frames
 on quest list pages that only refresh quest metadata.
+
+## 6. In-flight lock in ClaimButton to guard against duplicate reward claims (#2150)
+
+`components/rewards/ClaimButton.tsx` tracks an in-flight lock using `inFlightRef`
+and an `isPending` state variable. Repeat clicks while a claim request is active
+are synchronously ignored, preventing duplicate reward claim transactions,
+unnecessary RPC/API load, and double-claim risks.
+
+**Measuring:** run `npm run benchmark` (`scripts/benchmarks/claim-button.bench.tsx`),
+which simulates click bursts on `ClaimButton` during pending transactions. The lock
+reduces duplicate request dispatches by **90%** (10 clicks), **99%** (100 clicks), and
+**99.9%** (1000 clicks), guaranteeing exactly 1 transaction dispatch per claim action.
