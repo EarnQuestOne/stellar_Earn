@@ -85,3 +85,40 @@ quest or submission updates (e.g. quest cards no longer subscribe to
 status events (or replay socket traffic), and compare commit count with the
 previous behaviour; network tab should show fewer redundant `subscribe` frames
 on quest list pages that only refresh quest metadata.
+
+## 6. Memoized WalletContext value (#2149)
+
+`context/WalletContext.tsx` used to allocate a brand-new context `value`
+object (plus fresh `connect`/`disconnect`/`openModal`/`closeModal`/
+`signMessage`/`signTransaction` callback identities and a fresh
+`supportedWallets` array) on **every** provider render. Because Object.is on
+the old value always failed, every component calling `useWallet()` re-rendered
+whenever the provider re-rendered — even when no wallet state the consumer
+reads had changed.
+
+The provider now:
+
+- wraps the context value in `useMemo`, keyed on the exact exposed wallet
+  state fields (`address`, `isConnected`, `isConnecting`,
+  `isVerifyingWallet`, `selectedWalletId`, `isModalOpen`, `walletError`) and
+  the stabilized callbacks;
+- stabilizes all callbacks with `useCallback`;
+- hoists the static `supportedWallets` catalogue to module scope.
+
+The provider still re-renders when any subscribed store slice changes, but
+consumers now bail out unless something they actually read got a new identity.
+Stable callback/array identities also let downstream `React.memo` components
+and hook dependency arrays work as intended (e.g. a memoized button that only
+takes `onConnect` no longer re-renders on unrelated wallet-state churn).
+
+**Before/after (unit regression + benchmark, Vitest —
+`context/WalletContext.memo.test.tsx`):** 100 provider re-renders with
+unchanged wallet state (jsdom, React 19):
+
+| Metric                                       | Before | After     |
+| -------------------------------------------- | ------ | --------- |
+| Consumer commits for 100 provider re-renders | 101    | 1         |
+| Benchmark wall-clock time                    | ~79 ms | ~48–65 ms |
+
+The committed test asserts the "after" behaviour exactly (1 commit), so any
+future change that re-introduces per-render value allocation fails CI.
