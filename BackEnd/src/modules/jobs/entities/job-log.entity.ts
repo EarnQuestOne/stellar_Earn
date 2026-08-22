@@ -25,6 +25,16 @@ import { JobStatus, JobType } from '../job.types';
 @Index('idx_job_logs_external_id', ['externalJobId'])
 @Index('idx_job_logs_status_created', ['status', 'createdAt'])
 @Index('idx_job_logs_organization_status', ['organizationId', 'status'])
+// Composite indexes for archival queries and common filter combinations
+@Index('idx_job_logs_status_completed_created', ['status', 'createdAt'])
+@Index('idx_job_logs_org_status_created', [
+  'organizationId',
+  'status',
+  'createdAt',
+])
+@Index('idx_job_logs_user_status_created', ['userId', 'status', 'createdAt'])
+@Index('idx_job_logs_type_status_created', ['jobType', 'status', 'createdAt'])
+@Index('idx_job_logs_correlation', ['correlationId'])
 export class JobLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;

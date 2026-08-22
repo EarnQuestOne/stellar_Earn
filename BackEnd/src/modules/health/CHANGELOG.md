@@ -8,3 +8,5 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - `ExternalHealthService` now uses `PooledHttpClientService` (keep-alive connection pool, 3 s `short` timeout budget) instead of ad-hoc `axios` calls for Stellar Horizon and SendGrid health checks. `HttpClientModule` added to `HealthModule` imports.
+- Added `HealthCacheService` with configurable TTL to cache readiness probe results and avoid redundant dependency checks.
+- Readiness endpoint (`/health/ready`) now returns cached results within the TTL window.

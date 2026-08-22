@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum NotificationType {
@@ -25,6 +26,12 @@ export enum NotificationPriority {
   URGENT = 'URGENT',
 }
 
+@Index('idx_notification_active_user', ['userId'], {
+  where: '"deletedAt" IS NULL',
+})
+@Index('idx_notification_active_user_read', ['userId', 'read'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')

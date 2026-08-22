@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { getJwtPublicKeys } from '../utils/jwt-keys';
+import { parseCookies } from '../utils/security.utils';
+import { getApplicationSecurityConfig } from '../../config/security.config';
 
 export interface WsAuthPayload {
   sub: string;
@@ -71,6 +73,16 @@ export class WsAuthGuard implements CanActivate {
   }
 
   private extractToken(client: Socket): string | null {
+    // 1. Check cookie first (httpOnly auth_token set by backend)
+    const cookieHeader = client.handshake?.headers?.cookie;
+    if (cookieHeader) {
+      const securityConfig = getApplicationSecurityConfig(this.configService);
+      const cookies = parseCookies(cookieHeader);
+      const cookieToken = cookies[securityConfig.cookies.accessTokenName];
+      if (cookieToken) return cookieToken;
+    }
+
+    // 2. Fall back to auth object (Bearer token from client handshake)
     const authHeader =
       client.handshake?.auth?.token || client.handshake?.headers?.authorization;
 

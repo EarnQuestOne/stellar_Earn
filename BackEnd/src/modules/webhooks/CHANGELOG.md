@@ -5,3 +5,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+### Fixed
+
+- `WebhooksService.processWebhook` now returns a generic caller-facing processing failure message while keeping internal exception details in server logs.
+- Removed the non-functional `POST /webhooks/events` route (it referenced the nonexistent `WebhooksService.processEvent`), removed a duplicate `WebhookPayloadDto` import, and removed a stray brace in `webhook-event.dto.ts`.
+
+### Changed
+- Applied code-style formatting to `webhooks.controller.ts` and `webhook-event.dto.ts`: added missing newline at end of file and reformatted multi-argument call sites (no logic change).
+
+### Added
+
+- Rate-limiting configuration (@Throttle) applied to WebhooksController endpoints.
+- Persisted `failed_webhook_events` table for webhook processing failures (payload,
+  source, failure reason, attempt history).
+- Real `retryFailedWebhook` implementation: exponential backoff, configurable max
+  attempts, dead-letter state after exhaustion.
+- `FailedWebhookRetryScheduler` cron job that automatically retries due failures
+  every minute.
+- Admin endpoints: `GET /webhooks/admin/failed`, `GET /webhooks/admin/failed/:eventId`,
+  `POST /webhooks/admin/failed/:eventId/retry`.
+
+### Fixed
+
+- Generic webhook handler now validates `:service` against an explicit allowlist (`github`, `api`) before processing, rejecting unknown service names with 400. This prevents user-controlled input from probing arbitrary environment variables via the `${SERVICE}_WEBHOOK_SECRET` pattern.
+- `handleGenericWebhook` now resolves and validates the webhook secret before entering the trace context. Requests for a known service whose secret env var is missing or empty are rejected with 400 rather than silently bypassing signature verification.
+- `WebhooksService.processWebhook` now fails closed when a secret is configured: a missing signature is rejected with `success: false` rather than being treated as an unsigned event that is allowed through.
+
+### Changed
+
+- Improved error logging formatting in WebhooksService
+
+# Changelog - Webhooks Module
+
+## [Unreleased]
+
+### Changed
+- Updated `WebhooksController` and unit tests to enforce `WebhookPayloadDto` validation.
+
+
+# Changelog - Webhooks Module
+
+## [Unreleased]
+
+### Changed
+- Updated `WebhooksController` and unit tests to enforce `WebhookPayloadDto` validation.
+=======
+### Changed
+
+- Webhook event DTO and controller refinements for improved request validation.

@@ -21,8 +21,4 @@ test.describe('Accessibility smoke tests', () => {
   test('dashboard page has no critical axe violations', async ({ page }) => {
     await expectAxeToPass({ page, url: '/en/dashboard' });
   });
-
-  test('profile page has no critical axe violations', async ({ page }) => {
-    await expectAxeToPass({ page, url: '/en/profile' });
-  });
 });

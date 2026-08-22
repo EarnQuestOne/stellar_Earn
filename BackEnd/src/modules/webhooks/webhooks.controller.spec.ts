@@ -1,0 +1,571 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { WebhooksController } from './webhooks.controller';
+import { WebhooksService, WebhookResponse } from './webhooks.service';
+import { TraceService } from '../trace/trace.service';
+import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
+import { WebhookEventType, WebhookPayloadDto } from './dto/webhook-event.dto';
+
+/**
+ * Unit tests for WebhooksController.
+ *
+ * Covers:
+ *  - Route guards: required-header validation on each webhook endpoint,
+ *    rejecting malformed requests before the service layer is invoked
+ *  - Generic webhook handler's source allowlist behavior, enforced in the
+ *    controller before the service layer is reached
+ *  - Successful processing paths for GitHub, API, and generic webhooks
+ */
+describe('WebhooksController', () => {
+  let controller: WebhooksController;
+  let webhooksService: jest.Mocked<WebhooksService>;
+  let traceService: jest.Mocked<TraceService>;
+
+  const mockPayload: WebhookPayloadDto = {
+    eventId: 'evt_123',
+    eventType: WebhookEventType.PAYMENT_RECEIVED,
+    data: {
+      transactionHash: '0xabc1234567890',
+      sourceAccount: 'GABCD1234567890',
+      amount: '100.00',
+    },
+  };
+
+  const successResponse = (
+    overrides: Partial<WebhookResponse> = {},
+  ): WebhookResponse => ({
+    success: true,
+    eventId: 'evt-1',
+    message: 'Webhook processed successfully',
+    processedAt: new Date(),
+    ...overrides,
+  });
+
+  beforeEach(async () => {
+    const mockWebhooksService: Partial<jest.Mocked<WebhooksService>> = {
+      processWebhook: jest.fn(),
+      listFailedWebhooks: jest.fn(),
+      getFailedWebhook: jest.fn(),
+      retryFailedWebhook: jest.fn(),
+    };
+
+    const mockTraceService: Partial<jest.Mocked<TraceService>> = {
+      createTrace: jest.fn().mockResolvedValue(undefined),
+      appendEvent: jest.fn().mockResolvedValue(undefined),
+      linkOnchain: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [WebhooksController],
+      providers: [
+        { provide: WebhooksService, useValue: mockWebhooksService },
+        { provide: TraceService, useValue: mockTraceService },
+      ],
+    }).compile();
+
+    controller = module.get(WebhooksController);
+    webhooksService = module.get(WebhooksService);
+    traceService = module.get(TraceService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    delete process.env.GITHUB_WEBHOOK_SECRET;
+    delete process.env.API_WEBHOOK_SECRET;
+  });
+
+  // ─── POST /webhooks/github ──────────────────────────────────────────────
+
+  describe('POST /webhooks/github — route guards', () => {
+    it('should reject a request missing the X-GitHub-Event header', async () => {
+      await expect(
+        controller.handleGithubWebhook(
+          mockPayload,
+          undefined as unknown as string,
+          'delivery-1',
+          undefined as unknown as string,
+        ),
+      ).rejects.toThrow('Missing X-GitHub-Event header');
+
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a request missing the X-GitHub-Delivery header', async () => {
+      await expect(
+        controller.handleGithubWebhook(
+          mockPayload,
+          'push',
+          undefined as unknown as string,
+          undefined as unknown as string,
+        ),
+      ).rejects.toThrow('Missing X-GitHub-Delivery header');
+
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should process a well-formed GitHub webhook and link the trace', async () => {
+      webhooksService.processWebhook.mockResolvedValue(
+        successResponse({ txHash: '0xabc' }),
+      );
+
+      const result = await controller.handleGithubWebhook(
+        mockPayload,
+        'push',
+        'delivery-1',
+        'sha256=deadbeef',
+      );
+
+      expect(result.success).toBe(true);
+      expect(traceService.createTrace).toHaveBeenCalledWith(
+        expect.objectContaining({
+          webhookEventId: 'delivery-1',
+          questId: '0xabc1234567890',
+          submitterAddress: 'GABCD1234567890',
+        }),
+      );
+      expect(traceService.linkOnchain).toHaveBeenCalledWith(
+        expect.objectContaining({ txHash: '0xabc' }),
+      );
+      expect(traceService.appendEvent).not.toHaveBeenCalled();
+    });
+
+    it('should append a CONFIRMED event when no on-chain tx hash is returned', async () => {
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      await controller.handleGithubWebhook(
+        mockPayload,
+        'push',
+        'delivery-1',
+        'sig',
+      );
+
+      expect(traceService.linkOnchain).not.toHaveBeenCalled();
+      expect(traceService.appendEvent).toHaveBeenCalledWith(
+        expect.any(String),
+        'CONFIRMED',
+        expect.any(String),
+      );
+    });
+
+    it('should throw UnauthorizedException and log a FAILED trace event when the service rejects the webhook', async () => {
+      webhooksService.processWebhook.mockResolvedValue(
+        successResponse({
+          success: false,
+          message: 'Invalid webhook signature',
+        }),
+      );
+
+      await expect(
+        controller.handleGithubWebhook(
+          mockPayload,
+          'push',
+          'delivery-1',
+          'bad-sig',
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(traceService.appendEvent).toHaveBeenCalledWith(
+        expect.any(String),
+        'FAILED',
+        'Invalid webhook signature',
+      );
+    });
+  });
+
+  // ─── POST /webhooks/api-verify ──────────────────────────────────────────
+
+  describe('POST /webhooks/api-verify — route guards', () => {
+    it('should reject a request missing the X-Event-Type header', async () => {
+      await expect(
+        controller.handleApiVerificationWebhook(
+          mockPayload,
+          undefined as unknown as string,
+          'webhook-1',
+          undefined as unknown as string,
+        ),
+      ).rejects.toThrow('Missing X-Event-Type header');
+
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a request missing the X-Webhook-ID header', async () => {
+      await expect(
+        controller.handleApiVerificationWebhook(
+          mockPayload,
+          'submission_verify',
+          undefined as unknown as string,
+          undefined as unknown as string,
+        ),
+      ).rejects.toThrow('Missing X-Webhook-ID header');
+
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should extract the bearer token as the signature and process the webhook', async () => {
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      await controller.handleApiVerificationWebhook(
+        mockPayload,
+        'submission_verify',
+        'webhook-1',
+        'Bearer some-token-value',
+      );
+
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signature: 'some-token-value',
+          source: 'api',
+        }),
+      );
+    });
+
+    it('should leave signature undefined when the authorization header is not a Bearer token', async () => {
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      await controller.handleApiVerificationWebhook(
+        mockPayload,
+        'submission_verify',
+        'webhook-1',
+        'Basic abc123',
+      );
+
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ signature: undefined }),
+      );
+    });
+
+    it('should throw UnauthorizedException when the service rejects the webhook', async () => {
+      webhooksService.processWebhook.mockResolvedValue(
+        successResponse({
+          success: false,
+          message: 'Invalid webhook signature',
+        }),
+      );
+
+      await expect(
+        controller.handleApiVerificationWebhook(
+          mockPayload,
+          'submission_verify',
+          'webhook-1',
+          undefined as unknown as string,
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  // ─── POST /webhooks/generic/:service ────────────────────────────────────
+
+  describe('POST /webhooks/generic/:service — allowlist enforcement', () => {
+    it('should reject an unknown service name with BadRequestException', async () => {
+      await expect(
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'unknown',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject arbitrary env-var-probing service names', async () => {
+      process.env.AWS_SECRET_ACCESS_KEY = 'should-not-be-reachable';
+      await expect(
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'aws_secret_access_key',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a known service whose secret env var is not set', async () => {
+      await expect(
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'github',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should reject a known service whose secret env var is empty', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = '';
+      await expect(
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'github',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException and log a FAILED trace when the service rejects', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
+      webhooksService.processWebhook.mockResolvedValue(
+        successResponse({
+          success: false,
+          message: 'Invalid webhook signature',
+        }),
+      );
+
+      await expect(
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sha256=invalidsig',
+          'push',
+          'github',
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(traceService.appendEvent).toHaveBeenCalledWith(
+        expect.any(String),
+        'FAILED',
+        'Invalid webhook signature',
+      );
+    });
+
+    it('should succeed and link on-chain when the service accepts the webhook', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
+      webhooksService.processWebhook.mockResolvedValue(
+        successResponse({ txHash: '0xdef' }),
+      );
+
+      const result = await controller.handleGenericWebhook(
+        mockPayload,
+        {},
+        'sig',
+        'push',
+        'github',
+      );
+
+      expect(result.success).toBe(true);
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'github', secret: 'test-secret' }),
+      );
+      expect(traceService.linkOnchain).toHaveBeenCalledWith(
+        expect.objectContaining({ txHash: '0xdef' }),
+      );
+    });
+
+    it('should accept service names case-insensitively', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      const result = await controller.handleGenericWebhook(
+        mockPayload,
+        {},
+        'sig',
+        'push',
+        'GITHUB',
+      );
+
+      expect(result.success).toBe(true);
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ secret: 'test-secret' }),
+      );
+    });
+
+    it('should default the event type to "unknown" when no X-Event-Type header is sent', async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = 'test-secret';
+      webhooksService.processWebhook.mockResolvedValue(successResponse());
+
+      await controller.handleGenericWebhook(
+        mockPayload,
+        {},
+        'sig',
+        undefined as unknown as string,
+        'github',
+      );
+
+      expect(webhooksService.processWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'unknown' }),
+      );
+    });
+  });
+
+  // ─── Admin: failed webhook inspection & retry ───────────────────────────
+
+  describe('GET /webhooks/admin/failed', () => {
+    it('should list failed webhooks without a status filter', async () => {
+      webhooksService.listFailedWebhooks.mockResolvedValue([]);
+
+      await controller.listFailedWebhooks();
+
+      expect(webhooksService.listFailedWebhooks).toHaveBeenCalledWith(
+        undefined,
+      );
+    });
+
+    it('should forward a status filter to the service', async () => {
+      webhooksService.listFailedWebhooks.mockResolvedValue([]);
+
+      await controller.listFailedWebhooks(FailedWebhookStatus.DEAD_LETTER);
+
+      expect(webhooksService.listFailedWebhooks).toHaveBeenCalledWith(
+        FailedWebhookStatus.DEAD_LETTER,
+      );
+    });
+  });
+
+  describe('GET /webhooks/admin/failed/:eventId', () => {
+    it('should return the failed webhook record when found', async () => {
+      const record = { id: 'r-1', eventId: 'evt-1' } as any;
+      webhooksService.getFailedWebhook.mockResolvedValue(record);
+
+      const result = await controller.getFailedWebhook('evt-1');
+
+      expect(result).toBe(record);
+    });
+
+    it('should throw NotFoundException when no record exists for the event', async () => {
+      webhooksService.getFailedWebhook.mockResolvedValue(null);
+
+      await expect(controller.getFailedWebhook('missing-evt')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('POST /webhooks/admin/failed/:eventId/retry', () => {
+    it('should return success=true when the retry succeeds', async () => {
+      webhooksService.retryFailedWebhook.mockResolvedValue(true);
+
+      const result = await controller.retryFailedWebhook('evt-1');
+
+      expect(result).toEqual({ success: true, eventId: 'evt-1' });
+      expect(webhooksService.retryFailedWebhook).toHaveBeenCalledWith('evt-1');
+    });
+
+    it('should return success=false when the retry fails or is exhausted', async () => {
+      webhooksService.retryFailedWebhook.mockResolvedValue(false);
+
+      const result = await controller.retryFailedWebhook('evt-1');
+
+      expect(result).toEqual({ success: false, eventId: 'evt-1' });
+    });
+  });
+
+  // ─── POST /webhooks/health ───────────────────────────────────────────────
+
+  describe('POST /webhooks/health', () => {
+    it('should report ok status without touching the service layer', async () => {
+      const result = await controller.healthCheck();
+
+      expect(result.status).toBe('ok');
+      expect(result.timestamp).toBeInstanceOf(Date);
+      expect(webhooksService.processWebhook).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('WebhooksController Validation', () => {
+  let app: INestApplication;
+  let webhooksService: Partial<Record<keyof WebhooksService, jest.Mock>>;
+
+  beforeEach(async () => {
+    webhooksService = {
+      processEvent: jest.fn().mockResolvedValue({ status: 'PROCESSED' }),
+    };
+
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      controllers: [WebhooksController],
+      providers: [
+        {
+          provide: WebhooksService,
+          useValue: webhooksService,
+        },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  const validPayload = {
+    eventId: 'evt_123456789',
+    eventType: WebhookEventType.PAYMENT_RECEIVED,
+    data: {
+      transactionHash: '0xabc1234567890',
+      sourceAccount: 'GABCD1234567890',
+      amount: '100.00',
+    },
+  };
+
+  it('POST /webhooks/events - should accept valid payload and return 200 OK', async () => {
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(validPayload)
+      .expect(HttpStatus.OK);
+
+    expect(webhooksService.processEvent).toHaveBeenCalledWith(validPayload);
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when required fields are missing', async () => {
+    const invalidPayload = {
+      eventType: WebhookEventType.PAYMENT_RECEIVED,
+      // missing eventId and data
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request on unknown event type', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      eventType: 'INVALID_EVENT_TYPE',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when extra unwhitelisted properties exist', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      unsupportedField: 'malicious_input',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+});

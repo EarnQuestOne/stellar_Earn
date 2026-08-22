@@ -49,6 +49,12 @@
                         },
                         {
                           "key": {
+                            "symbol": "grace_period_seconds"
+                          },
+                          "val": "void"
+                        },
+                        {
+                          "key": {
                             "symbol": "id"
                           },
                           "val": {
@@ -500,6 +506,12 @@
                             },
                             {
                               "key": {
+                                "symbol": "grace_period_seconds"
+                              },
+                              "val": "void"
+                            },
+                            {
+                              "key": {
                                 "symbol": "id"
                               },
                               "val": {
@@ -706,7 +718,7 @@
             },
             "ext": "v0"
           },
-          4095
+          2073600
         ]
       ],
       [
@@ -793,7 +805,7 @@
             },
             "ext": "v0"
           },
-          4095
+          2073600
         ]
       ]
     ]
@@ -1015,6 +1027,12 @@
                           "val": {
                             "u64": 11060
                           }
+                        },
+                        {
+                          "key": {
+                            "symbol": "grace_period_seconds"
+                          },
+                          "val": "void"
                         },
                         {
                           "key": {

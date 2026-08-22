@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Quest } from '@/lib/types/quest';
 import { QuestDifficulty } from '@/lib/types/quest';
 
@@ -102,6 +102,20 @@ export const QuestCard = memo(
 
     const handleClick = () => onClick?.(localQuest);
 
+    // Prefetch quest detail data on hover/focus so navigation to the detail
+    // page hits a warm cache instead of a cold fetch. Runs once per card; a
+    // failed prefetch is allowed to retry on a later interaction.
+    const prefetchedRef = useRef(false);
+    const handlePrefetch = useCallback(() => {
+      if (prefetchedRef.current) return;
+      prefetchedRef.current = true;
+      import('@/lib/api/quests')
+        .then(({ getQuestById }) => getQuestById(localQuest.id))
+        .catch(() => {
+          prefetchedRef.current = false;
+        });
+    }, [localQuest.id]);
+
     // ── Accessible card label ────────────────────────────────────────────────
     // Previously: raw `${quest.rewardAmount} ${quest.rewardAsset}` interpolation
     // Now: uses formatReward so screen readers announce "500 XLM" not "500xlm"
@@ -134,6 +148,8 @@ export const QuestCard = memo(
       <button
         type="button"
         onClick={handleClick}
+        onMouseEnter={handlePrefetch}
+        onFocus={handlePrefetch}
         aria-label={cardLabel}
         className="quest-card"
       >

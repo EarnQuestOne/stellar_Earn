@@ -9,7 +9,7 @@ import {
 import { QuestsService } from './quests.service';
 import { Quest } from './entities/quest.entity';
 import * as questDto from './dto';
-import { QuestResponseDto } from './dto';
+import { QuestMapper } from './mappers/quest.mapper';
 import { CacheService } from '../cache/cache.service';
 import { ModerationService } from '../moderation/moderation.service';
 import { QuotaService } from '../quota/quota.service';
@@ -86,7 +86,7 @@ describe('QuestsService', () => {
 
       // patch static method via prototype
       const spy = jest
-        .spyOn(QuestResponseDto, 'fromEntity')
+        .spyOn(QuestMapper, 'toDto')
         .mockReturnValue(entity as any);
 
       await service.create(dto, creator);
@@ -111,7 +111,7 @@ describe('QuestsService', () => {
       repo.create.mockReturnValue(entity);
       repo.save.mockResolvedValue(entity);
 
-      jest.spyOn(QuestResponseDto, 'fromEntity').mockReturnValue(entity);
+      jest.spyOn(QuestMapper, 'toDto').mockReturnValue(entity);
 
       const result = await service.create(dto, creator);
 

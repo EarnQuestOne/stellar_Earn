@@ -10,6 +10,7 @@ import { CronJob } from 'cron';
 import { JobType, JobPriority } from '../job.types';
 import { JobSchedule } from '../entities/job-log.entity';
 import { JobsService } from '../jobs.service';
+import { policyToBullMQOptions, getRetryPolicy } from '../job-retry-policy';
 
 /**
  * Job Scheduler Service
@@ -260,7 +261,10 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Manually trigger a scheduled job
+   * Manually trigger a scheduled job.
+   *
+   * The per-type retry policy is merged into the job options so that manually
+   * triggered jobs benefit from the same backoff behaviour as scheduled ones.
    */
   async triggerScheduleNow(scheduleId: string): Promise<string> {
     const schedule = await this.jobScheduleRepository.findOne({
@@ -271,13 +275,17 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       throw new Error(`Schedule not found: ${scheduleId}`);
     }
 
+    const retryOpts = policyToBullMQOptions(getRetryPolicy(schedule.jobType));
+
     const job = await this.jobsService.addJob(
       this.mapJobTypeToQueue(schedule.jobType),
-      schedule.jobPayload,
+      { ...schedule.jobPayload, __jobType: schedule.jobType },
       {
+        ...retryOpts,
         priority: JobPriority.HIGH,
         jobId: `${scheduleId}:manual-trigger:${Date.now()}`,
       },
+      schedule.jobType,
     );
 
     this.logger.log(
@@ -334,13 +342,21 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
           try {
             schedule.lastRunAt = new Date();
 
+            // Resolve the per-type retry policy and embed __jobType so the
+            // worker's failed handler can apply non-retryable logic.
+            const retryOpts = policyToBullMQOptions(
+              getRetryPolicy(schedule.jobType),
+            );
+
             const job = await this.jobsService.addJob(
               this.mapJobTypeToQueue(schedule.jobType),
-              schedule.jobPayload,
+              { ...schedule.jobPayload, __jobType: schedule.jobType },
               {
+                ...retryOpts,
                 priority: JobPriority.MEDIUM,
                 jobId: `${schedule.id}:${Date.now()}`,
               },
+              schedule.jobType,
             );
 
             schedule.successCount++;

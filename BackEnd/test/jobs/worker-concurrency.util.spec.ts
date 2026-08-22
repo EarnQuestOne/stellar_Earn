@@ -10,7 +10,9 @@ import { JOB_QUEUE_CONFIG, QUEUES } from '#src/modules/jobs/jobs.constants';
 describe('worker concurrency tuning', () => {
   describe('workerConcurrencyEnvKey', () => {
     it('builds an upper-cased QUEUE_<NAME>_CONCURRENCY key', () => {
-      expect(workerConcurrencyEnvKey('payouts')).toBe('QUEUE_PAYOUTS_CONCURRENCY');
+      expect(workerConcurrencyEnvKey('payouts')).toBe(
+        'QUEUE_PAYOUTS_CONCURRENCY',
+      );
       expect(workerConcurrencyEnvKey(QUEUES.MAINTENANCE)).toBe(
         'QUEUE_MAINTENANCE_CONCURRENCY',
       );
@@ -40,7 +42,9 @@ describe('worker concurrency tuning', () => {
 
     it('clamps an override above the maximum down to MAX_WORKER_CONCURRENCY', () => {
       const env = { QUEUE_EMAIL_CONCURRENCY: '10000' };
-      expect(resolveWorkerConcurrency(QUEUES.EMAIL, env)).toBe(MAX_WORKER_CONCURRENCY);
+      expect(resolveWorkerConcurrency(QUEUES.EMAIL, env)).toBe(
+        MAX_WORKER_CONCURRENCY,
+      );
     });
 
     it('rejects an override below the minimum and uses the configured default', () => {

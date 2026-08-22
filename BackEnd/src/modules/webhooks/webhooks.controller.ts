@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Headers,
   HttpCode,
@@ -8,7 +9,12 @@ import {
   Logger,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
   Param,
+  Query,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +22,11 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   WebhooksService,
   WebhookEvent,
@@ -25,7 +35,11 @@ import {
 import {
   WebhookResponseDto,
   WebhookHealthResponseDto,
+  FailedWebhookEventResponseDto,
+  RetryWebhookResponseDto,
 } from './dto/webhook-response.dto';
+import { WebhookPayloadDto } from './dto/webhook-event.dto';
+import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 import { TraceService } from '../trace/trace.service';
 import { TraceIdUtil } from '../trace/trace-id.util';
 import {
@@ -33,9 +47,20 @@ import {
   TraceContext,
 } from '../trace/trace-context.storage';
 import { TraceStatus } from '../trace/trace.types';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
+
+/** Explicit allowlist of supported generic webhook services and their secret env var keys. */
+const WEBHOOK_SERVICE_ALLOWLIST: Record<string, string> = {
+  github: 'GITHUB_WEBHOOK_SECRET',
+  api: 'API_WEBHOOK_SECRET',
+};
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
@@ -50,9 +75,16 @@ export class WebhooksController {
    */
   @Post('github')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'Receive GitHub webhook events' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Webhook processed successfully',
@@ -64,7 +96,7 @@ export class WebhooksController {
     description: 'Unauthorized or invalid signature',
   })
   async handleGithubWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers('x-github-event') eventType: string,
     @Headers('x-github-delivery') deliveryId: string,
     @Headers('x-hub-signature-256') signature: string,
@@ -85,8 +117,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: deliveryId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -114,7 +146,6 @@ export class WebhooksController {
           throw new UnauthorizedException(response.message);
         }
 
-        // Link on-chain tx hash if the service returns one
         if (response.txHash) {
           await this.traceService.linkOnchain({
             traceId,
@@ -132,7 +163,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -156,9 +187,16 @@ export class WebhooksController {
    */
   @Post('api-verify')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'API verification webhook endpoint' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Verification processed',
@@ -170,7 +208,7 @@ export class WebhooksController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleApiVerificationWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers('x-event-type') eventType: string,
     @Headers('x-webhook-id') webhookId: string,
     @Headers('authorization') authHeader: string,
@@ -191,8 +229,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: webhookId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -242,7 +280,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -262,13 +300,19 @@ export class WebhooksController {
 
   /**
    * Generic webhook endpoint for other external services
-   * Note: This should be placed after specific routes to avoid conflicts
    */
   @Post('generic/:service')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'Generic webhook receiver for external services' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Webhook processed',
@@ -276,12 +320,24 @@ export class WebhooksController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleGenericWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers() headers: any,
     @Headers('x-signature') signature: string,
     @Headers('x-event-type') eventType: string,
     @Param('service') service: string,
   ): Promise<WebhookResponse> {
+    const secretEnvKey = WEBHOOK_SERVICE_ALLOWLIST[service.toLowerCase()];
+    if (!secretEnvKey) {
+      throw new BadRequestException(`Unknown webhook service: ${service}`);
+    }
+
+    const secret = process.env[secretEnvKey];
+    if (!secret) {
+      throw new BadRequestException(
+        `Webhook secret not configured for service: ${service}`,
+      );
+    }
+
     const eventId = this.generateEventId();
     const traceId = TraceIdUtil.generate(eventId);
     const traceCtx: TraceContext = { traceId, webhookEventId: eventId };
@@ -294,8 +350,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: eventId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -306,7 +362,7 @@ export class WebhooksController {
           timestamp: new Date(),
           source: service,
           signature,
-          secret: process.env[`${service.toUpperCase()}_WEBHOOK_SECRET`],
+          secret,
         };
 
         const response = await this.webhooksService.processWebhook(event);
@@ -337,7 +393,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -353,6 +409,80 @@ export class WebhooksController {
         throw error;
       }
     });
+  }
+
+  /**
+   * List persisted failed webhook events (admin only)
+   */
+  @Get('admin/failed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List failed webhook events (Admin only)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: FailedWebhookStatus,
+    description: 'Filter by retry lifecycle status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook events retrieved successfully',
+    type: [FailedWebhookEventResponseDto],
+  })
+  async listFailedWebhooks(
+    @Query('status') status?: FailedWebhookStatus,
+  ): Promise<FailedWebhookEventResponseDto[]> {
+    return this.webhooksService.listFailedWebhooks(status);
+  }
+
+  /**
+   * Inspect a single failed webhook event (admin only)
+   */
+  @Get('admin/failed/:eventId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Failed webhook event retrieved successfully',
+    type: FailedWebhookEventResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'No failed webhook found' })
+  async getFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<FailedWebhookEventResponseDto> {
+    const record = await this.webhooksService.getFailedWebhook(eventId);
+    if (!record) {
+      throw new NotFoundException(
+        `No failed webhook found for event ${eventId}`,
+      );
+    }
+    return record;
+  }
+
+  /**
+   * Manually trigger a retry of a failed webhook event (admin only)
+   */
+  @Post('admin/failed/:eventId/retry')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Retry a failed webhook event (Admin only)' })
+  @ApiParam({ name: 'eventId', description: 'Original webhook event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retry attempted',
+    type: RetryWebhookResponseDto,
+  })
+  async retryFailedWebhook(
+    @Param('eventId') eventId: string,
+  ): Promise<RetryWebhookResponseDto> {
+    const success = await this.webhooksService.retryFailedWebhook(eventId);
+    return { success, eventId };
   }
 
   /**
@@ -377,6 +507,6 @@ export class WebhooksController {
    * Generate unique event ID
    */
   private generateEventId(): string {
-    return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

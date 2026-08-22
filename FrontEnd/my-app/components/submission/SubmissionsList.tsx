@@ -4,6 +4,17 @@ import { memo } from 'react';
 import { SubmissionCard } from './SubmissionCard';
 import type { Submission } from '@/lib/types/submission';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { VirtualizedList } from '@/components/ui/VirtualizedList';
+
+/**
+ * Lists longer than this switch to windowed rendering so only the rows in view
+ * are mounted. Shorter lists keep the plain flow layout unchanged.
+ */
+const VIRTUALIZE_THRESHOLD = 40;
+/** Approximate rendered height of a SubmissionCard row, including spacing. */
+const ROW_HEIGHT = 180;
+/** Height of the virtualized scroll viewport. */
+const VIEWPORT_HEIGHT = 800;
 
 interface SubmissionsListProps {
   submissions: Submission[];
@@ -87,6 +98,28 @@ export const SubmissionsList = memo(function SubmissionsList({
 
   if (submissions.length === 0) {
     return <EmptyState />;
+  }
+
+  if (submissions.length > VIRTUALIZE_THRESHOLD) {
+    return (
+      <div id="submissions-list">
+        <VirtualizedList
+          items={submissions}
+          itemHeight={ROW_HEIGHT}
+          height={VIEWPORT_HEIGHT}
+          ariaLabel={`${submissions.length} submissions`}
+          getKey={(submission) => submission.id}
+          renderItem={(submission) => (
+            <div className="pb-4">
+              <SubmissionCard
+                submission={submission}
+                onClick={onSubmissionClick}
+              />
+            </div>
+          )}
+        />
+      </div>
+    );
   }
 
   return (

@@ -130,6 +130,7 @@ pub enum Error {
     StaleOracleData = 104,
     InvalidOracleData = 105,
     LowOracleConfidence = 106,
+    RewardDeviationTooHigh = 107,
 
     // Arithmetic
     ArithmeticOverflow = 110,
@@ -162,4 +163,12 @@ pub enum Error {
 
     /// Re-pause attempted before the cooldown period elapsed since last unpause.
     PauseCooldown = 152,
+
+    // Token Errors (SEP-41)
+    /// Spender's allowance is lower than the requested transfer/burn amount.
+    InsufficientAllowance = 153,
+
+    // Gas / Resource Errors
+    /// Instruction or resource limit exceeded for entrypoint.
+    GasBudgetExceeded = 160,
 }

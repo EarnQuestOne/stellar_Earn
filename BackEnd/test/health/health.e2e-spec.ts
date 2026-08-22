@@ -176,9 +176,7 @@ describe('Health (e2e)', () => {
       mockDatabaseHealth.check.mockResolvedValue(okResult);
       mockCacheHealth.check.mockResolvedValue(okResult);
 
-      await request(app.getHttpServer())
-        .get('/api/health/ready')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/health/ready').expect(200);
 
       // Both should have been called
       expect(mockDatabaseHealth.check).toHaveBeenCalledTimes(1);

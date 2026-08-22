@@ -41,7 +41,10 @@ describe('validateUploadedFile', () => {
 
   it('rejects an empty file', () => {
     expect(() =>
-      validateUploadedFile(makeFile({ size: 0, buffer: Buffer.alloc(0) }), options),
+      validateUploadedFile(
+        makeFile({ size: 0, buffer: Buffer.alloc(0) }),
+        options,
+      ),
     ).toThrow(BadRequestException);
   });
 
@@ -85,10 +88,14 @@ describe('hasMatchingMagicBytes', () => {
   });
 
   it('returns false for mismatched bytes', () => {
-    expect(hasMatchingMagicBytes(Buffer.from('hello'), 'image/png')).toBe(false);
+    expect(hasMatchingMagicBytes(Buffer.from('hello'), 'image/png')).toBe(
+      false,
+    );
   });
 
   it('returns true for types without a known signature', () => {
-    expect(hasMatchingMagicBytes(Buffer.from('plain'), 'text/plain')).toBe(true);
+    expect(hasMatchingMagicBytes(Buffer.from('plain'), 'text/plain')).toBe(
+      true,
+    );
   });
 });

@@ -11,10 +11,17 @@ import { MultiSigWallet } from '../stellar/multisig/entities/multisig-wallet.ent
 import { MultiSigModule } from '../stellar/multisig/multisig.module';
 import { TraceModule } from '../trace/trace.module';
 import { BulkheadService } from '../../common/services/bulkhead.service';
+import { FailedWebhookEvent } from './entities/failed-webhook-event.entity';
+import { FailedWebhookRetryScheduler } from './failed-webhook-retry.scheduler';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MultiSigTransaction, Payout, MultiSigWallet]),
+    TypeOrmModule.forFeature([
+      MultiSigTransaction,
+      Payout,
+      MultiSigWallet,
+      FailedWebhookEvent,
+    ]),
     TraceModule,
     MultiSigModule,
   ],
@@ -25,6 +32,7 @@ import { BulkheadService } from '../../common/services/bulkhead.service';
     ApiHandler,
     MultiSigWebhookHandler,
     BulkheadService,
+    FailedWebhookRetryScheduler,
   ],
   exports: [WebhooksService],
 })

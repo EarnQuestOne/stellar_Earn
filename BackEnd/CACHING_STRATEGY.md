@@ -223,6 +223,8 @@ await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
 - **Cache Keys**:
   - `payouts:{userId}` - User payouts
   - `payout_detail:{id}` - Individual payout
+  - `payout_poll:{id}:{viewerScope}` - Payout status polling snapshots (#1983, see `docs/JOB_RESULT_STATUS_CACHE.md`)
+  - `job_status:{jobId}` - Background job status/result snapshots
 - **TTL**: LONG (1 hour) - infrequent changes
 - **Invalidation**: On approval/rejection
 

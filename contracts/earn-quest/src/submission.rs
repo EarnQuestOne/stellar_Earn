@@ -145,6 +145,8 @@ pub fn submit_proof(
     submitter: &Address,
     proof_hash: &BytesN<32>,
 ) -> Result<(), Error> {
+    crate::gas_budget::reset_call_budget(env);
+    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("sub_prf"))?;
     // Verify quest exists and get its data
     let quest = storage::get_quest(env, quest_id)?;
     // Validate quest is active
@@ -194,6 +196,8 @@ pub fn approve_submission(
     submitter: &Address,
     verifier: &Address,
 ) -> Result<(), Error> {
+    crate::gas_budget::reset_call_budget(env);
+    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("appr_sub"))?;
     let quest = storage::get_quest(env, quest_id)?;
 
     if *verifier != quest.verifier {
@@ -326,11 +330,16 @@ pub fn approve_submissions_batch(
     verifier: &Address,
     submissions: &Vec<BatchApprovalInput>,
 ) -> Result<(), Error> {
+    crate::gas_budget::reset_call_budget(env);
     let len = submissions.len();
     validation::validate_batch_approval_size(len)?;
 
+    let ep = soroban_sdk::symbol_short!("appr_btch");
+    crate::gas_budget::enforce_budget(env, &ep)?;
+
     // Pre-validate all addresses to fail fast
     for i in 0u32..len {
+        crate::gas_budget::enforce_budget(env, &ep)?;
         let s = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
         for j in 0u32..s.submissions.len() {
             let submitter = s.submissions.get(j).ok_or(Error::IndexOutOfBounds)?;

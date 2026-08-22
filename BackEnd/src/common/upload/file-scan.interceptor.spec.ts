@@ -48,12 +48,16 @@ describe('FileScanInterceptor', () => {
   };
 
   it('passes a valid, clean file through to the handler', async () => {
-    const virusScan = { assertFileClean: jest.fn().mockResolvedValue({ clean: true }) };
-    const Interceptor = FileScanInterceptor({ allowedMimeTypes: ['image/png'] });
+    const virusScan = {
+      assertFileClean: jest.fn().mockResolvedValue({ clean: true }),
+    };
+    const Interceptor = FileScanInterceptor({
+      allowedMimeTypes: ['image/png'],
+    });
 
-    await expect(run(Interceptor, virusScan, contextWith(makeFile()))).resolves.toBe(
-      'handler-result',
-    );
+    await expect(
+      run(Interceptor, virusScan, contextWith(makeFile())),
+    ).resolves.toBe('handler-result');
     expect(virusScan.assertFileClean).toHaveBeenCalledTimes(1);
   });
 
@@ -76,7 +80,9 @@ describe('FileScanInterceptor', () => {
         .fn()
         .mockRejectedValue(new UnprocessableEntityException('malware')),
     };
-    const Interceptor = FileScanInterceptor({ allowedMimeTypes: ['image/png'] });
+    const Interceptor = FileScanInterceptor({
+      allowedMimeTypes: ['image/png'],
+    });
 
     await expect(
       run(Interceptor, virusScan, contextWith(makeFile())),
@@ -87,8 +93,8 @@ describe('FileScanInterceptor', () => {
     const virusScan = { assertFileClean: jest.fn() };
     const Interceptor = FileScanInterceptor({ required: false });
 
-    await expect(run(Interceptor, virusScan, contextWith(undefined))).resolves.toBe(
-      'handler-result',
-    );
+    await expect(
+      run(Interceptor, virusScan, contextWith(undefined)),
+    ).resolves.toBe('handler-result');
   });
 });

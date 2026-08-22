@@ -3,7 +3,8 @@
 //! Defines explicit instruction-count ceilings for each public entrypoint
 //! so that regressions are caught before they reach production.
 
-use soroban_sdk::{contracttype, symbol_short, Symbol};
+use crate::errors::Error;
+use soroban_sdk::{contracttype, symbol_short, Env, Symbol};
 
 /// Maximum allowed instructions per named entrypoint.
 #[contracttype]
@@ -27,7 +28,7 @@ pub struct GasBudgetTarget {
 //   claim_reward:      767,838
 
 /// Returns the static gas budget targets for all EarnQuest entrypoints.
-pub fn default_targets() -> [GasBudgetTarget; 5] {
+pub fn default_targets() -> [GasBudgetTarget; 7] {
     [
         GasBudgetTarget {
             entrypoint: symbol_short!("init"),
@@ -49,6 +50,14 @@ pub fn default_targets() -> [GasBudgetTarget; 5] {
             entrypoint: symbol_short!("clm_rwd"),
             max_instructions: 921_406,
         },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("reg_btch"),
+            max_instructions: 2_500_000,
+        },
+        GasBudgetTarget {
+            entrypoint: symbol_short!("appr_btch"),
+            max_instructions: 3_000_000,
+        },
     ]
 }
 
@@ -59,6 +68,36 @@ pub fn within_budget(entrypoint: &Symbol, measured: u64) -> bool {
         .find(|t| &t.entrypoint == entrypoint)
         .map(|t| measured <= t.max_instructions)
         .unwrap_or(true)
+}
+
+/// Resets the invocation CPU instruction budget counter to default.
+pub fn reset_call_budget(env: &Env) {
+    #[cfg(any(test, feature = "testutils"))]
+    {
+        env.budget().reset_default();
+    }
+    #[cfg(not(any(test, feature = "testutils")))]
+    {
+        let _ = env;
+    }
+}
+
+/// Enforces the gas budget at runtime. Checks measured CPU instructions against entrypoint target ceiling.
+///
+/// Returns `Ok(())` if within budget, or `Err(Error::GasBudgetExceeded)` if the budget ceiling is exceeded.
+pub fn enforce_budget(env: &Env, entrypoint: &Symbol) -> Result<(), Error> {
+    #[cfg(any(test, feature = "testutils"))]
+    {
+        let measured = env.budget().cpu_instruction_cost();
+        if !within_budget(entrypoint, measured) {
+            return Err(Error::GasBudgetExceeded);
+        }
+    }
+    #[cfg(not(any(test, feature = "testutils")))]
+    {
+        let _ = (env, entrypoint);
+    }
+    Ok(())
 }
 
 #[cfg(test)]

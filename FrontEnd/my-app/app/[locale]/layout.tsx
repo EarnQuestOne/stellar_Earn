@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { headers } from 'next/headers';
 import '../globals.css';
 import { RootProviders } from '@/app/providers/RootProviders';
 import { I18nProvider } from '@/app/providers/I18nProvider';
@@ -11,6 +12,7 @@ import { SkipToContent } from '@/components/a11y/SkipToContent';
 import PerformanceMonitor from '@/components/ui/PerformanceMonitor';
 import { EnvValidator } from '@/components/providers/EnvValidator';
 import { SWRegister } from '@/components/SWRegister';
+import { createPageMetadata, getLocale } from '@/lib/seo';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -22,11 +24,33 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'StellarEarn - Quest-Based Earning Platform',
-  description:
-    'Complete quests, earn rewards, and build your on-chain reputation with Stellar',
+const homeMetadata = {
+  en: {
+    title: 'Complete Quests and Earn Stellar Rewards',
+    description:
+      'Discover community quests, earn Stellar rewards, and build your on-chain reputation with StellarEarn.',
+  },
+  es: {
+    title: 'Completa misiones y gana recompensas Stellar',
+    description:
+      'Descubre misiones de la comunidad, gana recompensas Stellar y construye tu reputación on-chain con StellarEarn.',
+  },
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = getLocale(localeParam);
+
+  return createPageMetadata({
+    ...homeMetadata[locale],
+    locale,
+    pathname: '/',
+  });
+}
 
 export default async function RootLayout({
   children,
@@ -36,18 +60,18 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Preload critical CSS for Hero section */}
+        <link rel="preload" href="/styles/HeroSection.css" as="style" />
+        <noscript>
+          <link rel="stylesheet" href="/styles/HeroSection.css" />
+        </noscript>
         {/* Render-blocking script prevents flash of unstyled theme on first paint */}
-        <script src="/theme-init.js" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        <script src="/theme-init.js" nonce={nonce} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

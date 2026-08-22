@@ -38,6 +38,12 @@ jobs:
         with:
           node-version: 22
 
+      # The preflight script (check:toolchain) verifies Rust/Cargo versions because
+      # some backend workflows interact with the Soroban contract workspace.
+      # Match contract-ci.yml's toolchain choice so requirements stay in sync.
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Cache npm dependencies
         uses: actions/cache@v4
         with:

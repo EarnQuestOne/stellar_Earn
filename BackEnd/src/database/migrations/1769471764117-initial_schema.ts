@@ -5,7 +5,7 @@ export class InitialSchema1769471764117 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "users" (
+      `CREATE TABLE IF NOT EXISTS "users" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "stellarAddress" TEXT NOT NULL,
         "username" TEXT,
@@ -20,11 +20,11 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "IDX_USER_STELLAR_ADDRESS" ON "users" ("stellarAddress")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_USER_STELLAR_ADDRESS" ON "users" ("stellarAddress")`,
     );
 
     await queryRunner.query(
-      `CREATE TABLE "quests" (
+      `CREATE TABLE IF NOT EXISTS "quests" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "title" TEXT NOT NULL,
         "description" TEXT NOT NULL,
@@ -43,7 +43,7 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE "submissions" (
+      `CREATE TABLE IF NOT EXISTS "submissions" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "questId" TEXT NOT NULL,
         "userId" TEXT NOT NULL,
@@ -62,19 +62,19 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_SUBMISSION_QUEST_ID" ON "submissions" ("questId")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUBMISSION_QUEST_ID" ON "submissions" ("questId")`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_SUBMISSION_USER_ID" ON "submissions" ("userId")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUBMISSION_USER_ID" ON "submissions" ("userId")`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_SUBMISSION_STATUS" ON "submissions" ("status")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUBMISSION_STATUS" ON "submissions" ("status")`,
     );
 
     await queryRunner.query(
-      `CREATE TABLE "notifications" (
+      `CREATE TABLE IF NOT EXISTS "notifications" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "userId" TEXT NOT NULL,
         "type" TEXT NOT NULL,
@@ -89,15 +89,15 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_NOTIFICATION_USER_ID" ON "notifications" ("userId")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_NOTIFICATION_USER_ID" ON "notifications" ("userId")`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_NOTIFICATION_READ" ON "notifications" ("read")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_NOTIFICATION_READ" ON "notifications" ("read")`,
     );
 
     await queryRunner.query(
-      `CREATE TABLE "payouts" (
+      `CREATE TABLE IF NOT EXISTS "payouts" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "userId" TEXT NOT NULL,
         "amount" INTEGER NOT NULL,
@@ -110,7 +110,7 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE "refresh_tokens" (
+      `CREATE TABLE IF NOT EXISTS "refresh_tokens" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "token" TEXT NOT NULL,
         "stellarAddress" TEXT NOT NULL,
@@ -121,16 +121,26 @@ export class InitialSchema1769471764117 implements MigrationInterface {
       )`,
     );
 
-    await queryRunner.query(
-      `CREATE INDEX "IDX_REFRESH_TOKEN_TOKEN" ON "refresh_tokens" ("token")`,
+    const hasTokenCol = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'refresh_tokens' AND column_name = 'token'`,
     );
+    if (hasTokenCol.length > 0) {
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS "IDX_REFRESH_TOKEN_TOKEN" ON "refresh_tokens" ("token")`,
+      );
+    }
+
+    const hasStellarCol = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'refresh_tokens' AND column_name = 'stellarAddress'`,
+    );
+    if (hasStellarCol.length > 0) {
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS "IDX_REFRESH_TOKEN_STELLAR_ADDRESS" ON "refresh_tokens" ("stellarAddress")`,
+      );
+    }
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_REFRESH_TOKEN_STELLAR_ADDRESS" ON "refresh_tokens" ("stellarAddress")`,
-    );
-
-    await queryRunner.query(
-      `CREATE TABLE "analytics_snapshots" (
+      `CREATE TABLE IF NOT EXISTS "analytics_snapshots" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "date" DATE NOT NULL,
         "type" TEXT NOT NULL,
@@ -143,15 +153,15 @@ export class InitialSchema1769471764117 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_ANALYTICS_SNAPSHOT_DATE" ON "analytics_snapshots" ("date")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ANALYTICS_SNAPSHOT_DATE" ON "analytics_snapshots" ("date")`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_ANALYTICS_SNAPSHOT_TYPE" ON "analytics_snapshots" ("type")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ANALYTICS_SNAPSHOT_TYPE" ON "analytics_snapshots" ("type")`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_ANALYTICS_SNAPSHOT_REFERENCE_ID" ON "analytics_snapshots" ("referenceId")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ANALYTICS_SNAPSHOT_REFERENCE_ID" ON "analytics_snapshots" ("referenceId")`,
     );
   }
 

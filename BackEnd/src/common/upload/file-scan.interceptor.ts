@@ -87,7 +87,10 @@ export function FileScanInterceptor(
       }
     }
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    intercept(
+      context: ExecutionContext,
+      next: CallHandler,
+    ): Observable<unknown> {
       return from(this.process(context)).pipe(switchMap(() => next.handle()));
     }
   }

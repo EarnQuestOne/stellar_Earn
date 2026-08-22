@@ -11,8 +11,11 @@ import { CreateQuestDto } from './dto/create-quest.dto';
 import { UpdateQuestDto } from './dto/update-quest.dto';
 import { QueryQuestsDto } from './dto/query-quests.dto';
 
-import { QuestResponseDto } from './dto/quest-response.dto';
-import { PaginatedQuestsResponseDto } from './dto/quest-response.dto';
+import {
+  PaginatedQuestsResponseDto,
+  QuestResponseDto,
+} from './dto/quest-response.dto';
+import { QuestMapper } from './mappers/quest.mapper';
 class QuestCreatedEvent {
   constructor(
     public id: string,
@@ -107,7 +110,7 @@ export class QuestsService {
     // Invalidate quest list cache
     await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
 
-    return QuestResponseDto.fromEntity(savedQuest);
+    return QuestMapper.toDto(savedQuest);
   }
 
   async findAll(queryDto: QueryQuestsDto): Promise<PaginatedQuestsResponseDto> {
@@ -171,7 +174,7 @@ export class QuestsService {
       : undefined;
 
     const result: PaginatedQuestsResponseDto = {
-      data: data.map((quest) => QuestResponseDto.fromEntity(quest)),
+      data: QuestMapper.toDtoArray(data),
       nextCursor,
       limit,
     };
@@ -199,7 +202,7 @@ export class QuestsService {
       throw new NotFoundException(`Quest with ID ${id} not found`);
     }
 
-    const result = QuestResponseDto.fromEntity(quest);
+    const result = QuestMapper.toDto(quest);
 
     // Cache the result
     await this.cacheService.set(cacheKey, result, CACHE_TTL.LONG * 1000);
@@ -268,9 +271,11 @@ export class QuestsService {
       new QuestUpdatedEvent(id, updateQuestDto.title || 'Untitled', 'system'),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
 
     // Emit quest updated event
     this.eventEmitter.emit('quest.updated', {
@@ -279,7 +284,7 @@ export class QuestsService {
       updatedAt: new Date(),
     });
 
-    return QuestResponseDto.fromEntity(updatedQuest);
+    return QuestMapper.toDto(updatedQuest);
   }
 
   async remove(id: string, userAddress: string): Promise<void> {
@@ -305,9 +310,11 @@ export class QuestsService {
       new QuestDeletedEvent(id, quest.createdBy),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
   }
 
   validateStatusTransition(currentStatus: string, newStatus: string): void {

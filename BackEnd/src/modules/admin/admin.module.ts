@@ -5,7 +5,7 @@ import {
   Query,
   UseGuards,
   Injectable,
-  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,11 +17,15 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { IpWhitelistGuard } from '../../common/guards/ip-whitelist.guard';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../../common/enums/role.enum';
+import { GetUsersQueryDto } from './dto/get-users-query.dto';
 
 // ── Service ──────────────────────────────────────────────────────────────────
 
 @Injectable()
 export class AdminService {
+  private statsCache: { data: any; expiresAt: number } | null = null;
+  private readonly STATS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
@@ -39,17 +43,24 @@ export class AdminService {
   async getUserById(id: string) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) {
-      throw new ForbiddenException('User not found');
+      throw new NotFoundException(`User ${id} not found`);
     }
     return user;
   }
 
   async getPlatformStats() {
+    const now = Date.now();
+    if (this.statsCache && now < this.statsCache.expiresAt) {
+      return this.statsCache.data;
+    }
+
     const totalUsers = await this.userRepo.count();
     const adminCount = await this.userRepo.count({
       where: { role: Role.ADMIN },
     });
-    return { totalUsers, adminCount };
+    const data = { totalUsers, adminCount };
+    this.statsCache = { data, expiresAt: now + this.STATS_CACHE_TTL_MS };
+    return data;
   }
 }
 
@@ -61,8 +72,10 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  getUsers(@Query('page') page = 1, @Query('limit') limit = 20) {
-    return this.adminService.getUsers(Number(page), Number(limit));
+  getUsers(@Query() query: GetUsersQueryDto = {}) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    return this.adminService.getUsers(page, limit);
   }
 
   @Get('users/:id')

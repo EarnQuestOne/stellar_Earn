@@ -6,9 +6,16 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { QuestDifficulty } from '../enums/quest-difficulty.enum';
 
+@Index('idx_quest_active_status', ['status'], {
+  where: '"deletedAt" IS NULL',
+})
+@Index('idx_quest_active_created_by', ['createdBy'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('quests')
 export class Quest {
   @PrimaryGeneratedColumn('uuid')

@@ -3,49 +3,28 @@ import { tokenManager, getApiClient } from './client';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/tests/mocks/server';
 
-const REFRESH_TOKEN_KEY = 'stellar_earn_refresh_token';
-const ACCESS_TOKEN_KEY = 'stellar_earn_access_token';
-
-function setValidTokens() {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, 'header.payload.signature');
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, 'header.payload.signature');
-}
-
 describe('tokenManager', () => {
-  beforeEach(() => {
-    window.localStorage.clear();
-    vi.restoreAllMocks();
-  });
-
-  it('returns null when no token exists', () => {
+  it('getAccessToken returns null (tokens are httpOnly cookies)', () => {
     expect(tokenManager.getAccessToken()).toBeNull();
   });
 
-  it('returns valid JWT token when present', () => {
-    const validToken = 'header.payload.signature';
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, validToken);
-    expect(tokenManager.getAccessToken()).toBe(validToken);
+  it('getRefreshToken returns null (tokens are httpOnly cookies)', () => {
+    expect(tokenManager.getRefreshToken()).toBeNull();
   });
 
-  it('removes invalid JWT token and returns null', () => {
-    const invalidToken = 'invalid';
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, invalidToken);
-    expect(tokenManager.getAccessToken()).toBeNull();
-    expect(window.localStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  it('setTokens is a no-op (backend sets cookies)', () => {
+    // Should not throw
+    tokenManager.setTokens({ accessToken: 'test', refreshToken: 'test' });
   });
 
-  it('handles localStorage error gracefully', () => {
-    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
-      throw new Error('error');
-    });
-    const result = tokenManager.getAccessToken();
-    expect(result).toBeNull();
+  it('clearTokens is a no-op (backend clears cookies on logout)', () => {
+    // Should not throw
+    tokenManager.clearTokens();
   });
 });
 
-describe('response interceptor - refresh failure', () => {
+describe('CSRF token handling', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -53,34 +32,47 @@ describe('response interceptor - refresh failure', () => {
     server.resetHandlers();
   });
 
-  it('clears tokens when refresh fails after a 401 response', async () => {
-    setValidTokens();
-
+  it('captures CSRF token from response headers', async () => {
     server.use(
       http.get('http://localhost:3000/api/v1/auth/profile', () => {
-        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
-      }),
-      http.post('http://localhost:3000/api/v1/auth/refresh', () => {
         return HttpResponse.json(
-          { message: 'Refresh failed' },
-          { status: 401 }
+          { stellarAddress: 'GTEST', role: 'USER' },
+          { headers: { 'x-csrf-token': 'test-csrf-token-123' } }
         );
       })
     );
 
-    try {
-      await getApiClient().get('/auth/profile');
-    } catch {
-      // expected
-    }
+    await getApiClient().get('/auth/profile');
 
-    expect(tokenManager.getAccessToken()).toBeNull();
-    expect(tokenManager.getRefreshToken()).toBeNull();
+    // Subsequent requests should include the CSRF token
+    server.use(
+      http.post('http://localhost:3000/api/v1/quests', async ({ request }) => {
+        const csrfHeader = request.headers.get('x-csrf-token');
+        if (csrfHeader === 'test-csrf-token-123') {
+          return HttpResponse.json({ success: true });
+        }
+        return HttpResponse.json(
+          { message: 'Invalid CSRF token' },
+          { status: 403 }
+        );
+      })
+    );
+
+    const response = await getApiClient().post('/quests', { title: 'test' });
+    expect(response.data).toEqual({ success: true });
+  });
+});
+
+describe('response interceptor - refresh failure', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   it('dispatches session-expired event when refresh fails', async () => {
-    setValidTokens();
-
     const eventSpy = vi.fn();
     window.addEventListener('session-expired', eventSpy);
 

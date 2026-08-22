@@ -20,6 +20,32 @@ interface UseQuestDraftOptions {
   autosaveDelayMs?: number;
 }
 
+/**
+ * Merges a stored draft over the current defaults.
+ *
+ * Drafts are persisted as a plain snapshot, so one saved before a new section
+ * was added to `QuestWizardData` would be missing that key and crash the step
+ * that reads it. Filling gaps from the defaults keeps older drafts loadable.
+ */
+function normalizeDraftData(stored: Partial<QuestWizardData>): QuestWizardData {
+  return {
+    ...defaultQuestWizardData,
+    ...stored,
+    basics: { ...defaultQuestWizardData.basics, ...stored.basics },
+    requirements: {
+      ...defaultQuestWizardData.requirements,
+      ...stored.requirements,
+    },
+    reward: { ...defaultQuestWizardData.reward, ...stored.reward },
+    timeline: { ...defaultQuestWizardData.timeline, ...stored.timeline },
+    verification: {
+      ...defaultQuestWizardData.verification,
+      ...stored.verification,
+    },
+    advanced: { ...defaultQuestWizardData.advanced, ...stored.advanced },
+  };
+}
+
 export function useQuestDraft(
   data: QuestWizardData,
   step: QuestWizardStepIndex,
@@ -88,7 +114,7 @@ export function useQuestDraft(
       setLastSavedAt(parsed.updatedAt ?? null);
       setHasDraft(true);
       setHasLoadedDraft(true);
-      return parsed;
+      return { ...parsed, data: normalizeDraftData(parsed.data) };
     } catch {
       return null;
     }

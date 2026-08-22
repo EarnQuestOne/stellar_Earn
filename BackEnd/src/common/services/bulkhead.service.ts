@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 
 interface BulkheadOptions {
   maxConcurrent: number;
@@ -14,7 +18,10 @@ interface QueuedTask<T> {
 @Injectable()
 export class BulkheadService {
   private readonly logger = new Logger(BulkheadService.name);
-  private readonly state = new Map<string, { running: number; queue: QueuedTask<any>[] }>();
+  private readonly state = new Map<
+    string,
+    { running: number; queue: QueuedTask<any>[] }
+  >();
 
   async runWithBulkhead<T>(
     key: string,
@@ -57,7 +64,10 @@ export class BulkheadService {
     return entry;
   }
 
-  private async drainQueue(key: string, options: BulkheadOptions): Promise<void> {
+  private async drainQueue(
+    key: string,
+    options: BulkheadOptions,
+  ): Promise<void> {
     const state = this.getOrCreateState(key);
     while (state.running < options.maxConcurrent && state.queue.length > 0) {
       const next = state.queue.shift();

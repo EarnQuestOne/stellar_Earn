@@ -6,12 +6,24 @@ import {
 } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { QUEUES, DEFAULT_JOB_OPTIONS } from './jobs.constants';
+import {
+  getRetryPolicy,
+  policyToBullMQOptions,
+  isNonRetryableError,
+} from './job-retry-policy';
+import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
+import { PayoutProcessor } from './processors/payout.processor';
 import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
 import { AppLoggerService } from '../../common/logger/logger.service';
+import {
+  resolveWorkerConcurrency,
+  resolveWorkerLimiter,
+} from './utils/worker-concurrency.util';
+import { PayloadStorageService } from './services/payload-storage.service';
 
 export interface QueueMetrics {
   queue: string;
@@ -38,11 +50,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private queues: Record<string, Queue> = {};
   private workers: Worker[] = [];
   private emailProcessor:
-    ((messageId: string, dto: any) => Promise<void>) | null = null;
+    | ((messageId: string, dto: any) => Promise<void>)
+    | null = null;
 
   constructor(
     private readonly tracing: TracingService,
+    private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
+    private readonly payoutProcessor?: PayoutProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -71,12 +86,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     );
     this.queues[QUEUES.EMAIL] = new Queue(QUEUES.EMAIL, redisConnection());
     this.queues[QUEUES.EXPORTS] = new Queue(QUEUES.EXPORTS, redisConnection());
+    // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
+    //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
+    this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
     this.createWorker(QUEUES.CLEANUP, this.handleCleanup.bind(this));
     this.createWorker(QUEUES.SCHEDULED, this.handleScheduled.bind(this));
     this.createWorker(QUEUES.EMAIL, this.handleEmail.bind(this));
+
     if (
       this.dataExportProcessor &&
       typeof this.dataExportProcessor.processExport === 'function'
@@ -84,6 +103,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.EXPORTS,
         this.dataExportProcessor.processExport.bind(this.dataExportProcessor),
+      );
+    }
+
+    // ── Wire the PayoutProcessor to the PAYOUTS queue ─────────────────────
+    // This ensures each payout job is processed through the idempotency-aware
+    // PayoutProcessor regardless of how it was enqueued.
+    if (
+      this.payoutProcessor &&
+      typeof this.payoutProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.PAYOUTS,
+        this.payoutProcessor.process.bind(this.payoutProcessor),
       );
     }
   }
@@ -170,20 +202,51 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return this.queues[name];
   }
 
-  async addJob(name: string, data: any, opts: any = {}) {
+  /**
+   * Add a job to a named queue.
+   *
+   * When `jobType` is provided, its per-type retry policy is resolved and
+   * merged into the options **before** any caller-supplied overrides.  This
+   * means callers can still fine-tune individual jobs while benefiting from
+   * sensible defaults automatically.
+   *
+   * Precedence (highest → lowest):
+   *   caller opts  >  per-type policy  >  DEFAULT_JOB_OPTIONS
+   *
+   * Tracing context and correlation ID are automatically attached to job
+   * data and a span is created for the enqueue operation.
+   */
+  async addJob(
+    name: string,
+    data: any,
+    opts: Record<string, any> = {},
+    jobType?: JobType,
+  ) {
     const queue = this.getQueue(name);
     if (!queue) throw new Error(`Queue ${name} not found`);
 
     const traceContext = this.tracing.getCurrentContext();
     const correlationId = AppLoggerService.getRequestContext()?.correlationId;
-    const tracedData = this.attachTraceContext(data, traceContext, correlationId);
-    const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...opts };
+    const tracedData = this.attachTraceContext(
+      jobType ? { ...data, __jobType: jobType } : data,
+      traceContext,
+      correlationId,
+    );
+
+    const policyOpts = jobType
+      ? policyToBullMQOptions(getRetryPolicy(jobType))
+      : DEFAULT_JOB_OPTIONS;
+
+    const jobOpts = { ...DEFAULT_JOB_OPTIONS, ...policyOpts, ...opts };
 
     return this.tracing.trace(
       'jobs.queue.enqueue',
       async (span) => {
         span.attributes['queue.name'] = name;
         span.attributes['job.name'] = `${name}-job`;
+        if (jobType) {
+          span.attributes['job.type'] = jobType;
+        }
         if (traceContext) {
           span.attributes['trace.id'] = traceContext.traceId;
           span.attributes['trace.parent_span_id'] = traceContext.spanId;
@@ -192,13 +255,77 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           span.attributes['correlation.id'] = correlationId;
         }
 
-        return queue.add(`${name}-job`, tracedData, jobOpts);
+        // ── Payload / metadata split ────────────────────────────────
+        // If the data exceeds the threshold, offload the full payload
+        // to cache and enqueue only a lightweight reference + metadata.
+        let enqueueData: any = tracedData;
+        if (
+          typeof tracedData === 'object' &&
+          tracedData !== null &&
+          this.payloadStorage.shouldOffload(tracedData)
+        ) {
+          // Use a temporary key; the real BullMQ job ID isn't known yet,
+          // so we generate a stable reference from trace + timestamp.
+          const refKey = `pending:${traceContext?.traceId ?? Date.now()}:${Date.now()}`;
+          await this.payloadStorage.storePayload(refKey, tracedData);
+          enqueueData = this.payloadStorage.buildLightweightData(
+            tracedData,
+            refKey,
+            refKey,
+          );
+          span.attributes['payload.offloaded'] = true;
+        }
+
+        const job = await queue.add(`${name}-job`, enqueueData, jobOpts);
+
+        // If we used a pending ref, update the key to use the real job ID.
+        if (
+          enqueueData.__payloadRef &&
+          enqueueData.__payloadRef.startsWith('pending:')
+        ) {
+          const oldKey = enqueueData.__payloadRef;
+          const newRef = `job_payload:${job.id}`;
+          const payload =
+            await this.payloadStorage.retrievePayloadByKey(oldKey);
+          if (payload !== undefined) {
+            await this.payloadStorage.storePayload(job.id!, payload);
+            await this.payloadStorage.evictPayload(oldKey);
+          }
+          // Update the reference in-place so workers can resolve it.
+          enqueueData.__payloadRef = newRef;
+          await job.updateData(enqueueData);
+        }
+
+        return job;
       },
       {
         'queue.name': name,
         'job.name': `${name}-job`,
       },
     );
+  }
+
+  /**
+   * Resolve the full payload for a BullMQ job.
+   *
+   * When payload/metadata splitting is active, the job data stored in
+   * BullMQ contains only lightweight metadata plus a `__payloadRef` key
+   * pointing to the full payload in cache.  This method resolves that
+   * reference and returns the original data.
+   *
+   * If no payload reference exists (i.e. the job was small enough to
+   * fit entirely in BullMQ), `job.data` is returned as-is.
+   */
+  async resolvePayload<T = any>(job: Job): Promise<T> {
+    if (this.payloadStorage.hasPayloadRef(job.data)) {
+      const refKey = this.payloadStorage.getPayloadRefKey(job.data)!;
+      const full = await this.payloadStorage.retrievePayloadByKey<T>(refKey);
+      if (full !== undefined) return full;
+      this.logger.warn(
+        `Payload reference ${refKey} for job ${job.id} not found in cache; falling back to inline data`,
+      );
+    }
+    return job.data as T;
   }
 
   /** Returns active, delayed, failed, and completed counts for every queue. */
@@ -233,7 +360,18 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return { queue: name, active, delayed, failed, completed, waiting };
   }
 
+  /**
+   * Creates a BullMQ Worker for the given queue.
+   *
+   * The worker's `failed` handler checks whether the error is classified as
+   * non-retryable for the job type stored in `job.data.__jobType`.  When it
+   * is, OR when `attemptsMade` has reached the configured maximum, the job is
+   * forwarded to the dead-letter queue immediately.
+   */
   private createWorker(name: string, processor: (job: Job) => Promise<any>) {
+    const concurrency = resolveWorkerConcurrency(name);
+    const limiter = resolveWorkerLimiter(name);
+
     const worker = new Worker(
       name,
       async (job: Job) => {
@@ -282,23 +420,60 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
         return processJob();
       },
-      redisConnection(),
+      {
+        ...redisConnection(),
+        concurrency,
+        ...(limiter ? { limiter } : {}),
+      },
     );
 
     worker.on('failed', (job, err) => {
       void (async () => {
         if (!job) return;
-        const attempts = job.attemptsMade ?? 0;
-        const maxAttempts =
-          (job.opts && (job.opts as any).attempts) ||
-          DEFAULT_JOB_OPTIONS.attempts;
-        if (attempts >= maxAttempts) {
+
+        const jobType: JobType | undefined = job.data?.__jobType as
+          | JobType
+          | undefined;
+
+        // Determine max attempts: prefer per-type policy, fall back to job opts
+        const maxAttempts: number = jobType
+          ? getRetryPolicy(jobType).attempts
+          : ((job.opts as any)?.attempts ?? DEFAULT_JOB_OPTIONS.attempts);
+
+        const attemptsExhausted = (job.attemptsMade ?? 0) >= maxAttempts;
+        const notRetryable =
+          jobType && err?.message
+            ? isNonRetryableError(jobType, err.message)
+            : false;
+
+        if (attemptsExhausted || notRetryable) {
+          const reason = notRetryable
+            ? 'non-retryable error'
+            : 'attempts exhausted';
+
+          this.logger.warn(
+            `Job ${job.id} (${name}) forwarded to DLQ: ${reason} – ${err?.message}`,
+          );
+
+          // Store large payload in cache before forwarding to DLQ to keep
+          // the DLQ queue lightweight.
+          let dlqData = job.data;
+          if (this.payloadStorage.shouldOffload(job.data)) {
+            const dlqPayloadKey = `dlq_payload:${job.id}`;
+            await this.payloadStorage.storePayload(dlqPayloadKey, job.data);
+            dlqData = {
+              __dlqPayloadRef: dlqPayloadKey,
+              __jobType: job.data?.__jobType,
+            };
+          }
+
           await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
             failedJob: {
               id: job.id,
               name: job.name,
-              data: job.data,
+              data: { ...dlqData, __sourceQueue: name },
               failedReason: err?.message ?? String(err),
+              reason,
             },
           } as any);
         }

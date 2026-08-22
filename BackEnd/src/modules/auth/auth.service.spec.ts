@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -40,11 +42,11 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: 'JwtService',
+          provide: JwtService,
           useValue: jwtService,
         },
         {
-          provide: 'ConfigService',
+          provide: ConfigService,
           useValue: configService,
         },
         {
@@ -65,8 +67,8 @@ describe('AuthService', () => {
       ],
     })
       .useMocker((token) => {
-        if (token === 'JwtService') return jwtService;
-        if (token === 'ConfigService') return configService;
+        if (token === JwtService) return jwtService;
+        if (token === ConfigService) return configService;
         return undefined;
       })
       .compile();
@@ -189,7 +191,9 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      expect(result).toHaveProperty('expiresIn');
       expect(result).toHaveProperty('user');
+      expect(typeof result.expiresIn).toBe('number');
     });
 
     it('should throw UnauthorizedException for invalid refresh token', async () => {
@@ -344,6 +348,82 @@ describe('AuthService', () => {
         stellarAddress,
         role: Role.USER,
       });
+    });
+  });
+
+  describe('validate (JWT payload → identity)', () => {
+    it('should resolve the real identity/role for the user encoded in the payload, not a stub', async () => {
+      const user = createMockUser({
+        id: 'user-a-id',
+        role: Role.ADMIN,
+      });
+      jest.spyOn(usersService, 'findById').mockResolvedValue(user);
+
+      const result = await service.validate({
+        sub: user.id,
+        stellarAddress: user.stellarAddress,
+        role: 'USER', // stale/forged claim in the token — must be ignored
+      });
+
+      expect(result).toEqual({
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        role: user.role,
+      });
+      expect(result.role).toBe(Role.ADMIN);
+    });
+
+    it('should never resolve two different users to the same identity', async () => {
+      const userA = createMockUser({ id: 'user-a-id', role: Role.USER });
+      const userB = createMockUser({
+        id: 'user-b-id',
+        role: Role.ADMIN,
+        stellarAddress: generateRandomStellarAddress(),
+      });
+
+      jest
+        .spyOn(usersService, 'findById')
+        .mockImplementation(async (id: string) =>
+          id === userA.id ? userA : id === userB.id ? userB : null,
+        );
+
+      const resultA = await service.validate({
+        sub: userA.id,
+        stellarAddress: userA.stellarAddress,
+        role: userA.role,
+      });
+      const resultB = await service.validate({
+        sub: userB.id,
+        stellarAddress: userB.stellarAddress,
+        role: userB.role,
+      });
+
+      expect(resultA.id).toBe(userA.id);
+      expect(resultA.role).toBe(Role.USER);
+      expect(resultB.id).toBe(userB.id);
+      expect(resultB.role).toBe(Role.ADMIN);
+      expect(resultA.id).not.toBe(resultB.id);
+      expect(resultA.role).not.toBe(resultB.role);
+    });
+
+    it('should fall back to the stellarAddress claim when sub is absent', async () => {
+      const user = createMockUser();
+      jest.spyOn(usersService, 'findByAddress').mockResolvedValue(user);
+
+      const result = await service.validate({
+        stellarAddress: user.stellarAddress,
+      } as any);
+
+      expect(usersService.findByAddress).toHaveBeenCalledWith(
+        user.stellarAddress,
+      );
+      expect(result.id).toBe(user.id);
+    });
+
+    it('should throw UnauthorizedException when the payload has no identifiable subject', async () => {
+      await expect(service.validate({} as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

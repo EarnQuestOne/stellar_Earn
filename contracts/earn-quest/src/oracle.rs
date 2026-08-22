@@ -176,11 +176,15 @@ impl Oracle {
         let weighted_price = weighted_sum.div(&U256::from_u32(env, total_weight));
         let avg_confidence = confidence_sum / valid_prices.len();
 
+        // Report the decimal precision of the underlying price sources instead
+        // of assuming a fixed 7; all sources for a pair quote in the same unit.
+        let (first_price, _) = valid_prices.get(0).unwrap();
+
         Ok(AggregatedPrice {
             base_asset: request.base_asset.clone(),
             quote_asset: request.quote_asset.clone(),
             weighted_price,
-            decimals: 7, // Standard Stellar decimals
+            decimals: first_price.decimals,
             sources_used: valid_prices.len(),
             total_sources,
             confidence_score: avg_confidence,

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { JobLog, JobLogRetry, JobDependency } from '../entities/job-log.entity';
 import { JobStatus, JobType, JobResult } from '../job.types';
+import { JobResultStatusCacheService } from './job-result-status-cache.service';
 
 /**
  * Job Log Service
@@ -19,6 +20,7 @@ export class JobLogService {
     private readonly jobLogRetryRepository: Repository<JobLogRetry>,
     @InjectRepository(JobDependency)
     private readonly jobDependencyRepository: Repository<JobDependency>,
+    private readonly jobResultStatusCache: JobResultStatusCacheService,
   ) {}
 
   /**
@@ -58,7 +60,15 @@ export class JobLogService {
       jobLog.durationMs = new Date().getTime() - jobLog.startedAt.getTime();
     }
 
-    return this.jobLogRepository.save(jobLog);
+    const saved = await this.jobLogRepository.save(jobLog);
+    if (updates.status) {
+      await this.jobResultStatusCache.setJobStatus(
+        saved.id,
+        saved.status,
+        saved.result ?? null,
+      );
+    }
+    return saved;
   }
 
   /**
@@ -91,6 +101,7 @@ export class JobLogService {
         queueName,
       },
     );
+    await this.jobResultStatusCache.setJobStatus(jobId, JobStatus.PROCESSING);
   }
 
   /**
@@ -106,6 +117,11 @@ export class JobLogService {
         durationMs: result.duration,
       },
     );
+    await this.jobResultStatusCache.setJobStatus(
+      jobId,
+      JobStatus.COMPLETED,
+      (result.data as Record<string, unknown> | undefined) ?? null,
+    );
   }
 
   /**
@@ -118,11 +134,12 @@ export class JobLogService {
     maxAttempts: number,
   ): Promise<void> {
     const isRetryable = attempt < maxAttempts;
+    const status = isRetryable ? JobStatus.RETRY : JobStatus.FAILED;
 
     await this.jobLogRepository.update(
       { id: jobId },
       {
-        status: isRetryable ? JobStatus.RETRY : JobStatus.FAILED,
+        status,
         errorMessage: error.message,
         errorStack: error.stack,
         attempt,
@@ -131,6 +148,9 @@ export class JobLogService {
         completedAt: isRetryable ? undefined : new Date(),
       },
     );
+    await this.jobResultStatusCache.setJobStatus(jobId, status, {
+      error: error.message,
+    });
   }
 
   /**
