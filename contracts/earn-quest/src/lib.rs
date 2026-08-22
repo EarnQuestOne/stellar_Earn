@@ -31,6 +31,9 @@ mod test_oracle_deviation;
 #[cfg(test)]
 mod test_incremental_stats;
 
+#[cfg(test)]
+mod test_arithmetic_overflow;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -614,7 +617,10 @@ impl EarnQuestContract {
         // transfer. If a malicious token re-enters during the transfer the
         // AlreadyClaimed check in validate_claim_data rejects the second call.
         let mut submission = submission;
-        submission.claimed_amount += amount;
+        submission.claimed_amount = submission
+            .claimed_amount
+            .checked_add(amount)
+            .ok_or(Error::ArithmeticOverflow)?;
         submission.status = if submission.claimed_amount == quest.reward_amount {
             types::SubmissionStatus::Paid
         } else {
@@ -624,7 +630,10 @@ impl EarnQuestContract {
 
         // Increment claims: directly update quest to avoid extra read
         let mut quest = quest;
-        quest.total_claims += 1;
+        quest.total_claims = quest
+            .total_claims
+            .checked_add(1)
+            .ok_or(Error::ArithmeticOverflow)?;
         storage::set_quest(&env, &quest_id, &quest);
 
         payout::transfer_reward_from_escrow(

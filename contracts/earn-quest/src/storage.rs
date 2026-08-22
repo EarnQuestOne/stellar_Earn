@@ -497,7 +497,10 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
 /// * Type-safe increment operation
 pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     let mut quest = get_quest(env, id)?;
-    quest.total_claims += 1;
+    quest.total_claims = quest
+        .total_claims
+        .checked_add(1)
+        .ok_or(Error::ArithmeticOverflow)?;
     set_quest(env, id, &quest);
     Ok(())
 }
@@ -1329,16 +1332,20 @@ pub fn inc_platform_rewards_claimed(env: &Env) {
 }
 
 /// Add to the rewards-distributed counter.
-pub fn add_platform_rewards_distributed(env: &Env, amount: u128) {
+///
+/// Returns [`Error::ArithmeticOverflow`] if the cumulative sum would exceed
+/// `u128::MAX` rather than silently saturating or panicking.
+pub fn add_platform_rewards_distributed(env: &Env, amount: u128) -> Result<(), Error> {
     let v: u128 = env
         .storage()
         .instance()
         .get(&DataKey::PlatformRewardsDistributed)
         .unwrap_or(0);
-    env.storage().instance().set(
-        &DataKey::PlatformRewardsDistributed,
-        &v.saturating_add(amount),
-    );
+    let updated = v.checked_add(amount).ok_or(Error::ArithmeticOverflow)?;
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformRewardsDistributed, &updated);
+    Ok(())
 }
 
 pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {
