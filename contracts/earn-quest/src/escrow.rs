@@ -16,8 +16,17 @@ use crate::storage;
 use crate::types::{EscrowBalances, EscrowInfo, EscrowMeta, QuestStatus, VerifierStake};
 use crate::validation;
 
-fn available_balance(balances: &EscrowBalances) -> i128 {
-    balances.total_deposited - balances.total_paid_out - balances.total_refunded
+/// Computes the spendable escrow balance using checked subtraction so that a
+/// corrupted accounting state (paid_out + refunded > deposited) surfaces as a
+/// graceful [`Error::ArithmeticUnderflow`] instead of panicking the transaction.
+fn available_balance(balances: &EscrowBalances) -> Result<i128, Error> {
+    let after_payouts = balances
+        .total_deposited
+        .checked_sub(balances.total_paid_out)
+        .ok_or(Error::ArithmeticUnderflow)?;
+    after_payouts
+        .checked_sub(balances.total_refunded)
+        .ok_or(Error::ArithmeticUnderflow)
 }
 
 fn require_active_escrow(balances: &EscrowBalances) -> Result<(), Error> {
@@ -102,11 +111,17 @@ pub fn deposit(
         }
     };
 
-    balances.total_deposited += amount;
-    balances.deposit_count += 1;
+    balances.total_deposited = balances
+        .total_deposited
+        .checked_add(amount)
+        .ok_or(Error::ArithmeticOverflow)?;
+    balances.deposit_count = balances
+        .deposit_count
+        .checked_add(1)
+        .ok_or(Error::ArithmeticOverflow)?;
     storage::set_escrow_balances(env, quest_id, &balances);
 
-    let available = available_balance(&balances);
+    let available = available_balance(&balances)?;
     events::escrow_deposited(
         env,
         quest_id.clone(),
@@ -137,7 +152,7 @@ pub fn validate_sufficient(env: &Env, quest_id: &Symbol, amount: i128) -> Result
     let b = storage::get_escrow_balances(env, quest_id)?;
     require_active_escrow(&b)?;
 
-    let available = available_balance(&b);
+    let available = available_balance(&b)?;
     if available < amount {
         return Err(Error::InsufficientEscrow);
     }
@@ -177,15 +192,18 @@ pub fn record_payout(
 
     require_active_escrow(&b)?;
 
-    let available = available_balance(&b);
+    let available = available_balance(&b)?;
     if available < amount {
         return Err(Error::InsufficientEscrow);
     }
 
-    b.total_paid_out += amount;
+    b.total_paid_out = b
+        .total_paid_out
+        .checked_add(amount)
+        .ok_or(Error::ArithmeticOverflow)?;
     storage::set_escrow_balances(env, quest_id, &b);
 
-    let remaining = available_balance(&b);
+    let remaining = available_balance(&b)?;
     events::escrow_payout(
         env,
         quest_id.clone(),
@@ -208,8 +226,7 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let mut b = storage::get_escrow_balances(env, quest_id)?;
     let meta = storage::get_escrow_meta(env, quest_id)?;
 
-    let _available = b.total_deposited - b.total_paid_out - b.total_refunded;
-    let available = available_balance(&b);
+    let available = available_balance(&b)?;
     let depositor = meta.depositor.clone();
     let token = meta.token.clone();
 
@@ -217,7 +234,10 @@ fn refund_remaining(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     // re-entrant call during the transfer below cannot trigger a second
     // refund (it would see is_active=false). On transfer failure the
     // transaction reverts and the storage write is rolled back atomically.
-    b.total_refunded += available;
+    b.total_refunded = b
+        .total_refunded
+        .checked_add(available)
+        .ok_or(Error::ArithmeticOverflow)?;
     b.is_active = false;
     storage::set_escrow_balances(env, quest_id, &b);
 
@@ -358,7 +378,7 @@ pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, caller: &Address) -> Res
     }
 
     let balances = storage::get_escrow_balances(env, quest_id)?;
-    let available = available_balance(&balances);
+    let available = available_balance(&balances)?;
     if available <= 0 {
         return Err(Error::NoFundsToWithdraw);
     }
@@ -374,7 +394,7 @@ pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, caller: &Address) -> Res
 /// Get available balance — reads only EscrowBalances (hot path).
 pub fn get_balance(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
     let b = storage::get_escrow_balances(env, quest_id)?;
-    Ok(available_balance(&b))
+    available_balance(&b)
 }
 
 /// Get full EscrowInfo view — assembles from both split entries.
@@ -483,8 +503,15 @@ pub fn slash_verifier_stake(
         return Err(Error::VerifierStakeInactive);
     }
 
-    let slash_amount = (stake.amount * slash_bps as u128) / 10_000;
-    let remainder = stake.amount - slash_amount;
+    let slash_amount = stake
+        .amount
+        .checked_mul(slash_bps as u128)
+        .ok_or(Error::ArithmeticOverflow)?
+        / 10_000;
+    let remainder = stake
+        .amount
+        .checked_sub(slash_amount)
+        .ok_or(Error::ArithmeticUnderflow)?;
 
     stake.amount = 0;
     stake.is_active = false;
