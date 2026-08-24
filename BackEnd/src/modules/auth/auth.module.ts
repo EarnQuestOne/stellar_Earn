@@ -38,6 +38,7 @@ import { UsersModule } from '../users/users.module';
           },
           verifyOptions: {
             algorithms: ['RS256'],
+            clockTolerance: 30, // Allow 30 seconds clock skew
           },
         } as any;
       },

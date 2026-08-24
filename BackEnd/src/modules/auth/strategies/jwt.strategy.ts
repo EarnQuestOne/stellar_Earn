@@ -60,7 +60,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         for (const key of publicKeys) {
           try {
-            verify(token, key, { algorithms: ['RS256'] });
+            verify(token, key, {
+              algorithms: ['RS256'],
+              clockTolerance: 30, // Allow 30 seconds clock skew
+            });
             done(null, key);
             return;
           } catch {
