@@ -19,6 +19,7 @@ import * as StellarSdk from 'stellar-sdk';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { StellarService } from './stellar.service';
+import { SorobanQuestReaderService } from './soroban-quest-reader.service';
 
 export interface ApproveSubmissionResult {
   transactionHash: string;
@@ -43,6 +44,7 @@ export class StellarSubmissionService {
     private readonly tracing: TracingService,
     private readonly metrics: MetricsService,
     private readonly stellar: StellarService,
+    private readonly questReader: SorobanQuestReaderService,
   ) {}
 
   /**
@@ -177,6 +179,10 @@ export class StellarSubmissionService {
         this.logger.log(
           `approve_submission completed for quest=${questContractId} submitter=${submitterAddress} tx=${result.hash}`,
         );
+
+        // The approval bumps the quest's on-chain state (total_claims), so
+        // drop the cached get_quest read for this quest (see #1975).
+        this.questReader.invalidateQuest(contractId, questContractId);
 
         return {
           transactionHash: result.hash,

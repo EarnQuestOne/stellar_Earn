@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { StellarSubmissionService } from './stellar-submission.service';
 import { StellarService } from './stellar.service';
+import { SorobanQuestReaderService } from './soroban-quest-reader.service';
 import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import * as StellarSdk from 'stellar-sdk';
@@ -72,6 +73,10 @@ describe('StellarSubmissionService (Security)', () => {
         { provide: TracingService, useValue: mockTracing },
         { provide: MetricsService, useValue: mockMetrics },
         { provide: StellarService, useValue: mockStellarService },
+        {
+          provide: SorobanQuestReaderService,
+          useValue: { invalidateQuest: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -259,6 +264,10 @@ describe('StellarSubmissionService.approveSubmission (Soroban contract call)', (
         { provide: TracingService, useValue: mockTracing },
         { provide: MetricsService, useValue: metrics },
         { provide: StellarService, useValue: mockStellarService },
+        {
+          provide: SorobanQuestReaderService,
+          useValue: { invalidateQuest: jest.fn() },
+        },
       ],
     }).compile();
 
