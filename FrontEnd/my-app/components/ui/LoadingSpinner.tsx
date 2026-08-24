@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 type SpinnerSize = 'sm' | 'md' | 'lg';
 type SpinnerVariant = 'primary' | 'neutral' | 'white';
 
