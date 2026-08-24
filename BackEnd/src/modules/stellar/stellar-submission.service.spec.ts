@@ -62,6 +62,7 @@ describe('StellarSubmissionService (Security)', () => {
       getNetworkPassphrase: jest
         .fn()
         .mockReturnValue(StellarSdk.Networks.TESTNET),
+      getBaseFeeInStroops: jest.fn().mockResolvedValue(100),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -248,6 +249,7 @@ describe('StellarSubmissionService.approveSubmission (Soroban contract call)', (
       getNetworkPassphrase: jest
         .fn()
         .mockReturnValue(StellarSdk.Networks.TESTNET),
+      getBaseFeeInStroops: jest.fn().mockResolvedValue(100),
     };
 
     const module: TestingModule = await Test.createTestingModule({

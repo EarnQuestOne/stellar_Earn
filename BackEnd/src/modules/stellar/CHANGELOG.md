@@ -6,6 +6,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `StellarFeeService`: precomputes and caches the Stellar network base fee from Horizon `/fee_stats` with a short TTL (`STELLAR_FEE_CACHE_TTL_MS`, default 30s) and background refresh, exposing hit/miss/fetch-duration metrics and falling back to `STELLAR_BASE_FEE` when the network is unavailable. `StellarService`, `StellarPaymentService`, and `StellarSubmissionService` now build transactions with the cached estimate, removing the per-transaction fee network round-trip from the payout hot path. Closes #1980.
+
 ### Fixed
 
 - Repaired `StellarService` and `StellarModule` damaged by a merge conflict resolution: removed a duplicate constructor and duplicated imports, restored the `eventReorgBufferLedgers`/`eventInitialLookbackLedgers` properties and contract-event helper methods, and deduplicated `StellarModule` providers/exports.

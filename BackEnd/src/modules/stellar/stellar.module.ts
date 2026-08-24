@@ -7,6 +7,7 @@ import { StellarPaymentService } from './stellar-payment.service';
 import { StellarEventIngestionService } from './stellar-event-ingestion.service';
 import { SorobanQuestReaderService } from './soroban-quest-reader.service';
 import { StellarAccountCacheService } from './stellar-account-cache.service';
+import { StellarFeeService } from './stellar-fee.service';
 import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
 import { EventStore } from '../../events/entities/event-store.entity';
 
@@ -19,6 +20,7 @@ import { EventStore } from '../../events/entities/event-store.entity';
     StellarEventIngestionService,
     SorobanQuestReaderService,
     StellarAccountCacheService,
+    StellarFeeService,
     SorobanRpcClientPoolService,
   ],
   exports: [
@@ -28,6 +30,7 @@ import { EventStore } from '../../events/entities/event-store.entity';
     StellarEventIngestionService,
     SorobanQuestReaderService,
     StellarAccountCacheService,
+    StellarFeeService,
     SorobanRpcClientPoolService,
   ],
 })

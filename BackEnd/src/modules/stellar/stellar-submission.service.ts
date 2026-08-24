@@ -120,7 +120,7 @@ export class StellarSubmissionService {
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
-          fee: '100',
+          fee: (await this.stellar.getBaseFeeInStroops()).toString(),
           networkPassphrase: this.stellar.getNetworkPassphrase(),
         })
           .addOperation(

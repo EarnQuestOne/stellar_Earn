@@ -26,6 +26,7 @@ import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
 import { StellarAccountCacheService } from './stellar-account-cache.service';
+import { StellarFeeService } from './stellar-fee.service';
 import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
 
 export interface ApproveSubmissionResult {
@@ -58,6 +59,7 @@ export class StellarService implements OnModuleInit {
   private readonly eventInitialLookbackLedgers = 50;
   private accountCache: StellarAccountCacheService;
   private clientPool: SorobanRpcClientPoolService;
+  private feeService?: StellarFeeService;
 
   constructor(
     private readonly configService: ConfigService,
@@ -67,11 +69,13 @@ export class StellarService implements OnModuleInit {
     private readonly eventStoreRepository: Repository<EventStore>,
     @Optional() accountCache?: StellarAccountCacheService,
     @Optional() clientPool?: SorobanRpcClientPoolService,
+    @Optional() feeService?: StellarFeeService,
   ) {
     this.accountCache =
       accountCache ?? new StellarAccountCacheService(this.configService);
     this.clientPool =
       clientPool ?? new SorobanRpcClientPoolService(this.configService);
+    this.feeService = feeService;
   }
 
   onModuleInit() {
@@ -94,6 +98,21 @@ export class StellarService implements OnModuleInit {
   /** Returns the configured Horizon server instance. */
   getHorizon(): StellarSdk.Horizon.Server {
     return this.horizonServer;
+  }
+
+  /**
+   * Returns the current network base fee in stroops, served from the cached
+   * fee-estimate provider (see {@link StellarFeeService}). Falls back to the
+   * configured `STELLAR_BASE_FEE` when the fee service is not available.
+   */
+  async getBaseFeeInStroops(): Promise<number> {
+    if (this.feeService) {
+      return this.feeService.getBaseFeeInStroops();
+    }
+    return parseInt(
+      this.configService.get<string>('STELLAR_BASE_FEE') || '100',
+      10,
+    );
   }
 
   /**
@@ -172,7 +191,7 @@ export class StellarService implements OnModuleInit {
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
-          fee: '100',
+          fee: (await this.getBaseFeeInStroops()).toString(),
           networkPassphrase: this.networkPassphrase,
         })
           .addOperation(
@@ -629,7 +648,7 @@ export class StellarService implements OnModuleInit {
         : new StellarSdk.Asset(asset, sourcePublicKey);
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: '100',
+      fee: (await this.getBaseFeeInStroops()).toString(),
       networkPassphrase: this.networkPassphrase,
     })
       .addOperation(
@@ -680,6 +699,7 @@ export class StellarService implements OnModuleInit {
     );
 
     const maxOpsPerTx = 100;
+    const baseFee = await this.getBaseFeeInStroops();
     const results: Array<{
       transactionHash: string;
       ledger: number;
@@ -694,7 +714,7 @@ export class StellarService implements OnModuleInit {
       const chunk = payments.slice(i, i + maxOpsPerTx);
 
       const builder = new TransactionBuilder(sourceAccount, {
-        fee: '100',
+        fee: baseFee.toString(),
         networkPassphrase: this.networkPassphrase,
       });
 

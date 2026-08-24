@@ -1,7 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { StellarService } from './stellar.service';
+import { TracingService } from '../../common/tracing/tracing.service';
+import { MetricsService } from '../../common/services/metrics.service';
+import { EventStore } from '../../events/entities/event-store.entity';
 import * as StellarSdk from 'stellar-sdk';
+
+const mockSpan = { attributes: {} as Record<string, any>, status: 'ok' };
+const mockTracing = {
+  trace: jest
+    .fn()
+    .mockImplementation(async (_name: string, fn: any, _attrs?: any) => {
+      mockSpan.attributes = { ...(_attrs ?? {}) };
+      mockSpan.status = 'ok';
+      return fn(mockSpan);
+    }),
+};
+const mockMetricsFactory = () => ({
+  incrementCounter: jest.fn(),
+  observeHistogram: jest.fn(),
+  registerGauge: jest.fn(),
+  registerCounter: jest.fn(),
+  setGauge: jest.fn(),
+});
+const mockEventStoreRepository = () => ({
+  findOne: jest.fn().mockResolvedValue(null),
+  save: jest.fn().mockImplementation(async (v: any) => v),
+  create: jest.fn().mockImplementation((v: any) => v),
+});
 
 describe('StellarService (Infrastructure)', () => {
   let service: StellarService;
@@ -25,6 +52,12 @@ describe('StellarService (Infrastructure)', () => {
       providers: [
         StellarService,
         { provide: ConfigService, useValue: mockConfig },
+        { provide: TracingService, useValue: mockTracing },
+        { provide: MetricsService, useValue: mockMetricsFactory() },
+        {
+          provide: getRepositoryToken(EventStore),
+          useValue: mockEventStoreRepository(),
+        },
       ],
     }).compile();
 
@@ -80,6 +113,10 @@ describe('StellarService (Infrastructure)', () => {
     expect(service.getHorizon()).toBeDefined();
     expect(service.getRpc()).toBeDefined();
   });
+
+  it('should fall back to the configured base fee when no fee service is provided', async () => {
+    await expect(service.getBaseFeeInStroops()).resolves.toBe(100);
+  });
 });
 
 describe('StellarService.sendBatchPayments', () => {
@@ -101,28 +138,8 @@ describe('StellarService.sendBatchPayments', () => {
     }),
   };
 
-  const mockSpan = { attributes: {} as Record<string, any>, status: 'ok' };
-  const mockTracing = {
-    trace: jest
-      .fn()
-      .mockImplementation(async (_name: string, fn: any, _attrs?: any) => {
-        mockSpan.attributes = { ...(_attrs ?? {}) };
-        mockSpan.status = 'ok';
-        return fn(mockSpan);
-      }),
-  };
-  const mockMetricsFactory = () => ({
-    incrementCounter: jest.fn(),
-    observeHistogram: jest.fn(),
-  });
-
   beforeEach(async () => {
     metrics = mockMetricsFactory();
-    const eventStoreRepository = {
-      findOne: jest.fn().mockResolvedValue(null),
-      save: jest.fn().mockImplementation(async (v: any) => v),
-      create: jest.fn().mockImplementation((v: any) => v),
-    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -132,7 +149,7 @@ describe('StellarService.sendBatchPayments', () => {
         { provide: MetricsService, useValue: metrics },
         {
           provide: getRepositoryToken(EventStore),
-          useValue: eventStoreRepository,
+          useValue: mockEventStoreRepository(),
         },
       ],
     }).compile();
@@ -140,6 +157,11 @@ describe('StellarService.sendBatchPayments', () => {
     service = module.get<StellarService>(StellarService);
     service.onModuleInit();
 
+    jest
+      .spyOn((service as any).horizonServer, 'loadAccount')
+      .mockResolvedValue(
+        new StellarSdk.Account(adminKeypair.publicKey(), '1') as any,
+      );
     mockSubmitTransaction = jest
       .spyOn((service as any).horizonServer, 'submitTransaction')
       .mockResolvedValue({ hash: 'batch-tx-hash', ledger: 42 } as any);
