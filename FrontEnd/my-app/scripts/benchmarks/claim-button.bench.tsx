@@ -63,10 +63,9 @@ describe('ClaimButton duplicate claim prevention benchmark', () => {
       };
 
       const startBaseline = performance.now();
-      const { container: containerBaseline, unmount: unmountBaseline } =
-        render(
-          <button onClick={handleClickUnguarded}>Claim All Rewards</button>
-        );
+      const { container: containerBaseline, unmount: unmountBaseline } = render(
+        <button onClick={handleClickUnguarded}>Claim All Rewards</button>
+      );
       const buttonBaseline = containerBaseline.querySelector('button')!;
 
       await act(async () => {
@@ -84,8 +83,7 @@ describe('ClaimButton duplicate claim prevention benchmark', () => {
       const blockedDuplicates = baselineDispatches - lockedDispatches;
       const loadReductionPercent =
         baselineDispatches > 0
-          ? ((baselineDispatches - lockedDispatches) / baselineDispatches) *
-            100
+          ? ((baselineDispatches - lockedDispatches) / baselineDispatches) * 100
           : 0;
 
       results.push({
