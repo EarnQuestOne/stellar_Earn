@@ -6,6 +6,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Split the monolithic `admin.module.ts` into separate `admin.controller.ts`, `admin.service.ts`, and `admin.module.ts` files, matching the file-per-concern layout used by the other modules. No behavior change. Closes #1907.
+
 ### Fixed
 
 - `AdminService.getUserById` now throws `NotFoundException` (HTTP 404)
