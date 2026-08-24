@@ -280,13 +280,7 @@ export class EventsModule {}
 | `src/modules/jobs/processors/export.processor.ts` | Emit completion/failure events |
 | `src/events/events.module.ts` | Registered all event handlers |
 
-### Documentation Files (3)
-
-| File | Purpose |
-|------|---------|
-| `CIRCULAR_DEPENDENCY_RESOLUTION.md` | Detailed documentation |
-| `CIRCULAR_DEPS_SUMMARY.md` | Quick reference summary |
-| `VERIFICATION_STEPS.md` | Step-by-step verification guide |
+This document is the canonical reference for the circular-dependency resolution. The loose root-level docs that previously covered this topic (`CIRCULAR_DEPENDENCY_RESOLUTION.md`, `CIRCULAR_DEPS_SUMMARY.md`, `CIRCULAR_DEPS_INDEX.md`, `README_CIRCULAR_DEPS.md`, `ARCHITECTURE_DIAGRAM.md`, `IMPLEMENTATION_COMPLETE.md`, `FINAL_VERIFICATION.md`, `BUGS_FIXED.md`, `ANSWER_TO_YOUR_QUESTIONS.md`, `VERIFICATION_STEPS.md`) were consolidated here.
 
 ## ✅ How to Verify
 
@@ -305,7 +299,35 @@ npm run start:dev
 
 ### Detailed Verification
 
-See [VERIFICATION_STEPS.md](./VERIFICATION_STEPS.md) for comprehensive testing instructions.
+1. **Check for Circular Dependencies**
+   ```bash
+   npm run build
+   # Should complete without circular dependency errors
+   ```
+
+2. **Run the Circular Dependency Check Script**
+   ```bash
+   npx ts-node scripts/check-circular-deps.ts
+   ```
+
+3. **Start the Application**
+   ```bash
+   npm run start:dev
+   # Watch for any circular dependency errors in console
+   ```
+
+4. **Test the Data Export Flow**
+   ```bash
+   curl -X POST http://localhost:3000/api/users/me/export \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"exportType": "full", "format": "json"}'
+
+   # Check logs for:
+   # - "Emitted data export request event"
+   # - "[JobsModule] Data export requested"
+   # - "Successfully queued export job"
+   ```
 
 ### Expected Results
 
@@ -501,7 +523,85 @@ This implementation successfully resolves circular dependencies by:
 
 ---
 
-**For questions or issues, please refer to:**
-- [CIRCULAR_DEPENDENCY_RESOLUTION.md](./CIRCULAR_DEPENDENCY_RESOLUTION.md) - Detailed documentation
-- [CIRCULAR_DEPS_SUMMARY.md](./CIRCULAR_DEPS_SUMMARY.md) - Quick reference
-- [VERIFICATION_STEPS.md](./VERIFICATION_STEPS.md) - Testing guide
+## 📋 Module Dependency Audit
+
+| Module A | Module B | Status | Notes |
+|----------|----------|--------|-------|
+| AuthModule | UsersModule | ✅ OK | One-way dependency |
+| UsersModule | JobsModule | ✅ FIXED | Now uses events |
+| EmailModule | JobsModule | ✅ OK | One-way dependency |
+| QuestsModule | ModerationModule | ✅ OK | One-way dependency |
+| SubmissionsModule | NotificationsModule | ✅ OK | One-way dependency |
+
+## 🔀 Event Definitions
+
+### user.data-export.requested
+Emitted when a user requests a data export.
+
+| Field | Type |
+|-------|------|
+| `userId` | string |
+| `exportId` | string |
+| `exportType` | string |
+| `format` | string |
+
+**Emitter:** `DataExportService` (UsersModule)
+**Listener:** `DataExportListener` (JobsModule)
+
+### user.data-export.completed
+Emitted when a data export completes successfully.
+
+| Field | Type |
+|-------|------|
+| `userId` | string |
+| `exportId` | string |
+| `downloadUrl` | string |
+| `fileName` | string |
+| `recordCount` | number |
+
+**Emitter:** `DataExportProcessor` (JobsModule)
+**Listener:** Can be used by NotificationsModule, EmailModule, etc.
+
+### user.data-export.failed
+Emitted when a data export fails.
+
+| Field | Type |
+|-------|------|
+| `userId` | string |
+| `exportId` | string |
+| `error` | string |
+
+**Emitter:** `DataExportProcessor` (JobsModule)
+**Listener:** Can be used by NotificationsModule, EmailModule, etc.
+
+## 📡 Event Flow (After)
+
+```
+User Request → UsersController → DataExportService → EventEmitter.emit('user.data-export.requested')
+                                                    ↓
+                                              DataExportListener (in JobsModule) → JobsService.addJob()
+                                                    ↓
+                                              DataExportProcessor → EventEmitter.emit('user.data-export.completed')
+```
+
+## 🗺️ Module Dependency Graph (After Fix)
+
+```
+AppModule
+├── EventsModule (Global)
+├── AuthModule
+│   └── UsersModule
+├── UsersModule (no circular deps)
+├── JobsModule (no circular deps)
+├── EmailModule
+│   └── JobsModule
+├── QuestsModule
+│   └── ModerationModule
+├── SubmissionsModule
+│   └── NotificationsModule
+└── ... other modules
+```
+
+---
+
+**For the full backend documentation index, see [INDEX.md](./INDEX.md).**

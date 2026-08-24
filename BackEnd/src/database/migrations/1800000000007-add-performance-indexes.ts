@@ -5,7 +5,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * This migration adds critical indexes to improve query performance across the application.
  *
- * See DATABASE_INDEX_ANALYSIS.md for detailed analysis
+ * See BackEnd/docs/DATABASE_INDEXES.md for detailed analysis
  */
 export class AddPerformanceIndexes1800000000007 implements MigrationInterface {
   name = 'AddPerformanceIndexes1800000000007';

@@ -33,7 +33,7 @@ issue: 2057
 - **`isRetryableError()` now also treats 408 / 425 / 429 as transient.**
   Previously the check was `status >= 500 && status !== 501`, so rate-limited
   responses were never retried even though the backend documents sending a
-  `Retry-After` header with them (see `BackEnd/RATE_LIMITING_STRATEGY.md`).
+  `Retry-After` header with them (see `BackEnd/docs/RATE_LIMITING.md`).
 
 ### Before / after
 

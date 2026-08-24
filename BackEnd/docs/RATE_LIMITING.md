@@ -179,3 +179,48 @@ Potential improvements:
 3. Rate limit upgrade for premium users
 4. Distributed rate limiting for multi-instance deployments
 5. Rate limit analytics and monitoring dashboard
+
+---
+
+This document is the canonical reference for per-user rate limiting. The previous loose root-level report (`RATE_LIMITING_COMPLETION_REPORT.md`) was consolidated here.
+
+## Files Created / Modified
+
+### Created
+1. `src/config/per-user-rate-limit.config.ts` — per-user rate limit configuration
+
+### Modified
+1. `src/common/guards/throttler.guard.ts` — per-user limit tracking
+2. `src/app.module.ts` — throttler wiring
+3. `.env.example` — documented the `RATE_LIMIT_*` variables
+4. `test/common/rate-limiting.e2e-spec.ts` — e2e coverage
+
+## Testing Instructions
+
+```bash
+# Run per-user rate limiting tests
+npm run test:e2e -- --testPathPattern=rate-limiting
+
+# Expected results:
+# - Anonymous (IP-based) users hit their limit and receive 429
+# - Authenticated users get higher, role-based limits
+# - X-RateLimit-* headers are present on throttled responses
+```
+
+## Configuration in Production
+
+```env
+RATE_LIMIT_ANONYMOUS_LIMIT=50
+RATE_LIMIT_USER_LIMIT=100
+RATE_LIMIT_VERIFIER_LIMIT=200
+RATE_LIMIT_AUTH_USER_LIMIT=30
+```
+
+Monitor rate-limit health via HTTP 429 counts and `X-RateLimit-*` headers, then tune limits based on system performance and API usage patterns.
+
+## Acceptance Criteria (Summary)
+
+- ✅ Per-user limits work (authenticated users are isolated from one another)
+- ✅ Throttler configured for users with role-based tiers
+- ✅ User-based filters in place (anonymous vs authenticated vs verifier vs auth endpoints)
+- ✅ Comprehensive tests cover the limit tiers
