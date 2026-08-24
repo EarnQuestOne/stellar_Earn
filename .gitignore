@@ -86,6 +86,10 @@ Thumbs.db
 *.temp
 .cache/
 
+# Generated lint / tooling output (see #1916)
+lint-output*.txt
+output.txt
+
 # Database
 *.sqlite
 *.db
