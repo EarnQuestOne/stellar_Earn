@@ -102,6 +102,19 @@ export class TokenResponseDto {
   user: UserResponseDto;
 }
 
+export class LoginResponseDto {
+  @ApiProperty({
+    description: 'Whether authentication succeeded',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Authenticated user information',
+  })
+  user: UserResponseDto;
+}
+
 export class RefreshTokenDto {
   @ApiProperty({
     description: 'Refresh token',

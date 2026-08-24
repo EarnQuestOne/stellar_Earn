@@ -53,7 +53,7 @@ export class StellarPaymentService {
         : new StellarSdk.Asset(asset, sourceKeypair.publicKey());
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: '100',
+      fee: (await this.stellar.getBaseFeeInStroops()).toString(),
       networkPassphrase: this.stellar.getNetworkPassphrase(),
     })
       .addOperation(
