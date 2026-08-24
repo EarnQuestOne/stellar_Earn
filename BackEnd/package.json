@@ -30,6 +30,7 @@
     "benchmark:moderation-config": "ts-node scripts/benchmark-moderation-config-cache.ts",
     "benchmark:job-result-status-cache": "ts-node scripts/benchmark-job-result-status-cache.ts",
     "benchmark:stellar-fee-cache": "ts-node scripts/benchmark-stellar-fee-cache.ts",
+    "benchmark:soroban-read-cache": "ts-node scripts/benchmark-soroban-read-cache.ts",
     "db:backup": "ts-node scripts/db-backup.ts",
     "db:rollback": "ts-node scripts/db-rollback.ts",
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",

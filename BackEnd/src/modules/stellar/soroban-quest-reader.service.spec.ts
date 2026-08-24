@@ -50,6 +50,9 @@ describe('SorobanQuestReaderService', () => {
   const mockMetrics = {
     incrementCounter: jest.fn(),
     observeHistogram: jest.fn(),
+    registerCounter: jest.fn(),
+    registerGauge: jest.fn(),
+    setGauge: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -275,6 +278,108 @@ describe('SorobanQuestReaderService', () => {
       expect(res[1]?.id).toBe('q2');
       expect(res[2]?.id).toBe('q3');
       expect(service.getQuest).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('read cache', () => {
+    const setupQuestRead = () => {
+      const mockRetval = { _type: 'struct' };
+      mockRpcServer.simulateTransaction.mockResolvedValue({
+        result: { retval: mockRetval },
+      });
+      StellarSdk.rpc.Api.isSimulationError = jest.fn().mockReturnValue(false);
+      StellarSdk.rpc.Api.isSimulationSuccess = jest.fn().mockReturnValue(true);
+      mockScValToNative.mockReturnValue({
+        id: 'quest_1',
+        creator: 'GABC',
+        reward_asset: 'XLM',
+        reward_amount: 1000n,
+        verifier: 'GVERIFIER',
+        deadline: 123456n,
+        status: 'Active',
+        total_claims: 2,
+      });
+    };
+
+    it('should serve repeated reads from the cache without hitting the RPC', async () => {
+      setupQuestRead();
+
+      const first = await service.getQuest(validContractId, 'quest_1');
+      const second = await service.getQuest(validContractId, 'quest_1');
+      const third = await service.getQuest(validContractId, 'quest_1');
+
+      expect(first).not.toBeNull();
+      expect(second).toEqual(first);
+      expect(third).toEqual(first);
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(1);
+      expect(metricsService.incrementCounter).toHaveBeenCalledWith(
+        'stellar_contract_read_cache_hits_total',
+      );
+    });
+
+    it('should refetch after invalidateQuest', async () => {
+      setupQuestRead();
+
+      await service.getQuest(validContractId, 'quest_1');
+      service.invalidateQuest(validContractId, 'quest_1');
+      await service.getQuest(validContractId, 'quest_1');
+
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(2);
+    });
+
+    it('should refetch after the TTL expires', async () => {
+      setupQuestRead();
+
+      await service.getQuest(validContractId, 'quest_1');
+      // Force the stored entry to be stale.
+      const entry = (service as any).readCache.get(
+        `${validContractId}:quest_1`,
+      );
+      entry.expiresAt = Date.now() - 1;
+      await service.getQuest(validContractId, 'quest_1');
+
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(2);
+    });
+
+    it('should cache null results for missing quests', async () => {
+      mockRpcServer.simulateTransaction.mockResolvedValue({
+        result: { retval: null },
+      });
+      StellarSdk.rpc.Api.isSimulationError = jest.fn().mockReturnValue(false);
+      StellarSdk.rpc.Api.isSimulationSuccess = jest.fn().mockReturnValue(true);
+
+      const first = await service.getQuest(validContractId, 'missing');
+      const second = await service.getQuest(validContractId, 'missing');
+
+      expect(first).toBeNull();
+      expect(second).toBeNull();
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fetch and cache user stats', async () => {
+      mockRpcServer.simulateTransaction.mockResolvedValue({
+        result: { retval: { _type: 'struct' } },
+      });
+      StellarSdk.rpc.Api.isSimulationError = jest.fn().mockReturnValue(false);
+      StellarSdk.rpc.Api.isSimulationSuccess = jest.fn().mockReturnValue(true);
+      mockScValToNative.mockReturnValue({
+        xp: 2500n,
+        level: 7,
+        quests_completed: 12,
+      });
+
+      const userAddress =
+        'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
+      const first = await service.getUserStats(validContractId, userAddress);
+      const second = await service.getUserStats(validContractId, userAddress);
+
+      expect(first).toEqual({
+        xp: 2500n,
+        level: 7,
+        quests_completed: 12,
+      });
+      expect(second).toEqual(first);
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(1);
     });
   });
 });

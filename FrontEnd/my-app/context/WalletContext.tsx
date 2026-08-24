@@ -10,6 +10,7 @@ import React, {
 import { useStore } from '@/lib/store';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 import * as authApi from '@/lib/api/auth';
+import type { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit';
 
 interface WalletContextType {
   connect: (moduleId: string) => Promise<void>;
@@ -53,9 +54,9 @@ const SUPPORTED_WALLETS: WalletContextType['supportedWallets'] = [
 // instantiation only ever happens once per page session — every caller
 // (verification effect, connect()) awaits and reuses the same instance
 // instead of re-importing/re-constructing it.
-let kitPromise: Promise<any> | null = null;
+let kitPromise: Promise<StellarWalletsKit> | null = null;
 
-function loadWalletKit(): Promise<any> {
+function loadWalletKit(): Promise<StellarWalletsKit> {
   if (!kitPromise) {
     kitPromise = import('@creit.tech/stellar-wallets-kit')
       .then((walletKitModule) => {
@@ -100,7 +101,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const disconnectWallet = useStore((s) => s.disconnectWallet);
 
   // kit lives outside the store (not serialisable)
-  const [kit, setKit] = React.useState<any>(null);
+  const [kit, setKit] = React.useState<StellarWalletsKit | null>(null);
 
   const hydrated = useHydrated();
 
@@ -274,10 +275,10 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Wallet not connected');
       }
       try {
-        const { result } = await kit.sign({
-          payload: message,
+        const { signedMessage } = await kit.signMessage(message, {
+          address,
         });
-        return result;
+        return signedMessage;
       } catch (err: any) {
         console.error('Signing failed:', err);
         throw new Error(err?.message || 'Signing failed');
