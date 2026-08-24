@@ -754,6 +754,85 @@ Monitor these metrics weekly:
 
 ---
 
+## Quick Start
+
+```bash
+# 1. Run the migration
+npm run migration:run
+
+# 2. Verify all expected indexes exist
+npm run verify:indexes
+
+# 3. Rollback if needed
+npm run migration:revert
+```
+
+Expected result: **60-90% improvement** in query performance. This document is the canonical index reference; the previous loose root-level docs (`DATABASE_INDEX_ANALYSIS.md`, `DATABASE_INDEX_IMPLEMENTATION.md`, `DATABASE_INDEX_SUMMARY.md`, `INDEX_IMPLEMENTATION_CHECKLIST.md`, `INDEX_IMPLEMENTATION_COMPLETE.md`, `QUICK_START_INDEXES.md`, `README_DATABASE_INDEXES.md`) were consolidated here.
+
+## Implementation Steps
+
+### 1. Review the Analysis
+Understand the current index status, missing indexes, query patterns, and expected performance impact (summarized in [Expected Performance](#expected-performance)).
+
+### 2. Backup Database (Production Only)
+```bash
+pg_dump -h localhost -U postgres -d stellar_earn > backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+### 3. Run the Migration
+```bash
+cd BackEnd
+npm run migration:run
+# Or directly with the TypeORM CLI:
+# npx typeorm migration:run -d src/database/data-source.ts
+```
+
+### 4. Verify Indexes
+```bash
+npm run verify:indexes
+# or: npx ts-node scripts/verify-indexes.ts
+```
+
+Expected output confirms every expected index is present (`🎉 All expected indexes are present!`).
+
+## Expected Performance
+
+| Query Type | Before | After | Improvement |
+|------------|--------|-------|-------------|
+| User by email | 200-500ms | 20-50ms | 75-90% |
+| Quest listing | 300-800ms | 50-100ms | 80-90% |
+| Payout history | 400-1000ms | 50-150ms | 85-90% |
+| Submission queries | 250-600ms | 40-100ms | 80-85% |
+| Notification feed | 200-500ms | 30-100ms | 80-85% |
+
+### Key Performance Indicators
+- **P50/P95/P99 response times**: Should decrease by 60-90%.
+- **Database CPU**: May increase slightly (5-10%) due to index maintenance.
+- **Storage**: Will increase by ~10-15% for index storage.
+
+## Rollback Procedure
+
+```bash
+npm run migration:revert
+# or: npx typeorm migration:revert -d src/database/data-source.ts
+```
+
+## Troubleshooting
+
+- **Migration fails** — check the DB connection, verify the user has `CREATE INDEX` permission, and check for existing indexes with the same name.
+- **Slow migration** — run during a low-traffic period; indexes are created `CONCURRENTLY`.
+- **Index not being used** — run `ANALYZE table_name;`, inspect the plan with `EXPLAIN ANALYZE`, and verify the index exists (`\d table_name`).
+- **High write latency** — expected with more indexes; monitor write performance and consider removing unused indexes.
+
+## Maintenance Schedule
+
+- **Daily**: Monitor the slow-query log.
+- **Weekly**: Review index usage statistics; run `ANALYZE;`.
+- **Monthly**: Check for index bloat and unused indexes; validate performance targets.
+- **Quarterly**: Full index review; add or remove indexes based on query patterns.
+
+---
+
 ## References
 
 - [PostgreSQL Index Documentation](https://www.postgresql.org/docs/current/indexes.html)

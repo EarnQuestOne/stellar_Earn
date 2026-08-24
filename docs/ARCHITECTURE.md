@@ -569,7 +569,7 @@ bash scripts/validate-env-parity.sh FrontEnd/my-app/.env.example FrontEnd/my-app
 
 ## 10. Where to read more
 
-- `BackEnd/ReadMe Backend.md` — NestJS quickstart, module list, env vars, deployment
+- `BackEnd/README.md` — NestJS quickstart, module list, env vars, deployment
 - `FrontEnd/ReadMe Frontend.md` — Next.js quickstart, hooks, components, deployment
 - `FrontEnd/my-app/README.md` — Next.js dev details, env validation, test commands
 - `contracts/earn-quest/README.md` — contract API, build/test/deploy
