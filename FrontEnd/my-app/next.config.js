@@ -28,8 +28,7 @@ module.exports = {
   widenClientFileUpload: true,
   sourcemaps: { disable: true },
   silent: process.env.CI === 'true',
-});
-),
+  })),
   async headers() {
     return [
       {
