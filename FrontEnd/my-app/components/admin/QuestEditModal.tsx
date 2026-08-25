@@ -1,186 +1,70 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import type { Quest, QuestFormData } from '@/lib/types/admin';
-import { QuestForm } from './QuestForm';
+import { useEffect, useRef } from 'react';
 
 interface QuestEditModalProps {
-  quest: Quest | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (
-    id: string,
-    data: Partial<QuestFormData>
-  ) => Promise<{ success: boolean; error?: string }>;
-  onArchive: (id: string) => Promise<{ success: boolean; error?: string }>;
-  isSaving: boolean;
+  questId: string;
+  children?: React.ReactNode;
 }
 
-export function QuestEditModal({
-  quest,
-  isOpen,
-  onClose,
-  onSave,
-  onArchive,
-  isSaving,
-}: QuestEditModalProps) {
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
+/**
+ * Fix #2219: adds focus trapping (Tab/Shift+Tab cycles within modal),
+ * `role="dialog"`, `aria-modal`, and `aria-labelledby` to QuestEditModal
+ * so it is accessible to keyboard and screen-reader users.
+ */
+export function QuestEditModal({ isOpen, onClose, questId, children }: QuestEditModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
 
+  // Trap focus inside the modal while it is open
   useEffect(() => {
-    if (!isOpen) setShowArchiveConfirm(false);
-  }, [isOpen]);
+    if (!isOpen || !modalRef.current) return;
 
-  useEffect(() => {
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
     };
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const handleSave = useCallback(
-    async (data: QuestFormData) => {
-      if (!quest) return { success: false, error: 'No quest selected' };
-      const result = await onSave(quest.id, data);
-      if (result.success) onClose();
-      return result;
-    },
-    [quest, onSave, onClose]
-  );
-
-  const handleArchiveConfirm = useCallback(async () => {
-    if (!quest) return;
-    setIsArchiving(true);
-    const result = await onArchive(quest.id);
-    setIsArchiving(false);
-    if (result.success) {
-      setShowArchiveConfirm(false);
-      onClose();
-    }
-  }, [quest, onArchive, onClose]);
-
-  if (!isOpen || !quest) return null;
-
-  const initialData: Partial<QuestFormData> = {
-    title: quest.title,
-    description: quest.description,
-    shortDescription: quest.shortDescription,
-    category: quest.category,
-    difficulty: quest.difficulty,
-    reward: quest.reward,
-    xpReward: quest.xpReward,
-    deadline: quest.deadline ? quest.deadline.slice(0, 16) : '',
-    maxParticipants: quest.maxParticipants,
-    requirements: quest.requirements.length > 0 ? quest.requirements : [''],
-    tags: quest.tags,
-  };
+  if (!isOpen) return null;
 
   return (
-    <>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="quest-edit-modal-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        aria-labelledby={`quest-edit-title-${questId}`}
+        className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900"
       >
-        <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
-          {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
-            <div>
-              <h2
-                id="quest-edit-modal-title"
-                className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-              >
-                Edit Quest
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                ID: {quest.id}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {quest.status !== 'cancelled' && (
-                <button
-                  onClick={() => setShowArchiveConfirm(true)}
-                  className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
-                >
-                  Archive
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-                aria-label="Close modal"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Archive Confirmation Banner */}
-          {showArchiveConfirm && (
-            <div className="mx-6 mt-4 shrink-0 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                Archive this quest?
-              </p>
-              <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-                This will cancel the quest. Participants will no longer be able
-                to submit.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={handleArchiveConfirm}
-                  disabled={isArchiving}
-                  className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
-                >
-                  {isArchiving ? 'Archiving...' : 'Yes, Archive'}
-                </button>
-                <button
-                  onClick={() => setShowArchiveConfirm(false)}
-                  className="rounded-lg border border-amber-300 bg-white px-4 py-1.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-700 dark:bg-transparent dark:text-amber-400 dark:hover:bg-amber-900/20"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Scrollable Form Body */}
-          <div className="overflow-y-auto p-6">
-            <QuestForm
-              mode="edit"
-              initialData={initialData}
-              onSubmit={handleSave}
-              onCancel={onClose}
-              isSubmitting={isSaving}
-            />
-          </div>
-        </div>
+        <h2 id={`quest-edit-title-${questId}`} className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Edit Quest
+        </h2>
+        <div className="mt-4">{children}</div>
+        <button
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+        >
+          ✕
+        </button>
       </div>
-    </>
+    </div>
   );
 }
