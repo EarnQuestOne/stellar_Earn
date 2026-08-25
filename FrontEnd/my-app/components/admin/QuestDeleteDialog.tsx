@@ -1,8 +1,7 @@
 'use client';
 
-interface QuestDeleteDialogProps {
-  isOpen: boolean;
-  questTitle: string;
+export interface QuestDeleteDialogProps {
+  questId: string | null;
   onConfirm: () => void;
   onCancel: () => void;
   isDeleting?: boolean;
@@ -10,13 +9,13 @@ interface QuestDeleteDialogProps {
 
 /**
  * Fix #2220: confirmation dialog before destructive quest deletion.
- * Displays the quest title and requires an explicit confirm click
- * before the delete action fires, preventing accidental data loss.
+ * Requires an explicit confirm click before the delete action fires,
+ * preventing accidental data loss.
  */
 export function QuestDeleteDialog({
-  isOpen, questTitle, onConfirm, onCancel, isDeleting = false,
+  questId, onConfirm, onCancel, isDeleting = false,
 }: QuestDeleteDialogProps) {
-  if (!isOpen) return null;
+  if (!questId) return null;
 
   return (
     <div
@@ -28,10 +27,10 @@ export function QuestDeleteDialog({
     >
       <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900">
         <h2 id="delete-dialog-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Delete Quest?
+          Delete Quest
         </h2>
         <p id="delete-dialog-desc" className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          This will permanently delete <strong>&quot;{questTitle}&quot;</strong>. This action cannot be undone.
+          This action cannot be undone. The quest and all its data will be permanently removed.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -46,7 +45,7 @@ export function QuestDeleteDialog({
             disabled={isDeleting}
             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
           >
-            {isDeleting ? 'Deleting…' : 'Delete'}
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
