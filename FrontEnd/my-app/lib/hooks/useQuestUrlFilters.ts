@@ -20,14 +20,14 @@ export function useQuestUrlFilters() {
   const searchParams = useSearchParams();
 
   const filters: QuestFilterParams = {
-    status: searchParams.get('status') ?? undefined,
-    category: searchParams.get('category') ?? undefined,
-    search: searchParams.get('search') ?? undefined,
+    status: searchParams?.get('status') ?? undefined,
+    category: searchParams?.get('category') ?? undefined,
+    search: searchParams?.get('search') ?? undefined,
   };
 
   const setFilters = useCallback(
     (updates: Partial<QuestFilterParams>) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParams?.toString());
       Object.entries(updates).forEach(([key, val]) => {
         if (val) params.set(key, val);
         else params.delete(key);
