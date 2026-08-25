@@ -12,7 +12,10 @@ export const LazyQuestEditor = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-48 w-full animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" aria-label="Loading editor..." />
+      <div
+        className="h-48 w-full animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"
+        aria-label="Loading editor..."
+      />
     ),
-  },
+  }
 );

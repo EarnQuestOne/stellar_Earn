@@ -27,7 +27,9 @@ export function ClaimRetryButton({
       setStatus('idle');
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : 'Claim failed. Please try again.');
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Claim failed. Please try again.'
+      );
     }
   };
 
@@ -38,7 +40,11 @@ export function ClaimRetryButton({
         disabled={status === 'loading'}
         className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
       >
-        {status === 'loading' ? 'Claiming...' : status === 'error' ? 'Retry' : label}
+        {status === 'loading'
+          ? 'Claiming...'
+          : status === 'error'
+            ? 'Retry'
+            : label}
       </button>
       {status === 'error' && errorMsg && (
         <p role="alert" className="text-xs text-red-600 dark:text-red-400">

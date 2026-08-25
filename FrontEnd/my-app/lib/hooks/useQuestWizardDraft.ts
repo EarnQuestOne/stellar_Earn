@@ -10,7 +10,7 @@ const DRAFT_KEY = 'questWizardDraft';
  */
 export function useQuestWizardDraft<T extends object>(
   formData: T,
-  setFormData: (data: T) => void,
+  setFormData: (data: T) => void
 ) {
   // Restore saved draft on mount
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useQuestWizardDraft<T extends object>(
     } catch {
       // Ignore parse errors - corrupted draft is silently discarded
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist draft whenever form data changes
@@ -35,7 +35,11 @@ export function useQuestWizardDraft<T extends object>(
   }, [formData]);
 
   const clearDraft = useCallback(() => {
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return { clearDraft };

@@ -20,9 +20,9 @@ export function useQuestUrlFilters() {
   const searchParams = useSearchParams();
 
   const filters: QuestFilterParams = {
-    status:   searchParams.get('status')   ?? undefined,
+    status: searchParams.get('status') ?? undefined,
     category: searchParams.get('category') ?? undefined,
-    search:   searchParams.get('search')   ?? undefined,
+    search: searchParams.get('search') ?? undefined,
   };
 
   const setFilters = useCallback(
@@ -34,7 +34,7 @@ export function useQuestUrlFilters() {
       });
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [router, pathname, searchParams],
+    [router, pathname, searchParams]
   );
 
   const clearFilters = useCallback(() => {
