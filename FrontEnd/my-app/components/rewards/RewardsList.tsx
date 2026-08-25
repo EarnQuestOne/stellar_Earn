@@ -65,11 +65,6 @@ export function RewardsList() {
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) =>
-    sortField !== field ? null : (
-      <span className="ml-1 text-primary">{sortDir === 'asc' ? '↑' : '↓'}</span>
-    );
-
   if (loading) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -83,10 +78,17 @@ export function RewardsList() {
     );
   }
 
+  /** Fix #2216: error state includes a retry button */
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-        {error}
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <button
+          onClick={fetchHistory}
+          className="mt-3 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -104,9 +106,15 @@ export function RewardsList() {
         )}
       </div>
 
+      {/** Fix #2216: improved empty state with helpful copy */}
       {payouts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500 dark:text-zinc-400">
-          No payout history yet.
+        <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 text-center">
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            No payout history yet
+          </p>
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+            Complete and get approved for quests to see your rewards here.
+          </p>
         </div>
       ) : (
         <>
@@ -116,16 +124,16 @@ export function RewardsList() {
                 <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50">
                   <tr>
                     <th
-                      className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50 cursor-pointer select-none hover:text-primary"
+                      className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50 cursor-pointer hover:text-primary"
                       onClick={() => toggleSort('createdAt')}
                     >
-                      Date <SortIcon field="createdAt" />
+                      Date
                     </th>
                     <th
-                      className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50 cursor-pointer select-none hover:text-primary"
+                      className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50 cursor-pointer hover:text-primary"
                       onClick={() => toggleSort('amount')}
                     >
-                      Amount <SortIcon field="amount" />
+                      Amount
                     </th>
                     <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
                       Asset
@@ -168,37 +176,11 @@ export function RewardsList() {
                       </td>
                       <td className="px-4 py-4">
                         {p.transactionHash ? (
-                          <div className="flex items-center gap-2">
-                            <code className="text-xs text-zinc-400 truncate max-w-[7rem]">
-                              {p.transactionHash}
-                            </code>
-                            <button
-                              onClick={() =>
-                                navigator.clipboard.writeText(
-                                  p.transactionHash!
-                                )
-                              }
-                              className="text-zinc-400 hover:text-primary transition-colors"
-                              title="Copy hash"
-                              aria-label="Copy transaction hash"
-                            >
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                                />
-                              </svg>
-                            </button>
-                          </div>
+                          <code className="text-xs text-zinc-400 truncate max-w-[7rem]">
+                            {p.transactionHash}
+                          </code>
                         ) : (
-                          <span className="text-xs text-zinc-400">—</span>
+                          <span className="text-xs text-zinc-400">-</span>
                         )}
                       </td>
                     </tr>
@@ -207,13 +189,12 @@ export function RewardsList() {
               </table>
             </div>
           </div>
-
           {totalPages > 1 && (
             <div className="flex items-center justify-between text-sm">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-400"
               >
                 Previous
               </button>
@@ -223,7 +204,7 @@ export function RewardsList() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-400"
               >
                 Next
               </button>
