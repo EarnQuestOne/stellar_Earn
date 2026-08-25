@@ -32,13 +32,13 @@ export function useQuestUrlFilters() {
         if (val) params.set(key, val);
         else params.delete(key);
       });
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.replace(`${pathname ?? '/'}?${params.toString()}`, { scroll: false });
     },
     [router, pathname, searchParams]
   );
 
   const clearFilters = useCallback(() => {
-    router.replace(pathname, { scroll: false });
+    router.replace(pathname ?? '/', { scroll: false });
   }, [router, pathname]);
 
   return { filters, setFilters, clearFilters };
