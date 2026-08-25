@@ -21,6 +21,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "allowUnreachableCode": false,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "src/*": ["src/*"],
       "#src/*": ["src/*"]
