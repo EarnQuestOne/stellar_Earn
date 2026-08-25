@@ -1,197 +1,66 @@
 'use client';
 
-import { Modal } from '@/components/ui/Modal';
-import { ClaimStatus } from '@/lib/hooks/useClaim';
-import { ClaimResult } from '@/lib/stellar/claim';
+import { useState, useEffect, useRef } from 'react';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  status: ClaimStatus;
-  result: ClaimResult | null;
-  error: string | null;
+  onConfirm: () => Promise<void>;
+  amount: string;
+  recipient?: string;
 }
 
+/**
+ * Fix #2217: handle wallet rejection (user denies the transaction in their
+ * wallet) and component unmount (avoid setState on an unmounted component).
+ */
 export function TransactionModal({
-  isOpen,
-  onClose,
-  status,
-  result,
-  error,
+  isOpen, onClose, onConfirm, amount, recipient,
 }: TransactionModalProps) {
-  const isPending = status === 'pending';
-  const isSuccess = status === 'success';
-  const isError = status === 'error';
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const handleConfirm = async () => {
+    setStatus('loading');
+    setErrorMsg(null);
+    try {
+      await onConfirm();
+      if (mountedRef.current) { setStatus('idle'); onClose(); }
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const msg = err instanceof Error ? err.message : 'Transaction failed.';
+      // Detect wallet rejection codes
+      const isRejected = msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('cancel');
+      setErrorMsg(isRejected ? 'Transaction rejected in wallet.' : msg);
+      setStatus('error');
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={isPending ? () => {} : onClose}
-      title="Claim Transaction"
-    >
-      <div
-        className="flex flex-col items-center justify-center py-6 space-y-6"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {isPending && (
-          <>
-            <div
-              className="relative"
-              role="status"
-              aria-label="Processing transaction"
-            >
-              <div
-                className="h-20 w-20 rounded-full border-4 border-zinc-100 border-t-primary animate-spin"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                aria-hidden="true"
-              >
-                <svg
-                  className="h-8 w-8 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 21a9.003 9.003 0 008.384-5.562M18 10.5V12m-6.75 3.5l.054-.09A10.003 10.003 0 0012 21a9.003 9.003 0 008.384-5.562M12 9V7m0 2v2m0-2l.054-.09A10.003 10.003 0 0012 21a9.003 9.003 0 008.384-5.562M12 9V7m0 2v2m0-2l.054-.09A10.003 10.003 0 0012 21a9.003 9.003 0 008.384-5.562"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="text-center">
-              <h4 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
-                Processing Claim
-              </h4>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Please approve the transaction in your wallet and wait for
-                confirmation on the Stellar network.
-              </p>
-            </div>
-          </>
+    <div role="dialog" aria-modal="true" aria-label="Confirm Transaction" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Confirm Transaction</h2>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Send <strong>{amount}</strong>{recipient ? ` to ${recipient}` : ''}.
+        </p>
+        {status === 'error' && errorMsg && (
+          <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
         )}
-
-        {isSuccess && result && (
-          <>
-            <div
-              className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center dark:bg-green-900/30"
-              role="img"
-              aria-label="Transaction successful"
-            >
-              <svg
-                className="h-10 w-10 text-green-600 dark:text-green-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div className="text-center">
-              <h4 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
-                Claim Successful!
-              </h4>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {result.amount} Tokens have been sent to your wallet.
-              </p>
-            </div>
-            <div className="w-full bg-zinc-50 rounded-xl p-4 dark:bg-zinc-800/50">
-              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 dark:text-zinc-400">
-                Transaction Hash
-              </p>
-              <div className="flex items-center gap-2">
-                <code
-                  className="flex-1 text-xs text-zinc-600 break-all dark:text-zinc-300 bg-white p-2 rounded border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800"
-                  aria-label={`Transaction hash: ${result.transactionHash}`}
-                >
-                  {result.transactionHash}
-                </code>
-                <button
-                  onClick={() =>
-                    result.transactionHash &&
-                    navigator.clipboard.writeText(result.transactionHash)
-                  }
-                  aria-label="Copy transaction hash to clipboard"
-                  className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close transaction modal"
-              className="w-full bg-zinc-900 text-white rounded-xl py-3 text-sm font-semibold hover:bg-zinc-800 transition-all dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-100"
-            >
-              Done
-            </button>
-          </>
-        )}
-
-        {isError && (
-          <>
-            <div
-              className="h-20 w-20 rounded-full bg-red-100 flex items-center justify-center dark:bg-red-900/30"
-              role="img"
-              aria-label="Transaction failed"
-            >
-              <svg
-                className="h-10 w-10 text-red-600 dark:text-red-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
-            <div className="text-center">
-              <h4 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
-                Transaction Failed
-              </h4>
-              <p className="mt-1 text-sm text-red-500" role="alert">
-                {error || 'Something went wrong with the transaction.'}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close and try claiming again"
-              className="w-full bg-zinc-900 text-white rounded-xl py-3 text-sm font-semibold hover:bg-zinc-800 transition-all dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-100"
-            >
-              Try Again
-            </button>
-          </>
-        )}
+        <div className="mt-6 flex gap-3 justify-end">
+          <button onClick={onClose} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700">Cancel</button>
+          <button onClick={handleConfirm} disabled={status === 'loading'} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+            {status === 'loading' ? 'Sending…' : status === 'error' ? 'Retry' : 'Confirm'}
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
