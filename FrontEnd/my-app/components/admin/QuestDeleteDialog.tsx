@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 export interface QuestDeleteDialogProps {
   questId: string | null;
   onConfirm: () => void;
@@ -13,7 +15,10 @@ export interface QuestDeleteDialogProps {
  * preventing accidental data loss.
  */
 export function QuestDeleteDialog({
-  questId, onConfirm, onCancel, isDeleting = false,
+  questId,
+  onConfirm,
+  onCancel,
+  isDeleting = false,
 }: QuestDeleteDialogProps) {
   if (!questId) return null;
 
@@ -26,11 +31,18 @@ export function QuestDeleteDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
     >
       <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900">
-        <h2 id="delete-dialog-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2
+          id="delete-dialog-title"
+          className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+        >
           Delete Quest
         </h2>
-        <p id="delete-dialog-desc" className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          This action cannot be undone. The quest and all its data will be permanently removed.
+        <p
+          id="delete-dialog-desc"
+          className="mt-2 text-sm text-zinc-600 dark:text-zinc-400"
+        >
+          This action cannot be undone. The quest and all its data will be
+          permanently removed.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button

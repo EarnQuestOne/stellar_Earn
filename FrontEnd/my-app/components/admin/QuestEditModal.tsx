@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Quest, QuestFormData } from '@/lib/types/admin';
 import { QuestForm } from './QuestForm';
 
@@ -36,19 +36,28 @@ export function QuestEditModal({
     if (!isOpen || !modalRef.current) return;
 
     const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-      'a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])',
+      'a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])'
     );
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
     first?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key !== 'Tab') return;
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
       }
     };
 

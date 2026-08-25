@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ClaimStatus } from '@/lib/hooks/useClaim';
 import { ClaimResult } from '@/lib/stellar/claim';
@@ -20,7 +21,9 @@ function friendlyErrorMessage(error: string | null): string {
   if (!error) return 'Something went wrong with the transaction.';
   const lower = error.toLowerCase();
   const isRejected =
-    lower.includes('reject') || lower.includes('denied') || lower.includes('cancel');
+    lower.includes('reject') ||
+    lower.includes('denied') ||
+    lower.includes('cancel');
   return isRejected ? 'Transaction rejected in wallet.' : error;
 }
 

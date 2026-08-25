@@ -11,9 +11,7 @@ export const questFormSchema = z.object({
     .min(5, 'Title must be at least 5 characters')
     .max(120, 'Title must be 120 characters or fewer'),
 
-  description: z
-    .string()
-    .min(20, 'Description must be at least 20 characters'),
+  description: z.string().min(20, 'Description must be at least 20 characters'),
 
   rewardAmount: z
     .number({ error: 'Reward must be a number' })
@@ -22,8 +20,12 @@ export const questFormSchema = z.object({
 
   deadline: z
     .string()
-    .refine((v) => !isNaN(Date.parse(v)), { message: 'Deadline must be a valid date' })
-    .refine((v) => new Date(v) > new Date(), { message: 'Deadline must be in the future' }),
+    .refine((v) => !isNaN(Date.parse(v)), {
+      message: 'Deadline must be a valid date',
+    })
+    .refine((v) => new Date(v) > new Date(), {
+      message: 'Deadline must be in the future',
+    }),
 
   category: z.string().min(1, 'Category is required'),
 
