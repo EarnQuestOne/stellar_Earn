@@ -29,7 +29,9 @@ function checkMissingKeys(): void {
   const defaultMessages = loadMessages(DEFAULT_LOCALE);
   const defaultKeys = flattenKeys(defaultMessages);
 
-  const localeFiles = fs.readdirSync(MESSAGES_DIR).filter((f) => f.endsWith('.json'));
+  const localeFiles = fs
+    .readdirSync(MESSAGES_DIR)
+    .filter((f) => f.endsWith('.json'));
   let hasErrors = false;
 
   for (const file of localeFiles) {

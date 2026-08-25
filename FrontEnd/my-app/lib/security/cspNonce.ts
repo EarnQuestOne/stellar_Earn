@@ -33,7 +33,7 @@ export function buildCspWithNonce(nonce: string): string {
  */
 export function applyNonce(
   request: NextRequest,
-  response: NextResponse,
+  response: NextResponse
 ): string {
   const nonce = generateNonce();
   response.headers.set('Content-Security-Policy', buildCspWithNonce(nonce));

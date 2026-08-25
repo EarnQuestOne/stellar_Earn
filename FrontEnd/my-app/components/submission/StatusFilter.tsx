@@ -9,13 +9,32 @@ interface StatusFilterProps {
 }
 
 const statusOptions = [
-  { value: SubmissionStatus.APPROVED,     label: 'Approved',     color: 'text-green-600' },
-  { value: SubmissionStatus.PENDING,      label: 'Pending',      color: 'text-orange-600' },
-  { value: SubmissionStatus.UNDER_REVIEW, label: 'Under Review', color: 'text-blue-600' },
-  { value: SubmissionStatus.REJECTED,     label: 'Rejected',     color: 'text-red-600' },
+  {
+    value: SubmissionStatus.APPROVED,
+    label: 'Approved',
+    color: 'text-green-600',
+  },
+  {
+    value: SubmissionStatus.PENDING,
+    label: 'Pending',
+    color: 'text-orange-600',
+  },
+  {
+    value: SubmissionStatus.UNDER_REVIEW,
+    label: 'Under Review',
+    color: 'text-blue-600',
+  },
+  {
+    value: SubmissionStatus.REJECTED,
+    label: 'Rejected',
+    color: 'text-red-600',
+  },
 ] as const;
 
-export function StatusFilter({ selectedStatus, onStatusChange }: StatusFilterProps) {
+export function StatusFilter({
+  selectedStatus,
+  onStatusChange,
+}: StatusFilterProps) {
   /**
    * Fix #2232: track user selection in a ref so a parent refetch that passes
    * undefined/stale props does not visually reset the active filter button.
@@ -31,7 +50,11 @@ export function StatusFilter({ selectedStatus, onStatusChange }: StatusFilterPro
   const activeStatus = selectedStatus ?? lastSelection.current;
 
   return (
-    <div className="flex flex-wrap gap-2 justify-end" role="tablist" aria-label="Filter submissions by status">
+    <div
+      className="flex flex-wrap gap-2 justify-end"
+      role="tablist"
+      aria-label="Filter submissions by status"
+    >
       {statusOptions.map((option) => {
         const isSelected = activeStatus === option.value;
         return (
