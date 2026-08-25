@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
  * description step of the wizard, so deferring the load improves TTI.
  */
 export const LazyQuestEditor = dynamic(
-  () => import('./QuestEditor').then((m) => ({ default: m.QuestEditor ?? m.default })),
+  () => import('./QuestEditor').then((m) => ({ default: m.QuestEditor })),
   {
     ssr: false,
     loading: () => (
