@@ -42,10 +42,14 @@ export function ProofPreview({
 
   const proofTypeLabel = useMemo(() => {
     switch (proofType) {
-      case 'link': return 'Link';
-      case 'file': return 'File Upload';
-      case 'text': return 'Text Description';
-      default: return 'Unknown';
+      case 'link':
+        return 'Link';
+      case 'file':
+        return 'File Upload';
+      case 'text':
+        return 'Text Description';
+      default:
+        return 'Unknown';
     }
   }, [proofType]);
 
@@ -57,15 +61,24 @@ export function ProofPreview({
       <div className="space-y-3">
         {proofType === 'link' && link && (
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Submitted Link</p>
-            <a href={link} target="_blank" rel="noopener noreferrer" className="break-all text-primary hover:underline">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Submitted Link
+            </p>
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all text-primary hover:underline"
+            >
               {link}
             </a>
           </div>
         )}
         {proofType === 'text' && text && (
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Proof Description</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Proof Description
+            </p>
             <div className="rounded-md bg-white p-3 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
               <p className="whitespace-pre-wrap">{text}</p>
             </div>
@@ -73,26 +86,43 @@ export function ProofPreview({
         )}
         {proofType === 'file' && file && (
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Uploaded File</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Uploaded File
+            </p>
             <div className="flex items-center gap-4 rounded-md bg-white p-3 dark:bg-zinc-900">
               {filePreviewUrl ? (
-                <OptimizedImage src={filePreviewUrl} alt="File preview" width={80} height={80} unoptimized className="h-20 w-20 rounded-lg object-cover" />
+                <OptimizedImage
+                  src={filePreviewUrl}
+                  alt="File preview"
+                  width={80}
+                  height={80}
+                  unoptimized
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
               ) : (
                 <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
                   {isVideoFile(file) ? '🎥' : isPdfFile(file) ? '📄' : '📎'}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">{file.name}</p>
-                <p className="text-sm text-zinc-500">{formatFileSize(file.size)}</p>
+                <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
+                  {file.name}
+                </p>
+                <p className="text-sm text-zinc-500">
+                  {formatFileSize(file.size)}
+                </p>
               </div>
             </div>
           </div>
         )}
         {additionalNotes && (
           <div className="space-y-1 border-t border-zinc-200 pt-3 dark:border-zinc-700">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Additional Notes</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{additionalNotes}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Additional Notes
+            </p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {additionalNotes}
+            </p>
           </div>
         )}
       </div>
