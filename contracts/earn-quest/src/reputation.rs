@@ -73,7 +73,10 @@ pub fn award_xp_batch(env: &Env, grants: &Vec<(Address, u64)>) -> Result<(), Err
         if let Some((curr_xp, curr_quests)) = deltas.get(user.clone()) {
             deltas.set(
                 user.clone(),
-                (curr_xp.saturating_add(xp_amount), curr_quests.saturating_add(1)),
+                (
+                    curr_xp.saturating_add(xp_amount),
+                    curr_quests.saturating_add(1),
+                ),
             );
         } else {
             deltas.set(user.clone(), (xp_amount, 1));
@@ -103,7 +106,6 @@ pub fn award_xp_batch(env: &Env, grants: &Vec<(Address, u64)>) -> Result<(), Err
 
     Ok(())
 }
-
 
 /// Calculates the user level based on their current experience points (XP).
 ///

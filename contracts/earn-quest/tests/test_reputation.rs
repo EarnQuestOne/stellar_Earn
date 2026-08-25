@@ -615,7 +615,7 @@ fn test_award_xp_batch_equivalence_single_user_multiple_grants() {
 
     for i in 0u32..grants1.len() {
         let (u, xp) = grants1.get(i).unwrap();
-        let _ = client1.award_xp_batch(&Vec::from_array(&env1, [(u, xp)]));
+        client1.award_xp_batch(&Vec::from_array(&env1, [(u, xp)]));
     }
     let stats_sequential = client1.get_user_stats(&user1);
 
@@ -637,7 +637,10 @@ fn test_award_xp_batch_equivalence_single_user_multiple_grants() {
 
     assert_eq!(stats_batched.xp, stats_sequential.xp);
     assert_eq!(stats_batched.level, stats_sequential.level);
-    assert_eq!(stats_batched.quests_completed, stats_sequential.quests_completed);
+    assert_eq!(
+        stats_batched.quests_completed,
+        stats_sequential.quests_completed
+    );
     assert_eq!(stats_batched.xp, 350);
     assert_eq!(stats_batched.level, 2); // 350 XP >= 300 -> Level 2
     assert_eq!(stats_batched.quests_completed, 3);
@@ -692,4 +695,3 @@ fn test_award_xp_batch_empty_grant_list() {
     let grants = Vec::new(&env);
     client.award_xp_batch(&grants);
 }
-

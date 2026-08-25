@@ -260,8 +260,14 @@ fn benchmark_award_xp_batch_impact() {
     let batch_cost = budget.cpu_instruction_cost() - before;
 
     println!("\n=== REPUTATION BATCHING GAS IMPACT METRICS ===");
-    println!("Sequential per-entry reputation write cost (5 items): {} CPU instructions", seq_cost);
-    println!("Batched in-memory reputation write cost (5 items)   : {} CPU instructions", batch_cost);
+    println!(
+        "Sequential per-entry reputation write cost (5 items): {} CPU instructions",
+        seq_cost
+    );
+    println!(
+        "Batched in-memory reputation write cost (5 items)   : {} CPU instructions",
+        batch_cost
+    );
     println!(
         "Gas reduction: {} instructions ({:.2}% efficiency improvement)",
         seq_cost.saturating_sub(batch_cost),
@@ -276,4 +282,3 @@ fn benchmark_award_xp_batch_impact() {
         seq_cost
     );
 }
-
