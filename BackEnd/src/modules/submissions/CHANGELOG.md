@@ -12,6 +12,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Submission list query parameters now reject malformed UUID filters and invalid pagination, status, sort, and order values at the DTO boundary (#2252).
 - Converted `submissions/index.ts` from a corrupted UTF-16 encoding to UTF-8 and removed a duplicated export line.
 
 ### Changed
