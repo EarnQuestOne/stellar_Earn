@@ -332,7 +332,13 @@ export class StellarService implements OnModuleInit {
         networkPassphrase: this.networkPassphrase,
       },
     )
-      .addOperation(Operation.invokeContractFunction({ contract: contractId, function: functionName, args }))
+      .addOperation(
+        Operation.invokeContractFunction({
+          contract: contractId,
+          function: functionName,
+          args,
+        }),
+      )
       .setTimeout(30)
       .build();
     const simulation = await this.rpcServer.simulateTransaction(tx);

@@ -1,21 +1,28 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class OpenDisputeDto {
   @IsString()
-  submissionId: string;
+  submissionId!: string;
 
   @IsString()
-  arbitratorAddress: string;
+  arbitratorAddress!: string;
 }
 
 export class AppealDisputeDto {
   @IsString()
-  newArbitratorAddress: string;
+  newArbitratorAddress!: string;
 }
 
 export class ResolveDisputeDto {
   @IsBoolean()
-  upheld: boolean;
+  upheld!: boolean;
 
   @IsInt()
   @Min(0)
