@@ -774,7 +774,7 @@ export class PayoutsService {
     query: PayoutQueryDto,
     userAddress?: string,
   ): Promise<PayoutHistoryResponseDto> {
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? 10;
     const address = query.stellarAddress || userAddress;
 
     const qb = this.payoutRepository.createQueryBuilder('payout');
@@ -890,6 +890,65 @@ export class PayoutsService {
     });
 
     return this.mapToResponse(payout);
+  }
+
+  // ─── Force reset (recovery) ───────────────────────────────────────────────
+
+  /**
+   * Force-reset a stuck payout so the reconciliation processor can re-drive it.
+   *
+   * * PROCESSING without a transaction hash and within the retry budget is
+   *   reset to PENDING so the next batch-payout cron picks it up.
+   * * PROCESSING without a tx-hash but past the retry budget is dead-lettered.
+   * * RETRY_SCHEDULED payouts whose `nextRetryAt` has passed are pushed back
+   *   to PENDING so the next batch cycle retries them immediately.
+   *
+   * Returns the updated payout, or `null` when the payout was not found.
+   */
+  async forceResetPayout(payoutId: string): Promise<Payout | null> {
+    const payout = await this.payoutRepository.findOne({
+      where: { id: payoutId },
+    });
+    if (!payout) return null;
+
+    if (
+      payout.status === PayoutStatus.PROCESSING &&
+      !payout.transactionHash
+    ) {
+      if (payout.retryCount < this.maxAutomaticPayoutRetries) {
+        payout.status = PayoutStatus.PENDING;
+        payout.failureReason = 'Reset to PENDING by reconciliation recovery';
+        this.logger.warn(
+          `Force-reset stuck payout ${payout.id} → PENDING (retry ${payout.retryCount}/${this.maxAutomaticPayoutRetries})`,
+        );
+      } else {
+        payout.status = PayoutStatus.DEAD_LETTER;
+        payout.nextRetryAt = null;
+        payout.failureReason = 'Exceeded retries during stuck-payout recovery';
+        this.logger.error(
+          `Stuck payout ${payout.id} exceeded retries → DEAD_LETTER`,
+        );
+      }
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    if (
+      payout.status === PayoutStatus.RETRY_SCHEDULED &&
+      payout.nextRetryAt &&
+      payout.nextRetryAt <= new Date()
+    ) {
+      payout.status = PayoutStatus.PENDING;
+      payout.failureReason = null;
+      this.logger.warn(
+        `Force-reset overdue RETRY_SCHEDULED payout ${payout.id} → PENDING`,
+      );
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    // Nothing to do – payout is not in a recoverable stuck state.
+    return payout;
   }
 
   // ─── Mapper ────────────────────────────────────────────────────────────────
