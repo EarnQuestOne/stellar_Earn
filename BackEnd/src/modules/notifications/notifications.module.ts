@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { NotificationsController } from './notifications.controller';
@@ -16,7 +16,7 @@ import { JobsModule } from '../jobs/jobs.module';
       NotificationPreference,
       NotificationLog,
     ]),
-    JobsModule,
+    forwardRef(() => JobsModule),
   ],
   providers: [NotificationsService, NotificationTemplateService],
   controllers: [NotificationsController],

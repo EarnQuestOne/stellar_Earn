@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -17,7 +17,7 @@ import { User } from '../users/entities/user.entity';
   imports: [
     TypeOrmModule.forFeature([Submission, Quest, User]),
     EventEmitterModule,
-    NotificationsModule,
+    forwardRef(() => NotificationsModule),
     StellarModule,
     CacheModule,
   ],

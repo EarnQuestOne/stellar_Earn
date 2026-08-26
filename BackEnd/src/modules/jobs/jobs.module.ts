@@ -67,7 +67,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     EventEmitterModule,
     HttpClientModule,
     StellarModule,
-    AnalyticsModule,
+    forwardRef(() => AnalyticsModule),
     forwardRef(() => EmailModule),
     CacheModule,
   ],

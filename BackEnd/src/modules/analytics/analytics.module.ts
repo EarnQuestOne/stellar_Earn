@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AnalyticsController } from './analytics.controller';
@@ -23,6 +23,7 @@ import { AnalyticsReport } from './entities/analytics-report.entity';
 import { User as AnalyticsUser } from './entities/user.entity';
 import { SubmissionsModule } from '../submissions/submissions.module';
 
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -37,7 +38,7 @@ import { SubmissionsModule } from '../submissions/submissions.module';
       ttl: 300, // 5 minutes default
       max: 100, // max items in cache
     }),
-    SubmissionsModule,
+    forwardRef(() => SubmissionsModule),
   ],
   controllers: [AnalyticsController, WebVitalsAnalyticsController],
   providers: [
