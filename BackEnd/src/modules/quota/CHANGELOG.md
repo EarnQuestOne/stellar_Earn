@@ -7,6 +7,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- Quota usage records now track `createdAt` and `updatedAt` timestamps, with an idempotent migration preserving existing rows (#2249).
 - Applied code-style formatting to `quota.service.ts` multi-argument call sites (no logic change).
 
 ### Fixed

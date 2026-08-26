@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from 'typeorm';
-import { QuotaUsage } from '../../modules/quota/entities/quota-usage.entity';
-import { AddQuotaUsageTimestamps1850000000000 } from './1850000000000-add-quota-usage-timestamps';
+import { QuotaUsage } from './entities/quota-usage.entity';
+import { AddQuotaUsageTimestamps1850000000000 } from '../../database/migrations/1850000000000-add-quota-usage-timestamps';
 
 describe('Quota usage timestamps', () => {
   it('declares createdAt and updatedAt as managed timestamp columns', () => {
