@@ -631,6 +631,11 @@ impl EarnQuestContract {
         };
         storage::set_submission(&env, &quest_id, &submitter, &submission);
 
+        // If fully paid, remove from user's active quests
+        if submission.status == types::SubmissionStatus::Paid {
+            storage::remove_user_active_quest(&env, &submitter, &quest_id);
+        }
+
         // Increment claims: directly update quest to avoid extra read
         let mut quest = quest;
         quest.total_claims = quest
@@ -1287,6 +1292,28 @@ impl EarnQuestContract {
         limit: u32,
     ) -> Vec<Quest> {
         quest::get_quests_by_reward_range(&env, min_reward, max_reward, offset, limit)
+    }
+
+    /// Retrieves a list of quest IDs where a user has active submissions.
+    ///
+    /// This function returns the quest IDs for quests where the user has submissions
+    /// in Pending, Approved, or PartiallyPaid status (i.e., not yet Paid or Rejected).
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The contract environment.
+    /// * `user` - The address of the user.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<Symbol>` containing the quest IDs where the user has active submissions.
+    ///
+    /// # Performance
+    ///
+    /// This is an O(1) lookup operation that avoids scanning all quests in the system.
+    /// The list is automatically maintained when submissions are created or their status changes.
+    pub fn get_user_active_quest_ids(env: Env, user: Address) -> Vec<Symbol> {
+        quest::get_user_active_quest_ids(&env, &user)
     }
 
     //================================================================================

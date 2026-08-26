@@ -373,3 +373,172 @@ fn test_reward_range_pagination() {
     let page = client.get_quests_by_reward_range(&100, &300, &1, &1);
     assert_eq!(page.len(), 1);
 }
+
+//================================================================================
+// get_user_active_quest_ids
+//================================================================================
+
+#[test]
+fn test_get_user_active_quest_ids_empty_for_new_user() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let user = Address::generate(&env);
+
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 0);
+}
+
+#[test]
+fn test_get_user_active_quest_ids_tracks_submissions() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let user = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
+
+    // Register two quests
+    register(&client, &env, symbol_short!("Q1"), &creator, 100);
+    register(&client, &env, symbol_short!("Q2"), &creator, 200);
+
+    // Initially, user has no active quests
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 0);
+
+    // User submits to first quest
+    client.submit_proof(&symbol_short!("Q1"), &user, &proof);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1);
+    assert_eq!(results.get(0).unwrap(), symbol_short!("Q1"));
+
+    // User submits to second quest
+    client.submit_proof(&symbol_short!("Q2"), &user, &proof);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 2);
+    assert!(results.contains(symbol_short!("Q1")));
+    assert!(results.contains(symbol_short!("Q2")));
+}
+
+#[test]
+fn test_get_user_active_quest_ids_removes_on_completion() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let user = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
+    let token = Address::generate(&env);
+
+    // Register quest and set up escrow
+    client.register_quest(&symbol_short!("Q1"), &creator, &token, &100i128, &verifier, &99999u64);
+    client.deposit_escrow(&symbol_short!("Q1"), &creator, &token, &1000i128);
+
+    // User submits
+    client.submit_proof(&symbol_short!("Q1"), &user, &proof);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1);
+
+    // Approve submission
+    client.approve_submission(&symbol_short!("Q1"), &user, &verifier);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1); // Still active until claimed
+
+    // Claim reward (should remove from active list)
+    client.claim_reward(&symbol_short!("Q1"), &user, &100i128);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 0); // No longer active after being paid
+}
+
+#[test]
+fn test_get_user_active_quest_ids_multiple_users_independent() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let user1 = Address::generate(&env);
+    let user2 = Address::generate(&env);
+    let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
+
+    // Register quests
+    register(&client, &env, symbol_short!("Q1"), &creator, 100);
+    register(&client, &env, symbol_short!("Q2"), &creator, 200);
+
+    // User1 submits to Q1
+    client.submit_proof(&symbol_short!("Q1"), &user1, &proof);
+
+    // User2 submits to Q2
+    client.submit_proof(&symbol_short!("Q2"), &user2, &proof);
+
+    // Check that each user only sees their own active quests
+    let results1 = client.get_user_active_quest_ids(&user1);
+    assert_eq!(results1.len(), 1);
+    assert_eq!(results1.get(0).unwrap(), symbol_short!("Q1"));
+
+    let results2 = client.get_user_active_quest_ids(&user2);
+    assert_eq!(results2.len(), 1);
+    assert_eq!(results2.get(0).unwrap(), symbol_short!("Q2"));
+}
+
+#[test]
+fn test_get_user_active_quest_ids_no_duplicates_on_duplicate_submission() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let user = Address::generate(&env);
+    let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
+
+    // Register quest
+    register(&client, &env, symbol_short!("Q1"), &creator, 100);
+
+    // First submission
+    client.submit_proof(&symbol_short!("Q1"), &user, &proof);
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1);
+
+    // Attempt second submission to same quest (this should fail, but if it didn't,
+    // we shouldn't have duplicates)
+    let result = client.try_submit_proof(&symbol_short!("Q1"), &user, &proof);
+    assert!(result.is_err()); // Should fail due to AlreadyClaimed error
+
+    // Verify still only one entry
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1);
+}
+
+#[test]
+fn test_get_user_active_quest_ids_partial_payment_still_active() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+    let user = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
+    let token = Address::generate(&env);
+
+    // Register quest with higher reward
+    client.register_quest(&symbol_short!("Q1"), &creator, &token, &1000i128, &verifier, &99999u64);
+    client.deposit_escrow(&symbol_short!("Q1"), &creator, &token, &2000i128);
+
+    // User submits and gets approved
+    client.submit_proof(&symbol_short!("Q1"), &user, &proof);
+    client.approve_submission(&symbol_short!("Q1"), &user, &verifier);
+
+    // Partial claim (less than full reward)
+    client.claim_reward(&symbol_short!("Q1"), &user, &500i128);
+    
+    // Should still be active since not fully paid
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 1);
+
+    // Full claim (remaining amount)
+    client.claim_reward(&symbol_short!("Q1"), &user, &500i128);
+    
+    // Now should be removed from active list
+    let results = client.get_user_active_quest_ids(&user);
+    assert_eq!(results.len(), 0);
+}

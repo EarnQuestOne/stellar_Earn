@@ -536,3 +536,35 @@ pub fn get_quests_by_reward_range(
 
     results
 }
+
+/// Retrieves a list of quest IDs where a user has active submissions.
+///
+/// This function returns the quest IDs for quests where the user has submissions
+/// in Pending, Approved, or PartiallyPaid status (i.e., not yet Paid or Rejected).
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `user` - The address of the user.
+///
+/// # Returns
+///
+/// A `Vec<Symbol>` containing the quest IDs where the user has active submissions.
+///
+/// # Performance
+///
+/// This is an O(1) lookup operation that avoids scanning all quests in the system.
+/// The list is automatically maintained when submissions are created or their status changes.
+///
+/// # Example
+///
+/// ```rust
+/// let active_quest_ids = get_user_active_quest_ids(&env, &user_address);
+/// for i in 0..active_quest_ids.len() {
+///     let quest_id = active_quest_ids.get(i).unwrap();
+///     // Process each active quest
+/// }
+/// ```
+pub fn get_user_active_quest_ids(env: &Env, user: &Address) -> Vec<Symbol> {
+    storage::get_user_active_quests(env, user)
+}

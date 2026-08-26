@@ -116,10 +116,13 @@ pub fn reveal_submission(
 
     storage::set_submission(env, quest_id, submitter, &submission);
 
-    // 4. Cleanup the commitment to free up storage
+    // 4. Track this quest as active for the user
+    storage::add_user_active_quest(env, submitter, quest_id);
+
+    // 5. Cleanup the commitment to free up storage
     storage::delete_commitment(env, quest_id, submitter);
 
-    // 5. EMIT EVENTS
+    // 6. EMIT EVENTS
     events::submission_revealed(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
     events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
 
@@ -169,6 +172,9 @@ pub fn submit_proof(
     };
 
     storage::set_submission(env, quest_id, submitter, &submission);
+
+    // Track this quest as active for the user
+    storage::add_user_active_quest(env, submitter, quest_id);
 
     // EMIT EVENT: ProofSubmitted
     events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
