@@ -249,6 +249,42 @@ describe('WebhooksService', () => {
       expect(result).toHaveProperty('traceId');
       expect(result.eventId).toBe(event.id);
     });
+
+    it('should reject a webhook whose payload timestamp exceeds the maximum age', async () => {
+      const event = buildEvent({
+        payload: { timestamp: new Date(Date.now() - 300_001) },
+      });
+      const handleEventSpy = jest.spyOn(githubHandler, 'handleEvent');
+
+      const result = await service.processWebhook(event);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe(
+        'Webhook event exceeds the maximum allowed age',
+      );
+      expect(handleEventSpy).not.toHaveBeenCalled();
+    });
+
+    it('should process a webhook with a recent payload timestamp', async () => {
+      const event = buildEvent({
+        payload: { timestamp: new Date(Date.now() - 299_999) },
+      });
+
+      const result = await service.processWebhook(event);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject a webhook with an invalid payload timestamp', async () => {
+      const event = buildEvent({ payload: { timestamp: 'not-a-timestamp' } });
+
+      const result = await service.processWebhook(event);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe(
+        'Webhook event exceeds the maximum allowed age',
+      );
+    });
   });
 
   describe('Generic Handler Source Allowlist', () => {

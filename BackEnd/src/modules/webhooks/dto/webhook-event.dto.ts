@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsEnum,
   ValidateNested,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -32,6 +33,10 @@ export class WebhookPayloadDto {
   @IsString()
   @IsNotEmpty()
   eventId!: string;
+
+  @IsOptional()
+  @IsDateString()
+  timestamp?: string;
 
   @IsEnum(WebhookEventType)
   eventType!: WebhookEventType;

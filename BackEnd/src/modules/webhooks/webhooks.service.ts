@@ -44,6 +44,8 @@ const NON_RETRYABLE_MESSAGES = [
   'Unsupported webhook source',
 ];
 
+const DEFAULT_WEBHOOK_MAX_EVENT_AGE_MS = 300_000;
+
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
@@ -82,6 +84,17 @@ export class WebhooksService {
       this.logger.log(
         `Processing webhook event ${event.id} of type ${event.type} from ${event.source}`,
       );
+
+      const eventTimestamp = this.getEventTimestamp(event);
+      if (!eventTimestamp || !this.isEventTimestampAllowed(eventTimestamp)) {
+        return {
+          success: false,
+          eventId: event.id,
+          message: 'Webhook event exceeds the maximum allowed age',
+          processedAt: new Date(),
+          traceId: currentTraceId(),
+        };
+      }
 
       // When a secret is configured, a valid signature is required.
       // Fail closed: missing signature is rejected, not silently skipped.
@@ -178,6 +191,33 @@ export class WebhooksService {
         ),
       ),
     };
+  }
+
+  private getEventTimestamp(event: WebhookEvent): Date | null {
+    const payloadTimestamp =
+      event.payload && typeof event.payload === 'object'
+        ? event.payload.timestamp
+        : undefined;
+
+    if (payloadTimestamp !== undefined) {
+      const parsedTimestamp = new Date(payloadTimestamp);
+      return Number.isNaN(parsedTimestamp.getTime()) ? null : parsedTimestamp;
+    }
+
+    return event.timestamp instanceof Date && !Number.isNaN(event.timestamp.getTime())
+      ? event.timestamp
+      : null;
+  }
+
+  private isEventTimestampAllowed(timestamp: Date): boolean {
+    const maxAgeMs = Number(
+      this.configService.get<number | string>(
+        'WEBHOOK_MAX_EVENT_AGE_MS',
+        DEFAULT_WEBHOOK_MAX_EVENT_AGE_MS,
+      ),
+    );
+
+    return Math.abs(Date.now() - timestamp.getTime()) <= maxAgeMs;
   }
 
   /**
