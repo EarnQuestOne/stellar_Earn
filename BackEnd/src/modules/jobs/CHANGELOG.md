@@ -12,6 +12,8 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Stuck-outbox recovery in `PayoutReconciliationProcessor.recoverStuckPayoutOutbox()` — resets outbox rows left in PROCESSING beyond the crash threshold back to PENDING so the idempotent relay can safely replay them (#2158).
 
 ### Changed
+
+- `JobsService` now exposes bounded Redis/BullMQ queue health checks for system diagnostics (#2257).
 - Applied code-style formatting to `jobs.constants.ts` import block (no logic change).
 
 ### Added
