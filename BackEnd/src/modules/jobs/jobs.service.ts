@@ -50,6 +50,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private emailProcessor:
     | ((messageId: string, dto: any) => Promise<void>)
     | null = null;
+  private outboundWebhookProcessor: ((job: Job) => Promise<any>) | null = null;
 
   constructor(
     private readonly tracing: TracingService,
@@ -62,6 +63,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     processor: (messageId: string, dto: any) => Promise<void>,
   ) {
     this.emailProcessor = processor;
+  }
+
+  /**
+   * Registers the outbound-webhook delivery processor (webhooks-outbound
+   * module, #2306). The worker on the WEBHOOKS queue is created eagerly in
+   * onModuleInit and delegates here per job — same lazy pattern as email.
+   */
+  registerOutboundWebhookProcessor(processor: (job: Job) => Promise<any>) {
+    this.outboundWebhookProcessor = processor;
   }
 
   onModuleInit() {
@@ -87,12 +97,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
+    // ── Webhooks queue — outbound event-subscription deliveries (#2306).
+    this.queues[QUEUES.WEBHOOKS] = new Queue(QUEUES.WEBHOOKS, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
     this.createWorker(QUEUES.CLEANUP, this.handleCleanup.bind(this));
     this.createWorker(QUEUES.SCHEDULED, this.handleScheduled.bind(this));
     this.createWorker(QUEUES.EMAIL, this.handleEmail.bind(this));
+    this.createWorker(QUEUES.WEBHOOKS, this.handleOutboundWebhook.bind(this));
 
     if (
       this.dataExportProcessor &&
@@ -495,6 +508,20 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
     await job.updateProgress(100);
     return { sent: true, messageId };
+  }
+
+  /**
+   * Outbound webhook delivery jobs (#2306). Single-attempt by design —
+   * retry/backoff orchestration lives in the webhook_deliveries table.
+   */
+  private async handleOutboundWebhook(job: Job) {
+    if (this.outboundWebhookProcessor) {
+      return this.outboundWebhookProcessor(job);
+    }
+    this.logger.warn(
+      `No outbound webhook processor registered, skipping job ${job.id}`,
+    );
+    return { skipped: true };
   }
 
   private attachTraceContext(data: any, traceContext?: TraceContext): any {
