@@ -8,6 +8,8 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `webhooks` queue registration + worker in `JobsService.onModuleInit()` and `registerOutboundWebhookProcessor()` — outbound event-subscription webhook deliveries (#2306, `webhooks-outbound` module) now run through the shared queue spine; the processor self-registers at module init (email pattern), retry orchestration stays in the `webhook_deliveries` table.
+
 - Payout transactional-outbox relay in `PayoutProcessor.relayPayoutOutbox()` — an every-minute job that atomically claims PENDING `payout_outbox` rows (`PENDING → PROCESSING`), submits each via `StellarPaymentService` exactly once, and marks them DONE (or retries/parks on failure) (#2158).
 - Stuck-outbox recovery in `PayoutReconciliationProcessor.recoverStuckPayoutOutbox()` — resets outbox rows left in PROCESSING beyond the crash threshold back to PENDING so the idempotent relay can safely replay them (#2158).
 
