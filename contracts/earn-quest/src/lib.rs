@@ -691,6 +691,22 @@ impl EarnQuestContract {
         payout::execute_clawback(&env, &caller, &quest_id, &recipient)
     }
 
+    /// Awards experience points (XP) to multiple users in a batch, accumulating
+    /// per-address reputation/XP deltas in memory to minimize storage operations.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `grants` - Vector of (Address, u64) tuples representing target user and XP amount.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` on success, or `Err(Error)` if index/storage operations fail.
+    pub fn award_xp_batch(env: Env, grants: Vec<(Address, u64)>) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+        reputation::award_xp_batch(&env, &grants)
+    }
+
     /// Returns the core statistics for a user (XP, level, quests completed).
     ///
     /// # Arguments
