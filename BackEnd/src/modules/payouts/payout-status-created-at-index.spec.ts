@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from 'typeorm';
 import { Payout } from '../../modules/payouts/entities/payout.entity';
-import { AddPayoutStatusCreatedAtIndex1850000000001 } from './1850000000001-add-payout-status-created-at-index';
+import { AddPayoutStatusCreatedAtIndex1850000000001 } from '../../database/migrations/1850000000001-add-payout-status-created-at-index';
 
 describe('Payout status and creation-time index', () => {
   it('declares the composite active-payout index in entity metadata', () => {
