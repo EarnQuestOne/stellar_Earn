@@ -194,7 +194,7 @@ function SubmissionsContent() {
           ) : searchQuery ? null : (
             <EmptyState
               title="No submissions yet"
-              description="You haven&apos;t submitted any quests yet. Start completing quests to see your submissions here."
+              description="You haven't submitted any quests yet. Start completing quests to see your submissions here."
             />
           )}
         </div>

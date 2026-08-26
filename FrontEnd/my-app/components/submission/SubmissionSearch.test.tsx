@@ -68,9 +68,7 @@ describe('SubmissionSearch', () => {
   });
 
   it('does not show no-results state when resultCount is null', () => {
-    render(
-      <SubmissionSearch onSearch={vi.fn()} resultCount={null} />
-    );
+    render(<SubmissionSearch onSearch={vi.fn()} resultCount={null} />);
 
     const input = screen.getByPlaceholderText(/search by quest/i);
     fireEvent.change(input, { target: { value: 'zzz' } });
@@ -83,9 +81,7 @@ describe('SubmissionSearch', () => {
   });
 
   it('does not show no-results state when resultCount is greater than 0', () => {
-    render(
-      <SubmissionSearch onSearch={vi.fn()} resultCount={3} />
-    );
+    render(<SubmissionSearch onSearch={vi.fn()} resultCount={3} />);
 
     const input = screen.getByPlaceholderText(/search by quest/i);
     fireEvent.change(input, { target: { value: 'quest' } });
@@ -99,11 +95,7 @@ describe('SubmissionSearch', () => {
 
   it('does not show no-results state when isLoading is true', () => {
     render(
-      <SubmissionSearch
-        onSearch={vi.fn()}
-        resultCount={0}
-        isLoading={true}
-      />
+      <SubmissionSearch onSearch={vi.fn()} resultCount={0} isLoading={true} />
     );
 
     const input = screen.getByPlaceholderText(/search by quest/i);
@@ -117,20 +109,14 @@ describe('SubmissionSearch', () => {
   });
 
   it('does not show no-results state when query is empty', () => {
-    render(
-      <SubmissionSearch onSearch={vi.fn()} resultCount={0} />
-    );
+    render(<SubmissionSearch onSearch={vi.fn()} resultCount={0} />);
 
     expect(screen.queryByText('No submissions found')).not.toBeInTheDocument();
   });
 
   it('shows the no-results state when query is non-empty, resultCount is 0, and not loading', () => {
     render(
-      <SubmissionSearch
-        onSearch={vi.fn()}
-        resultCount={0}
-        isLoading={false}
-      />
+      <SubmissionSearch onSearch={vi.fn()} resultCount={0} isLoading={false} />
     );
 
     const input = screen.getByPlaceholderText(/search by quest/i);
@@ -168,12 +154,7 @@ describe('SubmissionSearch', () => {
   });
 
   it('hides no-results state when query is cleared', () => {
-    render(
-      <SubmissionSearch
-        onSearch={vi.fn()}
-        resultCount={0}
-      />
-    );
+    render(<SubmissionSearch onSearch={vi.fn()} resultCount={0} />);
 
     const input = screen.getByPlaceholderText(/search by quest/i);
     fireEvent.change(input, { target: { value: 'zzz' } });

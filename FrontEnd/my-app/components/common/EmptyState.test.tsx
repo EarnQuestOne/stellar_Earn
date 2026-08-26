@@ -14,9 +14,7 @@ describe('EmptyState', () => {
   });
 
   it('has a status role for screen readers', () => {
-    render(
-      <EmptyState title="Empty" description="Nothing here" />
-    );
+    render(<EmptyState title="Empty" description="Nothing here" />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
