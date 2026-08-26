@@ -67,6 +67,12 @@ pub fn transfer_reward_from_escrow(
     to: &Address,
     amount: i128,
 ) -> Result<(), Error> {
+    // Defense-in-depth: a zero/negative claim is rejected with the typed
+    // claim error even if a future caller skips claim validation.
+    if amount <= 0 {
+        return Err(Error::InvalidClaimAmount);
+    }
+
     let has_escrow = storage::has_escrow(env, quest_id);
 
     // CEI ordering: validate AND debit the escrow accounting before issuing

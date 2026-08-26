@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Claiming a zero or negative amount now returns the typed `Error::InvalidClaimAmount` (code 143) instead of proceeding silently; enforced in `validate_claim_amount` and defensively in `transfer_reward_from_escrow`.
+- Batch approval now caps the *total* number of submissions across all inputs at `MAX_BATCH_APPROVALS` (50) via `validate_batch_approval_total`, so a single oversized inner submitter list cannot exhaust gas in one call.
 - Quest expiry bounds: per-quest grace periods and the global default grace period are now capped at `MAX_GRACE_PERIOD_SECONDS` (30 days) via `validate_grace_period`, so the effective quest expiry (`deadline + grace_period_seconds`) stays bounded even when the deadline itself is within `MAX_DEADLINE_DURATION`. Exceeding the cap returns `Error::GracePeriodTooLarge` (code 96) at quest registration and when admins update the default.
 - Registered oracle configurations are now capped at `MAX_ORACLE_CONFIGS` (10) in `oracle.rs`/`storage.rs`, preventing unbounded instance storage growth and unbounded aggregation gas. Registering beyond the cap returns `Error::OracleLimitReached` (code 108); updating an existing oracle at the cap remains allowed.
 - Property-based quest lifecycle invariant tests in `tests/property_tests.rs`: escrow balance, payout bounds, and cancel acyclicity are fuzzed via QuickCheck (1000 sequences) and proptest against the live Soroban client (50 sequences).

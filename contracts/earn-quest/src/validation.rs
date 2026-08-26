@@ -423,6 +423,20 @@ pub fn validate_batch_approval_size(length: u32) -> Result<(), Error> {
     Ok(())
 }
 
+/// Validates the *total* number of submissions across all batch-approval
+/// inputs.
+///
+/// `validate_batch_approval_size` only caps the outer vector length; a single
+/// `BatchApprovalInput` can still carry an unbounded inner submitter list,
+/// risking gas exhaustion in one call. Capping the total keeps the whole
+/// batch within `MAX_BATCH_APPROVALS` submissions.
+pub fn validate_batch_approval_total(total: u32) -> Result<(), Error> {
+    if total > MAX_BATCH_APPROVALS {
+        return Err(Error::ArrayTooLong);
+    }
+    Ok(())
+}
+
 /// Validates that the total number of quests does not exceed the limit.
 pub fn validate_max_quests(current_count: u32) -> Result<(), Error> {
     if current_count >= MAX_QUEST_IDS_TOTAL {

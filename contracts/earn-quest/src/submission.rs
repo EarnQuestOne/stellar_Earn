@@ -240,6 +240,12 @@ pub fn validate_claim_amount(
     submission: &crate::types::Submission,
     amount: i128,
 ) -> Result<i128, Error> {
+    // Claiming zero (or a negative amount) is meaningless and would otherwise
+    // mint a PartiallyPaid transition for nothing — surface a typed error.
+    if amount <= 0 {
+        return Err(Error::InvalidClaimAmount);
+    }
+
     validation::validate_reward_amount(amount)?;
 
     // Guarded subtraction: if stored accounting were ever corrupted such that

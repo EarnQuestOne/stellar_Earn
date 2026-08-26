@@ -43,6 +43,7 @@ mod test_self_approval;
 #[cfg(test)]
 mod test_expiry_bounds;
 
+mod test_claim_and_batch;
 #[cfg(test)]
 mod test_reward_and_escrow_views;
 
@@ -600,6 +601,18 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         verifier.require_auth();
+
+        // Cap the total number of approvals across all inputs so a single
+        // oversized inner list cannot exhaust gas (issue #2279).
+        let mut total = 0u32;
+        for i in 0u32..submissions.len() {
+            let input = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+            total = total
+                .checked_add(input.submissions.len())
+                .ok_or(Error::ArrayTooLong)?;
+        }
+        validation::validate_batch_approval_total(total)?;
+
         submission::approve_submissions_batch(&env, &verifier, &submissions)
     }
 
