@@ -94,6 +94,24 @@ pub fn validate_reward_amount(amount: i128) -> Result<(), Error> {
     if amount <= 0 {
         return Err(Error::InvalidRewardAmount);
     }
+    validate_max_reward_amount(amount)?;
+    Ok(())
+}
+
+/// Validates that a reward amount does not exceed the maximum allowed bound.
+///
+/// Split out from [`validate_reward_amount`] so the upper-bound check has a
+/// single, explicitly named home. Quest registration relies on this to reject
+/// implausibly large rewards that would otherwise overflow downstream math
+/// (e.g. cumulative platform-reward accounting or reward × claims arithmetic).
+///
+/// # Arguments
+/// * `amount` - The reward amount to validate
+///
+/// # Returns
+/// * `Ok(())` if `amount <= MAX_REWARD_AMOUNT`
+/// * `Err(Error::AmountTooLarge)` if `amount > MAX_REWARD_AMOUNT`
+pub fn validate_max_reward_amount(amount: i128) -> Result<(), Error> {
     if amount > MAX_REWARD_AMOUNT {
         return Err(Error::AmountTooLarge);
     }

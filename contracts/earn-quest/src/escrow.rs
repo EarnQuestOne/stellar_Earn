@@ -402,6 +402,18 @@ pub fn get_info(env: &Env, quest_id: &Symbol) -> Result<EscrowInfo, Error> {
     storage::get_escrow(env, quest_id)
 }
 
+/// Get the total amount ever deposited into a quest's escrow (read-only view).
+///
+/// Unlike [`get_balance`], which returns the *remaining* spendable balance
+/// (deposits minus payouts and refunds), this returns the cumulative
+/// `total_deposited` counter — the full escrow size funded for the quest. It
+/// lets integrators query a quest's total escrow without inspecting raw
+/// storage.
+pub fn get_total_deposited(env: &Env, quest_id: &Symbol) -> Result<i128, Error> {
+    let b = storage::get_escrow_balances(env, quest_id)?;
+    Ok(b.total_deposited)
+}
+
 // ═══════════════════════════════════════════════════════════════
 // VERIFIER STAKE: Deposit stake before verifying; return if no dispute
 // ═══════════════════════════════════════════════════════════════
