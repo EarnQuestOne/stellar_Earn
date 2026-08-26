@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Quest, QuestStatus } from '@/lib/types/admin';
 
 export type SortField =
@@ -11,11 +11,38 @@ export type SortField =
   | 'participants';
 export type SortOrder = 'asc' | 'desc';
 
-export function useQuestFilters(quests: Quest[]) {
+/** Default debounce delay for the search query, in milliseconds. */
+export const DEFAULT_DEBOUNCE_MS = 300;
+
+export function useQuestFilters(
+  quests: Quest[],
+  options?: { debounceMs?: number }
+) {
+  const debounceMs = options?.debounceMs ?? DEFAULT_DEBOUNCE_MS;
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<QuestStatus | 'all'>('all');
   const [sortField, setSortField] = useState<SortField>('deadline');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce the search query so rapid keystrokes don't re-run the filter on
+  // every change. The input stays responsive (`searchQuery` updates
+  // immediately) while filtering only happens once the user pauses typing.
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, debounceMs);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchQuery, debounceMs]);
 
   const handleSort = (field: SortField) => {
     setSortField((currentField) => {
@@ -31,8 +58,8 @@ export function useQuestFilters(quests: Quest[]) {
   const filteredAndSortedQuests = useMemo(() => {
     let result = [...quests];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (q) =>
           q.title.toLowerCase().includes(query) ||
@@ -71,11 +98,12 @@ export function useQuestFilters(quests: Quest[]) {
     });
 
     return result;
-  }, [quests, searchQuery, statusFilter, sortField, sortOrder]);
+  }, [quests, debouncedSearchQuery, statusFilter, sortField, sortOrder]);
 
   return {
     searchQuery,
     setSearchQuery,
+    debouncedSearchQuery,
     statusFilter,
     setStatusFilter,
     sortField,
