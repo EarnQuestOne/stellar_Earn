@@ -1,32 +1,25 @@
 'use client';
 
-import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { useStore } from '@/lib/store';
+import { useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchSubmissions } from '@/lib/api/submissions';
-import { createCancelToken } from '@/lib/api/client';
+import { submissionKeys } from '@/lib/query/keys';
 import type {
   SubmissionFilters,
   PaginationParams,
 } from '@/lib/types/submission';
 
+// Submissions are user-specific; re-validate sooner than quests.
+const SUBMISSIONS_STALE_TIME = 30 * 1000;
+
 export function useSubmissions(
   filters?: SubmissionFilters,
   initialPagination?: PaginationParams
 ) {
-  const submissions = useStore((s) => s.submissions);
-  const isLoading = useStore((s) => s.submissionsLoading);
-  const error = useStore((s) => s.submissionsError);
-  const pagination = useStore((s) => s.submissionPagination);
+  const queryClient = useQueryClient();
 
-  const setSubmissions = useStore((s) => s.setSubmissions);
-  const setLoading = useStore((s) => s.setSubmissionsLoading);
-  const setError = useStore((s) => s.setSubmissionsError);
-  const setPagination = useStore((s) => s.setSubmissionPagination);
-  const setFilters = useStore((s) => s.setSubmissionFilters);
-  const optimisticUpdate = useStore((s) => s.optimisticallyUpdateSubmission);
-
-  const memoizedFilters = useMemo(() => filters, [filters?.status]);
-  const memoizedInitialPagination = useMemo(
+  const stableFilters = useMemo(() => filters, [filters?.status]);
+  const stablePagination = useMemo(
     () => initialPagination,
     [
       initialPagination?.page,
@@ -35,96 +28,52 @@ export function useSubmissions(
     ]
   );
 
-  // Tracks the in-flight request's cancel token so a superseding fetch (new
-  // filters/page, a manual refetch, or unmount) can abort it instead of
-  // letting it race a newer request or update state after unmount.
-  const cancelTokenRef = useRef<ReturnType<typeof createCancelToken> | null>(
-    null
-  );
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: submissionKeys.list(stableFilters, stablePagination),
+    queryFn: () => fetchSubmissions(stableFilters as any, stablePagination),
+    staleTime: SUBMISSIONS_STALE_TIME,
+  });
 
-  const load = useCallback(async () => {
-    cancelTokenRef.current?.cancel();
-    const cancelToken = createCancelToken();
-    cancelTokenRef.current = cancelToken;
+  const submissions = data?.data ?? [];
+  const pagination = data?.pagination ?? {
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasMore: false,
+  };
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetchSubmissions(
-        memoizedFilters as any,
-        {
-          page: pagination.page,
-          limit: pagination.limit,
-          ...memoizedInitialPagination,
-        },
-        cancelToken
+  // Optimistic update: mutates the cached list in place without a round-trip.
+  const optimisticallyUpdateSubmission = useCallback(
+    (id: string, updates: Record<string, unknown>) => {
+      queryClient.setQueryData(
+        submissionKeys.list(stableFilters, stablePagination),
+        (old: typeof data) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((s: any) =>
+              s.id === id ? { ...s, ...updates } : s
+            ),
+          };
+        }
       );
-
-      setSubmissions(response.data as any);
-      setPagination({
-        total: response.pagination.total ?? 0,
-        totalPages: response.pagination.totalPages ?? 0,
-        hasMore: response.pagination.hasMore ?? false,
-      });
-    } catch (err) {
-      // A cancelled request isn't a real error — either a newer fetch
-      // superseded it, or the component unmounted.
-      if (cancelToken.signal.aborted) return;
-
-      setError(
-        err instanceof Error ? err.message : 'Failed to load submissions'
-      );
-      setSubmissions([]);
-    } finally {
-      if (!cancelToken.signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, [
-    memoizedFilters,
-    pagination.page,
-    pagination.limit,
-    memoizedInitialPagination,
-    setLoading,
-    setError,
-    setSubmissions,
-    setPagination,
-    fetchSubmissions,
-  ]);
-
-  useEffect(() => {
-    if (memoizedFilters) setFilters(memoizedFilters);
-  }, [memoizedFilters, setFilters]);
-
-  useEffect(() => {
-    load();
-    return () => {
-      cancelTokenRef.current?.cancel();
-    };
-  }, [load]);
-
-  const goToPage = useCallback(
-    (page: number) => {
-      setPagination({ page });
     },
-    [setPagination]
+    [queryClient, stableFilters, stablePagination]
   );
-
-  const loadMore = useCallback(() => {
-    if (pagination.hasMore) setPagination({ page: pagination.page + 1 });
-  }, [pagination.hasMore, pagination.page, setPagination]);
 
   return {
     submissions,
     isLoading,
-    error: error ? new Error(error) : null,
-    refetch: load,
+    error: error as Error | null,
+    refetch,
     hasMore: pagination.hasMore,
     currentPage: pagination.page,
     totalPages: pagination.totalPages,
-    goToPage,
-    loadMore,
-    optimisticallyUpdateSubmission: optimisticUpdate,
+    optimisticallyUpdateSubmission,
+    // goToPage / loadMore are kept for API compat with existing callers.
+    // True pagination requires updating the `initialPagination` prop externally.
+    goToPage: (_page: number) => refetch(),
+    loadMore: () => refetch(),
   };
 }

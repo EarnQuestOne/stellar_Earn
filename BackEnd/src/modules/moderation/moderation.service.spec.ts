@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { ModerationService } from './moderation.service';
 import { ModerationItem } from './entities/moderation-item.entity';
 import { ModerationAppeal } from './entities/moderation-appeal.entity';
@@ -8,6 +7,7 @@ import { KeywordFilterService } from './filters/keyword-filter.service';
 import { ContentClassifierService } from './filters/content-classifier.service';
 import { ImageModerationService } from './filters/image-moderation.service';
 import { ExternalModerationApiService } from './filters/external-moderation-api.service';
+import { ModerationConfigCacheService } from './moderation-config-cache.service';
 
 describe('ModerationService', () => {
   let service: ModerationService;
@@ -42,7 +42,22 @@ describe('ModerationService', () => {
           provide: ExternalModerationApiService,
           useValue: { scoreText: jest.fn() },
         },
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: ModerationConfigCacheService,
+          useValue: {
+            getConfig: jest.fn(() => ({
+              blockOnHighSeverity: true,
+              highThreshold: 0.85,
+              mediumThreshold: 0.5,
+              externalApiUrl: '',
+              externalApiKey: '',
+              imageApiUrl: '',
+              imageApiKey: '',
+              blockedKeywords: [],
+              blockedImageHosts: [],
+            })),
+          },
+        },
       ],
     }).compile();
 

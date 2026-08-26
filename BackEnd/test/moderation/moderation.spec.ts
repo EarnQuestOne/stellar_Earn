@@ -17,6 +17,10 @@ import { KeywordFilterService } from '#src/modules/moderation/filters/keyword-fi
 import { ContentClassifierService } from '#src/modules/moderation/filters/content-classifier.service';
 import { ImageModerationService } from '#src/modules/moderation/filters/image-moderation.service';
 import { ExternalModerationApiService } from '#src/modules/moderation/filters/external-moderation-api.service';
+import {
+  ModerationConfigCacheService,
+  ModerationConfigSnapshot,
+} from '#src/modules/moderation/moderation-config-cache.service';
 import moderationConfig from '#src/config/moderation.config';
 
 describe('Moderation filters', () => {
@@ -75,7 +79,8 @@ describe('ModerationService', () => {
     moderateUrls: jest.Mock;
   };
   let externalApi: { scoreText: jest.Mock };
-  let configValues: Record<string, unknown>;
+  let configValues: Partial<ModerationConfigSnapshot>;
+  let configSourceGet: jest.Mock;
 
   const buildService = async () => {
     const moduleRef = await Test.createTestingModule({
@@ -88,9 +93,10 @@ describe('ModerationService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) => configValues[key]),
+            get: configSourceGet,
           },
         },
+        ModerationConfigCacheService,
         {
           provide: getRepositoryToken(ModerationItem),
           useValue: itemRepo as unknown as Repository<ModerationItem>,
@@ -135,10 +141,13 @@ describe('ModerationService', () => {
     externalApi = { scoreText: jest.fn(async () => null) };
 
     configValues = {
-      'moderation.highThreshold': HIGH,
-      'moderation.mediumThreshold': MED,
-      'moderation.blockOnHighSeverity': true,
+      highThreshold: HIGH,
+      mediumThreshold: MED,
+      blockOnHighSeverity: true,
     };
+    configSourceGet = jest.fn((key: string) =>
+      key === 'moderation' ? configValues : undefined,
+    );
 
     service = await buildService();
   });
@@ -156,6 +165,13 @@ describe('ModerationService', () => {
           shouldManualReview: expect.any(Boolean),
         }),
       );
+    });
+
+    it('loads config once across repeated moderation checks', async () => {
+      await service.scanText('first');
+      await service.scanText('second');
+
+      expect(configSourceGet).toHaveBeenCalledTimes(1);
     });
 
     it('takes the max score across keyword / classifier / external signals', async () => {
@@ -259,7 +275,7 @@ describe('ModerationService', () => {
     });
 
     it('does not block high-severity content when blockOnHighSeverity is false', async () => {
-      configValues['moderation.blockOnHighSeverity'] = false;
+      configValues.blockOnHighSeverity = false;
       service = await buildService();
       classifier.classify.mockReturnValue({
         labels: {},

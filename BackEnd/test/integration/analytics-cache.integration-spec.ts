@@ -1,7 +1,9 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
+import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { LoggerModule } from '#src/common/logger/logger.module';
 import { AnalyticsModule } from '#src/modules/analytics/analytics.module';
 import { CacheModule } from '#src/modules/cache/cache.module';
 import { CacheService } from '#src/modules/cache/cache.service';
@@ -18,6 +20,10 @@ describe('Analytics-Cache Integration', () => {
           envFilePath: '.env.test',
         }),
         EventEmitterModule.forRoot(),
+        LoggerModule.forRoot({
+          enableInterceptor: false,
+          enableErrorFilter: false,
+        }),
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST || 'localhost',
@@ -26,8 +32,12 @@ describe('Analytics-Cache Integration', () => {
           password: process.env.DB_PASSWORD || 'password',
           database: process.env.DB_DATABASE || 'stellar_earn_test_integration',
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
           dropSchema: true,
+          migrationsRun: true,
+          migrations: [
+            join(__dirname, '../../src/database/migrations/*.{ts,js}'),
+          ],
         }),
         AnalyticsModule,
         CacheModule,

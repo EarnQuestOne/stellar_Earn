@@ -6,6 +6,7 @@ import { DatabaseHealthService } from './services/database-health.service';
 import { CacheHealthService } from './services/cache-health.service';
 import { ExternalHealthService } from './services/external-health.service';
 import { MetricsService } from '../../common/services/metrics.service';
+import { HealthCacheService } from '../../common/services/health-cache.service';
 import {
   LiveHealthResponse,
   ReadyHealthResponse,
@@ -25,6 +26,7 @@ export class HealthController {
     private readonly cacheHealth: CacheHealthService,
     private readonly externalHealth: ExternalHealthService,
     private readonly metricsService: MetricsService,
+    private readonly healthCache: HealthCacheService,
   ) {}
 
   @Get('live')
@@ -153,6 +155,13 @@ export class HealthController {
   ): Promise<ReadyHealthResponse> {
     this.logger.debug('Readiness check starting');
 
+    const cacheKey = 'readiness';
+    const cached = this.healthCache.get(cacheKey);
+    if (cached) {
+      res.status(cached.status === 'down' ? 503 : 200);
+      return cached as ReadyHealthResponse;
+    }
+
     // Run database and cache checks in parallel
     const [dbResult, cacheResult] = await Promise.all([
       this.dbHealth.check(),
@@ -174,11 +183,15 @@ export class HealthController {
       cacheLatency: cacheResult.latency,
     });
 
-    return {
+    const response: ReadyHealthResponse = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       services,
     };
+
+    this.healthCache.set(cacheKey, response);
+
+    return response;
   }
 
   @Get('deep')

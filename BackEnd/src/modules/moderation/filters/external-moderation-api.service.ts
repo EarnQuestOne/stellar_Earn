@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PooledHttpClientService } from '../../../common/http-client/http-client.service';
+import { ModerationConfigSnapshot } from '../moderation-config-cache.service';
 
 export interface ExternalModerationResult {
   score: number;
@@ -11,18 +11,17 @@ export interface ExternalModerationResult {
 export class ExternalModerationApiService {
   private readonly logger = new Logger(ExternalModerationApiService.name);
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly httpClient: PooledHttpClientService,
-  ) {}
+  constructor(private readonly httpClient: PooledHttpClientService) {}
 
-  async scoreText(text: string): Promise<ExternalModerationResult | null> {
-    const url = this.configService.get<string>('moderation.externalApiUrl');
+  async scoreText(
+    text: string,
+    config?: Readonly<ModerationConfigSnapshot>,
+  ): Promise<ExternalModerationResult | null> {
+    const url = config?.externalApiUrl;
     if (!url?.trim()) {
       return null;
     }
-    const key =
-      this.configService.get<string>('moderation.externalApiKey') || '';
+    const key = config?.externalApiKey ?? '';
 
     try {
       const client = this.httpClient.create('medium');

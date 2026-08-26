@@ -1,9 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Payout, PayoutStatus } from '../../payouts/entities/payout.entity';
+import {
+  PayoutOutbox,
+  PayoutOutboxStatus,
+} from '../../payouts/entities/payout-outbox.entity';
 import { JobLogService } from '../services/job-log.service';
 
 /**
@@ -16,9 +20,14 @@ export class PayoutReconciliationProcessor {
   private readonly logger = new Logger(PayoutReconciliationProcessor.name);
   private readonly horizonUrl: string;
 
+  /** A PROCESSING outbox row older than this is treated as stuck (crash). */
+  private readonly stuckOutboxMs = 15 * 60 * 1000;
+
   constructor(
     @InjectRepository(Payout)
     private readonly payoutRepository: Repository<Payout>,
+    @InjectRepository(PayoutOutbox)
+    private readonly outboxRepository: Repository<PayoutOutbox>,
     private readonly configService: ConfigService,
     private readonly jobLogService: JobLogService,
   ) {
@@ -26,6 +35,32 @@ export class PayoutReconciliationProcessor {
       this.configService.get<string>('STELLAR_HORIZON_URL') ||
       this.configService.get<string>('HORIZON_URL') ||
       'https://horizon.stellar.org';
+  }
+
+  /**
+   * Recover transactional-outbox rows stuck mid-relay (#2158).
+   *
+   * A crash between claiming a row (`PENDING → PROCESSING`) and marking it DONE
+   * would otherwise strand it forever. Rows left in PROCESSING beyond
+   * `stuckOutboxMs` are reset to PENDING so the relay retries them; because the
+   * relay is idempotent, replaying a row never double-submits a payment.
+   */
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async recoverStuckPayoutOutbox(): Promise<void> {
+    const threshold = new Date(Date.now() - this.stuckOutboxMs);
+    const result = await this.outboxRepository.update(
+      {
+        status: PayoutOutboxStatus.PROCESSING,
+        updatedAt: LessThan(threshold),
+      },
+      { status: PayoutOutboxStatus.PENDING },
+    );
+
+    if (result.affected) {
+      this.logger.warn(
+        `Recovered ${result.affected} stuck payout outbox row(s) back to PENDING`,
+      );
+    }
   }
 
   /**

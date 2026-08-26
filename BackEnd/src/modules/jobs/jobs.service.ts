@@ -18,6 +18,11 @@ import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
+import {
+  resolveWorkerConcurrency,
+  resolveWorkerLimiter,
+} from './utils/worker-concurrency.util';
+import { PayloadStorageService } from './services/payload-storage.service';
 
 export interface QueueMetrics {
   queue: string;
@@ -48,6 +53,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly tracing: TracingService,
+    private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
   ) {}
@@ -242,13 +248,77 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           span.attributes['trace.parent_span_id'] = traceContext.spanId;
         }
 
-        return queue.add(`${name}-job`, tracedData, jobOpts);
+        // ── Payload / metadata split ────────────────────────────────
+        // If the data exceeds the threshold, offload the full payload
+        // to cache and enqueue only a lightweight reference + metadata.
+        let enqueueData: any = tracedData;
+        if (
+          typeof tracedData === 'object' &&
+          tracedData !== null &&
+          this.payloadStorage.shouldOffload(tracedData)
+        ) {
+          // Use a temporary key; the real BullMQ job ID isn't known yet,
+          // so we generate a stable reference from trace + timestamp.
+          const refKey = `pending:${traceContext?.traceId ?? Date.now()}:${Date.now()}`;
+          await this.payloadStorage.storePayload(refKey, tracedData);
+          enqueueData = this.payloadStorage.buildLightweightData(
+            tracedData,
+            refKey,
+            refKey,
+          );
+          span.attributes['payload.offloaded'] = true;
+        }
+
+        const job = await queue.add(`${name}-job`, enqueueData, jobOpts);
+
+        // If we used a pending ref, update the key to use the real job ID.
+        if (
+          enqueueData.__payloadRef &&
+          enqueueData.__payloadRef.startsWith('pending:')
+        ) {
+          const oldKey = enqueueData.__payloadRef;
+          const newRef = `job_payload:${job.id}`;
+          const payload =
+            await this.payloadStorage.retrievePayloadByKey(oldKey);
+          if (payload !== undefined) {
+            await this.payloadStorage.storePayload(job.id!, payload);
+            await this.payloadStorage.evictPayload(oldKey);
+          }
+          // Update the reference in-place so workers can resolve it.
+          enqueueData.__payloadRef = newRef;
+          await job.updateData(enqueueData);
+        }
+
+        return job;
       },
       {
         'queue.name': name,
         'job.name': `${name}-job`,
       },
     );
+  }
+
+  /**
+   * Resolve the full payload for a BullMQ job.
+   *
+   * When payload/metadata splitting is active, the job data stored in
+   * BullMQ contains only lightweight metadata plus a `__payloadRef` key
+   * pointing to the full payload in cache.  This method resolves that
+   * reference and returns the original data.
+   *
+   * If no payload reference exists (i.e. the job was small enough to
+   * fit entirely in BullMQ), `job.data` is returned as-is.
+   */
+  async resolvePayload<T = any>(job: Job): Promise<T> {
+    if (this.payloadStorage.hasPayloadRef(job.data)) {
+      const refKey = this.payloadStorage.getPayloadRefKey(job.data)!;
+      const full = await this.payloadStorage.retrievePayloadByKey<T>(refKey);
+      if (full !== undefined) return full;
+      this.logger.warn(
+        `Payload reference ${refKey} for job ${job.id} not found in cache; falling back to inline data`,
+      );
+    }
+    return job.data as T;
   }
 
   /** Returns active, delayed, failed, and completed counts for every queue. */
@@ -292,6 +362,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
    * forwarded to the dead-letter queue immediately.
    */
   private createWorker(name: string, processor: (job: Job) => Promise<any>) {
+    const concurrency = resolveWorkerConcurrency(name);
+    const limiter = resolveWorkerLimiter(name);
+
     const worker = new Worker(
       name,
       async (job: Job) => {
@@ -323,7 +396,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
         return processJob();
       },
-      redisConnection(),
+      {
+        ...redisConnection(),
+        concurrency,
+        ...(limiter ? { limiter } : {}),
+      },
     );
 
     worker.on('failed', (job, err) => {
@@ -354,11 +431,23 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             `Job ${job.id} (${name}) forwarded to DLQ: ${reason} – ${err?.message}`,
           );
 
+          // Store large payload in cache before forwarding to DLQ to keep
+          // the DLQ queue lightweight.
+          let dlqData = job.data;
+          if (this.payloadStorage.shouldOffload(job.data)) {
+            const dlqPayloadKey = `dlq_payload:${job.id}`;
+            await this.payloadStorage.storePayload(dlqPayloadKey, job.data);
+            dlqData = {
+              __dlqPayloadRef: dlqPayloadKey,
+              __jobType: job.data?.__jobType,
+            };
+          }
+
           await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
             failedJob: {
               id: job.id,
               name: job.name,
-              data: job.data,
+              data: { ...dlqData, __sourceQueue: name },
               failedReason: err?.message ?? String(err),
               reason,
             },

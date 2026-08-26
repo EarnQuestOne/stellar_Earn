@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import {
   ModerationItem,
   ModerationTargetType,
@@ -22,6 +21,10 @@ import { KeywordFilterService } from './filters/keyword-filter.service';
 import { ContentClassifierService } from './filters/content-classifier.service';
 import { ImageModerationService } from './filters/image-moderation.service';
 import { ExternalModerationApiService } from './filters/external-moderation-api.service';
+import {
+  ModerationConfigCacheService,
+  ModerationConfigSnapshot,
+} from './moderation-config-cache.service';
 
 export interface ScanResult {
   score: number;
@@ -52,29 +55,21 @@ export class ModerationService {
     private readonly classifier: ContentClassifierService,
     private readonly imageModeration: ImageModerationService,
     private readonly externalApi: ExternalModerationApiService,
-    private readonly configService: ConfigService,
+    private readonly moderationConfig: ModerationConfigCacheService,
   ) {}
 
-  private highThreshold(): number {
-    return this.configService.get<number>('moderation.highThreshold') ?? 0.85;
-  }
-
-  private mediumThreshold(): number {
-    return this.configService.get<number>('moderation.mediumThreshold') ?? 0.5;
-  }
-
-  private blockOnHigh(): boolean {
-    const v = this.configService.get<boolean | undefined>(
-      'moderation.blockOnHighSeverity',
-    );
-    return v !== false;
-  }
-
   async scanText(text: string): Promise<ScanResult> {
+    return this.scanTextWithConfig(text, this.moderationConfig.getConfig());
+  }
+
+  private async scanTextWithConfig(
+    text: string,
+    config: Readonly<ModerationConfigSnapshot>,
+  ): Promise<ScanResult> {
     const combined = text || '';
-    const kw = this.keywordFilter.scan(combined);
+    const kw = this.keywordFilter.scan(combined, config.blockedKeywords);
     const cls = this.classifier.classify(combined);
-    const external = await this.externalApi.scoreText(combined);
+    const external = await this.externalApi.scoreText(combined, config);
 
     let score = Math.max(kw.blocked ? 1 : 0, cls.score, external?.score ?? 0);
 
@@ -87,15 +82,15 @@ export class ModerationService {
       ...(external?.categories || {}),
     };
 
-    const high = this.highThreshold();
-    const med = this.mediumThreshold();
+    const high = config.highThreshold;
+    const med = config.mediumThreshold;
 
     return {
       score,
       keywordHits: kw.hits,
       labels: labels,
       imageFlags: [],
-      shouldBlock: this.blockOnHigh() && score >= high,
+      shouldBlock: config.blockOnHighSeverity && score >= high,
       shouldManualReview: score >= med && score < high,
     };
   }
@@ -138,15 +133,16 @@ export class ModerationService {
     userId: string,
     proof: unknown,
   ): Promise<ModerationItem> {
+    const config = this.moderationConfig.getConfig();
     const text =
       typeof proof === 'object' && proof !== null
         ? JSON.stringify(proof).slice(0, 50000)
         : String((proof as string | number | boolean | null | undefined) ?? '');
 
     const urls = this.imageModeration.extractUrlsFromProof(proof);
-    const imageFlags = await this.imageModeration.moderateUrls(urls);
+    const imageFlags = await this.imageModeration.moderateUrls(urls, config);
 
-    const scan = await this.scanText(text);
+    const scan = await this.scanTextWithConfig(text, config);
     const combinedScore = Math.max(
       scan.score,
       imageFlags.length > 0 ? 0.75 : 0,
@@ -167,7 +163,7 @@ export class ModerationService {
     const needsManual =
       scan.shouldManualReview ||
       imageFlags.length > 0 ||
-      combinedScore >= this.mediumThreshold();
+      combinedScore >= config.mediumThreshold;
 
     const item = this.itemRepo.create({
       targetType: ModerationTargetType.SUBMISSION,
@@ -205,8 +201,50 @@ export class ModerationService {
     return { page: safePage, limit: safeLimit };
   }
 
-  async listPending(page = 1, limit = 20) {
+  async listPending(
+    page = 1,
+    limit = 20,
+    cursor?: string,
+  ): Promise<{
+    items: ModerationItem[];
+    total: number;
+    page?: number;
+    limit: number;
+    nextCursor?: string;
+  }> {
     ({ page, limit } = this.clampPagination(page, limit));
+
+    // Keyset (cursor) pagination when a cursor is provided.
+    if (cursor) {
+      const [cursorPriority, cursorCreatedAt] = cursor.split('::').map(Number);
+      const items = await this.itemRepo
+        .createQueryBuilder('item')
+        .where('item.status = :status', {
+          status: ModerationItemStatus.MANUAL_REVIEW,
+        })
+        .andWhere(
+          '(item.priority < :cp OR (item.priority = :cp AND item.createdAt > :cra))',
+          {
+            cp: cursorPriority,
+            cra: new Date(cursorCreatedAt),
+          },
+        )
+        .orderBy('item.priority', 'DESC')
+        .addOrderBy('item.createdAt', 'ASC')
+        .take(limit + 1) // fetch one extra to detect if there's a next page
+        .getMany();
+
+      const hasMore = items.length > limit;
+      const pageItems = hasMore ? items.slice(0, limit) : items;
+      const lastItem = pageItems[pageItems.length - 1];
+      const nextCursor = hasMore
+        ? `${lastItem.priority}::${lastItem.createdAt.getTime()}::${lastItem.id}`
+        : undefined;
+
+      return { items: pageItems, total: pageItems.length, limit, nextCursor };
+    }
+
+    // Fallback to offset pagination.
     const [items, total] = await this.itemRepo.findAndCount({
       where: { status: ModerationItemStatus.MANUAL_REVIEW },
       order: { priority: 'DESC', createdAt: 'ASC' },
@@ -217,12 +255,15 @@ export class ModerationService {
   }
 
   async getDashboardStats() {
-    const pending = await this.itemRepo.count({
-      where: { status: ModerationItemStatus.MANUAL_REVIEW },
-    });
-    const appeals = await this.appealRepo.count({
-      where: { status: AppealStatus.PENDING },
-    });
+    // #2033: Run count queries in parallel
+    const [pending, appeals] = await Promise.all([
+      this.itemRepo.count({
+        where: { status: ModerationItemStatus.MANUAL_REVIEW },
+      }),
+      this.appealRepo.count({
+        where: { status: AppealStatus.PENDING },
+      }),
+    ]);
     return { pendingManualReview: pending, pendingAppeals: appeals };
   }
 

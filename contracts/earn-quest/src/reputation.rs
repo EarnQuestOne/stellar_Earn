@@ -2,7 +2,7 @@ use crate::errors::Error;
 use crate::events;
 use crate::storage;
 use crate::types::{Badge, BadgeType, Role, UserCore};
-use soroban_sdk::{symbol_short, Address, Env, String, Symbol};
+use soroban_sdk::{symbol_short, Address, Env, Map, String, Symbol, Vec};
 
 const LEVEL_2_XP: u64 = 300;
 const LEVEL_3_XP: u64 = 600;
@@ -43,6 +43,68 @@ pub fn award_xp(env: &Env, user: &Address, xp_amount: u64) -> Result<UserCore, E
     }
 
     Ok(stats)
+}
+
+/// Awards experience points (XP) to multiple users in a batch, accumulating per-address deltas in memory.
+///
+/// Instead of performing individual storage read + write operations per entry, this function aggregates
+/// per-address reputation/XP deltas and quest completions in memory during the batch and applies a single
+/// storage read + write per unique affected address.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `grants` - A vector of (Address, u64) tuples representing user addresses and XP amounts.
+///
+/// # Returns
+///
+/// * `Ok(())` on success.
+/// * `Err(Error)` if index operations or storage calls fail.
+pub fn award_xp_batch(env: &Env, grants: &Vec<(Address, u64)>) -> Result<(), Error> {
+    if grants.is_empty() {
+        return Ok(());
+    }
+
+    // Accumulate XP deltas and quest completions per unique address in memory
+    let mut deltas: Map<Address, (u64, u32)> = Map::new(env);
+
+    for i in 0u32..grants.len() {
+        let (user, xp_amount) = grants.get(i).ok_or(Error::IndexOutOfBounds)?;
+        if let Some((curr_xp, curr_quests)) = deltas.get(user.clone()) {
+            deltas.set(
+                user.clone(),
+                (
+                    curr_xp.saturating_add(xp_amount),
+                    curr_quests.saturating_add(1),
+                ),
+            );
+        } else {
+            deltas.set(user.clone(), (xp_amount, 1));
+        }
+    }
+
+    // Apply a single storage read + write per unique affected user address
+    for (user, (xp_delta, quests_delta)) in deltas.iter() {
+        let mut stats = storage::get_user_stats_or_default(env, &user);
+
+        let old_level = stats.level;
+        stats.xp = stats.xp.saturating_add(xp_delta);
+        stats.quests_completed = stats.quests_completed.saturating_add(quests_delta);
+
+        let new_level = calculate_level(stats.xp);
+        let level_up = new_level > old_level;
+        stats.level = new_level;
+
+        storage::set_user_stats(env, &user, &stats);
+
+        events::xp_awarded(env, user.clone(), xp_delta, stats.xp, stats.level);
+
+        if level_up {
+            events::level_up(env, user.clone(), stats.level);
+        }
+    }
+
+    Ok(())
 }
 
 /// Calculates the user level based on their current experience points (XP).
@@ -126,6 +188,14 @@ pub fn grant_badge(env: &Env, caller: &Address, user: &Address, badge: Badge) ->
 /// Retrieves the core reputation statistics for a user.
 ///
 /// If no stats exist for the user, returns default values (0 XP, Level 1, 0 Quests).
+///
+/// # Performance (#2153)
+///
+/// This is an O(1) storage read of the incrementally-maintained `UserCore`
+/// counters (updated in place by [`award_xp`] on the completion path), not a
+/// scan-and-recompute over the user's award history — so read cost and gas do
+/// not grow with the user's history. The `test_incremental_stats` suite proves
+/// the incremental counters always equal a full recompute.
 ///
 /// # Arguments
 ///

@@ -14,7 +14,7 @@ const AppLayoutContext = createContext(false);
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isNestedLayout = useContext(AppLayoutContext);
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isDashboardRoute =
     pathname === '/dashboard' || pathname.startsWith('/dashboard/');

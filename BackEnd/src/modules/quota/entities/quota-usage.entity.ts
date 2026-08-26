@@ -12,7 +12,11 @@ export enum QuotaResourceType {
 }
 
 @Entity('quota_usages')
-@Index(['tenantId', 'resourceType', 'periodStart'])
+@Index(
+  'UQ_quota_usages_tenant_resource_period',
+  ['tenantId', 'resourceType', 'periodStart'],
+  { unique: true },
+)
 export class QuotaUsage {
   @PrimaryGeneratedColumn('uuid')
   id: string;

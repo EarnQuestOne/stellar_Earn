@@ -5,6 +5,10 @@ import { IpWhitelistGuard } from '../../common/guards/ip-whitelist.guard';
 import { User } from '../users/entities/user.entity';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { AdminController } from './admin.controller';
+import { AdminService } from './admin.service';
+import { IpWhitelistGuard } from '../../common/guards/ip-whitelist.guard';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]), ConfigModule],

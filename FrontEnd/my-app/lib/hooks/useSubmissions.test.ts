@@ -1,108 +1,84 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { useSubmissions } from './useSubmissions';
 
-const { mockFetchSubmissions, mockStoreActions, mockUseStore } = vi.hoisted(
-  () => {
-    const mockFetchSubmissions = vi.fn();
-
-    const mockStoreState: Record<string, unknown> = {
-      submissions: [],
-      submissionsLoading: false,
-      submissionsError: null,
-      submissionPagination: { page: 1, limit: 20, hasMore: false },
-    };
-
-    const mockStoreActions = {
-      setSubmissions: vi.fn(),
-      setSubmissionsLoading: vi.fn(),
-      setSubmissionsError: vi.fn(),
-      setSubmissionPagination: vi.fn(),
-      setSubmissionFilters: vi.fn(),
-      optimisticallyUpdateSubmission: vi.fn(),
-    };
-
-    const mockUseStore = (selector: (s: Record<string, unknown>) => unknown) =>
-      selector({ ...mockStoreState, ...mockStoreActions });
-
-    return { mockFetchSubmissions, mockStoreActions, mockUseStore };
-  }
-);
-
-vi.mock('@/lib/store', () => ({
-  useStore: mockUseStore,
+const { mockFetchSubmissions } = vi.hoisted(() => ({
+  mockFetchSubmissions: vi.fn(),
 }));
 
 vi.mock('@/lib/api/submissions', () => ({
   fetchSubmissions: (...args: any[]) => mockFetchSubmissions(...args),
 }));
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  let reject!: (err: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
-
-type SubmissionsResponse = {
-  data: never[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
+const mockSubmissionsResponse = {
+  data: [
+    { id: 'sub-1', questId: 'q-1', status: 'pending', createdAt: '2026-01-01' },
+    {
+      id: 'sub-2',
+      questId: 'q-2',
+      status: 'approved',
+      createdAt: '2026-01-02',
+    },
+  ],
+  pagination: { page: 1, limit: 20, total: 2, totalPages: 1, hasMore: false },
 };
+
+function makeWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    createElement(QueryClientProvider, { client }, children);
+  return Wrapper;
+}
 
 describe('useSubmissions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('passes a cancel token to fetchSubmissions and aborts it on unmount', async () => {
-    const pending = deferred<SubmissionsResponse>();
-    mockFetchSubmissions.mockReturnValue(pending.promise);
+  it('fetches and returns submissions with pagination metadata', async () => {
+    mockFetchSubmissions.mockResolvedValue(mockSubmissionsResponse);
 
-    const { unmount } = renderHook(() => useSubmissions());
-
-    await waitFor(() => {
-      expect(mockFetchSubmissions).toHaveBeenCalledTimes(1);
+    const { result } = renderHook(() => useSubmissions(), {
+      wrapper: makeWrapper(),
     });
 
-    const cancelToken = mockFetchSubmissions.mock.calls[0][2];
-    expect(cancelToken).toBeDefined();
-    expect(cancelToken.signal.aborted).toBe(false);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    unmount();
-
-    expect(cancelToken.signal.aborted).toBe(true);
+    expect(result.current.submissions).toEqual(mockSubmissionsResponse.data);
+    expect(result.current.hasMore).toBe(false);
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.totalPages).toBe(1);
+    expect(result.current.error).toBeNull();
+    expect(mockFetchSubmissions).toHaveBeenCalledTimes(1);
   });
 
-  it('does not report an error for a cancelled request', async () => {
-    const pending = deferred<SubmissionsResponse>();
-    mockFetchSubmissions.mockReturnValue(pending.promise);
+  it('applies optimistic updates to the cached submission list without a refetch', async () => {
+    mockFetchSubmissions.mockResolvedValue(mockSubmissionsResponse);
 
-    const { unmount } = renderHook(() => useSubmissions());
-
-    await waitFor(() => {
-      expect(mockFetchSubmissions).toHaveBeenCalledTimes(1);
+    const { result } = renderHook(() => useSubmissions(), {
+      wrapper: makeWrapper(),
     });
 
-    unmount();
-    const abortError = new Error('canceled');
-    abortError.name = 'CanceledError';
-    // Simulate the in-flight request rejecting after cancellation, as a
-    // real aborted axios request would.
-    pending.reject(abortError);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await new Promise((r) => setTimeout(r, 0));
+    const callsBefore = mockFetchSubmissions.mock.calls.length;
 
-    for (const call of mockStoreActions.setSubmissionsError.mock.calls) {
-      expect(call[0]).toBeNull();
-    }
+    act(() => {
+      result.current.optimisticallyUpdateSubmission('sub-1', {
+        status: 'approved',
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.submissions[0].status).toBe('approved');
+    });
+
+    // The optimistic update must not trigger a network request.
+    expect(mockFetchSubmissions).toHaveBeenCalledTimes(callsBefore);
   });
 });

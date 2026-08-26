@@ -111,6 +111,10 @@ pub enum Error {
     DisputeAlreadyAppealed = 87,
     DisputeNotResolved = 95,
 
+    // Expiry validation
+    /// Quest expiry grace period exceeds the maximum allowed.
+    GracePeriodTooLarge = 96,
+
     // Additional validation / escrow
     InvalidDeadline = 88,
     QuestCancelled = 89,
@@ -130,6 +134,8 @@ pub enum Error {
     StaleOracleData = 104,
     InvalidOracleData = 105,
     LowOracleConfidence = 106,
+    RewardDeviationTooHigh = 107,
+    OracleLimitReached = 108,
 
     // Arithmetic
     ArithmeticOverflow = 110,
@@ -170,4 +176,8 @@ pub enum Error {
     // Gas / Resource Errors
     /// Instruction or resource limit exceeded for entrypoint.
     GasBudgetExceeded = 160,
+
+    // Self-approval guard (issue #2287)
+    /// The quest creator is not permitted to approve submissions on their own quest.
+    SelfApprovalDisallowed = 161,
 }

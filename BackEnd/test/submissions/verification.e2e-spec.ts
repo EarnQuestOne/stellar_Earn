@@ -3,16 +3,19 @@ import { INestApplication, HttpStatus, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
-import { StellarService } from '#src/modules/stellar/stellar.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
 import { NotificationsService } from '#src/modules/notifications/notifications.service';
+import { MetricsService } from '#src/common/services/metrics.service';
+import { VerificationDedupService } from '#src/common/services/verification-dedup.service';
 import { SubmissionsController } from '#src/modules/submissions/submissions.controller';
 import { JwtAuthGuard } from '#src/modules/auth/guards/jwt-auth.guard';
 import {
   Submission,
   SubmissionStatus,
 } from '#src/modules/submissions/entities/submission.entity';
-import { SubmissionBuilder } from '../../../test/utils/submission.builder';
+import { SubmissionBuilder } from '../utils/submission.builder';
 import { Quest } from '#src/modules/quests/entities/quest.entity';
 import { User } from '#src/modules/users/entities/user.entity';
 import { Notification } from '#src/modules/notifications/entities/notification.entity';
@@ -71,13 +74,21 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
     create: jest.fn(),
     delete: jest.fn(),
     find: jest.fn(),
-    createQueryBuilder: jest.fn(() => ({
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      execute: jest.fn().mockResolvedValue({ affected: 1 }),
-    })),
+    createQueryBuilder: jest.fn(() => {
+      const qb: any = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
+      return qb;
+    }),
   };
 
   const mockQuestRepository = {
@@ -122,7 +133,7 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
       providers: [
         SubmissionsService,
         {
-          provide: StellarService,
+          provide: StellarSubmissionService,
           useValue: mockStellarService,
         },
         {
@@ -144,6 +155,23 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
         {
           provide: getRepositoryToken(Notification),
           useValue: mockNotificationRepository,
+        },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        {
+          provide: MetricsService,
+          useValue: {
+            incrementCounter: jest.fn(),
+            setGauge: jest.fn(),
+            observeHistogram: jest.fn(),
+          },
+        },
+        {
+          provide: VerificationDedupService,
+          useValue: {
+            executeWithDedup: jest.fn(
+              (_key: string, operation: () => Promise<any>) => operation(),
+            ),
+          },
         },
       ],
     })
@@ -291,7 +319,6 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
         expect(submission.id).toBe('submission-123');
         expect(mockSubmissionRepository.findOne).toHaveBeenCalledWith({
           where: { id: 'submission-123' },
-          relations: ['quest', 'user'],
         });
       });
 
@@ -303,18 +330,42 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
         ).rejects.toThrow('Submission with ID non-existent not found');
       });
 
-      it('should find submissions by quest', async () => {
-        mockSubmissionRepository.find.mockResolvedValue([mockSubmission]);
+      it('should find submissions by quest with keyset pagination', async () => {
+        const rows = [mockSubmission];
+        const qb = {
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          leftJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          addOrderBy: jest.fn().mockReturnThis(),
+          take: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+          getMany: jest.fn().mockResolvedValue(rows),
+        };
+        mockSubmissionRepository.createQueryBuilder.mockReturnValue(qb);
 
         const submissions = await submissionsService.findByQuest('quest-123');
 
         expect(submissions).toBeDefined();
-        expect(Array.isArray(submissions)).toBe(true);
-        expect(mockSubmissionRepository.find).toHaveBeenCalledWith({
-          where: { quest: { id: 'quest-123' } },
-          relations: ['user'],
-          order: { createdAt: 'DESC' },
-        });
+        expect(submissions.data).toEqual(rows);
+        expect(submissions.nextCursor).toBeNull();
+        expect(submissions.hasMore).toBe(false);
+        expect(
+          mockSubmissionRepository.createQueryBuilder,
+        ).toHaveBeenCalledWith('submission');
+        expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+          'submission.quest',
+          'quest',
+        );
+        expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+          'submission.user',
+          'user',
+        );
+        expect(qb.orderBy).toHaveBeenCalledWith('submission.createdAt', 'DESC');
+        expect(qb.addOrderBy).toHaveBeenCalledWith('submission.id', 'DESC');
+        expect(qb.take).toHaveBeenCalledWith(11);
       });
     });
   });
@@ -346,26 +397,52 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
     const questId = mockQuest.id;
 
     it('should get all submissions for a quest', async () => {
-      mockSubmissionRepository.find.mockResolvedValue([mockSubmission]);
+      const qb = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        getMany: jest.fn().mockResolvedValue([mockSubmission]),
+      };
+      mockSubmissionRepository.createQueryBuilder.mockReturnValue(qb);
 
       const response = await request(app.getHttpServer())
         .get(`/quests/${questId}/submissions`)
         .expect(HttpStatus.OK);
 
       expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data.submissions)).toBe(true);
-      expect(response.body.data.total).toBe(1);
+      expect(Array.isArray(response.body.data.data)).toBe(true);
+      expect(response.body.data.data).toHaveLength(1);
+      expect(response.body.data.hasMore).toBe(false);
     });
 
     it('should return empty array when no submissions found', async () => {
-      mockSubmissionRepository.find.mockResolvedValue([]);
+      const qb = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
+      mockSubmissionRepository.createQueryBuilder.mockReturnValue(qb);
 
       const response = await request(app.getHttpServer())
         .get(`/quests/${questId}/submissions`)
         .expect(HttpStatus.OK);
 
-      expect(response.body.data.submissions).toEqual([]);
-      expect(response.body.data.total).toBe(0);
+      expect(response.body.data.data).toEqual([]);
+      expect(response.body.data.hasMore).toBe(false);
+      expect(response.body.data.nextCursor).toBeNull();
     });
   });
 

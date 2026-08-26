@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './ThemeProvider';
 import { AuthProvider } from './AuthProvider';
 import { AnalyticsProvider } from './AnalyticsProvider';
@@ -10,6 +11,7 @@ import { ToastProvider } from '@/components/notifications/Toast';
 import { AppErrorBoundary } from '@/components/error/ErrorBoundary';
 import { A11yAnnouncerProvider } from '@/components/a11y/A11yAnnouncer';
 import { OfflineModeProvider } from '@/components/providers/OfflineModeProvider';
+import { queryClient } from '@/lib/query/client';
 
 /**
  * RootProviders Component
@@ -27,12 +29,13 @@ import { OfflineModeProvider } from '@/components/providers/OfflineModeProvider'
  * Provider Hierarchy:
  * 1. HydrationBoundary - Prevents hydration mismatches
  * 2. ThemeProvider - Theme management
- * 3. AppErrorBoundary - Error boundary for the app
- * 4. ToastProvider - Toast notifications
- * 5. WalletProvider - Stellar wallet integration
- * 6. AuthProvider - Authentication state
- * 7. AnalyticsProvider - Analytics tracking
- * 8. A11yAnnouncerProvider - Accessibility announcements
+ * 3. QueryClientProvider - React Query shared cache
+ * 4. AppErrorBoundary - Error boundary for the app
+ * 5. ToastProvider - Toast notifications
+ * 6. WalletProvider - Stellar wallet integration
+ * 7. AuthProvider - Authentication state
+ * 8. AnalyticsProvider - Analytics tracking
+ * 9. A11yAnnouncerProvider - Accessibility announcements
  */
 interface RootProvidersProps {
   children: ReactNode;
@@ -42,19 +45,21 @@ export function RootProviders({ children }: RootProvidersProps) {
   return (
     <HydrationBoundary>
       <ThemeProvider>
-        <AppErrorBoundary>
-          <ToastProvider>
-            <WalletProvider>
-              <AuthProvider>
-                <AnalyticsProvider>
-                  <OfflineModeProvider>
-                    <A11yAnnouncerProvider>{children}</A11yAnnouncerProvider>
-                  </OfflineModeProvider>
-                </AnalyticsProvider>
-              </AuthProvider>
-            </WalletProvider>
-          </ToastProvider>
-        </AppErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AppErrorBoundary>
+            <ToastProvider>
+              <WalletProvider>
+                <AuthProvider>
+                  <AnalyticsProvider>
+                    <OfflineModeProvider>
+                      <A11yAnnouncerProvider>{children}</A11yAnnouncerProvider>
+                    </OfflineModeProvider>
+                  </AnalyticsProvider>
+                </AuthProvider>
+              </WalletProvider>
+            </ToastProvider>
+          </AppErrorBoundary>
+        </QueryClientProvider>
       </ThemeProvider>
     </HydrationBoundary>
   );

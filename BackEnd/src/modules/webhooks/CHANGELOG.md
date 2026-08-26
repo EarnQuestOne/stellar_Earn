@@ -6,6 +6,14 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `WebhooksService.processWebhook` now returns a generic caller-facing processing failure message while keeping internal exception details in server logs.
+- Removed the non-functional `POST /webhooks/events` route (it referenced the nonexistent `WebhooksService.processEvent`), removed a duplicate `WebhookPayloadDto` import, and removed a stray brace in `webhook-event.dto.ts`.
+
+### Changed
+- Applied code-style formatting to `webhooks.controller.ts` and `webhook-event.dto.ts`: added missing newline at end of file and reformatted multi-argument call sites (no logic change).
+
 ### Added
 
 - Rate-limiting configuration (@Throttle) applied to WebhooksController endpoints.
@@ -34,3 +42,15 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Updated `WebhooksController` and unit tests to enforce `WebhookPayloadDto` validation.
+
+
+# Changelog - Webhooks Module
+
+## [Unreleased]
+
+### Changed
+- Updated `WebhooksController` and unit tests to enforce `WebhookPayloadDto` validation.
+=======
+### Changed
+
+- Webhook event DTO and controller refinements for improved request validation.

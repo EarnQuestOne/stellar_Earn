@@ -34,11 +34,14 @@ const nextConfig: NextConfig = {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
+    dompurify: {
+      transform: 'dompurify/dist/purify.es.js',
+    },
   },
 
   experimental: {
     // Optimize package imports automatically.
-    optimizePackageImports: ['lucide-react', 'date-fns', 'lodash'],
+    optimizePackageImports: ['lucide-react', 'date-fns', 'lodash', 'dompurify'],
   },
 
   // Security headers (CSP, HSTS, X-Content-Type-Options, etc.) are set

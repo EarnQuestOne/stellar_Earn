@@ -68,7 +68,10 @@ export class AppThrottlerGuard extends ThrottlerGuard {
     if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
       try {
-        const payload = this.jwtService.verify<{ stellarAddress?: string; role?: string }>(token);
+        const payload = this.jwtService.verify<{
+          stellarAddress?: string;
+          role?: string;
+        }>(token);
         if (payload.role) {
           return payload.role;
         }

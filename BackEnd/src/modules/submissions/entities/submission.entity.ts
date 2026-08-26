@@ -7,6 +7,8 @@ import {
   UpdateDateColumn,
   JoinColumn,
   DeleteDateColumn,
+  Index,
+  VersionColumn,
 } from 'typeorm';
 
 export enum SubmissionStatus {
@@ -17,6 +19,12 @@ export enum SubmissionStatus {
   PAID = 'PAID',
 }
 
+@Index('idx_submission_active_quest_status', ['questId', 'status'], {
+  where: '"deletedAt" IS NULL',
+})
+@Index('idx_submission_active_user_status', ['userId', 'status'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
@@ -60,6 +68,14 @@ export class Submission {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /**
+   * Optimistic-concurrency token — auto-incremented by TypeORM on each save of
+   * a managed entity; a stale-version save is rejected, preventing lost updates
+   * (e.g. a status transition racing with an edit) (#2157).
+   */
+  @VersionColumn()
+  version: number;
 
   @DeleteDateColumn()
   deletedAt: Date;

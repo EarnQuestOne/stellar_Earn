@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ClaimStatus } from '@/lib/hooks/useClaim';
 import { ClaimResult } from '@/lib/stellar/claim';
@@ -10,6 +11,20 @@ interface TransactionModalProps {
   status: ClaimStatus;
   result: ClaimResult | null;
   error: string | null;
+}
+
+/**
+ * Fix #2217: surface a friendlier message when the wallet rejects the
+ * transaction (user denies/cancels in their wallet extension).
+ */
+function friendlyErrorMessage(error: string | null): string {
+  if (!error) return 'Something went wrong with the transaction.';
+  const lower = error.toLowerCase();
+  const isRejected =
+    lower.includes('reject') ||
+    lower.includes('denied') ||
+    lower.includes('cancel');
+  return isRejected ? 'Transaction rejected in wallet.' : error;
 }
 
 export function TransactionModal({
@@ -179,7 +194,7 @@ export function TransactionModal({
                 Transaction Failed
               </h4>
               <p className="mt-1 text-sm text-red-500" role="alert">
-                {error || 'Something went wrong with the transaction.'}
+                {friendlyErrorMessage(error)}
               </p>
             </div>
             <button

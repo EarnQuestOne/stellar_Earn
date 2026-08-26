@@ -204,6 +204,13 @@ pub fn approve_submission(
         return Err(Error::Unauthorized);
     }
 
+    // Issue #2287: the quest creator must not approve submissions on their own
+    // quest (self-approval / conflict of interest). This is defense-in-depth even
+    // where registration enforces creator != verifier.
+    if *verifier == quest.creator {
+        return Err(Error::SelfApprovalDisallowed);
+    }
+
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
 
     // Validate status transition: Pending -> Approved
@@ -235,7 +242,13 @@ pub fn validate_claim_amount(
 ) -> Result<i128, Error> {
     validation::validate_reward_amount(amount)?;
 
-    let remaining = quest.reward_amount - submission.claimed_amount;
+    // Guarded subtraction: if stored accounting were ever corrupted such that
+    // claimed_amount > reward_amount, surface a graceful error instead of
+    // panicking the whole transaction.
+    let remaining = quest
+        .reward_amount
+        .checked_sub(submission.claimed_amount)
+        .ok_or(Error::ArithmeticUnderflow)?;
     if amount > remaining {
         return Err(Error::InvalidRewardAmount);
     }
@@ -374,6 +387,12 @@ pub fn approve_submissions_batch(
 
         if *verifier != quest.verifier {
             return Err(Error::Unauthorized);
+        }
+
+        // Issue #2287: the quest creator must not approve submissions on their own
+        // quest (self-approval / conflict of interest).
+        if *verifier == quest.creator {
+            return Err(Error::SelfApprovalDisallowed);
         }
 
         for j in 0u32..batch.submissions.len() {

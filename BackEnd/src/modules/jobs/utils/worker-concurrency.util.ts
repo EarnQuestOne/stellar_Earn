@@ -20,12 +20,43 @@ export const MAX_WORKER_CONCURRENCY = 100;
  */
 export const DEFAULT_WORKER_CONCURRENCY = 5;
 
+export interface WorkerLimiterConfig {
+  max: number;
+  duration: number;
+}
+
 /**
  * Environment variable name that overrides the concurrency for a given queue.
- * e.g. queue `payouts` is overridden by `QUEUE_PAYOUTS_CONCURRENCY`.
+ * e.g. queue `payouts` is overridden by `PAYOUT_QUEUE_CONCURRENCY` or `QUEUE_PAYOUTS_CONCURRENCY`.
  */
-export function workerConcurrencyEnvKey(queue: string): string {
-  return `QUEUE_${queue.toUpperCase()}_CONCURRENCY`;
+export function workerConcurrencyEnvKeys(queue: string): string[] {
+  const upper = queue.toUpperCase();
+  const keys = [`QUEUE_${upper}_CONCURRENCY`];
+  if (upper === 'PAYOUTS') {
+    keys.unshift('PAYOUT_QUEUE_CONCURRENCY');
+  }
+  return keys;
+}
+
+/**
+ * Environment variable names that override rate limit parameters for a given queue.
+ */
+export function workerLimiterMaxEnvKeys(queue: string): string[] {
+  const upper = queue.toUpperCase();
+  const keys = [`QUEUE_${upper}_MAX_JOBS`];
+  if (upper === 'PAYOUTS') {
+    keys.unshift('PAYOUT_QUEUE_MAX_JOBS');
+  }
+  return keys;
+}
+
+export function workerLimiterDurationEnvKeys(queue: string): string[] {
+  const upper = queue.toUpperCase();
+  const keys = [`QUEUE_${upper}_DURATION_MS`];
+  if (upper === 'PAYOUTS') {
+    keys.unshift('PAYOUT_QUEUE_DURATION_MS');
+  }
+  return keys;
 }
 
 function clampConcurrency(value: number): number {
@@ -37,36 +68,72 @@ function clampConcurrency(value: number): number {
 
 /**
  * Resolve the effective max concurrency for a worker.
- *
- * Resolution order:
- *   1. `QUEUE_<NAME>_CONCURRENCY` environment override (lets ops re-tune from
- *      benchmark results without a code change or redeploy of new defaults).
- *   2. The benchmark-tuned default in {@link JOB_QUEUE_CONFIG}.
- *   3. {@link DEFAULT_WORKER_CONCURRENCY} for queues without a configured value.
- *
- * The result is always an integer clamped to
- * `[MIN_WORKER_CONCURRENCY, MAX_WORKER_CONCURRENCY]`. Non-numeric, fractional,
- * or out-of-range overrides fall back to the configured default rather than
- * throwing, so a bad env var degrades safely instead of crashing worker boot.
  */
 export function resolveWorkerConcurrency(
   queue: string,
   env: NodeJS.ProcessEnv = process.env,
 ): number {
-  const configured = JOB_QUEUE_CONFIG[queue]?.concurrency;
+  const configured = (JOB_QUEUE_CONFIG as Record<string, any>)[queue]
+    ?.concurrency;
   const fallback = clampConcurrency(
     typeof configured === 'number' ? configured : DEFAULT_WORKER_CONCURRENCY,
   );
 
-  const raw = env[workerConcurrencyEnvKey(queue)];
-  if (raw === undefined || raw.trim() === '') {
-    return fallback;
+  const keys = workerConcurrencyEnvKeys(queue);
+  for (const key of keys) {
+    const raw = env[key];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed >= MIN_WORKER_CONCURRENCY) {
+        return clampConcurrency(parsed);
+      }
+    }
   }
 
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < MIN_WORKER_CONCURRENCY) {
-    return fallback;
+  return fallback;
+}
+
+/**
+ * Resolve the effective rate limiter config for a worker.
+ */
+export function resolveWorkerLimiter(
+  queue: string,
+  env: NodeJS.ProcessEnv = process.env,
+): WorkerLimiterConfig | undefined {
+  const configured: WorkerLimiterConfig | undefined = (
+    JOB_QUEUE_CONFIG as Record<string, any>
+  )[queue]?.limiter;
+
+  let max = configured?.max;
+  let duration = configured?.duration;
+
+  const maxKeys = workerLimiterMaxEnvKeys(queue);
+  for (const key of maxKeys) {
+    const raw = env[key];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        max = parsed;
+        break;
+      }
+    }
   }
 
-  return clampConcurrency(parsed);
+  const durationKeys = workerLimiterDurationEnvKeys(queue);
+  for (const key of durationKeys) {
+    const raw = env[key];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        duration = parsed;
+        break;
+      }
+    }
+  }
+
+  if (max && duration) {
+    return { max, duration };
+  }
+
+  return undefined;
 }

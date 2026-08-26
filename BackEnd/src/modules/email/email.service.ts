@@ -87,7 +87,7 @@ export class EmailService implements OnModuleInit {
     }
   }
 
-  async sendEmail(
+  async queueEmail(
     dto: SendEmailDto,
   ): Promise<{ messageId: string; status: EmailStatus }> {
     const filteredRecipients = this.filterUnsubscribed(dto.to);
@@ -109,18 +109,6 @@ export class EmailService implements OnModuleInit {
       template: dto.template,
     });
 
-    return { messageId, status: EmailStatus.QUEUED };
-  }
-
-  async queueEmail(
-    dto: SendEmailDto,
-  ): Promise<{ messageId: string; status: EmailStatus }> {
-    const result = await this.sendEmail(dto);
-
-    if (result.status === EmailStatus.DROPPED) {
-      return result;
-    }
-
     const priority = dto.priority || EmailPriority.NORMAL;
     const jobPriority = this.mapPriorityToJobPriority(priority);
 
@@ -128,31 +116,25 @@ export class EmailService implements OnModuleInit {
       await this.jobsService.addJob(
         QUEUES.EMAIL,
         {
-          messageId: result.messageId,
+          messageId,
           dto: {
             ...dto,
-            to: this.filterUnsubscribed(dto.to),
+            to: filteredRecipients,
           },
         },
         { priority: jobPriority },
       );
 
       this.logger.log(
-        `Email queued: ${result.messageId} to ${dto.to.length} recipient(s)`,
+        `Email queued: ${messageId} to ${dto.to.length} recipient(s)`,
       );
     } catch (error) {
-      this.logger.error(
-        `Failed to queue email ${result.messageId}: ${error.message}`,
-      );
-      this.updateDeliveryStatus(
-        result.messageId,
-        EmailStatus.FAILED,
-        error.message,
-      );
-      return { messageId: result.messageId, status: EmailStatus.FAILED };
+      this.logger.error(`Failed to queue email ${messageId}: ${error.message}`);
+      this.updateDeliveryStatus(messageId, EmailStatus.FAILED, error.message);
+      return { messageId, status: EmailStatus.FAILED };
     }
 
-    return result;
+    return { messageId, status: EmailStatus.QUEUED };
   }
 
   async processEmailJob(messageId: string, dto: SendEmailDto): Promise<void> {

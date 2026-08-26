@@ -42,6 +42,15 @@ pub const MAX_DEADLINE_DURATION: u64 = 86400 * 365; // 1 year
 /// Minimum expiry buffer in seconds (absorbs normal validator clock drift)
 pub const MIN_EXPIRY_BUFFER: u64 = 10; // 10 seconds
 
+/// Maximum quest expiry grace period in seconds.
+///
+/// Bounds the *effective* quest expiry (`deadline + grace_period_seconds`):
+/// even when a quest's deadline is within `MAX_DEADLINE_DURATION`, an
+/// unbounded grace period would let the quest effectively live arbitrarily far
+/// in the future. Capping the grace period keeps the effective expiry within
+/// `MAX_DEADLINE_DURATION + MAX_GRACE_PERIOD_SECONDS` of the current time.
+pub const MAX_GRACE_PERIOD_SECONDS: u64 = 86400 * 30; // 30 days
+
 //================================================================================
 // Address Validation
 //================================================================================
@@ -85,6 +94,24 @@ pub fn validate_reward_amount(amount: i128) -> Result<(), Error> {
     if amount <= 0 {
         return Err(Error::InvalidRewardAmount);
     }
+    validate_max_reward_amount(amount)?;
+    Ok(())
+}
+
+/// Validates that a reward amount does not exceed the maximum allowed bound.
+///
+/// Split out from [`validate_reward_amount`] so the upper-bound check has a
+/// single, explicitly named home. Quest registration relies on this to reject
+/// implausibly large rewards that would otherwise overflow downstream math
+/// (e.g. cumulative platform-reward accounting or reward × claims arithmetic).
+///
+/// # Arguments
+/// * `amount` - The reward amount to validate
+///
+/// # Returns
+/// * `Ok(())` if `amount <= MAX_REWARD_AMOUNT`
+/// * `Err(Error::AmountTooLarge)` if `amount > MAX_REWARD_AMOUNT`
+pub fn validate_max_reward_amount(amount: i128) -> Result<(), Error> {
     if amount > MAX_REWARD_AMOUNT {
         return Err(Error::AmountTooLarge);
     }
@@ -133,6 +160,25 @@ pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
         return Err(Error::DeadlineTooFar);
     }
 
+    Ok(())
+}
+
+/// Validates that a quest expiry grace period is within allowed bounds.
+///
+/// The grace period extends the effective quest expiry (`deadline + grace`),
+/// so without this cap a quest could effectively expire arbitrarily far in the
+/// future even though its `deadline` itself is bounded by `validate_deadline`.
+///
+/// # Arguments
+/// * `grace_period_seconds` - The grace period to validate
+///
+/// # Returns
+/// * `Ok(())` if `grace_period_seconds <= MAX_GRACE_PERIOD_SECONDS`
+/// * `Err(Error::GracePeriodTooLarge)` if it exceeds the cap
+pub fn validate_grace_period(grace_period_seconds: u64) -> Result<(), Error> {
+    if grace_period_seconds > MAX_GRACE_PERIOD_SECONDS {
+        return Err(Error::GracePeriodTooLarge);
+    }
     Ok(())
 }
 

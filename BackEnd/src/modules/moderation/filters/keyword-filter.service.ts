@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { DEFAULT_MODERATION_BLOCKED_KEYWORDS } from '../moderation-config-cache.service';
 
 export interface KeywordFilterResult {
   hits: string[];
@@ -8,26 +8,16 @@ export interface KeywordFilterResult {
 
 @Injectable()
 export class KeywordFilterService {
-  private readonly blocklist: Set<string>;
-
-  constructor(private readonly configService: ConfigService) {
-    const mod = this.configService.get<{ blockedKeywords?: string[] }>(
-      'moderation',
-    );
-    const fromConfig = mod?.blockedKeywords || [];
-    const defaults = ['child porn', 'cp ', 'terrorist', 'kill yourself', 'kys'];
-    this.blocklist = new Set(
-      [...fromConfig, ...defaults].map((w) => w.toLowerCase()).filter(Boolean),
-    );
-  }
-
-  scan(text: string): KeywordFilterResult {
+  scan(
+    text: string,
+    blocklist: readonly string[] = DEFAULT_MODERATION_BLOCKED_KEYWORDS,
+  ): KeywordFilterResult {
     if (!text || !text.trim()) {
       return { hits: [], blocked: false };
     }
     const lower = text.toLowerCase();
     const hits: string[] = [];
-    for (const word of this.blocklist) {
+    for (const word of blocklist) {
       if (word && lower.includes(word)) {
         hits.push(word);
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -10,12 +10,23 @@ import type { ProofType } from '@/lib/validation/submission';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface SubmissionFormSubmitData {
+  questId: string;
+  proofType: ProofType;
+  proof: File | null;
+  link?: string;
+  text?: string;
+  notes: string;
+}
+
 interface SubmissionFormProps {
   questId: string;
   questTitle: string;
   isExpired?: boolean;
   isFull?: boolean;
   onSuccess?: (response: SubmissionResponse) => void;
+  onSubmit?: (data: SubmissionFormSubmitData) => void;
+  onClose?: () => void;
 }
 
 // ─── Commit-Reveal Tooltip ────────────────────────────────────────────────────
@@ -122,6 +133,8 @@ export function SubmissionForm({
   isExpired = false,
   isFull = false,
   onSuccess,
+  onSubmit,
+  onClose,
 }: SubmissionFormProps) {
   const {
     formData,
@@ -139,6 +152,31 @@ export function SubmissionForm({
     submissionError,
     reset,
   } = useSubmission({ questId, questTitle, onSuccess });
+
+  const lastNotifiedRef = useRef<SubmissionResponse | null>(null);
+
+  useEffect(() => {
+    if (
+      currentStep === 'success' &&
+      submissionResponse &&
+      lastNotifiedRef.current !== submissionResponse
+    ) {
+      lastNotifiedRef.current = submissionResponse;
+      onSubmit?.({
+        questId,
+        proofType: formData.proofType,
+        proof: formData.proofType === 'file' ? (formData.file ?? null) : null,
+        link: formData.link || undefined,
+        text: formData.text || undefined,
+        notes: formData.additionalNotes ?? '',
+      });
+    }
+  }, [currentStep, submissionResponse, onSubmit, questId, formData]);
+
+  const handleReset = useCallback(() => {
+    lastNotifiedRef.current = null;
+    reset();
+  }, [reset]);
 
   // ── Quest not available ────────────────────────────────────────────────────
   if (isExpired || isFull) {
@@ -185,7 +223,7 @@ export function SubmissionForm({
             Submission ID: {submissionResponse.id}
           </p>
         )}
-        <button type="button" onClick={reset} className={BTN_SECONDARY}>
+        <button type="button" onClick={handleReset} className={BTN_SECONDARY}>
           Submit another proof
         </button>
       </div>
@@ -279,12 +317,23 @@ export function SubmissionForm({
 
         <CommitRevealInfo />
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-between">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className={BTN_SECONDARY}
+              aria-label="Cancel submission"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="button"
             onClick={goToNextStep}
             disabled={!canGoNext}
-            className={BTN_PRIMARY}
+            className={`${BTN_PRIMARY} ${onClose ? 'ml-auto' : ''}`}
           >
             Continue
           </button>

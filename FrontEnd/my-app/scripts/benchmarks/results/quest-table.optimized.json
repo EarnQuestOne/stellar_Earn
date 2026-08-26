@@ -1,0 +1,19 @@
+{
+  "label": "optimized",
+  "generatedAt": "2026-08-17T21:53:45.493Z",
+  "iterations": 3,
+  "results": [
+    {
+      "n": 200,
+      "mountMs": 22.79,
+      "updateMs": 7.97,
+      "renderedRows": 10
+    },
+    {
+      "n": 1000,
+      "mountMs": 15.13,
+      "updateMs": 7.31,
+      "renderedRows": 10
+    }
+  ]
+}

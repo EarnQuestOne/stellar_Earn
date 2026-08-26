@@ -136,7 +136,12 @@ describe('WebhooksController', () => {
     it('should append a CONFIRMED event when no on-chain tx hash is returned', async () => {
       webhooksService.processWebhook.mockResolvedValue(successResponse());
 
-      await controller.handleGithubWebhook(mockPayload, 'push', 'delivery-1', 'sig');
+      await controller.handleGithubWebhook(
+        mockPayload,
+        'push',
+        'delivery-1',
+        'sig',
+      );
 
       expect(traceService.linkOnchain).not.toHaveBeenCalled();
       expect(traceService.appendEvent).toHaveBeenCalledWith(
@@ -155,7 +160,12 @@ describe('WebhooksController', () => {
       );
 
       await expect(
-        controller.handleGithubWebhook(mockPayload, 'push', 'delivery-1', 'bad-sig'),
+        controller.handleGithubWebhook(
+          mockPayload,
+          'push',
+          'delivery-1',
+          'bad-sig',
+        ),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(traceService.appendEvent).toHaveBeenCalledWith(
@@ -252,7 +262,13 @@ describe('WebhooksController', () => {
   describe('POST /webhooks/generic/:service — allowlist enforcement', () => {
     it('should reject an unknown service name with BadRequestException', async () => {
       await expect(
-        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'unknown'),
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'unknown',
+        ),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
@@ -273,7 +289,13 @@ describe('WebhooksController', () => {
 
     it('should reject a known service whose secret env var is not set', async () => {
       await expect(
-        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'github'),
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'github',
+        ),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
@@ -281,7 +303,13 @@ describe('WebhooksController', () => {
     it('should reject a known service whose secret env var is empty', async () => {
       process.env.GITHUB_WEBHOOK_SECRET = '';
       await expect(
-        controller.handleGenericWebhook(mockPayload, {}, 'sig', 'push', 'github'),
+        controller.handleGenericWebhook(
+          mockPayload,
+          {},
+          'sig',
+          'push',
+          'github',
+        ),
       ).rejects.toThrow(BadRequestException);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
@@ -443,5 +471,101 @@ describe('WebhooksController', () => {
       expect(result.timestamp).toBeInstanceOf(Date);
       expect(webhooksService.processWebhook).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('WebhooksController Validation', () => {
+  let app: INestApplication;
+  let webhooksService: Partial<Record<keyof WebhooksService, jest.Mock>>;
+
+  beforeEach(async () => {
+    webhooksService = {
+      processEvent: jest.fn().mockResolvedValue({ status: 'PROCESSED' }),
+    };
+
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      controllers: [WebhooksController],
+      providers: [
+        {
+          provide: WebhooksService,
+          useValue: webhooksService,
+        },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  const validPayload = {
+    eventId: 'evt_123456789',
+    eventType: WebhookEventType.PAYMENT_RECEIVED,
+    data: {
+      transactionHash: '0xabc1234567890',
+      sourceAccount: 'GABCD1234567890',
+      amount: '100.00',
+    },
+  };
+
+  it('POST /webhooks/events - should accept valid payload and return 200 OK', async () => {
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(validPayload)
+      .expect(HttpStatus.OK);
+
+    expect(webhooksService.processEvent).toHaveBeenCalledWith(validPayload);
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when required fields are missing', async () => {
+    const invalidPayload = {
+      eventType: WebhookEventType.PAYMENT_RECEIVED,
+      // missing eventId and data
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request on unknown event type', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      eventType: 'INVALID_EVENT_TYPE',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
+  });
+
+  it('POST /webhooks/events - should return 400 Bad Request when extra unwhitelisted properties exist', async () => {
+    const invalidPayload = {
+      ...validPayload,
+      unsupportedField: 'malicious_input',
+    };
+
+    await request(app.getHttpServer())
+      .post('/webhooks/events')
+      .send(invalidPayload)
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(webhooksService.processEvent).not.toHaveBeenCalled();
   });
 });

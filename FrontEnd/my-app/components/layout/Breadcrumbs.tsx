@@ -10,7 +10,7 @@ interface Crumb {
 }
 
 export function Breadcrumbs() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const getRouteLabel = useTranslatedRouteLabel();
   const segments = pathname
     .split('/')
