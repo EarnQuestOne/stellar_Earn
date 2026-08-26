@@ -32,6 +32,9 @@ export enum NotificationPriority {
 @Index('idx_notification_active_user_read', ['userId', 'read'], {
   where: '"deletedAt" IS NULL',
 })
+@Index('idx_notification_dedup_key', ['userId', 'type', 'entityId'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
@@ -59,6 +62,9 @@ export class Notification {
     default: NotificationPriority.NORMAL,
   })
   priority: NotificationPriority;
+
+  @Column({ nullable: true })
+  entityId: string;
 
   @Column({ type: 'json', nullable: true })
   metadata: any;
