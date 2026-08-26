@@ -24,6 +24,7 @@ const cwd = path.resolve(__dirname, '..');
 // Child that require()s @sentry/node and reports load time + memory delta.
 const EAGER_CHILD = `
   const start = process.hrtime.bigint();
+  
   const m0 = process.memoryUsage();
   require('@sentry/node');
   const end = process.hrtime.bigint();
