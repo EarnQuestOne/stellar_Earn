@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Quest expiry bounds: per-quest grace periods and the global default grace period are now capped at `MAX_GRACE_PERIOD_SECONDS` (30 days) via `validate_grace_period`, so the effective quest expiry (`deadline + grace_period_seconds`) stays bounded even when the deadline itself is within `MAX_DEADLINE_DURATION`. Exceeding the cap returns `Error::GracePeriodTooLarge` (code 96) at quest registration and when admins update the default.
 - Registered oracle configurations are now capped at `MAX_ORACLE_CONFIGS` (10) in `oracle.rs`/`storage.rs`, preventing unbounded instance storage growth and unbounded aggregation gas. Registering beyond the cap returns `Error::OracleLimitReached` (code 108); updating an existing oracle at the cap remains allowed.
 - Property-based quest lifecycle invariant tests in `tests/property_tests.rs`: escrow balance, payout bounds, and cancel acyclicity are fuzzed via QuickCheck (1000 sequences) and proptest against the live Soroban client (50 sequences).
 - 2-of-2 SuperAdmin clawback: `initiate_clawback` and `execute_clawback` entry points in `payout.rs` allow two distinct SuperAdmins to collaboratively recover funds sent to a fraudulent recipient. Emits `ClawbackInitiated` and `ClawbackExecuted` events. Adds `ClawbackPending` storage key, `ClawbackNotFound` (150) and `ClawbackAlreadySigned` (151) error variants.

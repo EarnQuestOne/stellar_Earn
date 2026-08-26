@@ -40,6 +40,9 @@ mod test_arithmetic_overflow;
 #[cfg(test)]
 mod test_self_approval;
 
+#[cfg(test)]
+mod test_expiry_bounds;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 

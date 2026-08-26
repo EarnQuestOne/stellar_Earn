@@ -111,6 +111,10 @@ pub enum Error {
     DisputeAlreadyAppealed = 87,
     DisputeNotResolved = 95,
 
+    // Expiry validation
+    /// Quest expiry grace period exceeds the maximum allowed.
+    GracePeriodTooLarge = 96,
+
     // Additional validation / escrow
     InvalidDeadline = 88,
     QuestCancelled = 89,
