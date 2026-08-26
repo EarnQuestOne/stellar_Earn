@@ -41,6 +41,7 @@ import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { TraceModule } from './modules/trace/trace.module';
 import { UsersModule } from './modules/users/users.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { WebhooksOutboundModule } from './modules/webhooks-outbound/webhooks-outbound.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { TraceInterceptor } from './modules/trace/trace.interceptor';
 import { EventsModule } from './events/events.module';
@@ -101,6 +102,7 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     SubmissionsModule,
     UsersModule,
     WebhooksModule,
+    WebhooksOutboundModule,
     WebsocketModule,
     ProcessResourceModule,
   ],

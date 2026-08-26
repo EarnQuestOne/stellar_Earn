@@ -15,6 +15,8 @@ export const QUEUES = {
   REPORTS: 'reports',
   MAINTENANCE: 'maintenance',
   WEBHOOKS: 'webhooks',
+  /** Outbound event-subscription webhook deliveries (issue #2306). */
+  WEBHOOKS_OUTBOUND: 'webhooks_outbound',
   QUESTS: 'quests',
 };
 

@@ -256,6 +256,25 @@ pub fn validate_claim_amount(
     Ok(remaining)
 }
 
+/// Returns the current status of a submission without loading the full record.
+///
+/// # Arguments
+/// * `env` - Contract environment
+/// * `quest_id` - The symbol of the quest
+/// * `submitter` - The address of the submitter
+///
+/// # Returns
+/// * `Ok(SubmissionStatus)` if the submission exists
+/// * `Err(Error::SubmissionNotFound)` if it does not
+pub fn get_submission_status(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+) -> Result<SubmissionStatus, Error> {
+    let submission = storage::get_submission(env, quest_id, submitter)?;
+    Ok(submission.status)
+}
+
 /// Core claim validation that operates on already-fetched data.
 ///
 /// This function performs the necessary checks to ensure a reward claim is valid.

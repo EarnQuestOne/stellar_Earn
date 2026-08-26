@@ -42,11 +42,36 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     this.registerBuiltins();
+    this.registerOutboundWebhookMetrics();
     this.startSystemCollection();
   }
 
   onModuleDestroy(): void {
     if (this.systemInterval) clearInterval(this.systemInterval);
+  }
+
+  /** Registers outbound webhook delivery metrics (issue #2306). */
+  private registerOutboundWebhookMetrics(): void {
+    this.registerCounter(
+      'outbound_webhook_deliveries_total',
+      'Outbound webhook deliveries by event type and outcome',
+    );
+    this.registerCounter(
+      'outbound_webhook_enqueued_total',
+      'Outbound webhook delivery jobs enqueued by event type',
+    );
+    this.registerCounter(
+      'outbound_webhook_retries_total',
+      'Outbound webhook delivery retries by event type',
+    );
+    this.registerCounter(
+      'outbound_webhook_dead_lettered_total',
+      'Outbound webhook deliveries dead-lettered after max attempts',
+    );
+    this.registerHistogram(
+      'outbound_webhook_delivery_latency_ms',
+      'Outbound webhook delivery latency in milliseconds',
+    );
   }
 
   // ─── Registration ──────────────────────────────────────────────────────────

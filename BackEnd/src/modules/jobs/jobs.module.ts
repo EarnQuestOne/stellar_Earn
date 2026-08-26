@@ -17,6 +17,7 @@ import { EmailProcessor } from './processors/email.processor';
 import { DataExportProcessor } from './processors/export.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
 import { WebhookProcessor } from './processors/webhook.processor';
+import { WebhookDeliveryProcessor } from './processors/webhook-delivery.processor';
 import { AnalyticsProcessor } from './processors/analytics.processor';
 import { QuestProcessor } from './processors/quest.processor';
 import { QuestStateReconciliationProcessor } from './processors/quest-state-reconciliation.processor';
@@ -45,6 +46,9 @@ import { CacheModule } from '../cache/cache.module';
 // module so that job-level idempotency can reuse the same persistence layer.
 import { IdempotencyKey } from '../payouts/entities/idempotency-key.entity';
 import { IdempotencyService } from '../payouts/services/idempotency.service';
+import { WebhookSubscription } from '../webhooks-outbound/entities/webhook-subscription.entity';
+import { WebhookDelivery } from '../webhooks-outbound/entities/webhook-delivery.entity';
+import { LoggerModule } from '../../common/logger/logger.module';
 
 @Module({
   imports: [
@@ -63,6 +67,8 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
       User,
       // Needed for IdempotencyService which is used by JobIdempotencyService
       IdempotencyKey,
+      WebhookSubscription,
+      WebhookDelivery,
     ]),
     EventEmitterModule,
     HttpClientModule,
@@ -70,6 +76,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     AnalyticsModule,
     forwardRef(() => EmailModule),
     CacheModule,
+    LoggerModule,
   ],
   providers: [
     JobsService,
@@ -89,6 +96,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     DataExportProcessor,
     CleanupProcessor,
     WebhookProcessor,
+    WebhookDeliveryProcessor,
     AnalyticsProcessor,
     QuestProcessor,
     QuestStateReconciliationProcessor,
@@ -112,6 +120,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     DataExportProcessor,
     CleanupProcessor,
     WebhookProcessor,
+    WebhookDeliveryProcessor,
     AnalyticsProcessor,
     QuestProcessor,
     QuestStateReconciliationProcessor,

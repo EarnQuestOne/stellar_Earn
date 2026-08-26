@@ -14,6 +14,7 @@ import {
 import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import { PayoutProcessor } from './processors/payout.processor';
+import { WebhookDeliveryProcessor } from './processors/webhook-delivery.processor';
 import {
   TracingService,
   TraceContext,
@@ -56,6 +57,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
+    private readonly webhookDeliveryProcessor?: WebhookDeliveryProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -87,6 +89,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
+    // ── Outbound webhook deliveries queue (issue #2306) ────────────────────
+    this.queues[QUEUES.WEBHOOKS_OUTBOUND] = new Queue(
+      QUEUES.WEBHOOKS_OUTBOUND,
+      redisConnection(),
+    );
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
@@ -114,6 +121,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.PAYOUTS,
         this.payoutProcessor.process.bind(this.payoutProcessor),
+      );
+    }
+
+    // ── Wire the WebhookDeliveryProcessor to the outbound queue ───────────
+    if (
+      this.webhookDeliveryProcessor &&
+      typeof this.webhookDeliveryProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.WEBHOOKS_OUTBOUND,
+        this.webhookDeliveryProcessor.process.bind(
+          this.webhookDeliveryProcessor,
+        ),
       );
     }
   }

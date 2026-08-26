@@ -45,6 +45,7 @@ mod test_expiry_bounds;
 
 #[cfg(test)]
 mod test_reward_and_escrow_views;
+mod test_submission_status;
 
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
@@ -1209,6 +1210,21 @@ impl EarnQuestContract {
         submitter: Address,
     ) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
+    }
+
+    /// Returns the current status of a submission by quest ID and submitter,
+    /// without loading the full submission record.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<SubmissionStatus, Error>` — `Error::SubmissionNotFound` if the
+    /// submission does not exist.
+    pub fn get_submission_status(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+    ) -> Result<SubmissionStatus, Error> {
+        submission::get_submission_status(&env, &quest_id, &submitter)
     }
 
     /// Sets the number of approvals required to unpause the contract (Admin only).
