@@ -131,6 +131,7 @@ pub enum Error {
     InvalidOracleData = 105,
     LowOracleConfidence = 106,
     RewardDeviationTooHigh = 107,
+    OracleLimitReached = 108,
 
     // Arithmetic
     ArithmeticOverflow = 110,
