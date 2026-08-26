@@ -31,6 +31,9 @@ export enum PayoutType {
 @Index('idx_payout_active_type_status', ['type', 'status'], {
   where: '"deletedAt" IS NULL',
 })
+@Index('idx_payout_status_created_at', ['status', 'createdAt'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('payouts')
 export class Payout {
   @PrimaryGeneratedColumn('uuid')
