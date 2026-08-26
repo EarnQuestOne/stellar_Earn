@@ -103,10 +103,13 @@ fn test_distinct_verifier_can_approve() {
 
     // Non-try call panics on contract error, so reaching the next line proves the
     // approval succeeded.
-    ctx.client.approve_submission(&qid, &ctx.submitter, &ctx.verifier);
+    ctx.client
+        .approve_submission(&qid, &ctx.submitter, &ctx.verifier);
 
-    let sub =
-        as_contract(&ctx, || storage::get_submission(&ctx.env, &qid, &ctx.submitter)).unwrap();
+    let sub = as_contract(&ctx, || {
+        storage::get_submission(&ctx.env, &qid, &ctx.submitter)
+    })
+    .unwrap();
     assert_eq!(sub.status, SubmissionStatus::Approved);
 }
 
@@ -128,8 +131,10 @@ fn test_creator_cannot_self_approve() {
     assert_eq!(result, Err(Error::SelfApprovalDisallowed));
 
     // State is unchanged: the submission remains pending.
-    let sub =
-        as_contract(&ctx, || storage::get_submission(&ctx.env, &qid, &ctx.submitter)).unwrap();
+    let sub = as_contract(&ctx, || {
+        storage::get_submission(&ctx.env, &qid, &ctx.submitter)
+    })
+    .unwrap();
     assert_eq!(sub.status, SubmissionStatus::Pending);
 }
 
@@ -159,7 +164,9 @@ fn test_creator_cannot_self_approve_batch() {
     });
     assert_eq!(result, Err(Error::SelfApprovalDisallowed));
 
-    let sub =
-        as_contract(&ctx, || storage::get_submission(&ctx.env, &qid, &ctx.submitter)).unwrap();
+    let sub = as_contract(&ctx, || {
+        storage::get_submission(&ctx.env, &qid, &ctx.submitter)
+    })
+    .unwrap();
     assert_eq!(sub.status, SubmissionStatus::Pending);
 }
