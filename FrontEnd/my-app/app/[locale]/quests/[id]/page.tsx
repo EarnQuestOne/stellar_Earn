@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 export default function QuestDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const questId = params.id as string;
+  const questId = params?.id as string;
   const { isOnline } = useOnlineStatus();
 
   const [quest, setQuest] = useState<Quest | null>(null);

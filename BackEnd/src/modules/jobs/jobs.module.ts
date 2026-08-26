@@ -31,6 +31,7 @@ import { JobLogArchive } from './entities/job-log-archive.entity';
 import { DataExport } from '../users/entities/data-export.entity';
 import { DataExportListener } from './listeners/data-export.listener';
 import { Payout } from '../payouts/entities/payout.entity';
+import { PayoutOutbox } from '../payouts/entities/payout-outbox.entity';
 import { Quest } from '../quests/entities/quest.entity';
 import { Submission } from '../submissions/entities/submission.entity';
 import { StellarModule } from '../stellar/stellar.module';
@@ -55,6 +56,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
       JobLogArchive,
       DataExport,
       Payout,
+      PayoutOutbox,
       Quest,
       Submission,
       EventStore,

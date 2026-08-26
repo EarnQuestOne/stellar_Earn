@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -21,9 +22,11 @@ import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
+import { QuerySubmissionsDto } from './dto/query-submissions.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.service';
 import { Submission } from './entities/submission.entity';
+import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Submissions')
 @ApiBearerAuth()
@@ -37,15 +40,15 @@ export class SubmissionsController {
   @ApiOperation({ summary: 'List submissions for a quest' })
   @ApiParam({ name: 'questId', description: 'Quest ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Submissions list returned' })
-  async list(@Param('questId') questId: string): Promise<{
+  async list(
+    @Param('questId') questId: string,
+    @Query() query: QuerySubmissionsDto,
+  ): Promise<{
     success: true;
-    data: { submissions: Submission[]; total: number };
+    data: PaginatedResponseDto<Submission>;
   }> {
-    const submissions = await this.submissionsService.findByQuest(questId);
-    return {
-      success: true,
-      data: { submissions, total: submissions.length },
-    };
+    const result = await this.submissionsService.findByQuest(questId, query);
+    return { success: true, data: result };
   }
 
   @Post()

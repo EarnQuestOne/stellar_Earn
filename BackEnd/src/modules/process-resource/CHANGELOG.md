@@ -7,6 +7,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+
+- Applied code-style formatting to `resource-limits.service.ts` (no logic change).
+
+### Changed
 - Applied code-style formatting across `process-resource.controller.ts`, `process-resource.types.ts`, `profiling.service.ts`, and `resource-limits.service.ts` (no logic change).
 
 ### Added

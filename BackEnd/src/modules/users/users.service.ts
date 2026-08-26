@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { CacheService } from '../cache/cache.service';
+import { CacheKeys, CacheTags, CacheTtl } from '../cache/cache-tags';
 
 export interface ReputationUpdateResult {
   userId: string;
@@ -28,6 +30,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly cacheService: CacheService,
   ) {}
 
   // Minimal implementations for server startup
@@ -70,11 +73,19 @@ export class UsersService {
   }
 
   async update(id: string, user: User): Promise<User> {
+    // Drop every cached read derived from this user on a write (#2159).
+    await this.cacheService.invalidateTag(CacheTags.user(id));
     return user;
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id } });
+    // Cache-aside read tagged per user so `update()` can invalidate it (#2159).
+    return this.cacheService.getOrSet(
+      CacheKeys.userById(id),
+      CacheTtl.user,
+      [CacheTags.user(id)],
+      () => this.usersRepository.findOne({ where: { id } }),
+    );
   }
 
   async findByGoogleId(_googleId: string): Promise<User | null> {
@@ -146,9 +157,7 @@ export class UsersService {
    *
    * Returns a Map keyed by userId for O(1) lookups.
    */
-  async getBatchUserStats(
-    userIds: string[],
-  ): Promise<Map<string, any>> {
+  async getBatchUserStats(userIds: string[]): Promise<Map<string, any>> {
     if (userIds.length === 0) return new Map();
 
     const rows = await this.usersRepository

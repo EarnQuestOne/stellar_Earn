@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Quest registration now increments platform stats counters (`total_quests_created`, `total_rewards_distributed`).
 - Resolved appealed disputes no longer call `require_auth` twice on the admin arbitrator, which caused `Auth(ExistingValue)` failures.
+- `get_admin` no longer panics with `.expect("Contract not initialized")` when the contract has not been initialized; it now returns `Error::NotInitialized` (code 93).
 
 ### Added
 
@@ -22,6 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Initialized this changelog so future contract releases have a single source of truth.
 - Added `gas_budget.rs` module defining explicit instruction-count ceilings per entrypoint (`init`, `reg_qst`, `sub_prf`, `appr_sub`, `clm_rwd`) and a `within_budget` helper for regression checks.
 - Minimum creator level requirement and creator whitelist. Admin can set a level threshold (default 0 = disabled); quest creation fails if the creator's XP level is below it. Whitelisted addresses bypass the check.
+
+### Breaking Changes
+
+#### Contract - `get_admin` returns `Result<Address, Error>` instead of panicking
+- **Impact**: The public `get_admin` entrypoint now returns `Result<Address, Error>` (via `ok_or(Error::NotInitialized)`) instead of a bare `Address`. Clients and contracts that invoke `get_admin` on an uninitialized contract previously triggered a panic; they now receive a graceful `Error::NotInitialized` (code 93).
+- **Affected Files**: [storage.rs](contracts/earn-quest/src/storage.rs), [lib.rs](contracts/earn-quest/src/lib.rs), [init.rs](contracts/earn-quest/src/init.rs)
+- **Migration Required**: No storage migration required. Integrations reading the admin address should switch to the `try_get_admin` client method (or otherwise handle the `Result`) and treat `Error::NotInitialized` as the uninitialized-state error.
 
 ---
 

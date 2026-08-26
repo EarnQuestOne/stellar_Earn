@@ -43,6 +43,7 @@ const NON_RETRYABLE_MESSAGES = [
   'Invalid webhook signature',
   'Unsupported webhook source',
 ];
+const WEBHOOK_PROCESSING_FAILED_MESSAGE = 'webhook processing failed';
 
 @Injectable()
 export class WebhooksService {
@@ -156,7 +157,7 @@ export class WebhooksService {
       return {
         success: false,
         eventId: event.id,
-        message: `Failed to process webhook: ${error.message}`,
+        message: WEBHOOK_PROCESSING_FAILED_MESSAGE,
         processedAt: new Date(),
         traceId: currentTraceId(),
       };

@@ -22,6 +22,8 @@ import { UsersService } from '#src/modules/users/users.service';
 import { QuestsService } from '#src/modules/quests/quests.service';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
 import { PayoutsService } from '#src/modules/payouts/payouts.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
+import { StellarPaymentService } from '#src/modules/stellar/stellar-payment.service';
 import { JobResultStatusCacheService } from '#src/modules/jobs/services/job-result-status-cache.service';
 import { StellarService } from '#src/modules/stellar/stellar.service';
 
@@ -92,16 +94,17 @@ describe('Full Application Integration', () => {
           .mockResolvedValue({ stellarAddress: 'test', sub: 'test' }),
         decode: jest.fn(),
       })
-      .overrideProvider(StellarService)
+      .overrideProvider(StellarSubmissionService)
       .useValue({
         approveSubmission: jest
           .fn()
           .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
+      })
+      .overrideProvider(StellarPaymentService)
+      .useValue({
         sendPayment: jest
           .fn()
           .mockResolvedValue({ transactionHash: 'tx-hash-mock' }),
-        getContractId: jest.fn().mockReturnValue('mock-contract-id'),
-        getServer: jest.fn(),
       })
       .compile();
 
@@ -114,7 +117,9 @@ describe('Full Application Integration', () => {
     _stellarService = module.get<StellarService>(StellarService);
   });
 
-  async function setPayoutStatusProcessingInDb(payoutId: string): Promise<void> {
+  async function setPayoutStatusProcessingInDb(
+    payoutId: string,
+  ): Promise<void> {
     const ds = module.get(DataSource);
     await ds.query(`UPDATE payouts SET status = 'processing' WHERE id = $1`, [
       payoutId,

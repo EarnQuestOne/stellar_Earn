@@ -106,12 +106,12 @@ let version = client.get_version();
 
 ### get_admin
 ```rust
-pub fn get_admin(env: Env) -> Address
+pub fn get_admin(env: Env) -> Result<Address, Error>
 ```
-Retrieves the contract administrator address.
+Retrieves the contract administrator address. Returns `Err(Error::NotInitialized)` if the contract has not been initialized yet.
 **Example:**
 ```rust
-let admin = client.get_admin();
+let admin = client.try_get_admin()?;
 ```
 
 ---

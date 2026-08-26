@@ -17,6 +17,9 @@ export default function robots(): MetadataRoute.Robots {
         '/*/rewards',
         '/*/settings',
         '/*/submissions',
+        // Debug/demo routes (also gated off in production, see #1922)
+        '/*/error-panel-demo',
+        '/*/test-error',
       ],
     },
     sitemap: new URL('/sitemap.xml', siteUrl).toString(),

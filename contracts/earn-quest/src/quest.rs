@@ -138,7 +138,7 @@ pub fn register_quest_with_category_and_grace_period(
     storage::add_quest_id(env, id)?;
     storage::add_quest_to_category_index(env, category, id)?;
     storage::inc_platform_quests_created(env);
-    storage::add_platform_rewards_distributed(env, reward_amount as u128);
+    storage::add_platform_rewards_distributed(env, reward_amount as u128)?;
 
     events::quest_registered(
         env,

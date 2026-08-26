@@ -27,11 +27,23 @@ import { Submission, SubmissionStatus } from './entities/submission.entity';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
-import { StellarService } from '../stellar/stellar.service';
+import { StellarSubmissionService } from '../stellar/stellar-submission.service';
+import {
+  QuerySubmissionsDto,
+  SubmissionSortBy,
+  SortOrder,
+} from './dto/query-submissions.dto';
+import {
+  PaginatedResponseDto,
+  encodeCursor,
+  decodeCursor,
+} from '../../common/dto/pagination.dto';
+
 import { NotificationsService } from '../notifications/notifications.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
+import { VerificationDedupService } from '../../common/services/verification-dedup.service';
 
 interface QuestVerifier {
   id: string;
@@ -60,10 +72,11 @@ export class SubmissionsService {
     private usersRepository: Repository<User>,
     @InjectRepository(Quest)
     private questsRepository: Repository<Quest>,
-    private stellarService: StellarService,
+    private stellarSubmissionService: StellarSubmissionService,
     private notificationsService: NotificationsService,
     private eventEmitter: EventEmitter2,
     private metricsService: MetricsService,
+    private verificationDedup: VerificationDedupService,
   ) {}
 
   /**
@@ -204,9 +217,29 @@ export class SubmissionsService {
   }
 
   /**
-   * Approve a submission and trigger on-chain reward distribution
+   * Approve a submission and trigger on-chain reward distribution.
+   *
+   * Duplicate approval requests for the same submission are deduplicated:
+   *   • In-flight — concurrent requests await the same in-flight operation.
+   *   • Result cache — recent successful results are returned briefly (5 s)
+   *     without re-executing the chain call or re-running validations.
    */
   async approveSubmission(
+    submissionId: string,
+    approveDto: ApproveSubmissionDto,
+    verifierId: string,
+  ): Promise<Submission> {
+    return this.verificationDedup.executeWithDedup(
+      `approve:${submissionId}`,
+      () => this.processApproval(submissionId, approveDto, verifierId),
+    );
+  }
+
+  /**
+   * Inner approval logic — never call directly; always go through
+   * {@link approveSubmission} so dedup/caching is applied.
+   */
+  private async processApproval(
     submissionId: string,
     approveDto: ApproveSubmissionDto,
     verifierId: string,
@@ -301,11 +334,12 @@ export class SubmissionsService {
 
     let onChainTxHash: string | undefined;
     try {
-      const onChainResult = await this.stellarService.approveSubmission(
-        quest.contractTaskId,
-        user.stellarAddress,
-        verifier.stellarAddress,
-      );
+      const onChainResult =
+        await this.stellarSubmissionService.approveSubmission(
+          quest.contractTaskId,
+          user.stellarAddress,
+          verifier.stellarAddress,
+        );
       onChainTxHash = onChainResult.transactionHash;
     } catch (error) {
       // Roll the DB status back so the submission remains actionable.
@@ -572,13 +606,120 @@ export class SubmissionsService {
     return submission;
   }
 
-  async findByQuest(questId: string): Promise<Submission[]> {
-    // Join quest and user up front so the controller (which serialises both
-    // relations) doesn't trigger lazy lookups per row.
-    return this.submissionsRepository.find({
-      where: { questId },
-      relations: ['quest', 'user'],
-      order: { createdAt: 'DESC' },
-    });
+  /**
+   * List submissions for a quest using keyset (cursor) pagination.
+   *
+   * Unlike offset pagination (`OFFSET n`), the cursor predicates page
+   * through the composite `("userId", "createdAt", "id")` index so deep
+   * pages do not degrade into scan-and-skip work: every page costs O(limit)
+   * index entries regardless of how far into the dataset it is.
+   *
+   * The cursor is an opaque base64 payload encoding `{ [sortBy], id }` —
+   * the last row's sort value plus its id as a stable tiebreaker (ids are
+   * monotonic within a single timestamp, so the tuple is a total order).
+   *
+   * @param questId  Quest the submissions belong to (UUID from path).
+   * @param query    Pagination + filter options (cursor, limit, status, userId,
+   *                 sortBy, order). Optional so callers can omit it entirely.
+   */
+  async findByQuest(
+    questId: string,
+    query?: QuerySubmissionsDto,
+  ): Promise<PaginatedResponseDto<Submission>> {
+    const limit = query?.limit ?? 10;
+    const sortBy = query?.sortBy ?? SubmissionSortBy.CREATED_AT;
+    const order = query?.order ?? SortOrder.DESC;
+
+    const qb = this.submissionsRepository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.quest', 'quest')
+      .leftJoinAndSelect('submission.user', 'user')
+      .where('submission.questId = :questId', { questId });
+
+    if (query?.status) {
+      qb.andWhere('submission.status = :status', { status: query.status });
+    }
+
+    if (query?.userId) {
+      qb.andWhere('submission.userId = :userId', { userId: query.userId });
+    }
+
+    // Keyset (composite sort column + id) predicate. Applied as a range
+    // filter — never as an OFFSET — so the planner can use the composite
+    // index instead of scanning and discarding already-seen rows.
+    if (query?.cursor) {
+      const predicate = this.buildKeysetPredicate(
+        sortBy,
+        order,
+        decodeCursor(query.cursor),
+      );
+      if (predicate) {
+        qb.andWhere(predicate.clause, predicate.params);
+      }
+    }
+
+    // Fetch one extra row so we can cheaply detect whether another page
+    // exists without issuing a COUNT(*) on every request.
+    qb.orderBy(`submission.${sortBy}`, order)
+      .addOrderBy('submission.id', order)
+      .take(limit + 1);
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+
+    const last = data[data.length - 1];
+    const nextCursor =
+      hasMore && last
+        ? encodeCursor({ [sortBy]: last[sortBy], id: last.id })
+        : null;
+
+    return new PaginatedResponseDto<Submission>(data, nextCursor);
+  }
+
+  /**
+   * Build the SQL predicate that pages past a decoded cursor.
+   *
+   * Uses a composite row comparison on `(sortBy, id)` — the standard
+   * keyset form:
+   *   DESC: (sortVal, id) < (:cv, :idv)
+   *   ASC:  (sortVal, id) > (:cv, :idv)
+   *
+   * Row comparisons translate directly into an index range condition on
+   * the composite `("userId", "createdAt", "id")` index, so each page walks
+   * exactly `limit + 1` index entries regardless of depth. (The `OR`-based
+   * formulation is avoided: the planner treats it as a post-scan Filter
+   * rather than an Index Cond and ends up skipping rows as deep pages would.)
+   *
+   * Falls back to the legacy `createdAt` key when decoding an older cursor
+   * that only encoded `{ createdAt, id }` so already-issued cursors keep
+   * working after the sort column was made explicit.
+   *
+   * `sortBy` is validated by the DTO (`@IsEnum(SubmissionSortBy)`), so it is
+   * always a whitelisted column name and is safe to interpolate.
+   *
+   * @returns The WHERE clause + parameters, or null when the cursor does not
+   *          carry a usable sort value + id (treated as "start from the top").
+   */
+  private buildKeysetPredicate(
+    sortBy: SubmissionSortBy,
+    order: SortOrder,
+    decoded: Record<string, unknown> | null,
+  ): { clause: string; params: Record<string, unknown> } | null {
+    if (!decoded) return null;
+
+    const id = decoded.id;
+    if (typeof id !== 'string' || id.length === 0) return null;
+
+    // Newer cursors carry the sort value under the sort column key; older
+    // ones only carried `createdAt`.
+    const sortValue = decoded[sortBy] ?? decoded.createdAt;
+    if (sortValue === undefined || sortValue === null) return null;
+
+    const cmp = order === SortOrder.ASC ? '>' : '<';
+    return {
+      clause: `(submission.${sortBy}, submission.id) ${cmp} (:cv, :idv)`,
+      params: { cv: sortValue, idv: id },
+    };
   }
 }

@@ -3,7 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotFoundException } from '@nestjs/common';
-import { Payout, PayoutStatus, PayoutType } from 'src/modules/payouts/entities/payout.entity';
+import {
+  Payout,
+  PayoutStatus,
+  PayoutType,
+} from 'src/modules/payouts/entities/payout.entity';
 import { PayoutsService } from 'src/modules/payouts/payouts.service';
 import { FraudRiskRulesService } from 'src/modules/payouts/services/fraud-risk-rules.service';
 import { QuotaService } from 'src/modules/quota/quota.service';
@@ -95,7 +99,10 @@ describe('PayoutsService payout status polling cache', () => {
     cache.getPayoutPoll.mockResolvedValue(undefined);
     repo.findOne.mockResolvedValue(payout);
 
-    const result = await service.getPayoutById(payout.id, payout.stellarAddress);
+    const result = await service.getPayoutById(
+      payout.id,
+      payout.stellarAddress,
+    );
 
     expect(result.status).toBe(PayoutStatus.PROCESSING);
     expect(repo.findOne).toHaveBeenCalledTimes(1);

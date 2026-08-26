@@ -70,7 +70,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
       `);
       for (const col of cols) {
         if (col.data_type === 'text') {
-          await queryRunner.query(`ALTER TABLE "submissions" ALTER COLUMN "${col.column_name}" TYPE UUID USING "${col.column_name}"::uuid`);
+          await queryRunner.query(
+            `ALTER TABLE "submissions" ALTER COLUMN "${col.column_name}" TYPE UUID USING "${col.column_name}"::uuid`,
+          );
           console.log(`Altered submissions.${col.column_name} to UUID`);
         }
       }
@@ -82,7 +84,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
         WHERE table_name = 'notifications' AND column_name = 'userId'
       `);
       if (col.length && col[0].data_type === 'text') {
-        await queryRunner.query(`ALTER TABLE "notifications" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`);
+        await queryRunner.query(
+          `ALTER TABLE "notifications" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`,
+        );
         console.log('Altered notifications.userId to UUID');
       }
     }
@@ -93,7 +97,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
         WHERE table_name = 'payouts' AND column_name = 'userId'
       `);
       if (col.length && col[0].data_type === 'text') {
-        await queryRunner.query(`ALTER TABLE "payouts" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`);
+        await queryRunner.query(
+          `ALTER TABLE "payouts" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`,
+        );
         console.log('Altered payouts.userId to UUID');
       }
     }
@@ -104,7 +110,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
         WHERE table_name = 'refresh_tokens' AND column_name = 'userId'
       `);
       if (col.length && col[0].data_type === 'text') {
-        await queryRunner.query(`ALTER TABLE "refresh_tokens" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`);
+        await queryRunner.query(
+          `ALTER TABLE "refresh_tokens" ALTER COLUMN "userId" TYPE UUID USING "userId"::uuid`,
+        );
         console.log('Altered refresh_tokens.userId to UUID');
       }
     }
@@ -279,7 +287,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
         FROM information_schema.columns 
         WHERE table_name = 'submissions'
       `);
-      const existingColumns = submissionColumns.map((col: any) => col.column_name);
+      const existingColumns = submissionColumns.map(
+        (col: any) => col.column_name,
+      );
 
       const missingSubmissionColumns = [
         'approvedBy',
@@ -345,9 +355,13 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
       const existingColumns = payoutColumns.map((col: any) => col.column_name);
 
       // Make userId nullable on payouts since Payout entity uses stellarAddress instead of userId
-      const userIdCol = payoutColumns.find((col: any) => col.column_name === 'userId');
+      const userIdCol = payoutColumns.find(
+        (col: any) => col.column_name === 'userId',
+      );
       if (userIdCol) {
-        await queryRunner.query(`ALTER TABLE "payouts" ALTER COLUMN "userId" DROP NOT NULL`);
+        await queryRunner.query(
+          `ALTER TABLE "payouts" ALTER COLUMN "userId" DROP NOT NULL`,
+        );
       }
 
       const missingPayoutColumns = [
@@ -452,7 +466,9 @@ export class DataMigrationStep1SchemaSync1800000000000 implements MigrationInter
         FROM information_schema.columns 
         WHERE table_name = 'notifications'
       `);
-      const existingColumns = notificationColumns.map((col: any) => col.column_name);
+      const existingColumns = notificationColumns.map(
+        (col: any) => col.column_name,
+      );
       if (!existingColumns.includes('priority')) {
         await queryRunner.query(
           `ALTER TABLE "notifications" ADD COLUMN "priority" VARCHAR DEFAULT 'NORMAL'`,

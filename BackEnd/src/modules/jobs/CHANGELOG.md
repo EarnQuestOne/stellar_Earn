@@ -6,6 +6,11 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Payout transactional-outbox relay in `PayoutProcessor.relayPayoutOutbox()` — an every-minute job that atomically claims PENDING `payout_outbox` rows (`PENDING → PROCESSING`), submits each via `StellarPaymentService` exactly once, and marks them DONE (or retries/parks on failure) (#2158).
+- Stuck-outbox recovery in `PayoutReconciliationProcessor.recoverStuckPayoutOutbox()` — resets outbox rows left in PROCESSING beyond the crash threshold back to PENDING so the idempotent relay can safely replay them (#2158).
+
 ### Changed
 - Applied code-style formatting to `jobs.constants.ts` import block (no logic change).
 
@@ -32,4 +37,8 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 - `DependencyFreshnessService` now uses `PooledHttpClientService` (keep-alive connection pool, 15 s `long` timeout budget) instead of a raw `axios` call for GitHub API requests. `HttpClientModule` added to `JobsModule` imports.
 - `addJob()` signature extended: `addJob(name, data, opts?, jobType?)` — fully backward-compatible; callers that omit `jobType` continue to use `DEFAULT_JOB_OPTIONS`.
+
+### Changed
+
+- `PayoutProcessor` now depends on `StellarPaymentService` (was `StellarService`) — aligns with the stellar module refactor that split the monolithic service into focused services (#1912).
 - `jobs.constants.ts` updated with refined job configuration constants.

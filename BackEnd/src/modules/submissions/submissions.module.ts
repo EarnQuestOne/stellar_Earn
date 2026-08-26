@@ -9,6 +9,7 @@ import { SubmissionsController } from './submissions.controller';
 import { SubmissionsService } from './submissions.service';
 import { SubmissionAggregatesService } from './submission-aggregates.service';
 import { Submission } from './entities/submission.entity';
+import { VerificationDedupService } from '../../common/services/verification-dedup.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -21,7 +22,11 @@ import { User } from '../users/entities/user.entity';
     CacheModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionAggregatesService],
+  providers: [
+    SubmissionsService,
+    SubmissionAggregatesService,
+    VerificationDedupService,
+  ],
   exports: [SubmissionsService, SubmissionAggregatesService],
 })
 export class SubmissionsModule {}

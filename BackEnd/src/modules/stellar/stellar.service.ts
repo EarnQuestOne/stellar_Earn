@@ -7,9 +7,9 @@ import {
   ServiceUnavailableException,
   Optional,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
 import {
   Account,
   Address,
@@ -26,6 +26,7 @@ import { TracingService } from '../../common/tracing/tracing.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { EventStore } from '../../events/entities/event-store.entity';
 import { StellarAccountCacheService } from './stellar-account-cache.service';
+import { StellarFeeService } from './stellar-fee.service';
 import { SorobanRpcClientPoolService } from './soroban-rpc-client-pool.service';
 
 export interface ApproveSubmissionResult {
@@ -35,25 +36,18 @@ export interface ApproveSubmissionResult {
 }
 
 /**
- * Outline of how a Soroban contract call flows through this service:
+ * Shared Stellar infrastructure service.
  *
- *   approveSubmission(...)
- *     │  validate args + read CONTRACT_ID
- *     │  tracing.trace('stellar.contract.approve_submission')
- *     │      │  build tx (Operation.invokeContractFunction)
- *     │      │  simulateTransaction → if error: throw BadRequestException
- *     │      └► _signAndSubmitContract(tx, contractId, functionName)
- *     │              │  load account, sign tx, submit via Horizon
- *     │              │  tracing.trace('stellar.contract.submit') — once
- *     │              │  metrics emitted once with correct labels
- *     │              └► return { hash, ledger }
- *     └► return { transactionHash, ledger, success: true }
+ * Initializes and provides access to the configured Horizon server, Soroban
+ * RPC server, and network passphrase. Focused business-logic services
+ * ({@link StellarSubmissionService}, {@link StellarPaymentService},
+ * {@link StellarEventIngestionService}) depend on this service for the
+ * low-level Stellar SDK clients.
  *
- * `_signAndSubmitContract` takes the contract id + function name
- * explicitly because the SDK's operation object doesn't expose them at
- * the top level for `invokeContractFunction` operations — extracting
- * `op.contract` / `op.function` (the old `signAndSubmit` heuristic)
- * returns `undefined` and forces metric labels to "unknown".
+ * Backward-compatibility note: this service retains delegating wrappers
+ * for `approveSubmission`, `signAndSubmit`, `sendPayment`, and
+ * `ingestContractEvents` so that existing consumers are not broken by the
+ * refactor. New code should inject the focused services directly.
  */
 @Injectable()
 export class StellarService implements OnModuleInit {
@@ -65,6 +59,7 @@ export class StellarService implements OnModuleInit {
   private readonly eventInitialLookbackLedgers = 50;
   private accountCache: StellarAccountCacheService;
   private clientPool: SorobanRpcClientPoolService;
+  private feeService?: StellarFeeService;
 
   constructor(
     private readonly configService: ConfigService,
@@ -74,11 +69,13 @@ export class StellarService implements OnModuleInit {
     private readonly eventStoreRepository: Repository<EventStore>,
     @Optional() accountCache?: StellarAccountCacheService,
     @Optional() clientPool?: SorobanRpcClientPoolService,
+    @Optional() feeService?: StellarFeeService,
   ) {
     this.accountCache =
       accountCache ?? new StellarAccountCacheService(this.configService);
     this.clientPool =
       clientPool ?? new SorobanRpcClientPoolService(this.configService);
+    this.feeService = feeService;
   }
 
   onModuleInit() {
@@ -96,6 +93,26 @@ export class StellarService implements OnModuleInit {
         : StellarSdk.Networks.TESTNET;
 
     this.logger.log(`Stellar Service initialized on ${network}`);
+  }
+
+  /** Returns the configured Horizon server instance. */
+  getHorizon(): StellarSdk.Horizon.Server {
+    return this.horizonServer;
+  }
+
+  /**
+   * Returns the current network base fee in stroops, served from the cached
+   * fee-estimate provider (see {@link StellarFeeService}). Falls back to the
+   * configured `STELLAR_BASE_FEE` when the fee service is not available.
+   */
+  async getBaseFeeInStroops(): Promise<number> {
+    if (this.feeService) {
+      return this.feeService.getBaseFeeInStroops();
+    }
+    return parseInt(
+      this.configService.get<string>('STELLAR_BASE_FEE') || '100',
+      10,
+    );
   }
 
   /**
@@ -174,7 +191,7 @@ export class StellarService implements OnModuleInit {
         const source = new Account(sourcePubKey, accountResponse.sequence);
 
         const tx = new TransactionBuilder(source, {
-          fee: '100',
+          fee: (await this.getBaseFeeInStroops()).toString(),
           networkPassphrase: this.networkPassphrase,
         })
           .addOperation(
@@ -588,6 +605,12 @@ export class StellarService implements OnModuleInit {
     return Number.isNaN(timestamp.getTime()) ? new Date() : timestamp;
   }
 
+  /** Returns the configured Soroban RPC server instance. */
+  getRpc(): rpc.Server {
+    return this.rpcServer;
+  }
+
+  /** Returns the Stellar network passphrase for the configured network. */
   getNetworkPassphrase(): string {
     return this.networkPassphrase;
   }
@@ -625,7 +648,7 @@ export class StellarService implements OnModuleInit {
         : new StellarSdk.Asset(asset, sourcePublicKey);
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: '100',
+      fee: (await this.getBaseFeeInStroops()).toString(),
       networkPassphrase: this.networkPassphrase,
     })
       .addOperation(
@@ -647,5 +670,85 @@ export class StellarService implements OnModuleInit {
       transactionHash: result.hash,
       ledger: (result as any).ledger ?? 0,
     };
+  }
+
+  async sendBatchPayments(
+    payments: Array<{ destination: string; amount: number; asset: string }>,
+  ): Promise<
+    Array<{
+      transactionHash: string;
+      ledger: number;
+      operations: Array<{
+        destination: string;
+        amount: number;
+        success: boolean;
+      }>;
+    }>
+  > {
+    const secretKey =
+      this.configService.get<string>('SOROBAN_SECRET_KEY') ||
+      this.configService.get<string>('STELLAR_ADMIN_SECRET');
+
+    if (!secretKey) {
+      throw new Error('No Stellar secret key configured for payments');
+    }
+
+    const sourceKeypair = Keypair.fromSecret(secretKey);
+    const sourceAccount = await this.horizonServer.loadAccount(
+      sourceKeypair.publicKey(),
+    );
+
+    const maxOpsPerTx = 100;
+    const baseFee = await this.getBaseFeeInStroops();
+    const results: Array<{
+      transactionHash: string;
+      ledger: number;
+      operations: Array<{
+        destination: string;
+        amount: number;
+        success: boolean;
+      }>;
+    }> = [];
+
+    for (let i = 0; i < payments.length; i += maxOpsPerTx) {
+      const chunk = payments.slice(i, i + maxOpsPerTx);
+
+      const builder = new TransactionBuilder(sourceAccount, {
+        fee: baseFee.toString(),
+        networkPassphrase: this.networkPassphrase,
+      });
+
+      for (const payment of chunk) {
+        const paymentAsset =
+          payment.asset === 'XLM'
+            ? StellarSdk.Asset.native()
+            : new StellarSdk.Asset(payment.asset, sourceKeypair.publicKey());
+
+        builder.addOperation(
+          Operation.payment({
+            destination: payment.destination,
+            asset: paymentAsset,
+            amount: payment.amount.toFixed(7),
+          }),
+        );
+      }
+
+      const tx = builder.setTimeout(30).build();
+      tx.sign(sourceKeypair);
+
+      const result = await this.horizonServer.submitTransaction(tx);
+
+      results.push({
+        transactionHash: result.hash,
+        ledger: (result as any).ledger ?? 0,
+        operations: chunk.map((p) => ({
+          destination: p.destination,
+          amount: p.amount,
+          success: true,
+        })),
+      });
+    }
+
+    return results;
   }
 }

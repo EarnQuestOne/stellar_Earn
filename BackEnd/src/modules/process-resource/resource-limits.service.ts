@@ -102,6 +102,11 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
   // ─── Private ─────────────────────────────────────────────────────────────
 
   private loadConfig(): ResourceLimitsConfig {
+    const rawInterval = this.configService.get<number>(
+      'RESOURCE_MONITOR_INTERVAL_MS',
+      60_000,
+    );
+    const monitorIntervalMs = Math.max(rawInterval, 10_000); // Minimum 10s to prevent CPU thrash
     return {
       maxHeapUsedMb: this.configService.get<number>(
         'RESOURCE_MAX_HEAP_MB',
@@ -121,10 +126,7 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
           'RESOURCE_EXIT_ON_HEAP_CRITICAL',
           'false',
         ) === 'true',
-      monitorIntervalMs: this.configService.get<number>(
-        'RESOURCE_MONITOR_INTERVAL_MS',
-        30_000,
-      ),
+      monitorIntervalMs,
     };
   }
 
@@ -136,8 +138,16 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private checkAndEmitViolations(): void {
+    const callbackStart = performance.now();
     const mem = this.getMemorySnapshot();
     const violations = this.evaluateViolations(mem);
+    const callbackDurationMs = performance.now() - callbackStart;
+
+    if (callbackDurationMs > 10) {
+      this.logger.warn(
+        `Resource monitor callback took ${callbackDurationMs.toFixed(1)}ms (>10ms overhead threshold)`,
+      );
+    }
 
     if (violations.length === 0) return;
 

@@ -235,7 +235,13 @@ pub fn validate_claim_amount(
 ) -> Result<i128, Error> {
     validation::validate_reward_amount(amount)?;
 
-    let remaining = quest.reward_amount - submission.claimed_amount;
+    // Guarded subtraction: if stored accounting were ever corrupted such that
+    // claimed_amount > reward_amount, surface a graceful error instead of
+    // panicking the whole transaction.
+    let remaining = quest
+        .reward_amount
+        .checked_sub(submission.claimed_amount)
+        .ok_or(Error::ArithmeticUnderflow)?;
     if amount > remaining {
         return Err(Error::InvalidRewardAmount);
     }

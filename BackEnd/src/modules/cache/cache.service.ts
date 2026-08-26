@@ -146,6 +146,39 @@ export class CacheService {
     }
   }
 
+  // ─── Unified cache-aside primitives (#2159) ──────────────────────────────────
+
+  /**
+   * Cache-aside helper: return the cached value for `key`, or run `loader()`,
+   * store the result for `ttlSeconds` tagged with `tags`, and return it. Every
+   * entry is registered against its tags (via {@link set}) so a later
+   * {@link invalidateTag} drops all reads derived from the same source, giving
+   * consistent, coordinated caching across the hot read paths.
+   */
+  async getOrSet<T>(
+    key: string,
+    ttlSeconds: number,
+    tags: string[],
+    loader: () => Promise<T>,
+  ): Promise<T> {
+    const cached = await this.get<T>(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const value = await loader();
+    await this.set(key, value, ttlSeconds, tags);
+    return value;
+  }
+
+  /**
+   * Drop every cache entry tagged with `tag` (e.g. `quest:<id>`). An
+   * explicitly-named alias over {@link invalidateByTag} so write paths read
+   * clearly: `invalidateTag(CacheTags.quest(id))` on a quest write.
+   */
+  async invalidateTag(tag: string): Promise<void> {
+    return this.invalidateByTag(tag);
+  }
+
   // ─── Distributed Locking ───────────────────────────────────────────────────
 
   async acquireLock(key: string, ttlMs: number = 5000): Promise<string | null> {

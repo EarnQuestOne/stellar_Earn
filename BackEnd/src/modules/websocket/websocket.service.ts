@@ -297,7 +297,8 @@ export class WebsocketService {
       true,
     );
 
-    this.server?.emit(event, {
+    const roomName = this.buildRoomName(WsChannel.BROADCAST);
+    this.server?.to(roomName).emit(event, {
       channel: WsChannel.BROADCAST,
       data: payload,
       timestamp: new Date().toISOString(),
@@ -397,22 +398,28 @@ export class WebsocketService {
     const existing = this.coalesceTimers.get(entityId);
 
     if (existing) {
-      existing.latestPayload = { event, payload, timestamp: new Date().toISOString() };
+      existing.latestPayload = {
+        event,
+        payload,
+        timestamp: new Date().toISOString(),
+      };
       return;
     }
 
-    const entry: { timeout: ReturnType<typeof setTimeout>; latestPayload: any } =
-      {
-        timeout: setTimeout(() => {
-          this.coalesceTimers.delete(entityId);
-          const data = entry.latestPayload;
-          this.server?.to(`entity:${entityId}`).emit(data.event, {
-            data: data.payload,
-            timestamp: data.timestamp,
-          });
-        }, this.COALESCE_WINDOW_MS),
-        latestPayload: { event, payload, timestamp: new Date().toISOString() },
-      };
+    const entry: {
+      timeout: ReturnType<typeof setTimeout>;
+      latestPayload: any;
+    } = {
+      timeout: setTimeout(() => {
+        this.coalesceTimers.delete(entityId);
+        const data = entry.latestPayload;
+        this.server?.to(`entity:${entityId}`).emit(data.event, {
+          data: data.payload,
+          timestamp: data.timestamp,
+        });
+      }, this.COALESCE_WINDOW_MS),
+      latestPayload: { event, payload, timestamp: new Date().toISOString() },
+    };
 
     this.coalesceTimers.set(entityId, entry);
   }

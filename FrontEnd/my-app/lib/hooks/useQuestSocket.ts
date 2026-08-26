@@ -46,10 +46,7 @@ const pendingGlobalSubmissionById = new Map<string, SubmissionStatusEvent>();
 let coalesceFrameId: number | null = null;
 
 export function channelsForSocketOptions(
-  options: Pick<
-    UseQuestSocketOptions,
-    'onQuestUpdated' | 'onSubmissionUpdated'
-  >
+  options: Pick<UseQuestSocketOptions, 'onQuestUpdated' | 'onSubmissionUpdated'>
 ): QuestChannel[] {
   const channels: QuestChannel[] = [];
   if (options.onQuestUpdated) {
