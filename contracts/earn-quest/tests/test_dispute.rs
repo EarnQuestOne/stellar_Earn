@@ -67,6 +67,59 @@ fn test_open_and_resolve_dispute_emit_indexed_events() {
     assert_eq!(resolved_arbitrator, arbitrator);
 }
 
+/// Registers a quest on the contract so an upheld resolution (which looks
+/// up the quest's verifier) can complete.
+fn register_quest(env: &Env, client: &EarnQuestContractClient<'static>, quest_id: &Symbol) {
+    let token_issuer = Address::generate(env);
+    let token_obj = env.register_stellar_asset_contract_v2(token_issuer);
+    let token_addr = token_obj.address();
+    let verifier = Address::generate(env);
+    let deadline = env.ledger().timestamp() + 86_400;
+    client.register_quest(
+        quest_id,
+        &Address::generate(env),
+        &token_addr,
+        &100_i128,
+        &verifier,
+        &deadline,
+    );
+}
+
+#[test]
+fn test_resolve_dispute_emits_outcome_in_event_data() {
+    let (env, client, _, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp04");
+    register_quest(&env, &client, &quest_id);
+
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    // Resolve with the dispute upheld and a 50% stake slash requested.
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &true, &5_000_u32);
+
+    let (_, resolved_topics, resolved_data) = env.events().all().last().unwrap();
+    let resolved_name: Symbol = resolved_topics.get(0).unwrap().into_val(&env);
+    assert_eq!(resolved_name, symbol_short!("disp_res"));
+
+    // The outcome (upheld, slash_bps) must be published so indexers can
+    // track the resolution without decoding storage.
+    let (upheld, slash_bps): (bool, u32) = resolved_data.into_val(&env);
+    assert!(upheld);
+    assert_eq!(slash_bps, 5_000);
+}
+
+#[test]
+fn test_resolve_dispute_not_upheld_emits_false_outcome() {
+    let (env, client, _, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp05");
+
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+
+    let (_, _, resolved_data) = env.events().all().last().unwrap();
+    let (upheld, slash_bps): (bool, u32) = resolved_data.into_val(&env);
+    assert!(!upheld);
+    assert_eq!(slash_bps, 0);
+}
+
 #[test]
 fn test_withdraw_dispute_emits_indexed_event() {
     let (env, client, _, initiator, arbitrator) = setup();

@@ -29,6 +29,9 @@ mod test_clawback;
 mod test_oracle_deviation;
 
 #[cfg(test)]
+mod test_oracle_cap;
+
+#[cfg(test)]
 mod test_incremental_stats;
 
 #[cfg(test)]

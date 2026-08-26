@@ -11,6 +11,12 @@ pub trait OracleInterface {
     fn price(env: Env, base: Address, quote: Address) -> Option<PriceData>;
 }
 
+/// Maximum number of oracle configurations that may be registered.
+///
+/// Guards against unbounded instance storage growth and unbounded gas cost
+/// in `get_aggregated_price`, which iterates every registered oracle.
+pub const MAX_ORACLE_CONFIGS: u32 = 10;
+
 /// Oracle module for decentralized price feeds
 pub struct Oracle;
 
