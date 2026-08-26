@@ -8,6 +8,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Composite `(status, createdAt)` partial index for active payout reconciliation scans (#2245).
 - Transactional outbox for on-chain payout execution (#2158): new `PayoutOutbox` entity + migration, and `PayoutsService.createPayout()` now writes the payout row and its execution intent in one DB transaction via `persistPayoutWithOutbox()` / `enqueuePayoutOutbox()`. A crash can no longer leave a payout without a queued on-chain execution (or vice-versa); the relay submits each payment exactly once.
 - Optimistic-concurrency `@VersionColumn` (`version`) on the `Payout` entity plus a backfilling migration; `PayoutsService.persistPayout()` now translates an `OptimisticLockVersionMismatchError` into a `409 ConflictException`, so two concurrent payout state transitions can no longer silently overwrite each other (lost update) (#2157).
 
@@ -27,6 +28,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Redis-backed payout status polling cache via `JobResultStatusCacheService` to avoid Postgres reads on repeated `GET /payouts/:id` polls (#1983).
 
 ### Changed
+
 - Code formatting and improved readability in PayoutsService error handling
 - `FraudRiskRulesService.getRiskStatistics` now runs all aggregate queries in parallel.
 - `FraudRiskRulesService.analyzeRecentPayouts` now analyzes all payouts in parallel via `Promise.allSettled`.
