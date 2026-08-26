@@ -15,6 +15,7 @@ const argv = process.argv.slice(2);
 const dryRun = argv.includes("--dry-run");
 const fix = argv.includes("--fix");
 
+
 // For tests we allow overriding the repo root.
 const ROOT = process.env.VERIFY_CI_ROOT || path.resolve(__dirname, "..");
 const WORKFLOW_DIR = path.join(ROOT, ".github", "workflows");
