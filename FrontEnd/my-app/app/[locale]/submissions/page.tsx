@@ -8,6 +8,7 @@ import { SubmissionSearch } from '@/components/submission/SubmissionSearch';
 import { SubmissionSummaryCards } from '@/components/submission/SubmissionSummaryCards';
 import { SubmissionsTable } from '@/components/submission/SubmissionsTable';
 import { SubmissionDetail } from '@/components/submission/SubmissionDetail';
+import { EmptyState } from '@/components/common/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Modal } from '@/components/ui/Modal';
 import { SubmissionForm } from '@/components/submission/SubmissionForm';
@@ -165,7 +166,15 @@ function SubmissionsContent() {
           data-onboarding="submissions-filters"
         >
           <div className="flex-1 lg:max-w-md">
-            <SubmissionSearch onSearch={handleSearch} />
+            <SubmissionSearch
+              onSearch={handleSearch}
+              resultCount={filteredSubmissions.length}
+              noResultsDescription={
+                searchQuery
+                  ? 'Try adjusting your search or filter criteria.'
+                  : "You haven't submitted any quests yet."
+              }
+            />
           </div>
           <div className="shrink-0">
             <StatusFilter
@@ -182,31 +191,11 @@ function SubmissionsContent() {
               submissions={paginatedSubmissions}
               onSubmissionClick={handleSubmissionClick}
             />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <svg
-                className="h-12 w-12 text-zinc-400 dark:text-zinc-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <h3 className="mt-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                No submissions found
-              </h3>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                {searchQuery
-                  ? 'Try adjusting your search or filter criteria.'
-                  : "You haven't submitted any quests yet."}
-              </p>
-            </div>
+          ) : searchQuery ? null : (
+            <EmptyState
+              title="No submissions yet"
+              description="You haven&apos;t submitted any quests yet. Start completing quests to see your submissions here."
+            />
           )}
         </div>
 
