@@ -1,3 +1,7 @@
+# Unreleased
+
+- Added shared Soroban invocation helpers for opening, appealing, and resolving disputes.
+
 # stellar module changelog
 
 All notable changes to the `stellar` backend module are documented here.

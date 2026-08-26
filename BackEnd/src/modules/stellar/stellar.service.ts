@@ -35,6 +35,11 @@ export interface ApproveSubmissionResult {
   success: boolean;
 }
 
+export interface ContractInvocationResult {
+  hash: string;
+  ledger: number;
+}
+
 /**
  * Shared Stellar infrastructure service.
  *
@@ -260,6 +265,89 @@ export class StellarService implements OnModuleInit {
         'stellar.contract.function': 'approve_submission',
       },
     );
+  }
+
+  async openDispute(
+    questId: string,
+    initiatorAddress: string,
+    arbitratorAddress: string,
+  ): Promise<ContractInvocationResult> {
+    return this.invokeDisputeContract('open_dispute', [
+      nativeToScVal(questId, { type: 'symbol' }),
+      new Address(initiatorAddress).toScVal(),
+      new Address(arbitratorAddress).toScVal(),
+    ]);
+  }
+
+  async appealDispute(
+    questId: string,
+    initiatorAddress: string,
+    newArbitratorAddress: string,
+  ): Promise<ContractInvocationResult> {
+    return this.invokeDisputeContract('appeal_dispute', [
+      nativeToScVal(questId, { type: 'symbol' }),
+      new Address(initiatorAddress).toScVal(),
+      new Address(newArbitratorAddress).toScVal(),
+    ]);
+  }
+
+  async resolveDispute(
+    questId: string,
+    initiatorAddress: string,
+    arbitratorAddress: string,
+    upheld: boolean,
+    slashBps: number,
+  ): Promise<ContractInvocationResult> {
+    return this.invokeDisputeContract('resolve_dispute', [
+      nativeToScVal(questId, { type: 'symbol' }),
+      new Address(initiatorAddress).toScVal(),
+      new Address(arbitratorAddress).toScVal(),
+      nativeToScVal(upheld, { type: 'bool' }),
+      nativeToScVal(slashBps, { type: 'u32' }),
+    ]);
+  }
+
+  private async invokeDisputeContract(
+    functionName: string,
+    args: any[],
+  ): Promise<ContractInvocationResult> {
+    const contractId = this.configService.get<string>('CONTRACT_ID');
+    const secret =
+      this.configService.get<string>('STELLAR_ADMIN_SECRET') ||
+      this.configService.get<string>('SOROBAN_SECRET_KEY');
+    if (!contractId || !secret) {
+      throw new ServiceUnavailableException(
+        'Stellar contract and signing credentials must be configured',
+      );
+    }
+    const signer = Keypair.fromSecret(secret);
+    const account = await this.accountCache.loadAccount(
+      signer.publicKey(),
+      () => this.horizonServer.loadAccount(signer.publicKey()),
+    );
+    const tx = new TransactionBuilder(
+      new Account(signer.publicKey(), account.sequence),
+      {
+        fee: (await this.getBaseFeeInStroops()).toString(),
+        networkPassphrase: this.networkPassphrase,
+      },
+    )
+      .addOperation(
+        Operation.invokeContractFunction({
+          contract: contractId,
+          function: functionName,
+          args,
+        }),
+      )
+      .setTimeout(30)
+      .build();
+    const simulation = await this.rpcServer.simulateTransaction(tx);
+    if (rpc.Api.isSimulationError(simulation)) {
+      throw new BadRequestException(
+        `Contract rejected ${functionName}: ${typeof simulation.error === 'string' ? simulation.error : 'simulation failed'}`,
+      );
+    }
+    return this._signAndSubmitContract(tx, contractId, functionName);
   }
 
   @Cron('*/30 * * * * *')

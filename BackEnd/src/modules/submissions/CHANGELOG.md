@@ -1,3 +1,7 @@
+# Unreleased
+
+- Submission details now expose the dispute lifecycle for rejected submissions.
+
 # submissions module changelog
 
 All notable changes to the `submissions` backend module are documented here.
