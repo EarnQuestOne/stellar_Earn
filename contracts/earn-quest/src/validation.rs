@@ -67,10 +67,7 @@ pub const MAX_GRACE_PERIOD_SECONDS: u64 = 86400 * 30; // 30 days
 /// # Returns
 /// * `Ok(())` if addresses are valid and distinct
 /// * `Err(Error::InvalidAddress)` if creator == verifier
-pub fn validate_addresses_distinct(
-    creator: &Address,
-    verifier: &Address,
-) -> Result<(), Error> {
+pub fn validate_addresses_distinct(creator: &Address, verifier: &Address) -> Result<(), Error> {
     if creator == verifier {
         return Err(Error::InvalidAddress);
     }

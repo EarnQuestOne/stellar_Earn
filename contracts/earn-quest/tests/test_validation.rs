@@ -48,9 +48,7 @@ fn test_validate_quest_registration_accepts_valid_input() {
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
 
-    let result = validation::validate_quest_registration(
-        &env, &id, &creator, &verifier, 100, 5000,
-    );
+    let result = validation::validate_quest_registration(&env, &id, &creator, &verifier, 100, 5000);
 
     assert!(result.is_ok());
 }
@@ -63,18 +61,16 @@ fn test_validate_quest_registration_rejects_each_shared_invalid_input() {
     let creator = Address::generate(&env);
     let verifier = Address::generate(&env);
 
-    assert!(validation::validate_quest_registration(
-        &env, &id, &creator, &creator, 100, 5000,
-    )
-    .is_err());
-    assert!(validation::validate_quest_registration(
-        &env, &id, &creator, &verifier, 0, 5000,
-    )
-    .is_err());
-    assert!(validation::validate_quest_registration(
-        &env, &id, &creator, &verifier, 100, 1000,
-    )
-    .is_err());
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &creator, 100, 5000,).is_err()
+    );
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &verifier, 0, 5000,).is_err()
+    );
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &verifier, 100, 1000,)
+            .is_err()
+    );
 }
 
 #[test]

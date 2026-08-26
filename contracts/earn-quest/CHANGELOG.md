@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - Quest registration now increments platform stats counters (`total_quests_created`, `total_rewards_distributed`).
+- Centralized shared quest registration validation across the public registration entrypoints (#2234).
 - Resolved appealed disputes no longer call `require_auth` twice on the admin arbitrator, which caused `Auth(ExistingValue)` failures.
 - `get_admin` no longer panics with `.expect("Contract not initialized")` when the contract has not been initialized; it now returns `Error::NotInitialized` (code 93).
 
