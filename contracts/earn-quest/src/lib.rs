@@ -43,6 +43,9 @@ mod test_self_approval;
 #[cfg(test)]
 mod test_expiry_bounds;
 
+#[cfg(test)]
+mod test_reward_and_escrow_views;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -1164,6 +1167,15 @@ impl EarnQuestContract {
     /// Returns detailed escrow information for a quest.
     pub fn get_escrow_info(env: Env, quest_id: Symbol) -> Result<EscrowInfo, Error> {
         escrow::get_info(&env, &quest_id)
+    }
+
+    /// Returns the total amount ever deposited into a quest's escrow.
+    ///
+    /// Read-only view over the cumulative `total_deposited` counter, letting
+    /// integrators query a quest's full escrow size without inspecting raw
+    /// storage. See [`Self::get_escrow_balance`] for the *remaining* balance.
+    pub fn get_escrow_total_deposited(env: Env, quest_id: Symbol) -> Result<i128, Error> {
+        escrow::get_total_deposited(&env, &quest_id)
     }
 
     /// Returns the details of a quest by its symbol ID.
