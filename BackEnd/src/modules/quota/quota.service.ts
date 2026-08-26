@@ -78,7 +78,10 @@ export class QuotaService {
     const result = await this.dataSource
       .createQueryBuilder()
       .update(QuotaUsage)
-      .set({ questCount: () => '"questCount" + 1' })
+      .set({
+        questCount: () => '"questCount" + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
       .where('tenantId = :tenantId', { tenantId })
       .andWhere('resourceType = :rt', { rt: QuotaResourceType.QUEST })
       .andWhere('periodStart = :ps', { ps: periodStart })
@@ -144,7 +147,10 @@ export class QuotaService {
     const result = await this.dataSource
       .createQueryBuilder()
       .update(QuotaUsage)
-      .set({ payoutAmount: () => '"payoutAmount" + :amount' })
+      .set({
+        payoutAmount: () => '"payoutAmount" + :amount',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
       .where('tenantId = :tenantId', { tenantId })
       .andWhere('resourceType = :rt', { rt: QuotaResourceType.PAYOUT })
       .andWhere('periodStart = :ps', { ps: periodStart })
