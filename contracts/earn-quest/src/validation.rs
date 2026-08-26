@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use crate::types::{QuestStatus, SubmissionStatus};
-use soroban_sdk::Env;
+use soroban_sdk::{Address, Env, Symbol};
 
 //================================================================================
 // Constants — Validation Limits
@@ -68,12 +68,31 @@ pub const MAX_GRACE_PERIOD_SECONDS: u64 = 86400 * 30; // 30 days
 /// * `Ok(())` if addresses are valid and distinct
 /// * `Err(Error::InvalidAddress)` if creator == verifier
 pub fn validate_addresses_distinct(
-    creator: &soroban_sdk::Address,
-    verifier: &soroban_sdk::Address,
+    creator: &Address,
+    verifier: &Address,
 ) -> Result<(), Error> {
     if creator == verifier {
         return Err(Error::InvalidAddress);
     }
+    Ok(())
+}
+
+/// Validates the common arguments shared by all quest registration entrypoints.
+///
+/// Keeping this sequence centralized ensures `register_quest`, category-aware
+/// registration, and metadata registration return the same validation errors.
+pub fn validate_quest_registration(
+    env: &Env,
+    id: &Symbol,
+    creator: &Address,
+    verifier: &Address,
+    reward_amount: i128,
+    deadline: u64,
+) -> Result<(), Error> {
+    validate_symbol_length(id)?;
+    validate_addresses_distinct(creator, verifier)?;
+    validate_reward_amount(reward_amount)?;
+    validate_deadline(env, deadline)?;
     Ok(())
 }
 

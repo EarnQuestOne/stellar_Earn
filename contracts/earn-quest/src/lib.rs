@@ -337,10 +337,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest(
             &env,
             &id,
@@ -371,10 +375,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_category(
             &env,
             &id,
@@ -413,10 +421,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_metadata(
             &env,
             &id,
