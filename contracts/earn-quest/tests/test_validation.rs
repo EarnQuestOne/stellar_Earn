@@ -41,6 +41,39 @@ fn test_validate_addresses_distinct_fail_same() {
 }
 
 #[test]
+fn test_validate_quest_registration_accepts_valid_input() {
+    let env = Env::default();
+    env.ledger().with_mut(|li| li.timestamp = 1000);
+    let id = symbol_short!("QUEST1");
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+
+    let result = validation::validate_quest_registration(&env, &id, &creator, &verifier, 100, 5000);
+
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_validate_quest_registration_rejects_each_shared_invalid_input() {
+    let env = Env::default();
+    env.ledger().with_mut(|li| li.timestamp = 1000);
+    let id = symbol_short!("QUEST1");
+    let creator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &creator, 100, 5000,).is_err()
+    );
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &verifier, 0, 5000,).is_err()
+    );
+    assert!(
+        validation::validate_quest_registration(&env, &id, &creator, &verifier, 100, 1000,)
+            .is_err()
+    );
+}
+
+#[test]
 fn test_register_quest_creator_verifier_same_address_rejected() {
     let env = Env::default();
     env.mock_all_auths();
