@@ -204,6 +204,13 @@ pub fn approve_submission(
         return Err(Error::Unauthorized);
     }
 
+    // Issue #2287: the quest creator must not approve submissions on their own
+    // quest (self-approval / conflict of interest). This is defense-in-depth even
+    // where registration enforces creator != verifier.
+    if *verifier == quest.creator {
+        return Err(Error::SelfApprovalDisallowed);
+    }
+
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
 
     // Validate status transition: Pending -> Approved
@@ -380,6 +387,12 @@ pub fn approve_submissions_batch(
 
         if *verifier != quest.verifier {
             return Err(Error::Unauthorized);
+        }
+
+        // Issue #2287: the quest creator must not approve submissions on their own
+        // quest (self-approval / conflict of interest).
+        if *verifier == quest.creator {
+            return Err(Error::SelfApprovalDisallowed);
         }
 
         for j in 0u32..batch.submissions.len() {
