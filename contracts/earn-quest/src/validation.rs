@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use crate::types::{QuestStatus, SubmissionStatus};
-use soroban_sdk::Env;
+use soroban_sdk::{Address, Env};
 
 //================================================================================
 // Constants — Validation Limits
@@ -64,6 +64,27 @@ pub fn validate_addresses_distinct(
 ) -> Result<(), Error> {
     if creator == verifier {
         return Err(Error::InvalidAddress);
+    }
+    Ok(())
+}
+
+/// Validates that the reward asset address is set and is not the zero/default
+/// address.
+///
+/// A quest must reference a real token contract for rewards. The zero address
+/// (`Address::from_contract_id(&[0u8; 32])`) is the default/uninitialized value
+/// and would cause payouts to fail or be misdirected, so it is rejected here.
+///
+/// # Arguments
+/// * `reward_asset` - The reward asset address to validate
+///
+/// # Returns
+/// * `Ok(())` if the address is set and non-default
+/// * `Err(Error::InvalidAsset)` if the address is the zero/default address
+pub fn validate_reward_asset(reward_asset: &Address) -> Result<(), Error> {
+    let zero = Address::from_contract_id(&[0u8; 32]);
+    if *reward_asset == zero {
+        return Err(Error::InvalidAsset);
     }
     Ok(())
 }
