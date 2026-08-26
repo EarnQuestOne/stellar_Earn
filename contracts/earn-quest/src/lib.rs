@@ -106,6 +106,9 @@ fn check_reward_deviation(
 #[contract]
 pub struct EarnQuestContract;
 
+/// The current on-chain contract version.
+const CONTRACT_VERSION: u32 = 1;
+
 #[contractimpl]
 impl EarnQuestContract {
     /// Initializes the contract with the initial administrator and roles.
@@ -131,6 +134,7 @@ impl EarnQuestContract {
         storage::grant_role(&env, &admin, &Role::StatsAdmin);
         storage::grant_role(&env, &admin, &Role::BadgeAdmin);
         reputation::seed_default_badge_types(&env, &admin).expect("seed default badge types");
+        storage::set_version(&env, CONTRACT_VERSION);
         storage::mark_initialized(&env);
     }
 
