@@ -83,13 +83,17 @@ export class AuthService {
       return { id: idOrAddress, stellarAddress: idOrAddress, role: Role.USER };
     }
 
-    const user = await this.usersService.findById(idOrAddress);
-    if (user) {
-      return {
-        id: user.id,
-        stellarAddress: user.stellarAddress ?? '',
-        role: user.role,
-      };
+    try {
+      const user = await this.usersService.findById(idOrAddress);
+      if (user) {
+        return {
+          id: user.id,
+          stellarAddress: user.stellarAddress ?? '',
+          role: user.role,
+        };
+      }
+    } catch {
+      // unknown id — fall through to default
     }
     return { id: idOrAddress, stellarAddress: '', role: Role.USER };
   }

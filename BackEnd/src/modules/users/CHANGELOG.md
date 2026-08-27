@@ -6,9 +6,14 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `anonymizeForErasure(userId, manager?)` — replaces a user's PII (email, stellarAddress, profile fields) with per-user tombstone values while retaining the row, used by the right-to-erasure pipeline; runs inside the caller's transaction when a manager is supplied (#2337).
+
 ### Changed
 
 - `findById()` now reads through the unified cache-aside layer (`CacheService.getOrSet`) tagged per user, and `update()` calls `invalidateTag(CacheTags.user(id))` so a write drops the user's cached reads (#2159).
+- Added `findByUsername`, `getUserStats`, `getUserQuests`, `updateProfile`, `getLeaderboard`, and `updateUserStats` helpers to align the service contract with the users test suite.
 
 - Applied code-style formatting to `users.service.ts` (no logic change).
 

@@ -27,6 +27,11 @@ pub const MAX_BATCH_QUEST_REGISTRATION: u32 = 50;
 /// Maximum number of submissions that can be approved in a single batch call
 pub const MAX_BATCH_APPROVALS: u32 = 50;
 
+/// Maximum total number of individual submission approvals across all inputs in
+/// a single batch-approval call. Bounds the inner-vector fan-out that
+/// `MAX_BATCH_APPROVALS` (which only counts inputs) does not.
+pub const MAX_BATCH_APPROVAL_TOTAL: u32 = 200;
+
 /// Maximum total number of quests allowed in the system (prevents global index bloat)
 pub const MAX_QUEST_IDS_TOTAL: u32 = 5000;
 
@@ -434,6 +439,21 @@ pub fn validate_batch_approval_size(length: u32) -> Result<(), Error> {
         return Err(Error::ArrayTooLong);
     }
     if length > MAX_BATCH_APPROVALS {
+        return Err(Error::ArrayTooLong);
+    }
+    Ok(())
+}
+
+/// Validates the *total* number of individual submission approvals across every
+/// input in a single batch-approval call.
+///
+/// `validate_batch_approval_size` only bounds the number of `BatchApprovalInput`
+/// entries; each entry carries its own inner vector of submitter addresses, so
+/// without this check a single input with an arbitrarily long inner vector could
+/// still exhaust gas. Bounding the total fan-out keeps a batch call's work
+/// predictable.
+pub fn validate_batch_approval_total(total: u32) -> Result<(), Error> {
+    if total > MAX_BATCH_APPROVAL_TOTAL {
         return Err(Error::ArrayTooLong);
     }
     Ok(())

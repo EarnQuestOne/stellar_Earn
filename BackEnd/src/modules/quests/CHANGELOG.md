@@ -17,3 +17,4 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Quest creation now translates PostgreSQL duplicate-key errors into a 409 conflict response (#2242).
 - Refactored `QuestsService` to use `QuestMapper` instead of `QuestResponseDto.fromEntity` for all response mappings (`create`, `findAll`, `findOne`, `update`)
 - Cache invalidation in `update` and `delete` now runs `deletePattern` and `delete` calls in parallel.
+- Restored the `Quest.creator` relation metadata so user lookups can load `createdQuests` without crashing TypeORM joins.

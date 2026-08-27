@@ -14,6 +14,7 @@ import {
 import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import { PayoutProcessor } from './processors/payout.processor';
+import { AccountErasureProcessor } from './processors/account-erasure.processor';
 import {
   TracingService,
   TraceContext,
@@ -59,6 +60,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
+    private readonly accountErasureProcessor?: AccountErasureProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -90,6 +92,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
+    this.queues[QUEUES.ERASURE] = new Queue(QUEUES.ERASURE, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
@@ -117,6 +120,17 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.PAYOUTS,
         this.payoutProcessor.process.bind(this.payoutProcessor),
+      );
+    }
+
+    // ── Wire the AccountErasureProcessor to the ERASURE queue ────────────
+    if (
+      this.accountErasureProcessor &&
+      typeof this.accountErasureProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.ERASURE,
+        this.accountErasureProcessor.process.bind(this.accountErasureProcessor),
       );
     }
   }
