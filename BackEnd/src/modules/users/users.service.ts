@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, PrivacyLevel } from './entities/user.entity';
 import { CacheService } from '../cache/cache.service';
 import { CacheKeys, CacheTags, CacheTtl } from '../cache/cache-tags';
 
@@ -32,6 +32,53 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
     private readonly cacheService: CacheService,
   ) {}
+
+  /**
+   * Anonymize a user's PII in place (right-to-erasure).
+   *
+   * Email / stellarAddress / profile fields are replaced with per-user
+   * tombstone values, but the row itself is retained so aggregate stats and
+   * foreign keys (submissions, payouts, …) remain valid. Returns the
+   * pre-anonymization identifiers so the caller can re-point retained
+   * financial/audit records at the tombstone.
+   *
+   * Runs on the provided transaction manager when called from the erasure
+   * pipeline (so the whole erasure is atomic); otherwise uses its own
+   * repository manager.
+   */
+  async anonymizeForErasure(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<{ stellarAddress: string | null; email: string | null }> {
+    const em = manager ?? this.usersRepository.manager;
+    const repo = em.getRepository(User);
+    const user = await repo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User ${userId} not found`);
+    }
+
+    const tombstone = `erased:${userId}`;
+    // The entity types the nullable profile columns as `string` (matching the
+    // rest of the codebase), so the null-out payload is cast to satisfy the
+    // query types — TypeORM maps `null` to SQL NULL for these columns.
+    await repo.update(userId, {
+      // Tombstone values must satisfy the unique constraints — the user id
+      // suffix keeps them collision-free across erased accounts.
+      email: `${tombstone}@erased.invalid`,
+      stellarAddress: tombstone,
+      username: null,
+      googleId: null,
+      githubId: null,
+      avatarUrl: null,
+      bio: null,
+      socialLinks: null,
+      pushToken: null,
+      webhookUrl: null,
+      privacyLevel: PrivacyLevel.PRIVATE,
+    } as any);
+
+    return { stellarAddress: user.stellarAddress, email: user.email };
+  }
 
   // Minimal implementations for server startup
   async findByAddress(stellarAddress: string): Promise<User | null> {
