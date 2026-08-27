@@ -49,6 +49,9 @@ mod test_reward_and_escrow_views;
 #[cfg(test)]
 mod test_submission_status;
 
+#[cfg(test)]
+mod test_claim_and_batch_bounds;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -615,6 +618,19 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         verifier.require_auth();
+
+        // Bound the total fan-out across all inputs' inner submission vectors,
+        // not just the number of inputs, to prevent gas exhaustion from an
+        // arbitrarily long single input.
+        let mut total: u32 = 0;
+        for i in 0u32..submissions.len() {
+            let input = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+            total = total
+                .checked_add(input.submissions.len())
+                .ok_or(Error::ArithmeticOverflow)?;
+        }
+        validation::validate_batch_approval_total(total)?;
+
         submission::approve_submissions_batch(&env, &verifier, &submissions)
     }
 
@@ -631,6 +647,10 @@ impl EarnQuestContract {
         gas_budget::reset_call_budget(&env);
         gas_budget::enforce_budget(&env, &soroban_sdk::symbol_short!("clm_rwd"))?;
         submitter.require_auth();
+
+        // Reject a zero/negative claim up front with a clear, typed error
+        // instead of silently proceeding.
+        payout::validate_claim_positive(amount)?;
 
         // Single read of quest and submission for all subsequent operations
         let quest = storage::get_quest(&env, &quest_id)?;
