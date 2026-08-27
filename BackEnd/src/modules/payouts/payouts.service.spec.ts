@@ -2,16 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConflictException } from '@nestjs/common';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
 import { PayoutsService } from './payouts.service';
 import { FraudRiskRulesService } from './services/fraud-risk-rules.service';
+import { IdempotencyService } from './services/idempotency.service';
 import { QuotaService } from '../quota/quota.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { JobsService } from '../jobs/jobs.service';
 import { StellarService } from '../stellar/stellar.service';
 import { BulkheadService } from '../../common/services/bulkhead.service';
 import { QUEUES } from '../jobs/jobs.constants';
-import { BulkheadService } from '../../common/services/bulkhead.service';
 import { JobResultStatusCacheService } from '../jobs/services/job-result-status-cache.service';
 
 const mockRepo = () => ({
@@ -57,6 +58,14 @@ describe('PayoutsService settlement finality', () => {
   let emitter: { emit: jest.Mock };
   let metrics: { incrementCounter: jest.Mock };
   let jobs: { addJob: jest.Mock };
+  let stellarService: { sendPayment: jest.Mock; sendBatchPayments: jest.Mock };
+  let idempotencyService: {
+    computeFingerprint: jest.Mock;
+    computeBodyHash: jest.Mock;
+    tryAcquire: jest.Mock;
+    complete: jest.Mock;
+    remove: jest.Mock;
+  };
 
   beforeEach(async () => {
     repo = mockRepo();
@@ -77,6 +86,13 @@ describe('PayoutsService settlement finality', () => {
       sendPayment: jest.fn(),
       sendBatchPayments: jest.fn(),
     };
+    idempotencyService = {
+      computeFingerprint: jest.fn().mockReturnValue('fingerprint-123'),
+      computeBodyHash: jest.fn().mockReturnValue('body-hash-123'),
+      tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+      complete: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -85,9 +101,11 @@ describe('PayoutsService settlement finality', () => {
         { provide: ConfigService, useValue: config },
         { provide: EventEmitter2, useValue: emitter },
         { provide: FraudRiskRulesService, useValue: {} },
+        { provide: IdempotencyService, useValue: idempotencyService },
         { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: jobs },
+        { provide: StellarService, useValue: stellarService },
         {
           provide: BulkheadService,
           useValue: {
@@ -298,7 +316,11 @@ describe('PayoutsService.processBatchPayouts', () => {
       }),
     };
     emitter = { emit: jest.fn() };
-    metrics = { incrementCounter: jest.fn(), observeHistogram: jest.fn() };
+    metrics = {
+      incrementCounter: jest.fn(),
+      observeHistogram: jest.fn(),
+      registerCounter: jest.fn(),
+    };
     jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
     stellarService = {
       sendPayment: jest.fn(),
@@ -320,6 +342,16 @@ describe('PayoutsService.processBatchPayouts', () => {
         { provide: ConfigService, useValue: config },
         { provide: EventEmitter2, useValue: emitter },
         { provide: FraudRiskRulesService, useValue: {} },
+        {
+          provide: IdempotencyService,
+          useValue: {
+            computeFingerprint: jest.fn().mockReturnValue('fp'),
+            computeBodyHash: jest.fn().mockReturnValue('bh'),
+            tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+            complete: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: jobs },
@@ -327,6 +359,14 @@ describe('PayoutsService.processBatchPayouts', () => {
         {
           provide: BulkheadService,
           useValue: { runWithBulkhead: jest.fn((_name, fn) => fn()) },
+        },
+        {
+          provide: JobResultStatusCacheService,
+          useValue: {
+            getPayoutPoll: jest.fn(),
+            setPayoutPoll: jest.fn(),
+            invalidatePayout: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -457,5 +497,243 @@ describe('PayoutsService.processBatchPayouts', () => {
       'payout_failures_total',
       expect.objectContaining({ outcome: 'retry_scheduled' }),
     );
+  });
+});
+
+describe('PayoutsService.claimPayout idempotency', () => {
+  let service: PayoutsService;
+  let repo: ReturnType<typeof mockRepo>;
+  let config: { get: jest.Mock };
+  let emitter: { emit: jest.Mock };
+  let metrics: { incrementCounter: jest.Mock };
+  let stellarService: { sendPayment: jest.Mock; sendBatchPayments: jest.Mock };
+  let idempotencyService: {
+    computeFingerprint: jest.Mock;
+    computeBodyHash: jest.Mock;
+    tryAcquire: jest.Mock;
+    complete: jest.Mock;
+    remove: jest.Mock;
+  };
+
+  const userAddress = 'G'.padEnd(56, 'A');
+  const submissionId = '11111111-1111-1111-1111-111111111111';
+  const claimDto = {
+    submissionId,
+    stellarAddress: userAddress,
+  };
+
+  beforeEach(async () => {
+    repo = mockRepo();
+    repo.save.mockImplementation(async (payout) => payout);
+    config = {
+      get: jest.fn((key: string, defaultValue?: unknown) => {
+        const values: Record<string, unknown> = {
+          NODE_ENV: 'test',
+        };
+        return values[key] ?? defaultValue;
+      }),
+    };
+    emitter = { emit: jest.fn() };
+    metrics = { incrementCounter: jest.fn(), registerCounter: jest.fn() };
+    stellarService = {
+      sendPayment: jest.fn(),
+      sendBatchPayments: jest.fn(),
+    };
+    idempotencyService = {
+      computeFingerprint: jest.fn().mockReturnValue('fp-claim'),
+      computeBodyHash: jest.fn().mockReturnValue('bh-claim'),
+      tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+      complete: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PayoutsService,
+        { provide: getRepositoryToken(Payout), useValue: repo },
+        { provide: ConfigService, useValue: config },
+        { provide: EventEmitter2, useValue: emitter },
+        { provide: FraudRiskRulesService, useValue: {} },
+        { provide: IdempotencyService, useValue: idempotencyService },
+        { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
+        { provide: MetricsService, useValue: metrics },
+        {
+          provide: JobsService,
+          useValue: {
+            addJob: jest.fn().mockResolvedValue({ id: 'job' }),
+          },
+        },
+        { provide: StellarService, useValue: stellarService },
+        {
+          provide: BulkheadService,
+          useValue: {
+            runWithBulkhead: (_n: string, fn: () => Promise<unknown>) => fn(),
+          },
+        },
+        {
+          provide: JobResultStatusCacheService,
+          useValue: {
+            getPayoutPoll: jest.fn(),
+            setPayoutPoll: jest.fn(),
+            invalidatePayout: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<PayoutsService>(PayoutsService);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('acquires an idempotency lock and completes the record on success', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PENDING,
+      claimedAt: null,
+      isClaimable: jest.fn().mockReturnValue(true),
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const response = await service.claimPayout(claimDto, userAddress);
+
+    expect(idempotencyService.tryAcquire).toHaveBeenCalledWith(
+      `payout-claim:${submissionId}:${userAddress}`,
+      'fp-claim',
+      'SERVICE',
+      'payout-claim',
+      'bh-claim',
+    );
+    expect(idempotencyService.complete).toHaveBeenCalledWith(
+      `payout-claim:${submissionId}:${userAddress}`,
+      200,
+      expect.objectContaining({ id: payout.id, status: 'processing' }),
+    );
+    expect(response.status).toBe(PayoutStatus.PROCESSING);
+    expect(response.id).toBe(payout.id);
+  });
+
+  it('returns the cached response when the idempotency record is already completed', async () => {
+    const cachedResponse = {
+      id: 'cached-payout',
+      status: PayoutStatus.COMPLETED,
+      stellarAddress: userAddress,
+      amount: 10,
+      asset: 'XLM',
+      type: PayoutType.QUEST_REWARD,
+      questId: null,
+      submissionId,
+      transactionHash: 'tx-123',
+      stellarLedger: 42,
+      settlementConfirmations: 3,
+      settlementConfirmedAt: new Date(),
+      failureReason: null,
+      retryCount: 0,
+      processedAt: new Date(),
+      claimedAt: new Date(),
+      createdAt: new Date(),
+    };
+
+    idempotencyService.tryAcquire.mockResolvedValue({
+      acquired: false,
+      existing: {
+        key: `payout-claim:${submissionId}:${userAddress}`,
+        fingerprint: 'fp-claim',
+        responseStatusCode: 200,
+        responseBody: cachedResponse,
+        locked: false,
+        completedAt: new Date(),
+      },
+    });
+
+    const response = await service.claimPayout(claimDto, userAddress);
+
+    expect(response).toEqual(cachedResponse);
+    // Must NOT have touched the database
+    expect(repo.findOne).not.toHaveBeenCalled();
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('throws ConflictException when the idempotency record is still locked', async () => {
+    idempotencyService.tryAcquire.mockResolvedValue({
+      acquired: false,
+      existing: {
+        key: `payout-claim:${submissionId}:${userAddress}`,
+        fingerprint: 'fp-claim',
+        responseStatusCode: null,
+        responseBody: null,
+        locked: true,
+        completedAt: null,
+      },
+    });
+
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      ConflictException,
+    );
+    expect(repo.findOne).not.toHaveBeenCalled();
+  });
+
+  it('removes the idempotency record when the payout is not found', async () => {
+    repo.findOne.mockResolvedValue(null);
+
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      'Payout not found for this submission',
+    );
+    expect(idempotencyService.remove).toHaveBeenCalledWith(
+      `payout-claim:${submissionId}:${userAddress}`,
+    );
+  });
+
+  it('removes the idempotency record when payout is not claimable', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.COMPLETED,
+      claimedAt: new Date(),
+      isClaimable: jest.fn().mockReturnValue(false),
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      'Payout cannot be claimed',
+    );
+    expect(idempotencyService.remove).toHaveBeenCalledWith(
+      `payout-claim:${submissionId}:${userAddress}`,
+    );
+  });
+
+  it('removes the idempotency record on optimistic-lock ConflictException', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PENDING,
+      claimedAt: null,
+      isClaimable: jest.fn().mockReturnValue(true),
+    });
+    repo.findOne.mockResolvedValue(payout);
+    repo.save.mockRejectedValue(new ConflictException('Concurrent update'));
+
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      ConflictException,
+    );
+    expect(idempotencyService.remove).toHaveBeenCalledWith(
+      `payout-claim:${submissionId}:${userAddress}`,
+    );
+  });
+
+  it('generates a deterministic idempotency key from submissionId and userAddress', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PENDING,
+      claimedAt: null,
+      isClaimable: jest.fn().mockReturnValue(true),
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    await service.claimPayout(claimDto, userAddress);
+
+    const expectedKey = `payout-claim:${submissionId}:${userAddress}`;
+    expect(idempotencyService.tryAcquire).toHaveBeenCalledWith(
+      expectedKey,
+      expect.any(String),
+      'SERVICE',
+      'payout-claim',
+      expect.any(String),
+    );
+    expect(idempotencyService.computeBodyHash).toHaveBeenCalledWith(claimDto);
   });
 });
