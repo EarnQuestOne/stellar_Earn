@@ -114,10 +114,12 @@ export const QuestList = memo(
 
     if (quests.length === 0) {
       return (
-        <EmptyQuestState
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={onClearFilters}
-        />
+        <div role="status" aria-live="polite">
+          <EmptyQuestState
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={onClearFilters}
+          />
+        </div>
       );
     }
 
