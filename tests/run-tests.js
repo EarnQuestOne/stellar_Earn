@@ -12,6 +12,7 @@ const { runAll: runReleasePackageTests } = require("./contract-release-package.t
 const {
   runAll: runBackendChangelogTests,
 } = require("./backend-changelog.test");
+const { runAll: runEnvGitignoreTests } = require("./env-gitignore.test");
 
 try {
   runOrphanedScriptTests();
@@ -20,6 +21,7 @@ try {
   runPreCommitHookTests();
   runReleasePackageTests();
   runBackendChangelogTests();
+  runEnvGitignoreTests();
   console.log("All tests passed");
   process.exit(0);
 } catch (e) {

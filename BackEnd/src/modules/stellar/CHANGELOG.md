@@ -1,3 +1,7 @@
+# Unreleased
+
+- Added shared Soroban invocation helpers for opening, appealing, and resolving disputes.
+
 # stellar module changelog
 
 All notable changes to the `stellar` backend module are documented here.
@@ -8,6 +12,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 - `StellarFeeService`: precomputes and caches the Stellar network base fee from Horizon `/fee_stats` with a short TTL (`STELLAR_FEE_CACHE_TTL_MS`, default 30s) and background refresh, exposing hit/miss/fetch-duration metrics and falling back to `STELLAR_BASE_FEE` when the network is unavailable. `StellarService`, `StellarPaymentService`, and `StellarSubmissionService` now build transactions with the cached estimate, removing the per-transaction fee network round-trip from the payout hot path. Closes #1980.
+- Short-TTL in-memory cache for idempotent Soroban contract reads in `SorobanQuestReaderService` (`get_quest` / `get_user_stats`), keyed by contract + args (`SOROBAN_READ_CACHE_TTL_MS`, default 15s), with hit/miss/entry metrics, `invalidateQuest`/`invalidateContract` invalidation (wired into `approveSubmission`), and a benchmark script (`npm run benchmark:soroban-read-cache`). Closes #1975.
 
 ### Fixed
 

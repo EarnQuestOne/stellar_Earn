@@ -407,14 +407,26 @@ pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrato
 }
 
 /// Emitted when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
-pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+///
+/// The data payload carries the resolution outcome so indexers can track
+/// rulings without decoding contract storage:
+/// * `upheld` - `true` when the dispute was upheld (verifier was wrong).
+/// * `slash_bps` - Basis points slashed from the verifier stake (0 if none).
+pub fn dispute_resolved(
+    env: &Env,
+    quest_id: Symbol,
+    initiator: Address,
+    arbitrator: Address,
+    upheld: bool,
+    slash_bps: u32,
+) {
     let topics = (
         TOPIC_DISPUTE_RESOLVED,
         quest_id,
         initiator.clone(),
         arbitrator.clone(),
     );
-    let data = ();
+    let data = (upheld, slash_bps);
     env.events().publish(topics, data);
 }
 

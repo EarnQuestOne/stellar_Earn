@@ -122,8 +122,8 @@ pub fn resolve_dispute(
     dispute.status = DisputeStatus::Resolved;
     storage::set_dispute(env, &quest_id, &initiator, &dispute);
 
-    // Emit event
-    events::dispute_resolved(env, quest_id, initiator, arbitrator);
+    // Emit event carrying the resolution outcome so indexers can track rulings.
+    events::dispute_resolved(env, quest_id, initiator, arbitrator, upheld, slash_bps);
 
     Ok(())
 }

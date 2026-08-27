@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { useQuestFilters } from '../useQuestFilters';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { useQuestFilters, DEFAULT_DEBOUNCE_MS } from '../useQuestFilters';
 import type { Quest } from '@/lib/types/admin';
 
 const mockQuests: Quest[] = [
@@ -63,11 +63,27 @@ const mockQuests: Quest[] = [
   },
 ];
 
+/** Advances past the debounce window so pending filter changes are applied. */
+function advanceDebounce() {
+  act(() => {
+    vi.advanceTimersByTime(DEFAULT_DEBOUNCE_MS + 1);
+  });
+}
+
 describe('useQuestFilters', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('returns default state', () => {
     const { result } = renderHook(() => useQuestFilters(mockQuests));
 
     expect(result.current.searchQuery).toBe('');
+    expect(result.current.debouncedSearchQuery).toBe('');
     expect(result.current.statusFilter).toBe('all');
     expect(result.current.sortField).toBe('deadline');
     expect(result.current.sortOrder).toBe('asc');
@@ -85,6 +101,7 @@ describe('useQuestFilters', () => {
     act(() => {
       result.current.setSearchQuery('Alpha');
     });
+    advanceDebounce();
 
     expect(result.current.filteredAndSortedQuests).toHaveLength(1);
     expect(result.current.filteredAndSortedQuests[0].id).toBe('1');
@@ -96,6 +113,7 @@ describe('useQuestFilters', () => {
     act(() => {
       result.current.setSearchQuery('second quest');
     });
+    advanceDebounce();
 
     expect(result.current.filteredAndSortedQuests).toHaveLength(1);
     expect(result.current.filteredAndSortedQuests[0].id).toBe('2');
@@ -107,6 +125,7 @@ describe('useQuestFilters', () => {
     act(() => {
       result.current.setSearchQuery('blockchain');
     });
+    advanceDebounce();
 
     expect(result.current.filteredAndSortedQuests).toHaveLength(1);
     expect(result.current.filteredAndSortedQuests[0].id).toBe('2');
@@ -199,6 +218,7 @@ describe('useQuestFilters', () => {
     act(() => {
       result.current.setSearchQuery('Development');
     });
+    advanceDebounce();
 
     act(() => {
       result.current.setStatusFilter('draft');
@@ -213,5 +233,82 @@ describe('useQuestFilters', () => {
     const filtered = result.current.filteredAndSortedQuests;
     expect(filtered).toHaveLength(2);
     expect(filtered.every((q) => q.status === 'active')).toBe(true);
+  });
+
+  it('keeps the input value immediate while filtering waits for the debounce', () => {
+    const { result } = renderHook(() => useQuestFilters(mockQuests));
+
+    act(() => {
+      result.current.setSearchQuery('Alpha');
+    });
+
+    // The input value updates instantly, but the filter has not run yet.
+    expect(result.current.searchQuery).toBe('Alpha');
+    expect(result.current.debouncedSearchQuery).toBe('');
+    expect(result.current.filteredAndSortedQuests).toHaveLength(3);
+
+    advanceDebounce();
+
+    expect(result.current.debouncedSearchQuery).toBe('Alpha');
+    expect(result.current.filteredAndSortedQuests).toHaveLength(1);
+  });
+
+  it('coalesces rapid keystrokes into a single filter application', () => {
+    const { result } = renderHook(() => useQuestFilters(mockQuests));
+
+    // Several keystrokes inside the debounce window: only the last one applies.
+    act(() => {
+      result.current.setSearchQuery('A');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setSearchQuery('Al');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setSearchQuery('Alp');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setSearchQuery('Alpha');
+    });
+
+    // Not yet applied — the trailing debounce window is still open.
+    expect(result.current.debouncedSearchQuery).toBe('');
+    expect(result.current.filteredAndSortedQuests).toHaveLength(3);
+
+    advanceDebounce();
+
+    expect(result.current.debouncedSearchQuery).toBe('Alpha');
+    expect(result.current.filteredAndSortedQuests).toHaveLength(1);
+    expect(result.current.filteredAndSortedQuests[0].id).toBe('1');
+  });
+
+  it('respects a custom debounce delay', () => {
+    const { result } = renderHook(() =>
+      useQuestFilters(mockQuests, { debounceMs: 500 })
+    );
+
+    act(() => {
+      result.current.setSearchQuery('Alpha');
+    });
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+
+    expect(result.current.debouncedSearchQuery).toBe('');
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(result.current.debouncedSearchQuery).toBe('Alpha');
+    expect(result.current.filteredAndSortedQuests).toHaveLength(1);
   });
 });

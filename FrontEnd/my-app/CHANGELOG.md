@@ -1,3 +1,7 @@
+# Unreleased
+
+- Added dispute status and participant actions to submission details.
+
 # Frontend Changelog
 
 All notable changes to the **StellarEarn Frontend** (`FrontEnd/my-app`) are

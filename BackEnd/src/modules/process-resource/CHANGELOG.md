@@ -29,5 +29,6 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Improved `ResourceLimitsService` threshold validation and monitoring interval handling.
+- `ResourceLimitsService` now emits event-loop lag, GC count, and freed-memory metrics alongside the existing resource snapshot and manual GC flow.
 - Refactored `ProfilingService` session lifecycle management.
 - Updated controller response types and `ProcessResourceTypes` definitions.

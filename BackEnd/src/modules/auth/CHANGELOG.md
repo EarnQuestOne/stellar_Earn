@@ -9,6 +9,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - `AuthController.login` now returns a typed `LoginResponseDto` instead of writing the response body manually via `@Res().json()`, so Nest's serialization/interceptor pipeline applies to the login response. `@Res({ passthrough: true })` is kept for setting the session cookies. Closes #1894.
 - Applied code-style formatting to `auth.module.ts` import block (no logic change).
+- `AuthService.validateUser` now tolerates missing users by falling back to a default caller identity instead of bubbling `NotFoundException`.
 ### Added
 
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `RefreshToken` for `userId` and `familyId` columns to speed up active-session queries (#2000).

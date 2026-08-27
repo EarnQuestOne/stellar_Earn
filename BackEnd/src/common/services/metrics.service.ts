@@ -254,6 +254,30 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private registerBuiltins(): void {
+    // Outbound webhook delivery metrics (#2306). Also registered by the
+    // delivery processor on init; declared here so they exist even before the
+    // first delivery is attempted.
+    this.registerCounter(
+      'webhook_outbound_delivery_success_total',
+      'Outbound webhook deliveries that succeeded',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_failure_total',
+      'Outbound webhook delivery attempts that failed',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_retry_total',
+      'Outbound webhook delivery retries scheduled',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_dead_letter_total',
+      'Outbound webhook deliveries dead-lettered',
+    );
+    this.registerHistogram(
+      'webhook_outbound_delivery_latency_ms',
+      'Outbound webhook delivery latency in milliseconds',
+    );
+
     this.registerCounter('http_requests_total', 'Total HTTP requests received');
     this.registerCounter(
       'http_errors_total',

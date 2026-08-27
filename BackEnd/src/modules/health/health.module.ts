@@ -9,9 +9,16 @@ import { CacheHealthService } from './services/cache-health.service';
 import { ExternalHealthService } from './services/external-health.service';
 import { DatabasePoolMonitorService } from './services/database-pool-monitor.service';
 import { MetricsService } from '../../common/services/metrics.service';
+import { JobsModule } from '../jobs/jobs.module';
 
 @Module({
-  imports: [TypeOrmModule, ConfigModule, CacheModule, HttpClientModule],
+  imports: [
+    TypeOrmModule,
+    ConfigModule,
+    CacheModule,
+    HttpClientModule,
+    JobsModule,
+  ],
   controllers: [HealthController],
   providers: [
     DatabaseHealthService,

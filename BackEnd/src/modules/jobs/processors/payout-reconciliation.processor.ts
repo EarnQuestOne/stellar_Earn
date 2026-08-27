@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan } from 'typeorm';
+import { Repository, In, LessThan, IsNull } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Payout, PayoutStatus } from '../../payouts/entities/payout.entity';
 import {
@@ -9,6 +9,7 @@ import {
   PayoutOutboxStatus,
 } from '../../payouts/entities/payout-outbox.entity';
 import { JobLogService } from '../services/job-log.service';
+import { PayoutsService } from '../../payouts/payouts.service';
 
 /**
  * Payout Reconciliation Processor
@@ -23,6 +24,12 @@ export class PayoutReconciliationProcessor {
   /** A PROCESSING outbox row older than this is treated as stuck (crash). */
   private readonly stuckOutboxMs = 15 * 60 * 1000;
 
+  /** A payout in PROCESSING without a tx hash older than this is stuck. */
+  private readonly stuckPayoutMs = 30 * 60 * 1000;
+
+  /** Max payouts to recover per cycle to avoid thundering-herd re-submissions. */
+  private readonly maxRecoverPerCycle = 50;
+
   constructor(
     @InjectRepository(Payout)
     private readonly payoutRepository: Repository<Payout>,
@@ -30,6 +37,7 @@ export class PayoutReconciliationProcessor {
     private readonly outboxRepository: Repository<PayoutOutbox>,
     private readonly configService: ConfigService,
     private readonly jobLogService: JobLogService,
+    private readonly payoutsService: PayoutsService,
   ) {
     this.horizonUrl =
       this.configService.get<string>('STELLAR_HORIZON_URL') ||
@@ -59,6 +67,84 @@ export class PayoutReconciliationProcessor {
     if (result.affected) {
       this.logger.warn(
         `Recovered ${result.affected} stuck payout outbox row(s) back to PENDING`,
+      );
+    }
+  }
+
+  /**
+   * Recover payouts stuck mid-flight (#stuck-payouts).
+   *
+   * A payout can get stuck in PROCESSING when the worker crashes before
+   * submitting the Stellar payment (no transactionHash), or in
+   * RETRY_SCHEDULED when the scheduled retry never fires.
+   *
+   * This job:
+   *  1. Finds PROCESSING payouts with no tx hash older than `stuckPayoutMs`
+   *     and resets them via `PayoutsService.forceResetPayout` so the next
+   *     batch-payout cron picks them up.
+   *  2. Finds RETRY_SCHEDULED payouts whose `nextRetryAt` has passed and
+   *     resets them to PENDING for immediate re-drive.
+   */
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async recoverStuckPayouts(): Promise<void> {
+    const threshold = new Date(Date.now() - this.stuckPayoutMs);
+    let recovered = 0;
+
+    try {
+      // 1 ─ PROCESSING without a tx hash, stuck longer than threshold ──────
+      const stuckProcessing = await this.payoutRepository.find({
+        where: {
+          status: PayoutStatus.PROCESSING,
+          transactionHash: IsNull(),
+          createdAt: LessThan(threshold),
+        },
+        order: { createdAt: 'ASC' },
+        take: this.maxRecoverPerCycle,
+      });
+
+      for (const payout of stuckProcessing) {
+        try {
+          const reset = await this.payoutsService.forceResetPayout(payout.id);
+          if (reset) recovered++;
+        } catch (err) {
+          this.logger.error(
+            `Failed to recover stuck payout ${payout.id}: ${err.message}`,
+          );
+        }
+      }
+
+      // 2 ─ RETRY_SCHEDULED with overdue nextRetryAt ───────────────────────
+      const overdueRetries = await this.payoutRepository.find({
+        where: {
+          status: PayoutStatus.RETRY_SCHEDULED,
+          nextRetryAt: LessThan(new Date()),
+        },
+        order: { nextRetryAt: 'ASC' },
+        take: Math.max(0, this.maxRecoverPerCycle - recovered),
+      });
+
+      for (const payout of overdueRetries) {
+        try {
+          const reset = await this.payoutsService.forceResetPayout(payout.id);
+          if (reset) recovered++;
+        } catch (err) {
+          this.logger.error(
+            `Failed to recover overdue payout ${payout.id}: ${err.message}`,
+          );
+        }
+      }
+
+      if (recovered > 0) {
+        this.logger.warn(
+          `Stuck-payout recovery: reset ${recovered} payout(s) for re-drive`,
+        );
+      } else {
+        this.logger.log('Stuck-payout recovery: no stuck payouts found');
+      }
+    } catch (error) {
+      this.logger.error(
+        `Stuck-payout recovery job failed: ${error.message}`,
+        error.stack,
       );
     }
   }

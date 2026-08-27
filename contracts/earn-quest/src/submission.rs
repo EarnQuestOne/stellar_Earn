@@ -176,6 +176,28 @@ pub fn submit_proof(
     Ok(())
 }
 
+/// Returns just the current status of a submission by its (quest, submitter)
+/// identity, without loading and returning the full record.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user who submitted.
+///
+/// # Returns
+///
+/// * `Ok(status)` with the submission's current [`SubmissionStatus`].
+/// * `Err(Error::SubmissionNotFound)` if no submission exists.
+pub fn get_submission_status(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+) -> Result<SubmissionStatus, Error> {
+    let submission = storage::get_submission(env, quest_id, submitter)?;
+    Ok(submission.status)
+}
+
 /// Approve a submission (Verifier only).
 ///
 /// # Arguments
@@ -202,6 +224,13 @@ pub fn approve_submission(
 
     if *verifier != quest.verifier {
         return Err(Error::Unauthorized);
+    }
+
+    // Issue #2287: the quest creator must not approve submissions on their own
+    // quest (self-approval / conflict of interest). This is defense-in-depth even
+    // where registration enforces creator != verifier.
+    if *verifier == quest.creator {
+        return Err(Error::SelfApprovalDisallowed);
     }
 
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
@@ -380,6 +409,12 @@ pub fn approve_submissions_batch(
 
         if *verifier != quest.verifier {
             return Err(Error::Unauthorized);
+        }
+
+        // Issue #2287: the quest creator must not approve submissions on their own
+        // quest (self-approval / conflict of interest).
+        if *verifier == quest.creator {
+            return Err(Error::SelfApprovalDisallowed);
         }
 
         for j in 0u32..batch.submissions.len() {

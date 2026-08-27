@@ -7,7 +7,8 @@ import {
   ArgumentMetadata,
 } from '@nestjs/common';
 
-import { AdminController, AdminService } from './admin.module';
+import { AdminController } from './admin.controller';
+import { AdminService } from './admin.service';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';

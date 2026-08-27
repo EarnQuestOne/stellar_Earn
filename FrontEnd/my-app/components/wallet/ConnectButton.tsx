@@ -1,10 +1,12 @@
 'use client';
 
+import React from 'react';
 import { useWallet } from '../../context/WalletContext';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { DisconnectWalletDialog } from './DisconnectWalletDialog';
 
 const ArrowDownIcon = () => (
   <svg
@@ -27,6 +29,8 @@ export function ConnectButton() {
     useWallet();
   const { isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const formatAddress = (addr: string) => {
@@ -34,9 +38,23 @@ export function ConnectButton() {
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
-  const handleLogout = async () => {
-    await logout();
+  // Disconnecting the wallet clears the wallet session context, so require an
+  // explicit confirmation before it can happen (issue #2274).
+  const handleLogoutClick = () => {
     setDropdownOpen(false);
+    setShowDisconnectConfirm(true);
+  };
+
+  const handleConfirmDisconnect = async () => {
+    setIsDisconnecting(true);
+    try {
+      // Sign out of the backend session and disconnect the wallet.
+      await logout();
+      await disconnect();
+    } finally {
+      setIsDisconnecting(false);
+      setShowDisconnectConfirm(false);
+    }
   };
 
   useEffect(() => {
@@ -89,7 +107,7 @@ export function ConnectButton() {
             >
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-zinc-100 dark:text-red-400 dark:hover:bg-white/5"
               >
                 <LogOut className="h-4 w-4" />
@@ -98,6 +116,13 @@ export function ConnectButton() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <DisconnectWalletDialog
+          open={showDisconnectConfirm}
+          onConfirm={handleConfirmDisconnect}
+          onCancel={() => setShowDisconnectConfirm(false)}
+          isDisconnecting={isDisconnecting}
+        />
       </div>
     );
   }

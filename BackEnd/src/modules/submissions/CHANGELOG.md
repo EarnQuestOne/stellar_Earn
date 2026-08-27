@@ -1,3 +1,7 @@
+# Unreleased
+
+- Submission details now expose the dispute lifecycle for rejected submissions.
+
 # submissions module changelog
 
 All notable changes to the `submissions` backend module are documented here.
@@ -8,10 +12,15 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `anonymizeForErasure(userId, manager?)` — detaches submitter PII and proof references from a user's submissions while preserving quest integrity and reviewer decisions, used by the right-to-erasure pipeline; runs inside the caller's transaction when a manager is supplied (#2337).
+
+### Added
+
 - Optimistic-concurrency `@VersionColumn` (`version`) on the `Submission` entity plus a backfilling migration, so concurrent submission writes (e.g. a status transition racing with an edit) are rejected on stale-version saves instead of causing a lost update (#2157).
 
 ### Fixed
 
+- Submission list query parameters now reject malformed UUID filters and invalid pagination, status, sort, and order values at the DTO boundary (#2252).
 - Converted `submissions/index.ts` from a corrupted UTF-16 encoding to UTF-8 and removed a duplicated export line.
 
 ### Changed
