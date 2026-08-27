@@ -20,4 +20,4 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Quota enforcement logic refactored for improved testability and error handling.
-
+- `QuotaService.enforceQuestCreationQuota` and `enforcePayoutQuota` now wrap the read/increment flow in a transaction with a locked usage row, matching the concurrency contract in the quota tests.
