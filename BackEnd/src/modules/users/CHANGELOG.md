@@ -13,6 +13,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - `findById()` now reads through the unified cache-aside layer (`CacheService.getOrSet`) tagged per user, and `update()` calls `invalidateTag(CacheTags.user(id))` so a write drops the user's cached reads (#2159).
+- Added `findByUsername`, `getUserStats`, `getUserQuests`, `updateProfile`, `getLeaderboard`, and `updateUserStats` helpers to align the service contract with the users test suite.
 
 - Applied code-style formatting to `users.service.ts` (no logic change).
 
