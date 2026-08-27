@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  SubmissionNotFoundException,
+  QuestNotFoundException,
+} from '../../common/exceptions/app.exceptions';
 import { SubmissionsService } from './submissions.service';
 import { Submission } from './entities/submission.entity';
 import { User } from '../users/entities/user.entity';
@@ -60,6 +64,7 @@ describe('SubmissionsService (N+1 prevention)', () => {
   let service: SubmissionsService;
   let submissionsRepo: any;
   let usersRepo: any;
+  let questsRepo: any;
   let notifications: {
     sendSubmissionApproved: jest.Mock;
     sendSubmissionRejected: jest.Mock;
@@ -105,6 +110,15 @@ describe('SubmissionsService (N+1 prevention)', () => {
       },
     };
 
+    questsRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'quest-1',
+        verifiers: [],
+        createdBy: '',
+        status: 'ACTIVE',
+      }),
+    };
+
     // The service now looks up the verifier via User repo to bind the
     // verifier's Stellar public key into the on-chain tx.
     usersRepo = {
@@ -138,7 +152,7 @@ describe('SubmissionsService (N+1 prevention)', () => {
         { provide: getRepositoryToken(User), useValue: usersRepo },
         {
           provide: getRepositoryToken(Quest),
-          useValue: { findOne: jest.fn() },
+          useValue: questsRepo,
         },
         { provide: NotificationsService, useValue: notifications },
         { provide: StellarSubmissionService, useValue: stellarService },
@@ -300,6 +314,23 @@ describe('SubmissionsService (N+1 prevention)', () => {
       expect(stellarService.approveSubmission).not.toHaveBeenCalled();
     });
 
+    it('throws SubmissionNotFoundException when the submission does not exist', async () => {
+      submissionsRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.approveSubmission(
+          'non-existent',
+          { notes: 'looks good' },
+          VERIFIER_ID,
+        ),
+      ).rejects.toThrow(SubmissionNotFoundException);
+
+      // No DB CAS update, no chain call.
+      const updateBuilder = submissionsRepo.createQueryBuilder as jest.Mock;
+      expect(updateBuilder).not.toHaveBeenCalled();
+      expect(stellarService.approveSubmission).not.toHaveBeenCalled();
+    });
+
     it('throws BadRequestException and does NOT mutate the DB when the submitter has no Stellar address linked', async () => {
       // Build a submission whose submitter has NO Stellar address. The
       // submitter-side check must short-circuit BEFORE the verifier lookup
@@ -393,6 +424,17 @@ describe('SubmissionsService (N+1 prevention)', () => {
   });
 
   describe('rejectSubmission', () => {
+    it('throws SubmissionNotFoundException when the submission does not exist', async () => {
+      submissionsRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.rejectSubmission(
+          'non-existent',
+          { reason: 'incomplete proof' },
+          VERIFIER_ID,
+        ),
+      ).rejects.toThrow(SubmissionNotFoundException);
+    });
     it('eager-loads quest+user relations in one findOne and never re-fetches them', async () => {
       const submission = buildSubmission();
       submissionsRepo.findOne.mockResolvedValue(submission);
@@ -422,6 +464,28 @@ describe('SubmissionsService (N+1 prevention)', () => {
       expect(result.status).toBe('REJECTED');
       expect(result.rejectedBy).toBe('verifier-1');
       expect(result.rejectionReason).toBe('incomplete proof');
+    });
+  });
+
+  describe('findOne', () => {
+    it('returns the submission when found', async () => {
+      const submission = buildSubmission();
+      submissionsRepo.findOne.mockResolvedValue(submission);
+
+      const result = await service.findOne('sub-1');
+
+      expect(result).toBe(submission);
+      expect(submissionsRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'sub-1' },
+      });
+    });
+
+    it('throws SubmissionNotFoundException when the submission does not exist', async () => {
+      submissionsRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('non-existent')).rejects.toThrow(
+        SubmissionNotFoundException,
+      );
     });
   });
 

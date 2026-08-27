@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   ForbiddenException,
   ConflictException,
@@ -44,6 +43,10 @@ import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
+import {
+  SubmissionNotFoundException,
+  QuestNotFoundException,
+} from '../../common/exceptions/app.exceptions';
 
 interface QuestVerifier {
   id: string;
@@ -181,7 +184,7 @@ export class SubmissionsService {
           withDeleted: false,
         });
         if (!current) {
-          throw new NotFoundException(`Quest with ID ${questId} not found`);
+          throw new QuestNotFoundException(questId);
         }
         if (current.status !== 'ACTIVE') {
           throw new BadRequestException(
@@ -253,9 +256,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -444,9 +445,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -580,10 +579,13 @@ export class SubmissionsService {
     const quest = await this.questsRepository.findOne({
       where: { id: questId },
     });
+    if (!quest) {
+      throw new QuestNotFoundException(questId);
+    }
     return {
       id: questId,
-      verifiers: quest?.verifiers ?? [],
-      createdBy: quest?.createdBy ?? '',
+      verifiers: quest.verifiers ?? [],
+      createdBy: quest.createdBy ?? '',
     };
   }
 
@@ -598,9 +600,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     return submission;
