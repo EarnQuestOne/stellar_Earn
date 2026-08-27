@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::types::{QuestStatus, SubmissionStatus};
+use crate::types::{DisputeStatus, QuestStatus, SubmissionStatus};
 use soroban_sdk::{Address, Env, Symbol};
 
 //================================================================================
@@ -380,6 +380,51 @@ pub fn validate_submission_status_transition(
                 SubmissionStatus::PartiallyPaid
             )
             | (SubmissionStatus::PartiallyPaid, SubmissionStatus::Paid)
+    );
+
+    if !valid {
+        return Err(Error::InvalidStatusTransition);
+    }
+    Ok(())
+}
+
+/// Validates a dispute status transition is allowed.
+///
+/// Allowed transitions:
+/// * Pending -> UnderReview
+/// * Pending -> Resolved
+/// * Pending -> Withdrawn
+/// * UnderReview -> Resolved
+/// * Resolved -> Appealed
+/// * Appealed -> Resolved
+/// * Resolved -> Pending (re-opening after a resolution)
+/// * Withdrawn -> Pending (re-opening after a withdrawal)
+///
+/// Non-terminal active states (`Pending`, `UnderReview`, `Appealed`) can never
+/// be re-opened as a fresh dispute, and terminal states (`Withdrawn`, a second
+/// `Resolved`) can never move into review/appeal paths.
+///
+/// # Arguments
+/// * `from` - Current dispute status
+/// * `to` - Desired dispute status
+///
+/// # Returns
+/// * `Ok(())` if the transition is allowed
+/// * `Err(Error::InvalidStatusTransition)` if the transition is not allowed
+pub fn validate_dispute_status_transition(
+    from: &DisputeStatus,
+    to: &DisputeStatus,
+) -> Result<(), Error> {
+    let valid = matches!(
+        (from, to),
+        (DisputeStatus::Pending, DisputeStatus::UnderReview)
+            | (DisputeStatus::Pending, DisputeStatus::Resolved)
+            | (DisputeStatus::Pending, DisputeStatus::Withdrawn)
+            | (DisputeStatus::UnderReview, DisputeStatus::Resolved)
+            | (DisputeStatus::Resolved, DisputeStatus::Appealed)
+            | (DisputeStatus::Appealed, DisputeStatus::Resolved)
+            | (DisputeStatus::Resolved, DisputeStatus::Pending)
+            | (DisputeStatus::Withdrawn, DisputeStatus::Pending)
     );
 
     if !valid {

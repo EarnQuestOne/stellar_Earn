@@ -3,6 +3,7 @@ use crate::errors::Error;
 use crate::escrow;
 use crate::events;
 use crate::storage;
+use crate::validation;
 use soroban_sdk::{Address, Env, Symbol};
 
 use super::types::{Dispute, DisputeStatus};
@@ -34,13 +35,18 @@ pub fn open_dispute(
     // Auth: initiator must sign
     initiator.require_auth();
 
-    // Ensure dispute doesn't already exist for this initiator/quest
+    // Ensure dispute doesn't already exist for this initiator/quest.
+    // If one does, the transition into a fresh `Pending` dispute is validated
+    // explicitly: only terminal states (`Resolved`, `Withdrawn`) may be
+    // re-opened, while active states (`Pending`, `UnderReview`) and an ongoing
+    // appeal (`Appealed`) are rejected.
     if storage::has_dispute(env, &quest_id, &initiator) {
         let d = storage::get_dispute(env, &quest_id, &initiator)?;
-        if d.status == DisputeStatus::Pending || d.status == DisputeStatus::UnderReview {
-            return Err(Error::DisputeAlreadyExists);
-        }
-        // If exists but resolved/withdrawn, allow opening a new one (we'll overwrite)
+        validation::validate_dispute_status_transition(&d.status, &DisputeStatus::Pending)
+            .map_err(|_| match d.status {
+                DisputeStatus::Appealed => Error::DisputeAlreadyAppealed,
+                _ => Error::DisputeAlreadyExists,
+            })?;
     }
 
     // Validate arbitrator is not the zero address (could add more checks)
@@ -84,6 +90,7 @@ pub fn open_dispute(
 /// * `Ok(())` if the dispute is successfully resolved.
 /// * `Err(Error::DisputeNotAuthorized)` if the caller is not the assigned arbitrator.
 /// * `Err(Error::DisputeNotPending)` if the dispute is not in a resolvable state.
+/// * `Err(Error::DisputeAlreadyResolved)` if the dispute is already resolved.
 pub fn resolve_dispute(
     env: &Env,
     quest_id: Symbol,
@@ -94,6 +101,14 @@ pub fn resolve_dispute(
 ) -> Result<(), Error> {
     // Fetch dispute
     let mut dispute = storage::get_dispute(env, &quest_id, &initiator)?;
+
+    // Validate the state transition explicitly: only `Pending`, `UnderReview`
+    // (arbitrator) and `Appealed` (admin) may move to `Resolved`.
+    validation::validate_dispute_status_transition(&dispute.status, &DisputeStatus::Resolved)
+        .map_err(|_| match dispute.status {
+            DisputeStatus::Resolved => Error::DisputeAlreadyResolved,
+            _ => Error::DisputeNotPending,
+        })?;
 
     // Validate status and auth
     match dispute.status {
@@ -106,6 +121,8 @@ pub fn resolve_dispute(
         DisputeStatus::Appealed => {
             admin::require_admin(env, &arbitrator)?;
         }
+        // Unreachable: the transition check above only lets the three
+        // resolvable states through.
         _ => return Err(Error::DisputeNotPending),
     }
 
@@ -142,10 +159,12 @@ pub fn appeal_dispute(
     // Fetch dispute
     let mut dispute = storage::get_dispute(env, &quest_id, &initiator)?;
 
-    // Must be Resolved to appeal
-    if dispute.status != DisputeStatus::Resolved {
-        return Err(Error::DisputeNotResolved);
-    }
+    // Explicit state transition check: only `Resolved` may move to `Appealed`.
+    validation::validate_dispute_status_transition(&dispute.status, &DisputeStatus::Appealed)
+        .map_err(|_| match dispute.status {
+            DisputeStatus::Appealed => Error::DisputeAlreadyAppealed,
+            _ => Error::DisputeNotResolved,
+        })?;
 
     // Update status to Appealed
     dispute.status = DisputeStatus::Appealed;
@@ -179,10 +198,11 @@ pub fn withdraw_dispute(env: &Env, quest_id: Symbol, initiator: Address) -> Resu
     // Fetch dispute
     let mut dispute = storage::get_dispute(env, &quest_id, &initiator)?;
 
-    // Status must be Pending (cannot withdraw UnderReview or Resolved)
-    if dispute.status != DisputeStatus::Pending {
-        return Err(Error::DisputeNotPending);
-    }
+    // Explicit state transition check: only `Pending` may move to `Withdrawn`.
+    // `UnderReview`, `Resolved`, `Appealed` and already-`Withdrawn` disputes
+    // are rejected.
+    validation::validate_dispute_status_transition(&dispute.status, &DisputeStatus::Withdrawn)
+        .map_err(|_| Error::DisputeNotPending)?;
 
     // Mark as withdrawn
     dispute.status = DisputeStatus::Withdrawn;
