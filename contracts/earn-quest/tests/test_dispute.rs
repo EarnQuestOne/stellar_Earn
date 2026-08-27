@@ -180,3 +180,61 @@ fn test_appeal_process_emits_indexed_events() {
     let resolve_name: Symbol = resolve_topics.get(0).unwrap().into_val(&env);
     assert_eq!(resolve_name, symbol_short!("disp_res"));
 }
+
+#[test]
+fn test_reopen_appealed_dispute_rejected() {
+    let (env, client, _admin, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp06");
+    let appeals_arbitrator = Address::generate(&env);
+
+    // Drive the dispute into the non-terminal `Appealed` state.
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+    client.appeal_dispute(&quest_id, &initiator, &appeals_arbitrator);
+
+    // Re-opening a fresh dispute while an appeal is pending must be rejected.
+    let result = client.try_open_dispute(&quest_id, &initiator, &arbitrator);
+    assert!(
+        result.is_err(),
+        "re-opening a dispute while it is appealed must be rejected"
+    );
+
+    // The appealed dispute record must be untouched.
+    let pending = client.get_dispute(&quest_id, &initiator);
+    assert_eq!(pending.status, DisputeStatus::Appealed);
+    assert_eq!(pending.arbitrator, appeals_arbitrator);
+}
+
+#[test]
+fn test_resolve_already_resolved_dispute_rejected() {
+    let (_env, client, _, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp07");
+
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+
+    // A second resolution on the same dispute must be rejected.
+    let result = client.try_resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+    assert!(
+        result.is_err(),
+        "resolving an already-resolved dispute must be rejected"
+    );
+}
+
+#[test]
+fn test_appeal_already_appealed_dispute_rejected() {
+    let (env, client, _admin, initiator, arbitrator) = setup();
+    let quest_id = symbol_short!("disp08");
+    let appeals_arbitrator = Address::generate(&env);
+
+    client.open_dispute(&quest_id, &initiator, &arbitrator);
+    client.resolve_dispute(&quest_id, &initiator, &arbitrator, &false, &0_u32);
+    client.appeal_dispute(&quest_id, &initiator, &appeals_arbitrator);
+
+    // A second appeal on the same dispute must be rejected.
+    let result = client.try_appeal_dispute(&quest_id, &initiator, &arbitrator);
+    assert!(
+        result.is_err(),
+        "appealing an already-appealed dispute must be rejected"
+    );
+}
