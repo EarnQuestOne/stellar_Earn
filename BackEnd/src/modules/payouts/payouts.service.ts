@@ -186,7 +186,8 @@ export class PayoutsService {
             );
           }
           if (lockResult.existing.responseBody) {
-            return lockResult.existing.responseBody as PayoutResponseDto;
+            return lockResult.existing
+              .responseBody as unknown as PayoutResponseDto;
           }
         }
 
@@ -217,11 +218,7 @@ export class PayoutsService {
           await this.persistPayout(payout);
 
           const response = this.mapToResponse(payout);
-          await this.idempotencyService.complete(
-            idempotencyKey,
-            200,
-            response,
-          );
+          await this.idempotencyService.complete(idempotencyKey, 200, response);
           return response;
         } catch (error) {
           // On business-logic or concurrency errors the idempotency record is
