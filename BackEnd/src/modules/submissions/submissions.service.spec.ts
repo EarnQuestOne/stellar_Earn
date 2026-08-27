@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import {
-  SubmissionNotFoundException,
-  QuestNotFoundException,
-} from '../../common/exceptions/app.exceptions';
+import { SubmissionNotFoundException } from '../../common/exceptions/app.exceptions';
 import { SubmissionsService } from './submissions.service';
 import { Submission } from './entities/submission.entity';
 import { User } from '../users/entities/user.entity';
