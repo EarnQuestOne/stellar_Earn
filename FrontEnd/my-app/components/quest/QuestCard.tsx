@@ -287,17 +287,16 @@ export const QuestCard = memo(
           )}
         </div>
 
-        <div className="quest-card__footer" aria-hidden="true">
+        <div className="quest-card__footer">
           {localQuest.creator && (
             <div className="quest-card__creator">
               {localQuest.creator.avatarUrl ? (
                 <OptimizedImage
                   src={localQuest.creator.avatarUrl}
-                  alt=""
+                  alt={`${localQuest.creator.name || 'Quest creator'} avatar`}
                   width={22}
                   height={22}
                   containerClassName="quest-card__avatar quest-card__avatar--img"
-                  aria-hidden="true"
                 />
               ) : (
                 <span
