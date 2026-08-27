@@ -30,6 +30,8 @@ import {
 import { JobLogArchive } from './entities/job-log-archive.entity';
 import { DataExport } from '../users/entities/data-export.entity';
 import { DataExportListener } from './listeners/data-export.listener';
+import { AccountErasureListener } from './listeners/account-erasure.listener';
+import { AccountErasureProcessor } from './processors/account-erasure.processor';
 import { Payout } from '../payouts/entities/payout.entity';
 import { PayoutOutbox } from '../payouts/entities/payout-outbox.entity';
 import { Quest } from '../quests/entities/quest.entity';
@@ -70,6 +72,17 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     AnalyticsModule,
     forwardRef(() => EmailModule),
     CacheModule,
+    // Lazy reference to PrivacyModule: the module graph has a cycle
+    // (JobsModule → PrivacyModule → UsersModule → EmailModule → JobsModule)
+    // that Nest resolves via forwardRef, but the static `import` would leave
+    // module classes undefined during CommonJS evaluation. Requiring inside
+    // the forwardRef closure defers resolution until scan time, when every
+    // module has finished loading.
+    forwardRef(
+      () =>
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('../privacy/privacy.module').PrivacyModule,
+    ),
   ],
   providers: [
     JobsService,
@@ -94,6 +107,8 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     QuestStateReconciliationProcessor,
     DependencyProcessor,
     DataExportListener,
+    AccountErasureListener,
+    AccountErasureProcessor,
     DependencyFreshnessService,
   ],
   controllers: [JobsController],
@@ -116,6 +131,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     QuestProcessor,
     QuestStateReconciliationProcessor,
     DependencyProcessor,
+    AccountErasureProcessor,
     DependencyFreshnessService,
   ],
 })

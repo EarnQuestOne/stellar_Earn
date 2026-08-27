@@ -36,6 +36,9 @@ export enum JobType {
 
   // Dependency Management
   DEPENDENCY_FRESHNESS_CHECK = 'dependency:freshness-check',
+
+  // Privacy / Right to Erasure
+  ACCOUNT_ERASURE = 'privacy:account-erasure',
 }
 
 export enum JobPriority {

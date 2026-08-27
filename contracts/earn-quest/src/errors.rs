@@ -106,8 +106,11 @@ pub enum Error {
     DisputeAlreadyExists = 82,
     DisputeNotPending = 83,
     DisputeNotAuthorized = 84,
+    /// Dispute has already been resolved and cannot be resolved again.
     DisputeAlreadyResolved = 85,
+    /// Dispute is not in `Appealed` state for the requested operation.
     DisputeNotAppealed = 86,
+    /// Dispute has already been appealed and cannot be appealed again.
     DisputeAlreadyAppealed = 87,
     DisputeNotResolved = 95,
 

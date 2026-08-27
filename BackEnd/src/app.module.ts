@@ -32,6 +32,7 @@ import { ModerationModule } from './modules/moderation/moderation.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { PostmortemsModule } from './modules/postmortems/postmortems.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
 import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
 import { QuestsModule } from './modules/quests/quests.module';
 import { QuotaModule } from './modules/quota/quota.module';
@@ -93,6 +94,7 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     JobsModule,
     ModerationModule,
     MultiSigModule,
+    PrivacyModule,
     NotificationsModule,
     PayoutsModule,
     ...(process.env.NODE_ENV !== 'production' ? [PostmortemsModule] : []),

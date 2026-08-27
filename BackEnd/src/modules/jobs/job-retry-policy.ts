@@ -223,6 +223,20 @@ export const JOB_RETRY_POLICIES: Readonly<
     removeOnComplete: 10,
     removeOnFail: 20,
   },
+
+  // ── Privacy / Right to Erasure ────────────────────────────────────────────
+  // High-value, irreversible operation; generous retries with slow backoff.
+  // Completed/cancelled requests are no-ops, so replays are always safe.
+  [JobType.ACCOUNT_ERASURE]: {
+    attempts: 5,
+    backoff: { type: 'exponential', delay: 30_000 },
+    nonRetryableErrors: [
+      'Erasure request .* not found',
+      'is already .* processing',
+    ],
+    removeOnComplete: 25,
+    removeOnFail: 50,
+  },
 };
 
 // ─── Utility Functions ────────────────────────────────────────────────────────

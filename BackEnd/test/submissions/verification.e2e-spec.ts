@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
+import { SubmissionNotFoundException } from '#src/common/exceptions/app.exceptions';
 import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
 import { NotificationsService } from '#src/modules/notifications/notifications.service';
 import { MetricsService } from '#src/common/services/metrics.service';
@@ -327,7 +328,7 @@ describe('Submission Verification (e2e) - Service Layer Tests', () => {
 
         await expect(
           submissionsService.findOne('non-existent'),
-        ).rejects.toThrow('Submission with ID non-existent not found');
+        ).rejects.toThrow(SubmissionNotFoundException);
       });
 
       it('should find submissions by quest with keyset pagination', async () => {

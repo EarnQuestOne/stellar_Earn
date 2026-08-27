@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PostmortemController } from './postmortems.controller';
 import { PostmortemService } from './postmortems.service';
 import {
@@ -85,6 +86,23 @@ describe('PostmortemController', () => {
       expect(result).toEqual(mockPostmortemResponse);
       expect(service.create).toHaveBeenCalledWith(dto);
     });
+
+    it('should propagate BadRequestException from the service', async () => {
+      jest
+        .spyOn(service, 'create')
+        .mockRejectedValue(new BadRequestException('Invalid input'));
+
+      const dto: CreatePostmortemDto = {
+        incidentId: 'invalid-id',
+        title: 'Test',
+        incidentDate: new Date(),
+        startTime: new Date(),
+        endTime: new Date(),
+        severity: IncidentSeverity.HIGH,
+      };
+
+      await expect(controller.create(dto)).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('getById', () => {
@@ -142,6 +160,29 @@ describe('PostmortemController', () => {
 
       expect(result.data).toHaveLength(1);
     });
+
+    it('should pass query filters and pagination to the service', async () => {
+      const query = {
+        status: PostmortemStatus.DRAFT,
+        searchTerm: 'database',
+        limit: 10,
+        offset: 5,
+        sortBy: 'incidentDate' as const,
+        sortOrder: 'ASC' as const,
+      };
+      const mockList = {
+        data: [mockPostmortemResponse],
+        total: 1,
+        limit: 10,
+        offset: 5,
+      };
+      const listSpy = jest.spyOn(service, 'list').mockResolvedValue(mockList);
+
+      const result = await controller.list(query);
+
+      expect(result).toEqual(mockList);
+      expect(listSpy).toHaveBeenCalledWith(query);
+    });
   });
 
   describe('update', () => {
@@ -155,6 +196,16 @@ describe('PostmortemController', () => {
 
       expect(result.title).toBe('Updated Title');
       expect(service.update).toHaveBeenCalledWith('test-id-123', dto);
+    });
+
+    it('should propagate NotFoundException from the service', async () => {
+      jest
+        .spyOn(service, 'update')
+        .mockRejectedValue(new NotFoundException('Postmortem not found'));
+
+      await expect(
+        controller.update('nonexistent', { title: 'New Title' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -10,6 +10,15 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Submission lookups now throw typed `SubmissionNotFoundException` / `QuestNotFoundException` instead of generic `NotFoundException`, producing clean 404 responses via `AppExceptionFilter` instead of falling through as 500s.
+- `getQuestWithVerifiers` now throws `QuestNotFoundException` when the quest does not exist instead of silently returning empty data.
+
+### Added
+
+- `anonymizeForErasure(userId, manager?)` — detaches submitter PII and proof references from a user's submissions while preserving quest integrity and reviewer decisions, used by the right-to-erasure pipeline; runs inside the caller's transaction when a manager is supplied (#2337).
+
 ### Added
 
 - Optimistic-concurrency `@VersionColumn` (`version`) on the `Submission` entity plus a backfilling migration, so concurrent submission writes (e.g. a status transition racing with an edit) are rejected on stale-version saves instead of causing a lost update (#2157).

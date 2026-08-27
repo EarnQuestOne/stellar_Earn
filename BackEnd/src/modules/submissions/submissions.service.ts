@@ -1,14 +1,13 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   ForbiddenException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 
 /**
  * Sentinel error thrown inside the capacity-gate transaction when the
@@ -44,6 +43,10 @@ import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
+import {
+  SubmissionNotFoundException,
+  QuestNotFoundException,
+} from '../../common/exceptions/app.exceptions';
 
 interface QuestVerifier {
   id: string;
@@ -78,6 +81,39 @@ export class SubmissionsService {
     private metricsService: MetricsService,
     private verificationDedup: VerificationDedupService,
   ) {}
+
+  /**
+   * Anonymize a user's submissions (right-to-erasure).
+   *
+   * Submitter PII and proof references are detached (`proof` is replaced with
+   * an erased marker, notes are nulled) while quest integrity and reviewer
+   * decisions (status, approvedBy/rejectedBy timestamps, transactionHash) are
+   * preserved so payout/audit trails stay consistent. Returns the number of
+   * submissions anonymized.
+   *
+   * Runs on the provided transaction manager when called from the erasure
+   * pipeline (so the whole erasure is atomic); otherwise uses its own
+   * repository manager.
+   */
+  async anonymizeForErasure(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const em = manager ?? this.submissionsRepository.manager;
+    const repo = em.getRepository(Submission);
+    const submissions = await repo.find({ where: { userId } });
+    if (submissions.length === 0) {
+      return 0;
+    }
+
+    for (const submission of submissions) {
+      submission.proof = { erased: true };
+      submission.verifierNotes = null;
+      submission.rejectionReason = null;
+    }
+    await repo.save(submissions);
+    return submissions.length;
+  }
 
   /**
    * Create a new submission for a quest.
@@ -181,7 +217,7 @@ export class SubmissionsService {
           withDeleted: false,
         });
         if (!current) {
-          throw new NotFoundException(`Quest with ID ${questId} not found`);
+          throw new QuestNotFoundException(questId);
         }
         if (current.status !== 'ACTIVE') {
           throw new BadRequestException(
@@ -253,9 +289,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -444,9 +478,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -580,10 +612,13 @@ export class SubmissionsService {
     const quest = await this.questsRepository.findOne({
       where: { id: questId },
     });
+    if (!quest) {
+      throw new QuestNotFoundException(questId);
+    }
     return {
       id: questId,
-      verifiers: quest?.verifiers ?? [],
-      createdBy: quest?.createdBy ?? '',
+      verifiers: quest.verifiers ?? [],
+      createdBy: quest.createdBy ?? '',
     };
   }
 
@@ -598,9 +633,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     return submission;

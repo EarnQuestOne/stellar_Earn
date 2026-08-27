@@ -43,6 +43,7 @@ import { QUEUES } from '../jobs/jobs.constants';
 import { BulkheadService } from '../../common/services/bulkhead.service';
 import { StellarService } from '../stellar/stellar.service';
 import { JobResultStatusCacheService } from '../jobs/services/job-result-status-cache.service';
+import { IdempotencyService } from './services/idempotency.service';
 
 @Injectable()
 export class PayoutsService {
@@ -63,6 +64,7 @@ export class PayoutsService {
     private readonly bulkheadService: BulkheadService,
     private readonly stellarService: StellarService,
     private readonly jobResultStatusCache: JobResultStatusCacheService,
+    private readonly idempotencyService: IdempotencyService,
   ) {
     this.metricsService.registerCounter(
       'payout_status_poll_cache_hits_total',
@@ -154,32 +156,83 @@ export class PayoutsService {
     return this.bulkheadService.runWithBulkhead(
       'payouts',
       async () => {
-        const payout = await this.payoutRepository.findOne({
-          where: {
-            submissionId: claimPayoutDto.submissionId,
-            stellarAddress: userAddress,
-          },
-        });
+        // Deterministic idempotency key so that client retries for the same
+        // submission+address are safely deduplicated via the idempotency-key
+        // entity, preventing double payouts on race-condition retries (#2204).
+        const idempotencyKey = `payout-claim:${claimPayoutDto.submissionId}:${userAddress}`;
+        const bodyHash = this.idempotencyService.computeBodyHash(
+          claimPayoutDto as unknown as Record<string, unknown>,
+        );
+        const fingerprint = this.idempotencyService.computeFingerprint(
+          'SERVICE',
+          'payout-claim',
+          claimPayoutDto as unknown as Record<string, unknown>,
+        );
 
-        if (!payout) {
-          throw new NotFoundException('Payout not found for this submission');
+        const lockResult = await this.idempotencyService.tryAcquire(
+          idempotencyKey,
+          fingerprint,
+          'SERVICE',
+          'payout-claim',
+          bodyHash,
+        );
+
+        // A completed record means this exact claim was already processed;
+        // replay the cached response instead of touching the database again.
+        if (!lockResult.acquired && lockResult.existing) {
+          if (lockResult.existing.locked) {
+            throw new ConflictException(
+              'Payout claim is already being processed',
+            );
+          }
+          if (lockResult.existing.responseBody) {
+            return lockResult.existing
+              .responseBody as unknown as PayoutResponseDto;
+          }
         }
 
-        if (!payout.isClaimable()) {
-          throw new BadRequestException(
-            `Payout cannot be claimed. Current status: ${payout.status}`,
-          );
+        try {
+          const payout = await this.payoutRepository.findOne({
+            where: {
+              submissionId: claimPayoutDto.submissionId,
+              stellarAddress: userAddress,
+            },
+          });
+
+          if (!payout) {
+            throw new NotFoundException('Payout not found for this submission');
+          }
+
+          if (!payout.isClaimable()) {
+            throw new BadRequestException(
+              `Payout cannot be claimed. Current status: ${payout.status}`,
+            );
+          }
+
+          if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
+            throw new BadRequestException('Stellar address mismatch');
+          }
+
+          payout.claimedAt = new Date();
+          payout.status = PayoutStatus.PROCESSING;
+          await this.persistPayout(payout);
+
+          const response = this.mapToResponse(payout);
+          await this.idempotencyService.complete(idempotencyKey, 200, response);
+          return response;
+        } catch (error) {
+          // On business-logic or concurrency errors the idempotency record is
+          // removed so that the caller can retry with the same key instead of
+          // being stuck behind a stale lock.
+          if (
+            error instanceof NotFoundException ||
+            error instanceof BadRequestException ||
+            error instanceof ConflictException
+          ) {
+            await this.idempotencyService.remove(idempotencyKey);
+          }
+          throw error;
         }
-
-        if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
-          throw new BadRequestException('Stellar address mismatch');
-        }
-
-        payout.claimedAt = new Date();
-        payout.status = PayoutStatus.PROCESSING;
-        await this.persistPayout(payout);
-
-        return this.mapToResponse(payout);
       },
       this.getPayoutBulkheadOptions(),
     );
@@ -718,7 +771,7 @@ export class PayoutsService {
     query: PayoutQueryDto,
     userAddress?: string,
   ): Promise<PayoutHistoryResponseDto> {
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? 10;
     const address = query.stellarAddress || userAddress;
 
     const qb = this.payoutRepository.createQueryBuilder('payout');
@@ -834,6 +887,62 @@ export class PayoutsService {
     });
 
     return this.mapToResponse(payout);
+  }
+
+  // ─── Force reset (recovery) ───────────────────────────────────────────────
+
+  /**
+   * Force-reset a stuck payout so the reconciliation processor can re-drive it.
+   *
+   * * PROCESSING without a transaction hash and within the retry budget is
+   *   reset to PENDING so the next batch-payout cron picks it up.
+   * * PROCESSING without a tx-hash but past the retry budget is dead-lettered.
+   * * RETRY_SCHEDULED payouts whose `nextRetryAt` has passed are pushed back
+   *   to PENDING so the next batch cycle retries them immediately.
+   *
+   * Returns the updated payout, or `null` when the payout was not found.
+   */
+  async forceResetPayout(payoutId: string): Promise<Payout | null> {
+    const payout = await this.payoutRepository.findOne({
+      where: { id: payoutId },
+    });
+    if (!payout) return null;
+
+    if (payout.status === PayoutStatus.PROCESSING && !payout.transactionHash) {
+      if (payout.retryCount < this.maxAutomaticPayoutRetries) {
+        payout.status = PayoutStatus.PENDING;
+        payout.failureReason = 'Reset to PENDING by reconciliation recovery';
+        this.logger.warn(
+          `Force-reset stuck payout ${payout.id} → PENDING (retry ${payout.retryCount}/${this.maxAutomaticPayoutRetries})`,
+        );
+      } else {
+        payout.status = PayoutStatus.DEAD_LETTER;
+        payout.nextRetryAt = null;
+        payout.failureReason = 'Exceeded retries during stuck-payout recovery';
+        this.logger.error(
+          `Stuck payout ${payout.id} exceeded retries → DEAD_LETTER`,
+        );
+      }
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    if (
+      payout.status === PayoutStatus.RETRY_SCHEDULED &&
+      payout.nextRetryAt &&
+      payout.nextRetryAt <= new Date()
+    ) {
+      payout.status = PayoutStatus.PENDING;
+      payout.failureReason = null;
+      this.logger.warn(
+        `Force-reset overdue RETRY_SCHEDULED payout ${payout.id} → PENDING`,
+      );
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    // Nothing to do – payout is not in a recoverable stuck state.
+    return payout;
   }
 
   // ─── Mapper ────────────────────────────────────────────────────────────────
