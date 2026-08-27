@@ -14,6 +14,7 @@ import { StellarService } from '../stellar/stellar.service';
 import { BulkheadService } from '../../common/services/bulkhead.service';
 import { QUEUES } from '../jobs/jobs.constants';
 import { JobResultStatusCacheService } from '../jobs/services/job-result-status-cache.service';
+import { encodeCursor } from '../../common/dto/pagination.dto';
 
 const mockRepo = () => ({
   create: jest.fn(),
@@ -290,6 +291,83 @@ describe('PayoutsService settlement finality', () => {
     expect(metrics.incrementCounter).toHaveBeenCalledWith(
       'payout_dead_letter_total',
       { asset: 'XLM' },
+    );
+  });
+
+  it('uses stable keyset pagination and emits a cursor for the next page', async () => {
+    const rows = [
+      buildPayout({
+        id: 'payout-3',
+        createdAt: new Date('2026-01-03T00:00:00.000Z'),
+      }),
+      buildPayout({
+        id: 'payout-2',
+        createdAt: new Date('2026-01-02T00:00:00.000Z'),
+      }),
+      buildPayout({
+        id: 'payout-1',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      }),
+    ];
+    const queryBuilder = {
+      andWhere: jest.fn(),
+      orderBy: jest.fn(),
+      addOrderBy: jest.fn(),
+      take: jest.fn(),
+      getMany: jest.fn().mockResolvedValue(rows),
+    };
+    queryBuilder.orderBy.mockReturnValue(queryBuilder);
+    queryBuilder.addOrderBy.mockReturnValue(queryBuilder);
+    queryBuilder.take.mockReturnValue(queryBuilder);
+    repo.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getPayoutHistory({ limit: 2 });
+
+    expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+      'payout.createdAt',
+      'DESC',
+    );
+    expect(queryBuilder.addOrderBy).toHaveBeenCalledWith('payout.id', 'DESC');
+    expect(queryBuilder.take).toHaveBeenCalledWith(3);
+    expect(result.data.map((payout) => payout.id)).toEqual([
+      'payout-3',
+      'payout-2',
+    ]);
+    expect(result.nextCursor).toBe(
+      encodeCursor({
+        createdAt: rows[1].createdAt,
+        id: rows[1].id,
+      }),
+    );
+    expect(result.hasMore).toBe(true);
+  });
+
+  it('applies the cursor boundary before fetching the next page', async () => {
+    const queryBuilder = {
+      andWhere: jest.fn(),
+      orderBy: jest.fn(),
+      addOrderBy: jest.fn(),
+      take: jest.fn(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+    queryBuilder.orderBy.mockReturnValue(queryBuilder);
+    queryBuilder.addOrderBy.mockReturnValue(queryBuilder);
+    queryBuilder.take.mockReturnValue(queryBuilder);
+    repo.createQueryBuilder.mockReturnValue(queryBuilder);
+    const cursor = encodeCursor({
+      createdAt: '2026-01-02T00:00:00.000Z',
+      id: 'payout-2',
+    });
+
+    await service.getPayoutHistory({ cursor, limit: 10 }, 'user-address');
+
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'payout.stellarAddress = :address',
+      { address: 'user-address' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      '(payout.createdAt < :cv OR (payout.createdAt = :cv AND payout.id < :idv))',
+      { cv: '2026-01-02T00:00:00.000Z', idv: 'payout-2' },
     );
   });
 });
@@ -735,5 +813,188 @@ describe('PayoutsService.claimPayout idempotency', () => {
       expect.any(String),
     );
     expect(idempotencyService.computeBodyHash).toHaveBeenCalledWith(claimDto);
+  });
+});
+
+describe('PayoutsService.forceResetPayout', () => {
+  let service: PayoutsService;
+  let repo: ReturnType<typeof mockRepo>;
+  let config: { get: jest.Mock };
+  let metrics: { incrementCounter: jest.Mock };
+
+  beforeEach(async () => {
+    repo = mockRepo();
+    repo.save.mockImplementation(async (payout) => payout);
+    config = {
+      get: jest.fn((key: string, defaultValue?: unknown) => {
+        const values: Record<string, unknown> = {
+          NODE_ENV: 'test',
+        };
+        return values[key] ?? defaultValue;
+      }),
+    };
+    metrics = { incrementCounter: jest.fn(), registerCounter: jest.fn() };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PayoutsService,
+        { provide: getRepositoryToken(Payout), useValue: repo },
+        { provide: ConfigService, useValue: config },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        { provide: FraudRiskRulesService, useValue: {} },
+        {
+          provide: IdempotencyService,
+          useValue: {
+            computeFingerprint: jest.fn().mockReturnValue('fp'),
+            computeBodyHash: jest.fn().mockReturnValue('bh'),
+            tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+            complete: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
+        { provide: MetricsService, useValue: metrics },
+        { provide: JobsService, useValue: { addJob: jest.fn() } },
+        {
+          provide: StellarService,
+          useValue: { sendPayment: jest.fn(), sendBatchPayments: jest.fn() },
+        },
+        {
+          provide: BulkheadService,
+          useValue: {
+            runWithBulkhead: jest.fn(
+              (_name: string, fn: () => Promise<unknown>) => fn(),
+            ),
+          },
+        },
+        {
+          provide: JobResultStatusCacheService,
+          useValue: {
+            getPayoutPoll: jest.fn(),
+            setPayoutPoll: jest.fn(),
+            invalidatePayout: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<PayoutsService>(PayoutsService);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('returns null when the payout does not exist', async () => {
+    repo.findOne.mockResolvedValue(null);
+
+    const result = await service.forceResetPayout('nonexistent');
+
+    expect(result).toBeNull();
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('resets a stuck PROCESSING payout to PENDING when retries remain', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PROCESSING,
+      transactionHash: null,
+      retryCount: 2,
+      maxRetries: 5,
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.PENDING);
+    expect(result!.failureReason).toContain('Reset to PENDING');
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: PayoutStatus.PENDING }),
+    );
+  });
+
+  it('moves a stuck PROCESSING payout to DEAD_LETTER when retries are exhausted', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PROCESSING,
+      transactionHash: null,
+      retryCount: 5,
+      maxRetries: 5,
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.DEAD_LETTER);
+    expect(result!.nextRetryAt).toBeNull();
+    expect(result!.failureReason).toContain('Exceeded retries');
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: PayoutStatus.DEAD_LETTER }),
+    );
+  });
+
+  it('resets an overdue RETRY_SCHEDULED payout to PENDING', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.RETRY_SCHEDULED,
+      transactionHash: 'tx_abc',
+      retryCount: 1,
+      maxRetries: 5,
+      nextRetryAt: new Date(Date.now() - 60_000), // overdue by 1 minute
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.PENDING);
+    expect(result!.failureReason).toBeNull();
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: PayoutStatus.PENDING }),
+    );
+  });
+
+  it('does not touch a RETRY_SCHEDULED payout whose nextRetryAt is still in the future', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.RETRY_SCHEDULED,
+      transactionHash: 'tx_abc',
+      retryCount: 1,
+      maxRetries: 5,
+      nextRetryAt: new Date(Date.now() + 60_000), // not yet due
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.RETRY_SCHEDULED);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('does not touch a PROCESSING payout that already has a transactionHash', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.PROCESSING,
+      transactionHash: 'tx_submitted',
+      retryCount: 0,
+      maxRetries: 5,
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.PROCESSING);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('does not touch a COMPLETED payout', async () => {
+    const payout = buildPayout({
+      status: PayoutStatus.COMPLETED,
+      transactionHash: 'tx_done',
+    });
+    repo.findOne.mockResolvedValue(payout);
+
+    const result = await service.forceResetPayout(payout.id);
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(PayoutStatus.COMPLETED);
+    expect(repo.save).not.toHaveBeenCalled();
   });
 });
