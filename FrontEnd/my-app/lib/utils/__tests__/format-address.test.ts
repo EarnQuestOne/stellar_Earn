@@ -4,7 +4,7 @@ import { truncateAddress } from '@/lib/utils/format-address';
 describe('truncateAddress', () => {
   it('truncates a Stellar contract ID (56 hex chars)', () => {
     const id = 'CBIELTK3Y7V5Y6V3Y7V5Y6V3Y7V5Y6V3Y7V5Y6V3Y7V5Y6V3Y7V5Y6V3Y7';
-    expect(truncateAddress(id)).toBe('CBIELT…Y6V3Y7');
+    expect(truncateAddress(id)).toBe('CBIELT…V3Y7');
   });
 
   it('truncates a long Stellar address', () => {
@@ -33,7 +33,7 @@ describe('truncateAddress', () => {
 
   it('truncates strings just over maxTotal length', () => {
     const over = '1234567890123'; // 13 chars
-    expect(truncateAddress(over)).toBe('123456…8901');
+    expect(truncateAddress(over)).toBe('123456…0123');
   });
 
   it('respects custom prefix/suffix lengths', () => {
