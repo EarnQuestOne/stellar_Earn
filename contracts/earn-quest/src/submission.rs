@@ -1,7 +1,7 @@
 use crate::errors::Error;
 use crate::events;
 use crate::storage;
-use crate::types;:BatchApprovalInput, Commitment, Submission, SubmissionStatus};
+use crate::types::{BatchApprovalInput, Commitment, Submission, SubmissionStatus};
 use crate::validation;
 use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
@@ -18,17 +18,16 @@ use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 ///
 /// # Returns
 ///
-/// * @Ok(``)  if the commitment is successfully stored.
+/// * `Ok(())` if the commitment is successfully stored.
 /// * `Err(Error::QuestNotActive)` if the quest is not active.
-/// * `ErrError::QuestExpired)`  if the deadline has passed.
-/// * `ErrError::AlreadyClaimed)` if the user already has a submission.
+/// * `Err(Error::QuestExpired)` if the deadline has passed.
+/// * `Err(Error::AlreadyClaimed)` if the user already has a submission.
 pub fn commit_submission(
     env: &Env,
     quest_id: &Symbol,
     submitter: &Address,
     commitment_hash: &BytesN<32>,
-) -> Result<StaticString?, Error>
-{
+) -> Result<(), Error> {
     // Verify quest exists and get its data
     let quest = storage::get_quest(env, quest_id)?;
     // Validate quest is active
@@ -64,7 +63,7 @@ pub fn commit_submission(
         commitment_hash.clone(),
     );
 
-    Ok()
+    Ok(())
 }
 
 /// Reveal the proof and salt to complete the submission process.
@@ -81,16 +80,15 @@ pub fn commit_submission(
 ///
 /// # Returns
 ///
-/// * @Ok(``) if the reveal is successful and the submission is created.
-/// * `Err(Error::InvalidCommitment)`  if the provided data does not match the commitment.
+/// * `Ok(())` if the reveal is successful and the submission is created.
+/// * `Err(Error::InvalidCommitment)` if the provided data does not match the commitment.
 pub fn reveal_submission(
     env: &Env,
     quest_id: &Symbol,
     submitter: &Address,
     proof_hash: &BytesN<32>,
     salt: &BytesN<32>,
-) -> Result<StaticString?, Error>
-{
+) -> Result<(), Error> {
     // 1. Retrieve the stored commitment
     let commitment = storage::get_commitment(env, quest_id, submitter)?;
 
@@ -125,7 +123,7 @@ pub fn reveal_submission(
     events::submission_revealed(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
     events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
 
-    Ok()
+    Ok(())
 }
 
 /// Submits a proof for a quest without the commit-reveal flow.
@@ -139,17 +137,16 @@ pub fn reveal_submission(
 ///
 /// # Returns
 ///
-/// * `Ok(`)` if the submission is successful.
-/// * `ErrError)  if the quest is not active or has expired.
+/// * `Ok(())` if the submission is successful.
+/// * `Err(Error)` if the quest is not active or has expired.
 pub fn submit_proof(
     env: &Env,
     quest_id: &Symbol,
     submitter: &Address,
     proof_hash: &BytesN<32>,
-) -> Result<StaticString?, Error>
-{
+) -> Result<(), Error> {
     crate::gas_budget::reset_call_budget(env);
-    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("sub_prf"))?
+    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("sub_prf"))?;
     // Verify quest exists and get its data
     let quest = storage::get_quest(env, quest_id)?;
     // Validate quest is active
@@ -160,7 +157,7 @@ pub fn submit_proof(
         .unwrap_or(storage::get_default_grace_period(env));
     validation::validate_quest_not_expired(env, quest.deadline, grace_period_seconds)?;
     // Validate submitter address
-    validation::validate_badge_count(0)? // Example: badge count check for submitter
+    validation::validate_badge_count(0)?; // Example: badge count check for submitter
 
     let submission = Submission {
         quest_id: quest_id.clone(),
@@ -176,7 +173,29 @@ pub fn submit_proof(
     // EMIT EVENT: ProofSubmitted
     events::proof_submitted(env, quest_id.clone(), submitter.clone(), proof_hash.clone());
 
-    Ok()
+    Ok(())
+}
+
+/// Returns just the current status of a submission by its (quest, submitter)
+/// identity, without loading and returning the full record.
+///
+/// # Arguments
+///
+/// * `env` - The contract environment.
+/// * `quest_id` - The symbol of the quest.
+/// * `submitter` - The address of the user who submitted.
+///
+/// # Returns
+///
+/// * `Ok(status)` with the submission's current [`SubmissionStatus`].
+/// * `Err(Error::SubmissionNotFound)` if no submission exists.
+pub fn get_submission_status(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+) -> Result<SubmissionStatus, Error> {
+    let submission = storage::get_submission(env, quest_id, submitter)?;
+    Ok(submission.status)
 }
 
 /// Approve a submission (Verifier only).
@@ -190,16 +209,15 @@ pub fn submit_proof(
 ///
 /// # Returns
 ///
-/// * @Oh(``)  if the approval is successful.
-/// * `ErrError::Unauthorized)`  if the caller is not the quest's verifier.
-/// * `ErrError)  if the submission is not found or status transition is invalid.
+/// * `Ok(())` if the approval is successful.
+/// * `Err(Error::Unauthorized)` if the caller is not the quest's verifier.
+/// * `Err(Error)` if the submission is not found or status transition is invalid.
 pub fn approve_submission(
     env: &Env,
     quest_id: &Symbol,
     submitter: &Address,
     verifier: &Address,
-) -> Result<StaticString?, Error>
-{
+) -> Result<(), Error> {
     crate::gas_budget::reset_call_budget(env);
     crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("appr_sub"))?;
     let quest = storage::get_quest(env, quest_id)?;
@@ -216,11 +234,6 @@ pub fn approve_submission(
     }
 
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
-
-    // Issue #2287: return an explicit error if submission is already approved
-    if submission.status == SubmissionStatus::Approved {
-        return Err(Error::AlreadyApproved);
-    }
 
     // Validate status transition: Pending -> Approved
     validation::validate_submission_status_transition(
@@ -240,7 +253,7 @@ pub fn approve_submission(
     // EMIT EVENT: SubmissionApproved
     events::submission_approved(env, quest_id.clone(), submitter.clone(), verifier.clone());
 
-    Ok()
+    Ok(())
 }
 
 /// Validates a claim amount against the remaining reward for a submission.
@@ -248,8 +261,7 @@ pub fn validate_claim_amount(
     quest: &crate::types::Quest,
     submission: &crate::types::Submission,
     amount: i128,
-) -> Result<i128, Error>
-{
+) -> Result<i128, Error> {
     validation::validate_reward_amount(amount)?;
 
     // Guarded subtraction: if stored accounting were ever corrupted such that
@@ -278,15 +290,14 @@ pub fn validate_claim_amount(
 ///
 /// # Returns
 ///
-/// * @Oh(``)  if the claim is valid.
-/// * `Err(Error::AlreadyClaimed)`  if the submission has already been paid.
-/// * `Err(Error::QuestClaimsLimitReached)`  if the quest's maximum claims have been reached.
-/// * `ErrError)  if the status transition is invalid.
+/// * `Ok(())` if the claim is valid.
+/// * `Err(Error::AlreadyClaimed)` if the submission has already been paid.
+/// * `Err(Error::QuestClaimsLimitReached)` if the quest's maximum claims have been reached.
+/// * `Err(Error)` if the status transition is invalid.
 pub fn validate_claim_data(
     quest: &crate::types::Quest,
     submission: &crate::types::Submission,
-) -> Result<(), Error>
-{
+) -> Result<(), Error> {
     // Check if already fully claimed
     if submission.status == SubmissionStatus::Paid {
         return Err(Error::AlreadyClaimed);
@@ -298,7 +309,7 @@ pub fn validate_claim_data(
     // Validate quest claims limit
     validation::validate_quest_claims_limit(quest.total_claims)?;
 
-    Ok()
+    Ok(())
 }
 
 /// Validates a reward claim for a specific quest and submitter.
@@ -316,19 +327,19 @@ pub fn validate_claim_data(
 ///
 /// # Returns
 ///
-/// * @Ok(``) if the claim is valid.
+/// * `Ok(())` if the claim is valid.
 /// * `Err(Error)` if the quest or submission is not found, or if validation fails.
 #[allow(dead_code)]
 pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<(), Error> {
     let quest = storage::get_quest(env, quest_id)?;
     let submission = storage::get_submission(env, quest_id, submitter)?;
     validate_claim_data(&quest, &submission)?;
-    Ok()
+    Ok(())
 }
 
-//=================================================================================================================
+//================================================================================
 // Batch approval (gas-optimized)
-//=================================================================================================================
+//================================================================================
 
 /// Approve multiple submissions in a single transaction (gas-optimized).
 ///
@@ -342,7 +353,7 @@ pub fn validate_claim(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 /// * `submissions` - List of (quest_id, submitter) to approve
 ///
 /// # Returns
-/// * @Ok(``) if all submissions were approved
+/// * `Ok(())` if all submissions were approved
 /// * `Err(Error)` on first failure (e.g. Unauthorized, SubmissionNotFound)
 ///
 /// # Gas Optimization
@@ -353,21 +364,91 @@ pub fn approve_submissions_batch(
     env: &Env,
     verifier: &Address,
     submissions: &Vec<BatchApprovalInput>,
-) -> Result<StaticString?, Error>
-{
+) -> Result<(), Error> {
     crate::gas_budget::reset_call_budget(env);
-    crate::gas_budget::enforce_budget(env, &soroban_sdk::symbol_short!("appr_bat"))?;
+    let len = submissions.len();
+    validation::validate_batch_approval_size(len)?;
 
-    if submissions.len() > storage::get_max_batch_size(env) {
-        return Err(Error::BatchLimitExceeded);
+    let ep = soroban_sdk::symbol_short!("appr_btch");
+    crate::gas_budget::enforce_budget(env, &ep)?;
+
+    // Pre-validate all addresses to fail fast
+    for i in 0u32..len {
+        crate::gas_budget::enforce_budget(env, &ep)?;
+        let s = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+        for j in 0u32..s.submissions.len() {
+            let submitter = s.submissions.get(j).ok_or(Error::IndexOutOfBounds)?;
+            validation::validate_addresses_distinct(verifier, &submitter)?;
+        }
     }
 
-    let mut approved_count: u32 = 0;
-    for item in submissions.iter() {
-        approve_submission(env, , item.quest_id, item.submitter, verifier)?;
-        approved_count += 1;
+    // Cache quest and escrow data to avoid redundant reads
+    let mut cached_quest_id: Option<Symbol> = None;
+    let mut cached_quest_data: Option<crate::types::Quest> = None;
+    let mut cached_escrow: Option<crate::types::EscrowInfo> = None;
+
+    for i in 0u32..len {
+        let batch = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+        let quest_id = &batch.quest_id;
+
+        // Reuse quest data if same quest as previous iteration
+        let quest = if cached_quest_id.as_ref() == Some(quest_id) {
+            cached_quest_data.as_ref().unwrap()
+        } else {
+            let quest_data = storage::get_quest(env, quest_id)?;
+            cached_quest_id = Some(quest_id.clone());
+            cached_quest_data = Some(quest_data);
+            // Also cache escrow if it exists for this quest
+            if storage::has_escrow(env, quest_id) {
+                cached_escrow = Some(storage::get_escrow(env, quest_id)?);
+            } else {
+                cached_escrow = None;
+            }
+            cached_quest_data.as_ref().unwrap()
+        };
+
+        if *verifier != quest.verifier {
+            return Err(Error::Unauthorized);
+        }
+
+        // Issue #2287: the quest creator must not approve submissions on their own
+        // quest (self-approval / conflict of interest).
+        if *verifier == quest.creator {
+            return Err(Error::SelfApprovalDisallowed);
+        }
+
+        for j in 0u32..batch.submissions.len() {
+            let submitter = batch.submissions.get(j).ok_or(Error::IndexOutOfBounds)?;
+
+            // Single read of submission; will be updated directly
+            let mut submission = storage::get_submission(env, quest_id, &submitter)?;
+
+            // Validate status transition: Pending -> Approved
+            validation::validate_submission_status_transition(
+                &submission.status,
+                &SubmissionStatus::Approved,
+            )?;
+
+            // Escrow check — verify there are enough funds using cached data
+            if let Some(ref escrow) = cached_escrow {
+                if !escrow.is_active {
+                    return Err(Error::EscrowInactive);
+                }
+                let available =
+                    escrow.total_deposited - escrow.total_paid_out - escrow.total_refunded;
+                if available < quest.reward_amount {
+                    return Err(Error::InsufficientEscrow);
+                }
+            }
+
+            // Direct update to avoid redundant read
+            submission.status = SubmissionStatus::Approved;
+            storage::set_submission(env, quest_id, &submitter, &submission);
+
+            // Emit event
+            events::submission_approved(env, quest_id.clone(), submitter.clone(), verifier.clone());
+        }
     }
 
-    events::batch_approved(env, verifier.clone(), approved_count);
-    Ok()
+    Ok(())
 }
