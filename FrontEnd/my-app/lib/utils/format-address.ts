@@ -15,7 +15,7 @@ export function truncateAddress(
   value: string | null | undefined,
   prefix = 6,
   suffix = 4,
-  maxTotal = 12,
+  maxTotal = 12
 ): string {
   if (!value) return '';
   if (value.length <= maxTotal) return value;
