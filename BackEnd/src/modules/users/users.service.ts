@@ -12,7 +12,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { User, PrivacyLevel } from './entities/user.entity';
 import { CacheService } from '../cache/cache.service';
 import { CacheTags } from '../cache/cache-tags';
-import { Submission, SubmissionStatus } from '../submissions/entities/submission.entity';
+import { Submission } from '../submissions/entities/submission.entity';
 import { Quest } from '../quests/entities/quest.entity';
 import { Payout } from '../payouts/entities/payout.entity';
 import { UserMapper } from './mappers/user.mapper';
@@ -214,14 +214,14 @@ export class UsersService {
 
     const totalSubmissions = submissions.length;
     const approvedSubmissions = submissions.filter(
-      (submission) => submission.status === SubmissionStatus.APPROVED,
+      (submission) => String(submission.status) === 'APPROVED',
     ).length;
     const rejectedSubmissions = submissions.filter(
-      (submission) => submission.status === SubmissionStatus.REJECTED,
+      (submission) => String(submission.status) === 'REJECTED',
     ).length;
     const completedQuests = approvedSubmissions;
     const pendingQuests = submissions.filter(
-      (submission) => submission.status === SubmissionStatus.PENDING,
+      (submission) => String(submission.status) === 'PENDING',
     ).length;
     const failedQuests = rejectedSubmissions;
     const totalQuests = totalSubmissions;

@@ -35,6 +35,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Improved error logging formatting in WebhooksService
+- `WebhooksService` now records basic processing and failure metrics while preserving the dead-letter persistence flow.
 
 # Changelog - Webhooks Module
 
