@@ -15,6 +15,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Fixed TS2352 build error in `PayoutsService.claimPayout()` — `responseBody` cast now goes through `unknown` to satisfy strict type checking.
 - Repaired the `PayoutsService` constructor that was mangled by a merge conflict resolution — the `JobResultStatusCacheService` dependency is injected correctly again.
 
 ### Added

@@ -115,8 +115,8 @@ body {
 
 /* Accessibility: Enhanced focus styles for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid var(--theme-primary);
-  outline-offset: 2px;
+  outline: 2px solid var(--theme-primary) !important;
+  outline-offset: 2px !important;
 }
 
 /* Screen reader only class */
