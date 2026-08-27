@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 interface EmptyQuestStateProps {
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
@@ -44,20 +46,8 @@ export function EmptyQuestState({
         />
 
         {/* Pegs behind the scroll */}
-        <circle
-          cx="58"
-          cy="72"
-          r="6"
-          fill="currentColor"
-          fillOpacity="0.5"
-        />
-        <circle
-          cx="142"
-          cy="72"
-          r="6"
-          fill="currentColor"
-          fillOpacity="0.5"
-        />
+        <circle cx="58" cy="72" r="6" fill="currentColor" fillOpacity="0.5" />
+        <circle cx="142" cy="72" r="6" fill="currentColor" fillOpacity="0.5" />
 
         {/* Scroll body */}
         <rect
@@ -83,7 +73,13 @@ export function EmptyQuestState({
 
         {/* Magnifying glass */}
         <g stroke="currentColor" strokeWidth="4" strokeLinecap="round">
-          <circle cx="128" cy="102" r="16" fill="currentColor" fillOpacity="0.14" />
+          <circle
+            cx="128"
+            cy="102"
+            r="16"
+            fill="currentColor"
+            fillOpacity="0.14"
+          />
           <path d="M140 114l14 14" />
         </g>
 

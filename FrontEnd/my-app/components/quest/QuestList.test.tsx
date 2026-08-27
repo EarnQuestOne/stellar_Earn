@@ -59,9 +59,7 @@ describe('QuestList empty state', () => {
       screen.getByRole('heading', { name: /no quests found/i })
     ).toBeInTheDocument();
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(
-      container.querySelector('svg[aria-hidden="true"]')
-    ).not.toBeNull();
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
   });
 
@@ -92,7 +90,9 @@ describe('QuestList empty state', () => {
     expect(
       screen.queryByRole('heading', { name: /no quests found/i })
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('status', { name: /loading quests/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('status', { name: /loading quests/i })
+    ).toBeInTheDocument();
   });
 
   test('does not show the empty state when an error occurs', () => {

@@ -39,7 +39,10 @@ describe('EmptyQuestState', () => {
   it('renders the clear filters button and triggers onClearFilters', () => {
     const onClearFilters = vi.fn();
     render(
-      <EmptyQuestState hasActiveFilters={true} onClearFilters={onClearFilters} />
+      <EmptyQuestState
+        hasActiveFilters={true}
+        onClearFilters={onClearFilters}
+      />
     );
 
     const button = screen.getByRole('button', { name: /clear filters/i });
