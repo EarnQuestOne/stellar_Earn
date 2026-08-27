@@ -8,9 +8,7 @@ import {
   Payout,
   PayoutStatus,
 } from '#src/modules/payouts/entities/payout.entity';
-import {
-  PayoutOutbox,
-} from '#src/modules/payouts/entities/payout-outbox.entity';
+import { PayoutOutbox } from '#src/modules/payouts/entities/payout-outbox.entity';
 
 describe('PayoutReconciliationProcessor', () => {
   let module: TestingModule;
@@ -47,17 +45,18 @@ describe('PayoutReconciliationProcessor', () => {
 
   beforeEach(async () => {
     // Deep-clone so each test gets fresh data (processor mutates in place)
-    const freshPayouts = () =>
-      mockPayouts.map((p) => ({ ...p }));
+    const freshPayouts = () => mockPayouts.map((p) => ({ ...p }));
 
     payoutRepository = {
       find: jest.fn().mockImplementation(() => Promise.resolve(freshPayouts())),
       save: jest.fn().mockImplementation((p) => Promise.resolve(p)),
     };
     payoutsService = {
-      forceResetPayout: jest.fn().mockImplementation((_id: string) =>
-        Promise.resolve({ id: _id, status: PayoutStatus.PENDING }),
-      ),
+      forceResetPayout: jest
+        .fn()
+        .mockImplementation((_id: string) =>
+          Promise.resolve({ id: _id, status: PayoutStatus.PENDING }),
+        ),
     };
 
     module = await Test.createTestingModule({
@@ -210,7 +209,7 @@ describe('PayoutReconciliationProcessor', () => {
     it('should log nothing when there are no stuck payouts', async () => {
       payoutRepository.find
         .mockReset()
-        .mockResolvedValueOnce([])  // no stuck PROCESSING
+        .mockResolvedValueOnce([]) // no stuck PROCESSING
         .mockResolvedValueOnce([]); // no overdue RETRY_SCHEDULED
 
       await processor.recoverStuckPayouts();
@@ -222,7 +221,10 @@ describe('PayoutReconciliationProcessor', () => {
       payoutsService.forceResetPayout
         .mockRejectedValueOnce(new Error('DB timeout'))
         .mockResolvedValueOnce({ id: 'stuck-2', status: PayoutStatus.PENDING })
-        .mockResolvedValueOnce({ id: 'overdue-1', status: PayoutStatus.PENDING });
+        .mockResolvedValueOnce({
+          id: 'overdue-1',
+          status: PayoutStatus.PENDING,
+        });
 
       await expect(processor.recoverStuckPayouts()).resolves.not.toThrow();
 

@@ -394,7 +394,11 @@ describe('PayoutsService.processBatchPayouts', () => {
       }),
     };
     emitter = { emit: jest.fn() };
-    metrics = { incrementCounter: jest.fn(), observeHistogram: jest.fn(), registerCounter: jest.fn() };
+    metrics = {
+      incrementCounter: jest.fn(),
+      observeHistogram: jest.fn(),
+      registerCounter: jest.fn(),
+    };
     jobs = { addJob: jest.fn().mockResolvedValue({ id: 'dead-letter-job' }) };
     stellarService = {
       sendPayment: jest.fn(),
@@ -416,13 +420,16 @@ describe('PayoutsService.processBatchPayouts', () => {
         { provide: ConfigService, useValue: config },
         { provide: EventEmitter2, useValue: emitter },
         { provide: FraudRiskRulesService, useValue: {} },
-        { provide: IdempotencyService, useValue: {
-          computeFingerprint: jest.fn().mockReturnValue('fp'),
-          computeBodyHash: jest.fn().mockReturnValue('bh'),
-          tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
-          complete: jest.fn().mockResolvedValue(undefined),
-          remove: jest.fn().mockResolvedValue(undefined),
-        } },
+        {
+          provide: IdempotencyService,
+          useValue: {
+            computeFingerprint: jest.fn().mockReturnValue('fp'),
+            computeBodyHash: jest.fn().mockReturnValue('bh'),
+            tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+            complete: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: jobs },
@@ -737,18 +744,18 @@ describe('PayoutsService.claimPayout idempotency', () => {
       },
     });
 
-    await expect(
-      service.claimPayout(claimDto, userAddress),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      ConflictException,
+    );
     expect(repo.findOne).not.toHaveBeenCalled();
   });
 
   it('removes the idempotency record when the payout is not found', async () => {
     repo.findOne.mockResolvedValue(null);
 
-    await expect(
-      service.claimPayout(claimDto, userAddress),
-    ).rejects.toThrow('Payout not found for this submission');
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      'Payout not found for this submission',
+    );
     expect(idempotencyService.remove).toHaveBeenCalledWith(
       `payout-claim:${submissionId}:${userAddress}`,
     );
@@ -762,9 +769,9 @@ describe('PayoutsService.claimPayout idempotency', () => {
     });
     repo.findOne.mockResolvedValue(payout);
 
-    await expect(
-      service.claimPayout(claimDto, userAddress),
-    ).rejects.toThrow('Payout cannot be claimed');
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      'Payout cannot be claimed',
+    );
     expect(idempotencyService.remove).toHaveBeenCalledWith(
       `payout-claim:${submissionId}:${userAddress}`,
     );
@@ -779,9 +786,9 @@ describe('PayoutsService.claimPayout idempotency', () => {
     repo.findOne.mockResolvedValue(payout);
     repo.save.mockRejectedValue(new ConflictException('Concurrent update'));
 
-    await expect(
-      service.claimPayout(claimDto, userAddress),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.claimPayout(claimDto, userAddress)).rejects.toThrow(
+      ConflictException,
+    );
     expect(idempotencyService.remove).toHaveBeenCalledWith(
       `payout-claim:${submissionId}:${userAddress}`,
     );
@@ -805,9 +812,7 @@ describe('PayoutsService.claimPayout idempotency', () => {
       'payout-claim',
       expect.any(String),
     );
-    expect(idempotencyService.computeBodyHash).toHaveBeenCalledWith(
-      claimDto,
-    );
+    expect(idempotencyService.computeBodyHash).toHaveBeenCalledWith(claimDto);
   });
 });
 
@@ -837,20 +842,30 @@ describe('PayoutsService.forceResetPayout', () => {
         { provide: ConfigService, useValue: config },
         { provide: EventEmitter2, useValue: { emit: jest.fn() } },
         { provide: FraudRiskRulesService, useValue: {} },
-        { provide: IdempotencyService, useValue: {
-          computeFingerprint: jest.fn().mockReturnValue('fp'),
-          computeBodyHash: jest.fn().mockReturnValue('bh'),
-          tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
-          complete: jest.fn().mockResolvedValue(undefined),
-          remove: jest.fn().mockResolvedValue(undefined),
-        } },
+        {
+          provide: IdempotencyService,
+          useValue: {
+            computeFingerprint: jest.fn().mockReturnValue('fp'),
+            computeBodyHash: jest.fn().mockReturnValue('bh'),
+            tryAcquire: jest.fn().mockResolvedValue({ acquired: true }),
+            complete: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: QuotaService, useValue: { enforcePayoutQuota: jest.fn() } },
         { provide: MetricsService, useValue: metrics },
         { provide: JobsService, useValue: { addJob: jest.fn() } },
-        { provide: StellarService, useValue: { sendPayment: jest.fn(), sendBatchPayments: jest.fn() } },
+        {
+          provide: StellarService,
+          useValue: { sendPayment: jest.fn(), sendBatchPayments: jest.fn() },
+        },
         {
           provide: BulkheadService,
-          useValue: { runWithBulkhead: jest.fn((_name: string, fn: () => Promise<unknown>) => fn()) },
+          useValue: {
+            runWithBulkhead: jest.fn(
+              (_name: string, fn: () => Promise<unknown>) => fn(),
+            ),
+          },
         },
         {
           provide: JobResultStatusCacheService,
