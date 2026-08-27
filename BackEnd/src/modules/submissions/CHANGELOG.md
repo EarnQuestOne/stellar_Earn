@@ -17,6 +17,10 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `anonymizeForErasure(userId, manager?)` — detaches submitter PII and proof references from a user's submissions while preserving quest integrity and reviewer decisions, used by the right-to-erasure pipeline; runs inside the caller's transaction when a manager is supplied (#2337).
+
+### Added
+
 - Optimistic-concurrency `@VersionColumn` (`version`) on the `Submission` entity plus a backfilling migration, so concurrent submission writes (e.g. a status transition racing with an edit) are rejected on stale-version saves instead of causing a lost update (#2157).
 
 ### Fixed

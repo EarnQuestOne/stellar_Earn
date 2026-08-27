@@ -120,6 +120,12 @@ export class WebsocketService {
     const client = this.clients.get(socketId);
     if (!client) return;
 
+    for (const roomName of client.subscribedChannels) {
+      client.socket.leave(roomName);
+    }
+    client.socket.leave(`user:${client.userId}`);
+    client.socket.removeAllListeners?.();
+
     const userSockets = this.userSocketMap.get(client.userId);
     if (userSockets) {
       userSockets.delete(socketId);

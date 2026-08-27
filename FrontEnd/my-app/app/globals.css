@@ -4,6 +4,7 @@
 @source "../lib";
 @import '../styles/themes.css';
 @import '../styles/homepage.css';
+@import '../styles/animations.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -114,8 +115,8 @@ body {
 
 /* Accessibility: Enhanced focus styles for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid var(--theme-primary);
-  outline-offset: 2px;
+  outline: 2px solid var(--theme-primary) !important;
+  outline-offset: 2px !important;
 }
 
 /* Screen reader only class */
@@ -146,3 +147,17 @@ body {
 /* Ensure sufficient color contrast for text */
 /* Primary color #089ec3 (cyan) has good contrast on white (#ffffff) - ratio ~4.5:1 (AA) */
 /* On dark backgrounds, ensure text colors meet contrast requirements */
+
+/* Respect the user's reduced-motion preference (WCAG 2.1 criterion 2.3.3).
+   Suppresses CSS animations and transitions so users who opt into reduced
+   motion are not exposed to motion that could cause discomfort. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

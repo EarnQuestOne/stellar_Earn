@@ -148,6 +148,7 @@ pub enum Error {
     BadgeTypeNotFound = 142,
 
     // Payout Errors
+    /// Reward-claim amount is zero or negative.
     InvalidClaimAmount = 143,
 
     // Verifier Stake Errors

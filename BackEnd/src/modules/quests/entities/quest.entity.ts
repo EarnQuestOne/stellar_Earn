@@ -3,12 +3,15 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
   Index,
 } from 'typeorm';
 import { QuestDifficulty } from '../enums/quest-difficulty.enum';
+import { User } from '../../users/entities/user.entity';
 
 @Index('idx_quest_active_status', ['status'], {
   where: '"deletedAt" IS NULL',
@@ -84,6 +87,8 @@ export class Quest {
 
   // For compatibility with verification system
   verifiers: { id: string }[];
-  creator: { id: string } | null;
+  @ManyToOne('User', 'createdQuests')
+  @JoinColumn({ name: 'createdBy', referencedColumnName: 'id' })
+  creator: User | null;
   category: any;
 }
