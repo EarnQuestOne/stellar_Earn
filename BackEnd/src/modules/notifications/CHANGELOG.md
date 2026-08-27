@@ -12,3 +12,4 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - `WebhookChannel` now uses `PooledHttpClientService` (keep-alive connection pool, 8 s `medium` timeout budget) instead of an unbounded raw `axios` call for webhook delivery.
+- `NotificationsService` now supports batched mark-all-as-read updates plus preference reads and upserts without row-by-row writes.
