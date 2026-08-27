@@ -16,6 +16,7 @@ export const QUEUES = {
   MAINTENANCE: 'maintenance',
   WEBHOOKS: 'webhooks',
   QUESTS: 'quests',
+  ERASURE: 'erasure',
 };
 
 /**
@@ -78,5 +79,10 @@ export const JOB_QUEUE_CONFIG = {
     concurrency: 20,
     priority: 'MEDIUM',
     timeout: 30000,
+  },
+  [QUEUES.ERASURE]: {
+    concurrency: 1,
+    priority: 'LOW',
+    timeout: 120000, // 2 minutes — bounded by the erasure transaction
   },
 };

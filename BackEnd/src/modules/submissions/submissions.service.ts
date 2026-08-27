@@ -8,7 +8,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 
 /**
  * Sentinel error thrown inside the capacity-gate transaction when the
@@ -78,6 +78,39 @@ export class SubmissionsService {
     private metricsService: MetricsService,
     private verificationDedup: VerificationDedupService,
   ) {}
+
+  /**
+   * Anonymize a user's submissions (right-to-erasure).
+   *
+   * Submitter PII and proof references are detached (`proof` is replaced with
+   * an erased marker, notes are nulled) while quest integrity and reviewer
+   * decisions (status, approvedBy/rejectedBy timestamps, transactionHash) are
+   * preserved so payout/audit trails stay consistent. Returns the number of
+   * submissions anonymized.
+   *
+   * Runs on the provided transaction manager when called from the erasure
+   * pipeline (so the whole erasure is atomic); otherwise uses its own
+   * repository manager.
+   */
+  async anonymizeForErasure(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const em = manager ?? this.submissionsRepository.manager;
+    const repo = em.getRepository(Submission);
+    const submissions = await repo.find({ where: { userId } });
+    if (submissions.length === 0) {
+      return 0;
+    }
+
+    for (const submission of submissions) {
+      submission.proof = { erased: true };
+      submission.verifierNotes = null;
+      submission.rejectionReason = null;
+    }
+    await repo.save(submissions);
+    return submissions.length;
+  }
 
   /**
    * Create a new submission for a quest.

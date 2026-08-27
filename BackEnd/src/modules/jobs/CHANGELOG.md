@@ -9,6 +9,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Stuck payout recovery in `PayoutReconciliationProcessor.recoverStuckPayouts()` — an every-10-minute job that detects payouts stuck in PROCESSING (no transaction hash, crashed before submission) or RETRY_SCHEDULED (overdue, never re-driven) and resets them back to PENDING or DEAD_LETTER via `PayoutsService.forceResetPayout()`.
+- Account-erasure pipeline: new `ERASURE` BullMQ queue, `JobType.ACCOUNT_ERASURE` (with retry policy), `AccountErasureProcessor` and `AccountErasureListener`. The listener schedules the erasure job for the end of the grace period; the processor runs the idempotent, transactional anonymization via `ErasureService` (#2337).
 - Payout transactional-outbox relay in `PayoutProcessor.relayPayoutOutbox()` — an every-minute job that atomically claims PENDING `payout_outbox` rows (`PENDING → PROCESSING`), submits each via `StellarPaymentService` exactly once, and marks them DONE (or retries/parks on failure) (#2158).
 - Stuck-outbox recovery in `PayoutReconciliationProcessor.recoverStuckPayoutOutbox()` — resets outbox rows left in PROCESSING beyond the crash threshold back to PENDING so the idempotent relay can safely replay them (#2158).
 
