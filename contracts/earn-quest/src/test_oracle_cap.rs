@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 //! Unit tests for the cap on registered oracle configurations.
 //!
 //! Guards against unbounded instance storage and unbounded gas in

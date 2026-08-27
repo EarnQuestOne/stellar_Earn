@@ -2,7 +2,9 @@ use crate::errors::Error;
 use crate::events;
 use crate::reputation;
 use crate::storage;
-use crate::types::{BatchQuestInput, MetadataDescription, Quest, QuestMetadata, QuestStatus, Role};
+use crate::types::{
+    BatchQuestInput, MetadataDescription, Quest, QuestMetadata, QuestStatus, Role, SubmissionStatus,
+};
 use crate::validation;
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
@@ -553,8 +555,8 @@ pub fn get_quests_by_reward_range(
 ///
 /// # Performance
 ///
-/// This is an O(1) lookup operation that avoids scanning all quests in the system.
-/// The list is automatically maintained when submissions are created or their status changes.
+/// This implementation scans through all quests to check for active submissions by the user.
+/// While not O(1), it avoids gas overhead in submission creation and status updates.
 ///
 /// # Example
 ///
@@ -566,5 +568,30 @@ pub fn get_quests_by_reward_range(
 /// }
 /// ```
 pub fn get_user_active_quest_ids(env: &Env, user: &Address) -> Vec<Symbol> {
-    storage::get_user_active_quests(env, user)
+    let quest_ids = storage::get_quest_ids(env);
+    let mut active_quests = Vec::new(env);
+
+    for i in 0..quest_ids.len() {
+        if i >= validation::MAX_SCAN_ITERATIONS {
+            break;
+        }
+
+        if let Some(quest_id) = quest_ids.get(i) {
+            if storage::has_submission(env, &quest_id, user) {
+                if let Ok(submission) = storage::get_submission(env, &quest_id, user) {
+                    // Only include if submission is in an active state
+                    match submission.status {
+                        SubmissionStatus::Pending
+                        | SubmissionStatus::Approved
+                        | SubmissionStatus::PartiallyPaid => {
+                            active_quests.push_back(quest_id);
+                        }
+                        _ => {} // Paid or Rejected are terminal states
+                    }
+                }
+            }
+        }
+    }
+
+    active_quests
 }

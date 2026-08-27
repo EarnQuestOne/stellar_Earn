@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 //! Unit tests for the reward/oracle-price deviation check used by
 //! `validate_reward_with_oracle`.
 

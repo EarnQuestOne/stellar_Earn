@@ -110,8 +110,6 @@ pub enum DataKey {
     PauseCooldownSeconds,
     /// Default grace period (in seconds) applied when checking quest expiry
     DefaultQuestGracePeriodSeconds,
-    /// Track active quest IDs for a user (quest IDs where user has pending/approved submissions)
-    UserActiveQuests(Address),
 }
 
 //================================================================================
@@ -527,7 +525,6 @@ pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
 /// # Benefits
 /// * Clearer intent for status transitions (Pending -> Approved -> Paid)
 /// * Prevents accidentally modifying proof_hash or timestamp
-/// * Automatically manages user active quest tracking for terminal states
 pub fn update_submission_status(
     env: &Env,
     quest_id: &Symbol,
@@ -535,17 +532,8 @@ pub fn update_submission_status(
     status: SubmissionStatus,
 ) -> Result<(), Error> {
     let mut submission = get_submission(env, quest_id, submitter)?;
-    submission.status = status.clone();
+    submission.status = status;
     set_submission(env, quest_id, submitter, &submission);
-    
-    // Automatically remove from active quests when reaching terminal states
-    match status {
-        SubmissionStatus::Paid | SubmissionStatus::Rejected => {
-            remove_user_active_quest(env, submitter, quest_id);
-        }
-        _ => {} // No action needed for non-terminal states
-    }
-    
     Ok(())
 }
 
@@ -1622,10 +1610,9 @@ mod layout_tests {
         "LastUnpauseTimestamp",
         "PauseCooldownSeconds",
         "DefaultQuestGracePeriodSeconds",
-        "UserActiveQuests",
     ];
 
-    const EXPECTED_VARIANT_COUNT: usize = 50;
+    const EXPECTED_VARIANT_COUNT: usize = 49;
 
     /// One sample instance per `DataKey` variant for layout audits.
     fn all_data_keys(env: &Env) -> Vec<DataKey> {
@@ -1683,7 +1670,6 @@ mod layout_tests {
         keys.push_back(DataKey::LastUnpauseTimestamp);
         keys.push_back(DataKey::PauseCooldownSeconds);
         keys.push_back(DataKey::DefaultQuestGracePeriodSeconds);
-        keys.push_back(DataKey::UserActiveQuests(addr.clone()));
         keys
     }
 
@@ -1720,110 +1706,6 @@ mod layout_tests {
         assert_eq!(all_data_keys(&env).len() as usize, VARIANT_NAMES.len());
         assert_eq!(VARIANT_NAMES.len(), EXPECTED_VARIANT_COUNT);
     }
-}
-
-//================================================================================
-// User Active Quest Tracking
-//================================================================================
-
-/// Get the list of quest IDs where a user has active submissions.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-///
-/// # Returns
-/// * `Vec<Symbol>` - List of quest IDs with active submissions for this user
-///
-/// # Storage Access
-/// * Reads from: Instance storage
-/// * Gas Cost: Moderate (vector read)
-pub fn get_user_active_quests(env: &Env, user: &Address) -> Vec<Symbol> {
-    env.storage()
-        .instance()
-        .get(&DataKey::UserActiveQuests(user.clone()))
-        .unwrap_or_else(|| Vec::new(env))
-}
-
-/// Add a quest ID to a user's active quest list.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-/// * `quest_id` - The quest ID to add
-///
-/// # Storage Access
-/// * Reads from: Instance storage
-/// * Writes to: Instance storage
-/// * Gas Cost: High (read + modify + write)
-///
-/// # Notes
-/// * Idempotent - won't add duplicates
-/// * Should be called when a user creates a submission
-pub fn add_user_active_quest(env: &Env, user: &Address, quest_id: &Symbol) {
-    let mut active_quests = get_user_active_quests(env, user);
-    
-    // Check if quest ID is already in the list to avoid duplicates
-    for i in 0..active_quests.len() {
-        if let Some(existing_id) = active_quests.get(i) {
-            if existing_id == *quest_id {
-                return; // Already exists, no need to add
-            }
-        }
-    }
-    
-    active_quests.push_back(quest_id.clone());
-    env.storage()
-        .instance()
-        .set(&DataKey::UserActiveQuests(user.clone()), &active_quests);
-    ttl::extend_entry_ttl(
-        env,
-        &DataKey::UserActiveQuests(user.clone()),
-        ttl::DEFAULT_TTL_THRESHOLD,
-        ttl::DEFAULT_TTL_EXTEND_TO,
-    );
-}
-
-/// Remove a quest ID from a user's active quest list.
-///
-/// # Arguments
-/// * `env` - The contract environment
-/// * `user` - The user's address
-/// * `quest_id` - The quest ID to remove
-///
-/// # Storage Access
-/// * Reads from: Instance storage
-/// * Writes to: Instance storage
-/// * Gas Cost: High (read + modify + write)
-///
-/// # Notes
-/// * Should be called when a submission reaches a terminal state (Paid, Rejected)
-/// * Safe to call even if quest ID is not in the list
-pub fn remove_user_active_quest(env: &Env, user: &Address, quest_id: &Symbol) {
-    let mut active_quests = get_user_active_quests(env, user);
-    
-    // Find and remove the quest ID
-    let mut i = 0u32;
-    while i < active_quests.len() {
-        if let Some(existing_id) = active_quests.get(i) {
-            if existing_id == *quest_id {
-                active_quests.remove(i);
-                break;
-            }
-        }
-        i += 1;
-    }
-    
-    // Update storage - even if empty, we store the empty vector
-    env.storage()
-        .instance()
-        .set(&DataKey::UserActiveQuests(user.clone()), &active_quests);
-    ttl::extend_entry_ttl(
-        env,
-        &DataKey::UserActiveQuests(user.clone()),
-        ttl::DEFAULT_TTL_THRESHOLD,
-        ttl::DEFAULT_TTL_EXTEND_TO,
-    );
 }
 
 //================================================================================

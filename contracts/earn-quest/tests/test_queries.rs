@@ -8,7 +8,10 @@ use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 fn setup(env: &Env) -> EarnQuestContractClient<'_> {
     let contract_id = env.register_contract(None, EarnQuestContract);
-    EarnQuestContractClient::new(env, &contract_id)
+    let client = EarnQuestContractClient::new(env, &contract_id);
+    let admin = Address::generate(env);
+    client.initialize(&admin);
+    client
 }
 
 fn register(
@@ -396,7 +399,7 @@ fn test_get_user_active_quest_ids_tracks_submissions() {
     let client = setup(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let verifier = Address::generate(&env);
+    let _verifier = Address::generate(&env);
     let proof = soroban_sdk::BytesN::from_array(&env, &[1u8; 32]);
 
     // Register two quests
@@ -433,7 +436,14 @@ fn test_get_user_active_quest_ids_removes_on_completion() {
     let token = Address::generate(&env);
 
     // Register quest and set up escrow
-    client.register_quest(&symbol_short!("Q1"), &creator, &token, &100i128, &verifier, &99999u64);
+    client.register_quest(
+        &symbol_short!("Q1"),
+        &creator,
+        &token,
+        &100i128,
+        &verifier,
+        &99999u64,
+    );
     client.deposit_escrow(&symbol_short!("Q1"), &creator, &token, &1000i128);
 
     // User submits
@@ -521,7 +531,14 @@ fn test_get_user_active_quest_ids_partial_payment_still_active() {
     let token = Address::generate(&env);
 
     // Register quest with higher reward
-    client.register_quest(&symbol_short!("Q1"), &creator, &token, &1000i128, &verifier, &99999u64);
+    client.register_quest(
+        &symbol_short!("Q1"),
+        &creator,
+        &token,
+        &1000i128,
+        &verifier,
+        &99999u64,
+    );
     client.deposit_escrow(&symbol_short!("Q1"), &creator, &token, &2000i128);
 
     // User submits and gets approved
@@ -530,14 +547,14 @@ fn test_get_user_active_quest_ids_partial_payment_still_active() {
 
     // Partial claim (less than full reward)
     client.claim_reward(&symbol_short!("Q1"), &user, &500i128);
-    
+
     // Should still be active since not fully paid
     let results = client.get_user_active_quest_ids(&user);
     assert_eq!(results.len(), 1);
 
     // Full claim (remaining amount)
     client.claim_reward(&symbol_short!("Q1"), &user, &500i128);
-    
+
     // Now should be removed from active list
     let results = client.get_user_active_quest_ids(&user);
     assert_eq!(results.len(), 0);

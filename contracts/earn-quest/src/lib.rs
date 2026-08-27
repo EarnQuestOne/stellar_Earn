@@ -631,11 +631,6 @@ impl EarnQuestContract {
         };
         storage::set_submission(&env, &quest_id, &submitter, &submission);
 
-        // If fully paid, remove from user's active quests
-        if submission.status == types::SubmissionStatus::Paid {
-            storage::remove_user_active_quest(&env, &submitter, &quest_id);
-        }
-
         // Increment claims: directly update quest to avoid extra read
         let mut quest = quest;
         quest.total_claims = quest
@@ -1310,8 +1305,8 @@ impl EarnQuestContract {
     ///
     /// # Performance
     ///
-    /// This is an O(1) lookup operation that avoids scanning all quests in the system.
-    /// The list is automatically maintained when submissions are created or their status changes.
+    /// This implementation scans through quests to check for active submissions by the user.
+    /// While not O(1) like maintained tracking, it avoids gas overhead in submission operations.
     pub fn get_user_active_quest_ids(env: Env, user: Address) -> Vec<Symbol> {
         quest::get_user_active_quest_ids(&env, &user)
     }
