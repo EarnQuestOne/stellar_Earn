@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { getPayoutHistory } from '@/lib/api/payouts';
 import { useFormatter } from '@/lib/hooks/useFormatter';

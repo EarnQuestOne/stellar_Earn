@@ -17,16 +17,15 @@ vi.mock('@/components/ui/OptimizedImage', () => ({
     width?: number;
     height?: number;
     className?: string;
-  }) => (
-    <div
-      role="img"
-      data-testid="mock-opt-image"
-      alt={alt}
-      src={src}
-      style={{ width, height }}
-      className={className}
-    />
-  ),
+  }) =>
+    React.createElement('img', {
+      'data-testid': 'mock-opt-image',
+      alt,
+      src,
+      width,
+      height,
+      className,
+    }),
 }));
 
 const baseQuest = (overrides: Partial<Quest> = {}): Quest => ({
