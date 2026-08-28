@@ -139,6 +139,8 @@ pub enum Error {
     LowOracleConfidence = 106,
     RewardDeviationTooHigh = 107,
     OracleLimitReached = 108,
+    OracleAlreadyExists = 109,
+    OracleNotFound = 115,
 
     // Arithmetic
     ArithmeticOverflow = 110,

@@ -132,3 +132,47 @@ fn removing_an_oracle_frees_a_slot() {
         );
     });
 }
+
+#[test]
+fn adding_a_duplicate_oracle_address_is_rejected() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let cid = env.register_contract(None, crate::EarnQuestContract);
+
+    env.as_contract(&cid, || {
+        let config = make_config(Address::generate(&env));
+        storage::add_oracle_config(&env, &config).unwrap();
+
+        // Re-registering the same address via add must be rejected.
+        assert_eq!(
+            storage::add_oracle_config(&env, &config),
+            Err(Error::OracleAlreadyExists)
+        );
+
+        // The address list is unchanged and the configured values are untouched.
+        assert_eq!(storage::get_oracle_addresses(&env).len(), 1);
+        let stored = storage::get_oracle_config(&env, &config.oracle_address).unwrap();
+        assert!(stored.is_active);
+    });
+}
+
+#[test]
+fn updating_an_unregistered_oracle_is_rejected() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let cid = env.register_contract(None, crate::EarnQuestContract);
+
+    env.as_contract(&cid, || {
+        // Updating an address that was never registered must not create it.
+        let config = make_config(Address::generate(&env));
+        assert_eq!(
+            storage::update_oracle_config(&env, &config),
+            Err(Error::OracleNotFound)
+        );
+        assert_eq!(storage::get_oracle_addresses(&env).len(), 0);
+        assert_eq!(
+            storage::get_oracle_config(&env, &config.oracle_address),
+            Err(Error::OracleInactive)
+        );
+    });
+}
