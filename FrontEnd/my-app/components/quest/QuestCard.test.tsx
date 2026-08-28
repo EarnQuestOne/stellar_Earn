@@ -18,12 +18,12 @@ vi.mock('@/components/ui/OptimizedImage', () => ({
     height?: number;
     className?: string;
   }) => (
-    <img
+    <div
+      role="img"
       data-testid="mock-opt-image"
       alt={alt}
       src={src}
-      width={width}
-      height={height}
+      style={{ width, height }}
       className={className}
     />
   ),
