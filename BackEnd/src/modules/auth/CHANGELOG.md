@@ -12,6 +12,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - `AuthService.validateUser` now tolerates missing users by falling back to a default caller identity instead of bubbling `NotFoundException`.
 ### Added
 
+- `LoginDto` accepts an optional `referralCode`; on first-time signup `AuthService.verifyAndLogin` records a pending referral attribution (invalid/self/circular/duplicate codes are ignored so signup never fails). Part of the referral program (#2357).
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `RefreshToken` for `userId` and `familyId` columns to speed up active-session queries (#2000).
 
 ### Fixed

@@ -8,6 +8,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `ReferralRewardProcessor` (`processors/referral-reward.processor.ts`) — credits a qualified referral's reward exactly once. Idempotency is enforced by the unique `ReferralReward.referralId`, and self-referrals are rejected/dead-lettered at credit time. Provided by `ReferralsModule`; invoked in-process (no BullMQ worker runs) with the persisted rows keeping state queryable for a future queue-backed worker (#2357).
 - Stuck payout recovery in `PayoutReconciliationProcessor.recoverStuckPayouts()` — an every-10-minute job that detects payouts stuck in PROCESSING (no transaction hash, crashed before submission) or RETRY_SCHEDULED (overdue, never re-driven) and resets them back to PENDING or DEAD_LETTER via `PayoutsService.forceResetPayout()`.
 - Account-erasure pipeline: new `ERASURE` BullMQ queue, `JobType.ACCOUNT_ERASURE` (with retry policy), `AccountErasureProcessor` and `AccountErasureListener`. The listener schedules the erasure job for the end of the grace period; the processor runs the idempotent, transactional anonymization via `ErasureService` (#2337).
 - Payout transactional-outbox relay in `PayoutProcessor.relayPayoutOutbox()` — an every-minute job that atomically claims PENDING `payout_outbox` rows (`PENDING → PROCESSING`), submits each via `StellarPaymentService` exactly once, and marks them DONE (or retries/parks on failure) (#2158).

@@ -14,6 +14,7 @@ import {
   getJwtPublicKeys,
 } from '../../common/utils/jwt-keys';
 import { UsersModule } from '../users/users.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { UsersModule } from '../users/users.module';
     }),
     TypeOrmModule.forFeature([RefreshToken]),
     UsersModule,
+    ReferralsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],

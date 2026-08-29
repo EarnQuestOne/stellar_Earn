@@ -36,6 +36,7 @@ import { PrivacyModule } from './modules/privacy/privacy.module';
 import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
 import { QuestsModule } from './modules/quests/quests.module';
 import { QuotaModule } from './modules/quota/quota.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
 import { StellarModule } from './modules/stellar/stellar.module';
 import { MultiSigModule } from './modules/stellar/multisig/multisig.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
@@ -101,6 +102,7 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     QueryMonitoringModule,
     QuestsModule,
     QuotaModule,
+    ReferralsModule,
     StellarModule,
     SubmissionsModule,
     DisputesModule,
