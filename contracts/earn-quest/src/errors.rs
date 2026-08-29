@@ -44,6 +44,8 @@ pub enum Error {
     InvalidProofHash = 24,
     /// Submission has already been processed.
     SubmissionAlreadyProcessed = 25,
+    /// Submission has already been approved.
+    SubmissionAlreadyApproved = 26,
 
     // ── Payout Errors ──
     /// Contract has insufficient balance for payout.

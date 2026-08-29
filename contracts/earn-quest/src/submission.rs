@@ -235,6 +235,13 @@ pub fn approve_submission(
 
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
 
+    // Issue #2290: reject duplicate approvals with a dedicated, explicit error
+    // instead of the generic invalid-status-transition error. Callers can now
+    // tell "already approved" apart from other invalid transitions.
+    if submission.status == SubmissionStatus::Approved {
+        return Err(Error::SubmissionAlreadyApproved);
+    }
+
     // Validate status transition: Pending -> Approved
     validation::validate_submission_status_transition(
         &submission.status,
