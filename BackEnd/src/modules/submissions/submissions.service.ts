@@ -43,6 +43,7 @@ import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import {
   SubmissionNotFoundException,
   QuestNotFoundException,
@@ -80,6 +81,7 @@ export class SubmissionsService {
     private eventEmitter: EventEmitter2,
     private metricsService: MetricsService,
     private verificationDedup: VerificationDedupService,
+    private referralsService: ReferralsService,
   ) {}
 
   /**
@@ -445,6 +447,11 @@ export class SubmissionsService {
       approvedBy: verifierId,
       approvedAt,
     });
+
+    // Referral qualifying milestone: a referred user's first approved
+    // submission qualifies their referrer's reward. Idempotent and a no-op
+    // when the submitter was not referred, so it never affects the flow.
+    await this.referralsService.onQualifyingApproval(submission.userId);
 
     // Emit SLA metrics for submission review time
     this.metricsService.incrementCounter('submission_review_total');

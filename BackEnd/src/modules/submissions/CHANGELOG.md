@@ -17,6 +17,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Referral qualifying-milestone hook: after a successful approval, `SubmissionsService.processApproval` calls `ReferralsService.onQualifyingApproval(submitterUserId)` so a referred user's first approved submission qualifies their referrer's reward. Idempotent and a no-op for non-referred users, so the approval flow is unaffected (#2357).
 - `anonymizeForErasure(userId, manager?)` — detaches submitter PII and proof references from a user's submissions while preserving quest integrity and reviewer decisions, used by the right-to-erasure pipeline; runs inside the caller's transaction when a manager is supplied (#2337).
 
 ### Added
