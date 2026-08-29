@@ -176,28 +176,6 @@ pub fn submit_proof(
     Ok(())
 }
 
-/// Returns just the current status of a submission by its (quest, submitter)
-/// identity, without loading and returning the full record.
-///
-/// # Arguments
-///
-/// * `env` - The contract environment.
-/// * `quest_id` - The symbol of the quest.
-/// * `submitter` - The address of the user who submitted.
-///
-/// # Returns
-///
-/// * `Ok(status)` with the submission's current [`SubmissionStatus`].
-/// * `Err(Error::SubmissionNotFound)` if no submission exists.
-pub fn get_submission_status(
-    env: &Env,
-    quest_id: &Symbol,
-    submitter: &Address,
-) -> Result<SubmissionStatus, Error> {
-    let submission = storage::get_submission(env, quest_id, submitter)?;
-    Ok(submission.status)
-}
-
 /// Approve a submission (Verifier only).
 ///
 /// # Arguments
@@ -234,6 +212,13 @@ pub fn approve_submission(
     }
 
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
+
+    // Issue #2290: reject duplicate approvals with a dedicated, explicit error
+    // instead of the generic invalid-status-transition error. Callers can now
+    // tell "already approved" apart from other invalid transitions.
+    if submission.status == SubmissionStatus::Approved {
+        return Err(Error::SubmissionAlreadyApproved);
+    }
 
     // Validate status transition: Pending -> Approved
     validation::validate_submission_status_transition(

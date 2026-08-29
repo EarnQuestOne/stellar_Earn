@@ -1,11 +1,11 @@
 use soroban_sdk::contracterror;
 
 /// Comprehensive error codes for the EarnQuest contract.
-#contracterror(export = false)
-[derive(Copy, Clone, Debug, Eq, PartialE)]
-[repr(u32)]
+#[contracterror(export = false)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
 pub enum Error {
-    // ❀❀❀ Quest Errors ❠❠❠
+    // ── Quest Errors ──
     /// Quest already exists with this ID.
     QuestAlreadyExists = 1,
     /// Quest not found.
@@ -21,7 +21,7 @@ pub enum Error {
     /// Invalid quest status for the requested operation.
     InvalidQuestStatus = 7,
 
-    // ❀❀❀ Auth Errors ❠❠❠
+    // ── Auth Errors ──
     /// Caller is not authorized for this operation.
     Unauthorized = 10,
     /// Caller is not the authorized verifier.
@@ -31,7 +31,7 @@ pub enum Error {
     /// Invalid administrator address.
     InvalidAdmin = 13,
 
-    // ❀❀❀ Submission Errors ❠❠❠
+    // ── Submission Errors ──
     /// Invalid submission status for the requested operation.
     InvalidSubmissionStatus = 20,
     /// Submission not found.
@@ -47,7 +47,7 @@ pub enum Error {
     /// Submission has already been approved.
     SubmissionAlreadyApproved = 26,
 
-    // ❀❀❀ Payout Errors ❠❠❠
+    // ── Payout Errors ──
     /// Contract has insufficient balance for payout.
     InsufficientBalance = 30,
     /// Token transfer failed.
@@ -57,7 +57,7 @@ pub enum Error {
     /// Invalid asset for reward.
     InvalidAsset = 33,
 
-    // ❠❠❠ Reputation Errors ❠❠❠
+    // ── Reputation Errors ──
     /// User statistics not found.
     UserStatsNotFound = 40,
     /// Badge has already been granted to this user.
