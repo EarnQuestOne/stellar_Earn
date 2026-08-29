@@ -32,6 +32,9 @@ import { DataExport } from '../users/entities/data-export.entity';
 import { DataExportListener } from './listeners/data-export.listener';
 import { AccountErasureListener } from './listeners/account-erasure.listener';
 import { AccountErasureProcessor } from './processors/account-erasure.processor';
+import { ReferralRewardProcessor } from './processors/referral-reward.processor';
+import { Referral } from '../referrals/entities/referral.entity';
+import { ReferralReward } from '../referrals/entities/referral-reward.entity';
 import { Payout } from '../payouts/entities/payout.entity';
 import { PayoutOutbox } from '../payouts/entities/payout-outbox.entity';
 import { Quest } from '../quests/entities/quest.entity';
@@ -63,6 +66,8 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
       Submission,
       EventStore,
       User,
+      Referral,
+      ReferralReward,
       // Needed for IdempotencyService which is used by JobIdempotencyService
       IdempotencyKey,
     ]),
@@ -82,6 +87,11 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
       () =>
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('../privacy/privacy.module').PrivacyModule,
+    ),
+    forwardRef(
+      () =>
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('../referrals/referrals.module').ReferralsModule,
     ),
   ],
   providers: [
@@ -109,6 +119,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     DataExportListener,
     AccountErasureListener,
     AccountErasureProcessor,
+    ReferralRewardProcessor,
     DependencyFreshnessService,
   ],
   controllers: [JobsController],
@@ -132,6 +143,7 @@ import { IdempotencyService } from '../payouts/services/idempotency.service';
     QuestStateReconciliationProcessor,
     DependencyProcessor,
     AccountErasureProcessor,
+    ReferralRewardProcessor,
     DependencyFreshnessService,
   ],
 })

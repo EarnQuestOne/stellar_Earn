@@ -39,6 +39,9 @@ export enum JobType {
 
   // Privacy / Right to Erasure
   ACCOUNT_ERASURE = 'privacy:account-erasure',
+
+  // Referral Reward Processing
+  REFERRAL_REWARD = 'referral:reward',
 }
 
 export enum JobPriority {
@@ -188,6 +191,14 @@ export interface DependencyFreshnessCheckPayload extends JobPayload {
   branch?: string;
 }
 
+export interface ReferralRewardJobPayload extends JobPayload {
+  referralId: string;
+  referrerId?: string;
+  referredUserId?: string;
+  amount?: number;
+  asset?: string;
+}
+
 export type AnyJobPayload =
   | PayoutProcessPayload
   | PayoutSettlePayload
@@ -204,4 +215,5 @@ export type AnyJobPayload =
   | MetricsCollectPayload
   | QuestDeadlineCheckPayload
   | QuestCompletionVerifyPayload
-  | DependencyFreshnessCheckPayload;
+  | DependencyFreshnessCheckPayload
+  | ReferralRewardJobPayload;

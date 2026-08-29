@@ -1,5 +1,11 @@
-import { IsString, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStellarAddress } from '../../../common/decorators/is-stellar-address.decorator';
 
 export class ChallengeRequestDto {
@@ -70,6 +76,14 @@ export class LoginDto {
   @MinLength(10)
   @MaxLength(1000)
   challenge: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional referral code used during initial signup',
+    example: 'REF-A1B2C3D4',
+  })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }
 
 export class UserResponseDto {

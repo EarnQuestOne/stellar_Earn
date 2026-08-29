@@ -15,6 +15,7 @@ import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import { PayoutProcessor } from './processors/payout.processor';
 import { AccountErasureProcessor } from './processors/account-erasure.processor';
+import { ReferralRewardProcessor } from './processors/referral-reward.processor';
 import {
   TracingService,
   TraceContext,
@@ -61,6 +62,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
     private readonly accountErasureProcessor?: AccountErasureProcessor,
+    private readonly referralRewardProcessor?: ReferralRewardProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -93,6 +95,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
     this.queues[QUEUES.ERASURE] = new Queue(QUEUES.ERASURE, redisConnection());
+    this.queues[QUEUES.REFERRALS] = new Queue(
+      QUEUES.REFERRALS,
+      redisConnection(),
+    );
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
@@ -131,6 +137,17 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.ERASURE,
         this.accountErasureProcessor.process.bind(this.accountErasureProcessor),
+      );
+    }
+
+    // ── Wire the ReferralRewardProcessor to the REFERRALS queue ─────────
+    if (
+      this.referralRewardProcessor &&
+      typeof this.referralRewardProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.REFERRALS,
+        this.referralRewardProcessor.process.bind(this.referralRewardProcessor),
       );
     }
   }

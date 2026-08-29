@@ -237,6 +237,20 @@ export const JOB_RETRY_POLICIES: Readonly<
     removeOnComplete: 25,
     removeOnFail: 50,
   },
+
+  // ── Referral Reward Processing ────────────────────────────────────────────
+  [JobType.REFERRAL_REWARD]: {
+    attempts: 5,
+    backoff: { type: 'exponential', delay: 5_000 },
+    nonRetryableErrors: [
+      'Referral not found',
+      'Self-referral detected',
+      'Circular referral detected',
+      'Referral already rewarded',
+    ],
+    removeOnComplete: 200,
+    removeOnFail: 200,
+  },
 };
 
 // ─── Utility Functions ────────────────────────────────────────────────────────

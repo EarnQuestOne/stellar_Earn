@@ -3,6 +3,9 @@ import {
   Logger,
   UnauthorizedException,
   NotFoundException,
+  Optional,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +16,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { LoginDto, ChallengeResponseDto } from './dto/auth.dto';
 import { Role } from '../../common/enums/role.enum';
 import { UsersService } from '../users/users.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import {
   generateChallengeMessage,
   verifyStellarSignature,
@@ -34,6 +38,7 @@ export interface OAuthProfile {
   username: string;
   avatarUrl?: string;
   provider: 'google' | 'github';
+  referralCode?: string;
 }
 
 @Injectable()
@@ -46,6 +51,9 @@ export class AuthService {
     private readonly usersService: UsersService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @Optional()
+    @Inject(forwardRef(() => ReferralsService))
+    private readonly referralsService?: ReferralsService,
   ) {}
 
   /**
@@ -128,6 +136,7 @@ export class AuthService {
 
     verifyStellarSignature(stellarAddress, signature, challenge);
 
+    let isNewUser = false;
     let user = await this.usersService.findByAddress(stellarAddress);
     if (!user) {
       user = await this.usersService.create({
@@ -135,6 +144,17 @@ export class AuthService {
         username: stellarAddress,
         role: Role.USER,
       });
+      isNewUser = true;
+    }
+
+    if (isNewUser && dto.referralCode && this.referralsService) {
+      await this.referralsService
+        .recordAttribution(user.id, dto.referralCode)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to record referral attribution for user ${user.id}: ${err.message}`,
+          );
+        });
     }
 
     const tokens = await this.generateTokens(
@@ -322,6 +342,7 @@ export class AuthService {
       user = await this.usersService.findByEmail(profile.email);
     }
 
+    let isNewUser = false;
     if (!user) {
       user = await this.usersService.create({
         email: profile.email,
@@ -331,6 +352,17 @@ export class AuthService {
         avatarUrl: profile.avatarUrl,
         role: Role.USER,
       });
+      isNewUser = true;
+    }
+
+    if (isNewUser && profile.referralCode && this.referralsService) {
+      await this.referralsService
+        .recordAttribution(user.id, profile.referralCode)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to record referral attribution for user ${user.id}: ${err.message}`,
+          );
+        });
     }
 
     const tokens = await this.generateTokens(

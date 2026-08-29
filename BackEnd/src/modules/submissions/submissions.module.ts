@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -12,6 +12,7 @@ import { Submission } from './entities/submission.entity';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { User } from '../users/entities/user.entity';
     NotificationsModule,
     StellarModule,
     CacheModule,
+    forwardRef(() => ReferralsModule),
   ],
   controllers: [SubmissionsController],
   providers: [

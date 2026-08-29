@@ -5,9 +5,13 @@ import {
   ForbiddenException,
   ConflictException,
   InternalServerErrorException,
+  Optional,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, EntityManager, Repository } from 'typeorm';
+import { ReferralsService } from '../referrals/referrals.service';
 
 /**
  * Sentinel error thrown inside the capacity-gate transaction when the
@@ -80,6 +84,9 @@ export class SubmissionsService {
     private eventEmitter: EventEmitter2,
     private metricsService: MetricsService,
     private verificationDedup: VerificationDedupService,
+    @Optional()
+    @Inject(forwardRef(() => ReferralsService))
+    private referralsService?: ReferralsService,
   ) {}
 
   /**
@@ -445,6 +452,16 @@ export class SubmissionsService {
       approvedBy: verifierId,
       approvedAt,
     });
+
+    if (this.referralsService) {
+      await this.referralsService
+        .handleQualifyingSubmission(submission.userId, submissionId)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to handle referral qualification for user ${submission.userId}: ${err.message}`,
+          );
+        });
+    }
 
     // Emit SLA metrics for submission review time
     this.metricsService.incrementCounter('submission_review_total');

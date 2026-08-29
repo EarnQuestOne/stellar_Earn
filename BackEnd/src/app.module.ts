@@ -40,6 +40,7 @@ import { StellarModule } from './modules/stellar/stellar.module';
 import { MultiSigModule } from './modules/stellar/multisig/multisig.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
 import { TraceModule } from './modules/trace/trace.module';
 import { UsersModule } from './modules/users/users.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
@@ -104,6 +105,7 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     StellarModule,
     SubmissionsModule,
     DisputesModule,
+    ReferralsModule,
     UsersModule,
     WebhooksModule,
     WebhooksOutboundModule,

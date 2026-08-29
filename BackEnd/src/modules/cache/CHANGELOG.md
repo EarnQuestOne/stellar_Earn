@@ -6,6 +6,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Migrated distributed lock random value generator to native `crypto.randomUUID()` for reliable module loading.
+
 ### Added
 
 - Unified cache-aside primitives on `CacheService`: `getOrSet(key, ttl, tags, loader)` and `invalidateTag(tag)`, backed by the existing tag registry, giving consistent tag-based invalidation across the hot read paths (#2159).

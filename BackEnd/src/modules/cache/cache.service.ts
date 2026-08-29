@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { CacheAnalyticsService } from './cache-analytics.service';
-import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class CacheService {
@@ -183,7 +183,7 @@ export class CacheService {
 
   async acquireLock(key: string, ttlMs: number = 5000): Promise<string | null> {
     const lockKey = `lock:${key}`;
-    const lockValue = uuidv4();
+    const lockValue = crypto.randomUUID();
 
     try {
       const store =

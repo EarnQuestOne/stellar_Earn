@@ -10,6 +10,9 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Integrated referral milestone qualification hook into `SubmissionsService.processApproval`, triggering qualification and reward processing for referred submitters (#2357).
+
 ### Fixed
 
 - Submission lookups now throw typed `SubmissionNotFoundException` / `QuestNotFoundException` instead of generic `NotFoundException`, producing clean 404 responses via `AppExceptionFilter` instead of falling through as 500s.
