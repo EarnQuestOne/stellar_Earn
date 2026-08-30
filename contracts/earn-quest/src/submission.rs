@@ -233,6 +233,11 @@ pub fn approve_submission(
         return Err(Error::SelfApprovalDisallowed);
     }
 
+    // Issue #2281: reject approval when the verifier equals the submitter.
+    if verifier == submitter {
+        return Err(Error::SelfVerificationNotAllowed);
+    }
+
     let mut submission = storage::get_submission(env, quest_id, submitter)?;
 
     // Issue #2290: reject duplicate approvals with a dedicated, explicit error
@@ -385,7 +390,9 @@ pub fn approve_submissions_batch(
         let s = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
         for j in 0u32..s.submissions.len() {
             let submitter = s.submissions.get(j).ok_or(Error::IndexOutOfBounds)?;
-            validation::validate_addresses_distinct(verifier, &submitter)?;
+            if verifier == &submitter {
+                return Err(Error::SelfVerificationNotAllowed);
+            }
         }
     }
 
