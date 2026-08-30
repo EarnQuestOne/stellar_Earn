@@ -150,4 +150,31 @@ export class SubmissionsController {
       .rejectSubmission(id, dto, user.id)
       .then((submission) => ({ success: true, data: { submission } }));
   }
+
+  @Post(':id/withdraw')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'submission' })
+  @ApiOperation({ summary: 'Withdraw your own submission before review' })
+  @ApiParam({ name: 'questId', description: 'Quest ID (UUID)' })
+  @ApiParam({ name: 'id', description: 'Submission ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Submission withdrawn' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid status transition - cannot withdraw a reviewed submission',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'You can only withdraw your own submissions',
+  })
+  @ApiResponse({ status: 404, description: 'Submission not found' })
+  @ApiResponse({ status: 409, description: 'CAS conflict (status changed)' })
+  withdraw(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<{ success: true; data: { submission: Submission } }> {
+    return this.submissionsService
+      .withdrawSubmission(id, user.id)
+      .then((submission) => ({ success: true, data: { submission } }));
+  }
 }

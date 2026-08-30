@@ -10,14 +10,7 @@ import {
   Index,
   VersionColumn,
 } from 'typeorm';
-
-export enum SubmissionStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-  PAID = 'PAID',
-}
+import { SubmissionStatus } from '../submission-status';
 
 @Index('idx_submission_active_quest_status', ['questId', 'status'], {
   where: '"deletedAt" IS NULL',
@@ -25,6 +18,7 @@ export enum SubmissionStatus {
 @Index('idx_submission_active_user_status', ['userId', 'status'], {
   where: '"deletedAt" IS NULL',
 })
+@Index('uq_submission_user_quest', ['userId', 'questId'], { unique: true })
 @Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
@@ -53,6 +47,9 @@ export class Submission {
 
   @Column({ type: 'timestamp', nullable: true })
   rejectedAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  withdrawnAt: Date | null;
 
   @Column({ type: 'text', nullable: true })
   rejectionReason: string | null;

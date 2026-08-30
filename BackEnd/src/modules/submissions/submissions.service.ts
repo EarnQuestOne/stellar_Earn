@@ -22,7 +22,8 @@ class CapacityGateFailedError extends Error {
     this.name = 'CapacityGateFailedError';
   }
 }
-import { Submission, SubmissionStatus } from './entities/submission.entity';
+import { Submission } from './entities/submission.entity';
+import { SubmissionStatus, SubmissionStateMachine } from './submission-status';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
@@ -598,15 +599,7 @@ export class SubmissionsService {
     currentStatus: string,
     newStatus: string,
   ): void {
-    const validTransitions: Record<string, string[]> = {
-      PENDING: ['APPROVED', 'REJECTED', 'UNDER_REVIEW'],
-      UNDER_REVIEW: ['APPROVED', 'REJECTED', 'PENDING'],
-      APPROVED: [],
-      REJECTED: ['PENDING'],
-      PAID: [],
-    };
-
-    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+    if (!SubmissionStateMachine.canTransition(currentStatus as SubmissionStatus, newStatus as SubmissionStatus)) {
       throw new BadRequestException(
         `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
@@ -644,6 +637,64 @@ export class SubmissionsService {
     }
 
     return submission;
+  }
+
+  /**
+   * Withdraw a submission before it's been reviewed.
+   * Only allows withdrawal if submission is in PENDING status.
+   */
+  async withdrawSubmission(
+    submissionId: string,
+    userId: string,
+  ): Promise<Submission> {
+    const submission = await this.submissionsRepository.findOne({
+      where: { id: submissionId },
+      withDeleted: false,
+      relations: ['quest'],
+    });
+
+    if (!submission) {
+      throw new SubmissionNotFoundException(submissionId);
+    }
+
+    // Verify the user owns the submission
+    if (submission.userId !== userId) {
+      throw new ForbiddenException('You can only withdraw your own submissions');
+    }
+
+    // Validate status transition
+    this.validateStatusTransition(submission.status, SubmissionStatus.WITHDRAWN);
+
+    const withdrawnAt = new Date();
+
+    const updateResult = await this.submissionsRepository
+      .createQueryBuilder()
+      .update(Submission)
+      .set({
+        status: SubmissionStatus.WITHDRAWN,
+        withdrawnAt,
+      })
+      .where('id::text = :id', { id: submissionId })
+      .andWhere('status = :status', { status: submission.status })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      throw new ConflictException(
+        'Submission status has changed. Please refresh and try again.',
+      );
+    }
+
+    this.logger.log(
+      `Submission ${submissionId} withdrawn for quest=${submission.questId} by user=${userId}`,
+    );
+
+    // Decrement quest's currentCompletions since submission was withdrawn
+    const quest = submission.quest as Quest;
+    await this.questsRepository.update(quest.id, {
+      currentCompletions: () => 'currentCompletions - 1',
+    });
+
+    return this.findOne(submissionId);
   }
 
   /**
