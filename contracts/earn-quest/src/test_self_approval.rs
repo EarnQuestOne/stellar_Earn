@@ -247,4 +247,3 @@ fn test_spoofed_verifier_argument_fails_auth() {
     // Calling approve_submission without verifier's signature will panic/fail require_auth
     client.approve_submission(&qid, &submitter, &verifier);
 }
-
