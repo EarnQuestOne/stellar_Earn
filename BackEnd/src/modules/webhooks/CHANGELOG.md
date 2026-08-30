@@ -13,6 +13,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Applied code-style formatting to `webhooks.controller.ts` and `webhook-event.dto.ts`: added missing newline at end of file and reformatted multi-argument call sites (no logic change).
+- Additional Prettier pass on `webhooks.service.ts` (no logic change).
 
 ### Added
 

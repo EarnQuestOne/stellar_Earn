@@ -16,6 +16,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Added `findByUsername`, `getUserStats`, `getUserQuests`, `updateProfile`, `getLeaderboard`, and `updateUserStats` helpers to align the service contract with the users test suite.
 
 - Applied code-style formatting to `users.service.ts` (no logic change).
+- Additional Prettier pass on `users.service.ts` (no logic change).
 
 ### Added
 
