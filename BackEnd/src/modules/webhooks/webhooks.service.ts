@@ -74,9 +74,13 @@ export class WebhooksService {
       source: event.source,
       success: String(response.success),
     });
-    this.metricsService.observeHistogram('webhook_processing_duration_ms', Date.now() - startedAt, {
-      source: event.source,
-    });
+    this.metricsService.observeHistogram(
+      'webhook_processing_duration_ms',
+      Date.now() - startedAt,
+      {
+        source: event.source,
+      },
+    );
 
     return response;
   }

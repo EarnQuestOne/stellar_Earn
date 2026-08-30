@@ -141,7 +141,11 @@ export class QuotaService {
         .execute();
 
       const usage = await manager.findOne(QuotaUsage, {
-        where: { tenantId, resourceType: QuotaResourceType.PAYOUT, periodStart },
+        where: {
+          tenantId,
+          resourceType: QuotaResourceType.PAYOUT,
+          periodStart,
+        },
         lock: { mode: 'pessimistic_write' },
       });
 

@@ -160,7 +160,8 @@ export class SubmissionsController {
   @ApiResponse({ status: 200, description: 'Submission withdrawn' })
   @ApiResponse({
     status: 400,
-    description: 'Invalid status transition - cannot withdraw a reviewed submission',
+    description:
+      'Invalid status transition - cannot withdraw a reviewed submission',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({

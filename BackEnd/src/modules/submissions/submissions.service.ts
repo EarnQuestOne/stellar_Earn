@@ -599,7 +599,12 @@ export class SubmissionsService {
     currentStatus: string,
     newStatus: string,
   ): void {
-    if (!SubmissionStateMachine.canTransition(currentStatus as SubmissionStatus, newStatus as SubmissionStatus)) {
+    if (
+      !SubmissionStateMachine.canTransition(
+        currentStatus as SubmissionStatus,
+        newStatus as SubmissionStatus,
+      )
+    ) {
       throw new BadRequestException(
         `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
@@ -659,11 +664,16 @@ export class SubmissionsService {
 
     // Verify the user owns the submission
     if (submission.userId !== userId) {
-      throw new ForbiddenException('You can only withdraw your own submissions');
+      throw new ForbiddenException(
+        'You can only withdraw your own submissions',
+      );
     }
 
     // Validate status transition
-    this.validateStatusTransition(submission.status, SubmissionStatus.WITHDRAWN);
+    this.validateStatusTransition(
+      submission.status,
+      SubmissionStatus.WITHDRAWN,
+    );
 
     const withdrawnAt = new Date();
 

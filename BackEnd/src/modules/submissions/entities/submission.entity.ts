@@ -33,8 +33,8 @@ export class Submission {
   @Column({ type: 'json' })
   proof: any;
 
-  @Column({ type: 'varchar', default: 'PENDING' })
-  status: string;
+  @Column({ type: 'varchar', default: SubmissionStatus.PENDING })
+  status: SubmissionStatus;
 
   @Column({ type: 'varchar', nullable: true })
   approvedBy: string | null;
