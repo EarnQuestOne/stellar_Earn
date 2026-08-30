@@ -170,3 +170,81 @@ fn test_creator_cannot_self_approve_batch() {
     .unwrap();
     assert_eq!(sub.status, SubmissionStatus::Pending);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. A submitter cannot act as their own verifier to approve (issue #2281)
+// ─────────────────────────────────────────────────────────────────────────────
+
+fn set_verifier_to_submitter(ctx: &TestCtx, quest_id: &Symbol) {
+    ctx.env.as_contract(&ctx.contract_id, || {
+        let mut quest = storage::get_quest(&ctx.env, quest_id).unwrap();
+        quest.verifier = ctx.submitter.clone();
+        storage::set_quest(&ctx.env, quest_id, &quest);
+    });
+}
+
+#[test]
+fn test_submitter_cannot_self_verify() {
+    let ctx = setup();
+    let qid = symbol_short!("q1");
+    register_quest(&ctx, &qid);
+    set_verifier_to_submitter(&ctx, &qid);
+    submit(&ctx, &qid);
+
+    let result = as_contract(&ctx, || {
+        crate::submission::approve_submission(&ctx.env, &qid, &ctx.submitter, &ctx.submitter)
+    });
+    assert_eq!(result, Err(Error::SelfVerificationNotAllowed));
+
+    let sub = as_contract(&ctx, || {
+        storage::get_submission(&ctx.env, &qid, &ctx.submitter)
+    })
+    .unwrap();
+    assert_eq!(sub.status, SubmissionStatus::Pending);
+}
+
+#[test]
+fn test_submitter_cannot_self_verify_batch() {
+    let ctx = setup();
+    let qid = symbol_short!("q1");
+    register_quest(&ctx, &qid);
+    set_verifier_to_submitter(&ctx, &qid);
+    submit(&ctx, &qid);
+
+    let submissions = soroban_sdk::Vec::from_array(&ctx.env, [ctx.submitter.clone()]);
+    let batch = soroban_sdk::Vec::from_array(
+        &ctx.env,
+        [BatchApprovalInput {
+            quest_id: qid.clone(),
+            submissions,
+        }],
+    );
+
+    let result = as_contract(&ctx, || {
+        crate::submission::approve_submissions_batch(&ctx.env, &ctx.submitter, &batch)
+    });
+    assert_eq!(result, Err(Error::SelfVerificationNotAllowed));
+
+    let sub = as_contract(&ctx, || {
+        storage::get_submission(&ctx.env, &qid, &ctx.submitter)
+    })
+    .unwrap();
+    assert_eq!(sub.status, SubmissionStatus::Pending);
+}
+
+#[test]
+#[should_panic]
+fn test_spoofed_verifier_argument_fails_auth() {
+    let env = Env::default();
+    // Do NOT call env.mock_all_auths() here so real auth enforcement occurs
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+
+    let verifier = Address::generate(&env);
+    let submitter = Address::generate(&env);
+    let qid = symbol_short!("q1");
+
+    // Calling approve_submission without verifier's signature will panic/fail require_auth
+    client.approve_submission(&qid, &submitter, &verifier);
+}
+

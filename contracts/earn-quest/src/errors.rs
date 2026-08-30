@@ -188,4 +188,8 @@ pub enum Error {
     // Self-approval guard (issue #2287)
     /// The quest creator is not permitted to approve submissions on their own quest.
     SelfApprovalDisallowed = 161,
+
+    // Self-verification guard (issue #2281)
+    /// A submitter cannot act as their own verifier to approve their submission.
+    SelfVerificationNotAllowed = 162,
 }
