@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
-import { NotificationLog, DeliveryStatus } from './entities/notification-log.entity';
+import {
+  NotificationLog,
+  DeliveryStatus,
+} from './entities/notification-log.entity';
 import { ChannelType } from './channels/notification-channel.interface';
 import { NotificationType } from './entities/notification.entity';
 

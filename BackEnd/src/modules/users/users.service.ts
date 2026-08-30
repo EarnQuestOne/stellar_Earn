@@ -209,7 +209,9 @@ export class UsersService {
     }
 
     const submissions = this.submissionsRepository
-      ? await this.submissionsRepository.find({ where: { userId: user.id } as any })
+      ? await this.submissionsRepository.find({
+          where: { userId: user.id },
+        })
       : [];
 
     const totalSubmissions = submissions.length;
@@ -273,7 +275,7 @@ export class UsersService {
 
     const skip = (page - 1) * limit;
     const [quests, total] = await this.submissionsRepository!.findAndCount({
-      where: { userId: user.id } as any,
+      where: { userId: user.id },
       relations: ['quest'],
       order: { createdAt: 'DESC' },
       skip,
@@ -291,7 +293,10 @@ export class UsersService {
     };
   }
 
-  async updateProfile(stellarAddress: string, updateData: Partial<User>): Promise<User> {
+  async updateProfile(
+    stellarAddress: string,
+    updateData: Partial<User>,
+  ): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { stellarAddress },
     });
@@ -308,7 +313,10 @@ export class UsersService {
     return saved;
   }
 
-  async getLeaderboard(page = 1, limit = 20): Promise<{ data: any[]; meta: any }> {
+  async getLeaderboard(
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: any[]; meta: any }> {
     const skip = (page - 1) * limit;
     const [users, total] = await this.usersRepository
       .createQueryBuilder('user')
@@ -318,7 +326,9 @@ export class UsersService {
       .getManyAndCount();
 
     return {
-      data: users.map((user, index) => UserMapper.toLeaderboardDto(user, skip + index + 1)),
+      data: users.map((user, index) =>
+        UserMapper.toLeaderboardDto(user, skip + index + 1),
+      ),
       meta: {
         page,
         limit,
