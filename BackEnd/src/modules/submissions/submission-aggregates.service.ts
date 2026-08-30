@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Submission, SubmissionStatus } from './entities/submission.entity';
+import { Submission } from './entities/submission.entity';
+import { SubmissionStatus } from './submission-status';
 import { CacheService } from '../cache/cache.service';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SubmissionCreatedEvent } from '../../events/dto/submission-created.event';

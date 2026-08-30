@@ -10,7 +10,6 @@ import {
   Index,
   VersionColumn,
 } from 'typeorm';
-import { SubmissionStatus } from '../submission-status';
 
 @Index('idx_submission_active_quest_status', ['questId', 'status'], {
   where: '"deletedAt" IS NULL',
@@ -33,8 +32,8 @@ export class Submission {
   @Column({ type: 'json' })
   proof: any;
 
-  @Column({ type: 'varchar', default: SubmissionStatus.PENDING })
-  status: SubmissionStatus;
+  @Column({ type: 'varchar', default: 'PENDING' })
+  status: string;
 
   @Column({ type: 'varchar', nullable: true })
   approvedBy: string | null;
