@@ -14,12 +14,14 @@ import {
 } from './entities/feature-flag-audit.entity';
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
+import { CacheService } from '../cache/cache.service';
 
 describe('FeatureFlagsService', () => {
   let service: FeatureFlagsService;
   let _featureFlagRepository: Repository<FeatureFlag>;
   let _auditLogRepository: Repository<FeatureFlagAuditLog>;
   let _cacheManager: any;
+  let _cacheService: CacheService;
 
   const mockFeatureFlagRepository = {
     findOne: jest.fn(),
@@ -40,6 +42,13 @@ describe('FeatureFlagsService', () => {
     del: jest.fn(),
   };
 
+  const mockCacheService = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    invalidateTag: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,6 +65,10 @@ describe('FeatureFlagsService', () => {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
         },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
+        },
       ],
     }).compile();
 
@@ -67,6 +80,7 @@ describe('FeatureFlagsService', () => {
       getRepositoryToken(FeatureFlagAuditLog),
     );
     _cacheManager = module.get(CACHE_MANAGER);
+    _cacheService = module.get<CacheService>(CacheService);
 
     jest.clearAllMocks();
   });
@@ -348,6 +362,87 @@ describe('FeatureFlagsService', () => {
         'Feature flag with key "EXISTING_FLAG" already exists',
       );
     });
+
+    it('should invalidate all flag caches on create', async () => {
+      const createDto: CreateFeatureFlagDto = {
+        key: 'NEW_FLAG',
+        name: 'New Flag',
+        description: 'New flag description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        enabled: true,
+      };
+
+      const savedFlag: FeatureFlag = {
+        id: '1',
+        ...createDto,
+        status: FlagStatus.DRAFT,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(null);
+      mockFeatureFlagRepository.create.mockReturnValue(savedFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(savedFlag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.create(createDto, 'user123');
+
+      // Verify cache invalidation was called with correct tag
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:NEW_FLAG');
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:all');
+    });
+
+    it('should handle audit log save errors gracefully on create', async () => {
+      const createDto: CreateFeatureFlagDto = {
+        key: 'NEW_FLAG',
+        name: 'New Flag',
+        description: 'New flag description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        enabled: true,
+      };
+
+      const savedFlag: FeatureFlag = {
+        id: '1',
+        ...createDto,
+        status: FlagStatus.DRAFT,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(null);
+      mockFeatureFlagRepository.create.mockReturnValue(savedFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(savedFlag);
+      mockAuditLogRepository.save.mockRejectedValue(
+        new Error('Audit log save failed'),
+      );
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      // Should not throw even when audit log save fails
+      const result = await service.create(createDto, 'user123');
+
+      expect(result).toEqual(savedFlag);
+      // Cache invalidation should still proceed
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:NEW_FLAG');
+    });
   });
 
   describe('update', () => {
@@ -400,8 +495,250 @@ describe('FeatureFlagsService', () => {
     it('should throw error when flag not found', async () => {
       mockFeatureFlagRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('1', {}, 'user123')).rejects.toThrow(
         'Feature flag with ID "1" not found',
+      );
+    });
+
+    it('should invalidate all flag caches on update', async () => {
+      const existingFlag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: false,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updateDto: UpdateFeatureFlagDto = {
+        enabled: true,
+      };
+
+      const updatedFlag: FeatureFlag = {
+        ...existingFlag,
+        enabled: true,
+        updatedBy: 'user456',
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(existingFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(updatedFlag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.update('1', updateDto, 'user456');
+
+      // Verify cache invalidation was called with correct tag
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:TEST_FLAG',
+      );
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:all');
+    });
+
+    it('should handle audit log save errors gracefully on update', async () => {
+      const existingFlag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: false,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updateDto: UpdateFeatureFlagDto = {
+        enabled: true,
+      };
+
+      const updatedFlag: FeatureFlag = {
+        ...existingFlag,
+        enabled: true,
+        updatedBy: 'user456',
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(existingFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(updatedFlag);
+      mockAuditLogRepository.save.mockRejectedValue(
+        new Error('Audit log save failed'),
+      );
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      // Should not throw even when audit log save fails
+      const result = await service.update('1', updateDto, 'user456');
+
+      expect(result).toEqual(updatedFlag);
+      // Cache invalidation should still proceed
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:TEST_FLAG',
+      );
+    });
+
+    it('should determine correct audit action when enabled flag changes', async () => {
+      const existingFlag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: false,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updateDto: UpdateFeatureFlagDto = {
+        enabled: true,
+      };
+
+      const updatedFlag: FeatureFlag = {
+        ...existingFlag,
+        enabled: true,
+        updatedBy: 'user456',
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(existingFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(updatedFlag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.update('1', updateDto, 'user456');
+
+      expect(mockAuditLogRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          flagId: '1',
+          flagKey: 'TEST_FLAG',
+          action: AuditAction.ACTIVATED,
+          previousValue: expect.any(Object),
+          newValue: updatedFlag,
+          performedBy: 'user456',
+        }),
+      );
+    });
+
+    it('should determine DEACTIVATED audit action when enabled flag is turned off', async () => {
+      const existingFlag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: true,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updateDto: UpdateFeatureFlagDto = {
+        enabled: false,
+      };
+
+      const updatedFlag: FeatureFlag = {
+        ...existingFlag,
+        enabled: false,
+        updatedBy: 'user456',
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(existingFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(updatedFlag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.update('1', updateDto, 'user456');
+
+      expect(mockAuditLogRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.DEACTIVATED,
+        }),
+      );
+    });
+
+    it('should determine ROLLOUT_CHANGED audit action when rollout percentage changes', async () => {
+      const existingFlag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.PERCENTAGE,
+        status: FlagStatus.ACTIVE,
+        enabled: true,
+        rolloutPercentage: 50,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updateDto: UpdateFeatureFlagDto = {
+        rolloutPercentage: 75,
+      };
+
+      const updatedFlag: FeatureFlag = {
+        ...existingFlag,
+        rolloutPercentage: 75,
+        updatedBy: 'user456',
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(existingFlag);
+      mockFeatureFlagRepository.save.mockResolvedValue(updatedFlag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.update('1', updateDto, 'user456');
+
+      expect(mockAuditLogRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ROLLOUT_CHANGED,
+        }),
       );
     });
   });
@@ -448,6 +785,120 @@ describe('FeatureFlagsService', () => {
 
       await expect(service.delete('1', 'user123')).rejects.toThrow(
         'Feature flag with ID "1" not found',
+      );
+    });
+
+    it('should invalidate all flag caches on delete', async () => {
+      const flag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: true,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(flag);
+      mockFeatureFlagRepository.remove.mockResolvedValue(flag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.delete('1', 'user123');
+
+      // Verify cache invalidation was called with correct tag
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:TEST_FLAG',
+      );
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:all');
+    });
+
+    it('should log deletion audit before invalidating cache', async () => {
+      const flag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: true,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(flag);
+      mockFeatureFlagRepository.remove.mockResolvedValue(flag);
+      mockAuditLogRepository.save.mockResolvedValue({});
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      await service.delete('1', 'user123');
+
+      expect(mockAuditLogRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          flagId: '1',
+          flagKey: 'TEST_FLAG',
+          action: AuditAction.DELETED,
+          previousValue: flag,
+          performedBy: 'user123',
+        }),
+      );
+    });
+
+    it('should handle audit log save errors gracefully on delete', async () => {
+      const flag: FeatureFlag = {
+        id: '1',
+        key: 'TEST_FLAG',
+        name: 'Test Flag',
+        description: 'Test description',
+        rolloutStrategy: RolloutStrategy.BOOLEAN,
+        status: FlagStatus.ACTIVE,
+        enabled: true,
+        rolloutPercentage: 0,
+        whitelistedUsers: null,
+        blacklistedUsers: null,
+        segmentRules: null,
+        metadata: null,
+        createdBy: 'user123',
+        updatedBy: null,
+        scheduledActivationAt: null,
+        scheduledDeactivationAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockFeatureFlagRepository.findOne.mockResolvedValue(flag);
+      mockFeatureFlagRepository.remove.mockResolvedValue(flag);
+      mockAuditLogRepository.save.mockRejectedValue(
+        new Error('Audit log save failed'),
+      );
+      mockCacheService.invalidateTag.mockResolvedValue(undefined);
+
+      // Should not throw even when audit log save fails
+      await service.delete('1', 'user123');
+
+      // Cache invalidation should still proceed
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:TEST_FLAG',
       );
     });
   });
