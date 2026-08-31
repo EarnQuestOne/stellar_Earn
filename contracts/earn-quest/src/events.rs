@@ -113,6 +113,7 @@ pub fn pause_cooldown_violation(env: &Env, caller: Address, last_unpause: u64, a
 /// # Indexing Benefits
 /// * Track emergency withdrawals
 /// * Monitor fund movements
+/// * Provide an auditable record for privileged asset transfers
 pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, amount: i128) {
     // Topics: [EventName, By, Asset, To] - all indexed for tracking
     let topics = (
@@ -121,7 +122,7 @@ pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, 
         asset.clone(),
         to.clone(),
     );
-    // Data: amount
+    // Data: amount for auditability and reconciliation with downstream token events.
     let data = (amount,);
     env.events().publish(topics, data);
 }
