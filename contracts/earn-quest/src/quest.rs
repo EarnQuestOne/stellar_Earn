@@ -108,6 +108,7 @@ pub fn register_quest_with_category_and_grace_period(
         return Err(Error::QuestAlreadyExists);
     }
 
+    validation::validate_reward_asset(reward_asset)?;
     validation::validate_reward_amount(reward_amount)?;
     validation::validate_deadline(env, deadline)?;
     if let Some(grace) = grace_period_seconds {

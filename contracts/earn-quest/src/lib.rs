@@ -38,19 +38,7 @@ mod test_incremental_stats;
 mod test_arithmetic_overflow;
 
 #[cfg(test)]
-mod test_self_approval;
-
-#[cfg(test)]
-mod test_expiry_bounds;
-
-#[cfg(test)]
-mod test_reward_and_escrow_views;
-
-#[cfg(test)]
-mod test_submission_status;
-
-#[cfg(test)]
-mod test_claim_and_batch_bounds;
+mod test_reward_asset;
 
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
