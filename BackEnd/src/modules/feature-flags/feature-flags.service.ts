@@ -138,11 +138,11 @@ export class FeatureFlagsService {
           break;
 
         case RolloutStrategy.USER_WHITELIST:
-          result = userId ? flag.whitelistedUsers?.includes(userId) : false;
+          result = userId ? (flag.whitelistedUsers?.includes(userId) ?? false) : false;
           break;
 
         case RolloutStrategy.USER_BLACKLIST:
-          result = userId ? !flag.blacklistedUsers?.includes(userId) : true;
+          result = userId ? !(flag.blacklistedUsers?.includes(userId) ?? false) : true;
           break;
 
         case RolloutStrategy.SEGMENT_BASED:

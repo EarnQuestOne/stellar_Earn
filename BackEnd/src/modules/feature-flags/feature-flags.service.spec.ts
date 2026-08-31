@@ -495,6 +495,7 @@ describe('FeatureFlagsService', () => {
     it('should throw error when flag not found', async () => {
       mockFeatureFlagRepository.findOne.mockResolvedValue(null);
 
+      await expect(service.update('1', {}, 'user456')).rejects.toThrow(
         'Feature flag with ID "1" not found',
       );
     });
