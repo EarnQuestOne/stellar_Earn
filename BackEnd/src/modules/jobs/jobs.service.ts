@@ -14,6 +14,7 @@ import {
 import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import { PayoutProcessor } from './processors/payout.processor';
+import { AccountErasureProcessor } from './processors/account-erasure.processor';
 import {
   TracingService,
   TraceContext,
@@ -23,6 +24,7 @@ import {
   resolveWorkerLimiter,
 } from './utils/worker-concurrency.util';
 import { PayloadStorageService } from './services/payload-storage.service';
+import type { HealthCheckResult } from '../health/types/health.types';
 
 export interface QueueMetrics {
   queue: string;
@@ -36,6 +38,8 @@ export interface QueueMetrics {
 interface TraceableJobData {
   __trace?: TraceContext;
 }
+
+const QUEUE_HEALTH_TIMEOUT_MS = 3000;
 
 const redisConnection = () => {
   const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -56,6 +60,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
+    private readonly accountErasureProcessor?: AccountErasureProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -87,6 +92,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
+    this.queues[QUEUES.ERASURE] = new Queue(QUEUES.ERASURE, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
@@ -114,6 +120,17 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.PAYOUTS,
         this.payoutProcessor.process.bind(this.payoutProcessor),
+      );
+    }
+
+    // ── Wire the AccountErasureProcessor to the ERASURE queue ────────────
+    if (
+      this.accountErasureProcessor &&
+      typeof this.accountErasureProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.ERASURE,
+        this.accountErasureProcessor.process.bind(this.accountErasureProcessor),
       );
     }
   }
@@ -321,6 +338,55 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return job.data as T;
   }
 
+  /**
+   * Checks Redis connectivity and readiness of every initialized BullMQ queue.
+   *
+   * Health checks must not wait indefinitely for a reconnecting Redis client,
+   * so the complete check is bounded by QUEUE_HEALTH_TIMEOUT_MS.
+   */
+  async checkHealth(): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    const queueEntries = Object.entries(this.queues);
+
+    if (queueEntries.length === 0) {
+      return {
+        status: 'down',
+        latency: Date.now() - startTime,
+        error: 'No BullMQ queues are initialized',
+      };
+    }
+
+    try {
+      await this.withTimeout(
+        Promise.all(
+          queueEntries.map(async ([name, queue]) => {
+            const client = await queue.waitUntilReady();
+            if (typeof client.ping !== 'function') {
+              throw new Error(`Redis client for queue ${name} cannot ping`);
+            }
+            await client.ping();
+          }),
+        ),
+        QUEUE_HEALTH_TIMEOUT_MS,
+      );
+
+      return {
+        status: 'ok',
+        latency: Date.now() - startTime,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown queue health error';
+      this.logger.error(`BullMQ health check failed: ${errorMessage}`);
+
+      return {
+        status: 'down',
+        latency: Date.now() - startTime,
+        error: errorMessage,
+      };
+    }
+  }
+
   /** Returns active, delayed, failed, and completed counts for every queue. */
   async getQueueMetrics(): Promise<QueueMetrics[]> {
     return Promise.all(
@@ -351,6 +417,30 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       queue.getWaitingCount(),
     ]);
     return { queue: name, active, delayed, failed, completed, waiting };
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+  ): Promise<T> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          timeout = setTimeout(
+            () =>
+              reject(
+                new Error(`Queue health check timed out after ${timeoutMs}ms`),
+              ),
+            timeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
   }
 
   /**

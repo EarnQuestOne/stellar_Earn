@@ -2,6 +2,7 @@
 
 import { ClaimResult } from '@/lib/stellar/claim';
 import { useFormatter } from '@/lib/hooks/useFormatter';
+import { formatRelativeTime } from '@/lib/utils/relative-time';
 
 interface RewardHistoryProps {
   claims: ClaimResult[];
@@ -55,14 +56,21 @@ export function RewardHistory({ claims }: RewardHistoryProps) {
                           default which is 'en-US' on most servers, but the
                           user's locale on the client → hydration mismatch.
 
-                      After: date(claim.timestamp, 'medium')
-                        → Reads navigator.language via useFormatter.
-                          Consistent between renders. e.g. "May 30, 2026"
-                          (en-US), "30 mai 2026" (fr-FR), "30. Mai 2026" (de-DE).
+                      After: date(claim.timestamp, 'medium') + relative time
+                        → Uses shared formatRelativeTime() from
+                          @/lib/utils/relative-time for consistent i18n.
+                          e.g. "May 30, 2026" + "2 days ago"
                       ──────────────────────────────────────────────────────
                     */}
                     <td className="px-4 py-4 text-zinc-600 dark:text-zinc-400">
-                      {date(claim.timestamp, 'medium')}
+                      <span className="block text-sm">
+                        {date(claim.timestamp, 'medium')}
+                      </span>
+                      <span className="block text-xs text-zinc-400 dark:text-zinc-500">
+                        {formatRelativeTime(
+                          claim.timestamp as string | number | Date
+                        )}
+                      </span>
                     </td>
 
                     {/*

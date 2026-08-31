@@ -7,6 +7,7 @@ import { ApiHandler } from './handlers/api.handler';
 import { verifyWebhookSignature } from './utils/signature';
 import { currentTraceId } from '../trace/trace-context.storage';
 import { BulkheadService } from '../../common/services/bulkhead.service';
+import { MetricsService } from '../../common/services/metrics.service';
 import {
   FailedWebhookEvent,
   FailedWebhookStatus,
@@ -54,11 +55,13 @@ export class WebhooksService {
     private readonly apiHandler: ApiHandler,
     private readonly configService: ConfigService,
     private readonly bulkheadService: BulkheadService,
+    private readonly metricsService: MetricsService,
     @InjectRepository(FailedWebhookEvent)
     private readonly failedWebhookRepository: Repository<FailedWebhookEvent>,
   ) {}
 
   async processWebhook(event: WebhookEvent): Promise<WebhookResponse> {
+    const startedAt = Date.now();
     const response = await this.dispatchWebhook(event);
 
     if (!response.success) {
@@ -66,6 +69,18 @@ export class WebhooksService {
     } else {
       await this.resolveIfTracked(event.id);
     }
+
+    this.metricsService.incrementCounter('webhook_events_total', {
+      source: event.source,
+      success: String(response.success),
+    });
+    this.metricsService.observeHistogram(
+      'webhook_processing_duration_ms',
+      Date.now() - startedAt,
+      {
+        source: event.source,
+      },
+    );
 
     return response;
   }
@@ -237,6 +252,10 @@ export class WebhooksService {
     });
 
     await this.failedWebhookRepository.save(record);
+    this.metricsService.incrementCounter('webhook_failures_total', {
+      source: event.source,
+      retryable: String(retryable),
+    });
   }
 
   /** Marks any tracked failure for this event as resolved once it succeeds. */

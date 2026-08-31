@@ -65,34 +65,35 @@ export class QuotaService {
 
     const periodStart = this.getPeriodStart(config);
     const limit = config.maxQuestsPerPeriod;
+    await this.dataSource.transaction(async (manager) => {
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(QuotaUsage)
+        .values({
+          tenantId,
+          resourceType: QuotaResourceType.QUEST,
+          periodStart,
+        })
+        .orIgnore()
+        .execute();
 
-    await this.dataSource
-      .createQueryBuilder()
-      .insert()
-      .into(QuotaUsage)
-      .values({ tenantId, resourceType: QuotaResourceType.QUEST, periodStart })
-      .orIgnore()
-      .execute();
+      const usage = await manager.findOne(QuotaUsage, {
+        where: { tenantId, resourceType: QuotaResourceType.QUEST, periodStart },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Atomic increment with guard: only increments if under limit.
-    const result = await this.dataSource
-      .createQueryBuilder()
-      .update(QuotaUsage)
-      .set({ questCount: () => '"questCount" + 1' })
-      .where('tenantId = :tenantId', { tenantId })
-      .andWhere('resourceType = :rt', { rt: QuotaResourceType.QUEST })
-      .andWhere('periodStart = :ps', { ps: periodStart })
-      .andWhere('"questCount" < :limit', { limit })
-      .execute();
+      if (!usage || usage.questCount >= limit) {
+        this.logger.warn(
+          `Tenant ${tenantId} exceeded quest quota (limit: ${limit})`,
+        );
+        throw new ForbiddenException(
+          `Quest creation quota exceeded (${limit} per period)`,
+        );
+      }
 
-    if (result.affected === 0) {
-      this.logger.warn(
-        `Tenant ${tenantId} exceeded quest quota (limit: ${limit})`,
-      );
-      throw new ForbiddenException(
-        `Quest creation quota exceeded (${limit} per period)`,
-      );
-    }
+      await manager.increment(QuotaUsage, { id: usage.id }, 'questCount', 1);
+    });
 
     await this.updateCachedQuotaUsage(
       tenantId,
@@ -126,40 +127,49 @@ export class QuotaService {
 
     const periodStart = this.getPeriodStart(config);
     const limit = config.maxPayoutAmountPerPeriod;
+    await this.dataSource.transaction(async (manager) => {
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(QuotaUsage)
+        .values({
+          tenantId,
+          resourceType: QuotaResourceType.PAYOUT,
+          periodStart,
+        })
+        .orIgnore()
+        .execute();
 
-    // Ensure the usage row exists.
-    await this.dataSource
-      .createQueryBuilder()
-      .insert()
-      .into(QuotaUsage)
-      .values({
-        tenantId,
-        resourceType: QuotaResourceType.PAYOUT,
-        periodStart,
-      })
-      .orIgnore()
-      .execute();
+      const usage = await manager.findOne(QuotaUsage, {
+        where: {
+          tenantId,
+          resourceType: QuotaResourceType.PAYOUT,
+          periodStart,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Atomic increment with guard: only adds amount if under limit.
-    const result = await this.dataSource
-      .createQueryBuilder()
-      .update(QuotaUsage)
-      .set({ payoutAmount: () => '"payoutAmount" + :amount' })
-      .where('tenantId = :tenantId', { tenantId })
-      .andWhere('resourceType = :rt', { rt: QuotaResourceType.PAYOUT })
-      .andWhere('periodStart = :ps', { ps: periodStart })
-      .andWhere('"payoutAmount" + :amount <= :limit', { amount, limit })
-      .setParameter('amount', amount)
-      .execute();
+      if (!usage || Number(usage.payoutAmount) + amount > limit) {
+        this.logger.warn(
+          `Tenant ${tenantId} exceeded payout quota (limit: ${limit})`,
+        );
+        throw new ForbiddenException(
+          `Payout quota exceeded (period limit: ${limit})`,
+        );
+      }
 
-    if (result.affected === 0) {
-      this.logger.warn(
-        `Tenant ${tenantId} exceeded payout quota (limit: ${limit})`,
-      );
-      throw new ForbiddenException(
-        `Payout quota exceeded (period limit: ${limit})`,
-      );
-    }
+      const qb = manager
+        .createQueryBuilder()
+        .update(QuotaUsage)
+        .set({
+          payoutAmount: () => '"payoutAmount" + :amount',
+          updatedAt: () => 'CURRENT_TIMESTAMP',
+        })
+        .where('id = :id', { id: usage.id })
+        .setParameter('amount', amount);
+
+      await qb.execute();
+    });
 
     await this.updateCachedQuotaUsage(
       tenantId,

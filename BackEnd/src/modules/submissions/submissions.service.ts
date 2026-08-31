@@ -1,14 +1,13 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   ForbiddenException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 
 /**
  * Sentinel error thrown inside the capacity-gate transaction when the
@@ -23,7 +22,8 @@ class CapacityGateFailedError extends Error {
     this.name = 'CapacityGateFailedError';
   }
 }
-import { Submission, SubmissionStatus } from './entities/submission.entity';
+import { Submission } from './entities/submission.entity';
+import { SubmissionStatus, SubmissionStateMachine } from './submission-status';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
@@ -44,6 +44,11 @@ import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
 import { VerificationDedupService } from '../../common/services/verification-dedup.service';
+import { ReferralsService } from '../referrals/referrals.service';
+import {
+  SubmissionNotFoundException,
+  QuestNotFoundException,
+} from '../../common/exceptions/app.exceptions';
 
 interface QuestVerifier {
   id: string;
@@ -77,7 +82,41 @@ export class SubmissionsService {
     private eventEmitter: EventEmitter2,
     private metricsService: MetricsService,
     private verificationDedup: VerificationDedupService,
+    private referralsService: ReferralsService,
   ) {}
+
+  /**
+   * Anonymize a user's submissions (right-to-erasure).
+   *
+   * Submitter PII and proof references are detached (`proof` is replaced with
+   * an erased marker, notes are nulled) while quest integrity and reviewer
+   * decisions (status, approvedBy/rejectedBy timestamps, transactionHash) are
+   * preserved so payout/audit trails stay consistent. Returns the number of
+   * submissions anonymized.
+   *
+   * Runs on the provided transaction manager when called from the erasure
+   * pipeline (so the whole erasure is atomic); otherwise uses its own
+   * repository manager.
+   */
+  async anonymizeForErasure(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const em = manager ?? this.submissionsRepository.manager;
+    const repo = em.getRepository(Submission);
+    const submissions = await repo.find({ where: { userId } });
+    if (submissions.length === 0) {
+      return 0;
+    }
+
+    for (const submission of submissions) {
+      submission.proof = { erased: true };
+      submission.verifierNotes = null;
+      submission.rejectionReason = null;
+    }
+    await repo.save(submissions);
+    return submissions.length;
+  }
 
   /**
    * Create a new submission for a quest.
@@ -181,7 +220,7 @@ export class SubmissionsService {
           withDeleted: false,
         });
         if (!current) {
-          throw new NotFoundException(`Quest with ID ${questId} not found`);
+          throw new QuestNotFoundException(questId);
         }
         if (current.status !== 'ACTIVE') {
           throw new BadRequestException(
@@ -253,9 +292,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -412,6 +449,11 @@ export class SubmissionsService {
       approvedAt,
     });
 
+    // Referral qualifying milestone: a referred user's first approved
+    // submission qualifies their referrer's reward. Idempotent and a no-op
+    // when the submitter was not referred, so it never affects the flow.
+    await this.referralsService.onQualifyingApproval(submission.userId);
+
     // Emit SLA metrics for submission review time
     this.metricsService.incrementCounter('submission_review_total');
     this.metricsService.incrementCounter('submission_approval_total');
@@ -444,9 +486,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -559,15 +599,12 @@ export class SubmissionsService {
     currentStatus: string,
     newStatus: string,
   ): void {
-    const validTransitions: Record<string, string[]> = {
-      PENDING: ['APPROVED', 'REJECTED', 'UNDER_REVIEW'],
-      UNDER_REVIEW: ['APPROVED', 'REJECTED', 'PENDING'],
-      APPROVED: [],
-      REJECTED: ['PENDING'],
-      PAID: [],
-    };
-
-    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+    if (
+      !SubmissionStateMachine.canTransition(
+        currentStatus as SubmissionStatus,
+        newStatus as SubmissionStatus,
+      )
+    ) {
       throw new BadRequestException(
         `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
@@ -580,10 +617,13 @@ export class SubmissionsService {
     const quest = await this.questsRepository.findOne({
       where: { id: questId },
     });
+    if (!quest) {
+      throw new QuestNotFoundException(questId);
+    }
     return {
       id: questId,
-      verifiers: quest?.verifiers ?? [],
-      createdBy: quest?.createdBy ?? '',
+      verifiers: quest.verifiers ?? [],
+      createdBy: quest.createdBy ?? '',
     };
   }
 
@@ -598,12 +638,73 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     return submission;
+  }
+
+  /**
+   * Withdraw a submission before it's been reviewed.
+   * Only allows withdrawal if submission is in PENDING status.
+   */
+  async withdrawSubmission(
+    submissionId: string,
+    userId: string,
+  ): Promise<Submission> {
+    const submission = await this.submissionsRepository.findOne({
+      where: { id: submissionId },
+      withDeleted: false,
+      relations: ['quest'],
+    });
+
+    if (!submission) {
+      throw new SubmissionNotFoundException(submissionId);
+    }
+
+    // Verify the user owns the submission
+    if (submission.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only withdraw your own submissions',
+      );
+    }
+
+    // Validate status transition
+    this.validateStatusTransition(
+      submission.status,
+      SubmissionStatus.WITHDRAWN,
+    );
+
+    const withdrawnAt = new Date();
+
+    const updateResult = await this.submissionsRepository
+      .createQueryBuilder()
+      .update(Submission)
+      .set({
+        status: SubmissionStatus.WITHDRAWN,
+        withdrawnAt,
+      })
+      .where('id::text = :id', { id: submissionId })
+      .andWhere('status = :status', { status: submission.status })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      throw new ConflictException(
+        'Submission status has changed. Please refresh and try again.',
+      );
+    }
+
+    this.logger.log(
+      `Submission ${submissionId} withdrawn for quest=${submission.questId} by user=${userId}`,
+    );
+
+    // Decrement quest's currentCompletions since submission was withdrawn
+    const quest = submission.quest as Quest;
+    await this.questsRepository.update(quest.id, {
+      currentCompletions: () => 'currentCompletions - 1',
+    });
+
+    return this.findOne(submissionId);
   }
 
   /**

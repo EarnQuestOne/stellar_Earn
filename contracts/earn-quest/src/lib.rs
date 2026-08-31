@@ -29,6 +29,9 @@ mod test_clawback;
 mod test_oracle_deviation;
 
 #[cfg(test)]
+mod test_oracle_cap;
+
+#[cfg(test)]
 mod test_incremental_stats;
 
 #[cfg(test)]
@@ -328,10 +331,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest(
             &env,
             &id,
@@ -362,10 +369,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_category(
             &env,
             &id,
@@ -404,10 +415,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_metadata(
             &env,
             &id,
@@ -591,6 +606,19 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         verifier.require_auth();
+
+        // Bound the total fan-out across all inputs' inner submission vectors,
+        // not just the number of inputs, to prevent gas exhaustion from an
+        // arbitrarily long single input.
+        let mut total: u32 = 0;
+        for i in 0u32..submissions.len() {
+            let input = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+            total = total
+                .checked_add(input.submissions.len())
+                .ok_or(Error::ArithmeticOverflow)?;
+        }
+        validation::validate_batch_approval_total(total)?;
+
         submission::approve_submissions_batch(&env, &verifier, &submissions)
     }
 
@@ -607,6 +635,10 @@ impl EarnQuestContract {
         gas_budget::reset_call_budget(&env);
         gas_budget::enforce_budget(&env, &soroban_sdk::symbol_short!("clm_rwd"))?;
         submitter.require_auth();
+
+        // Reject a zero/negative claim up front with a clear, typed error
+        // instead of silently proceeding.
+        payout::validate_claim_positive(amount)?;
 
         // Single read of quest and submission for all subsequent operations
         let quest = storage::get_quest(&env, &quest_id)?;
@@ -692,6 +724,22 @@ impl EarnQuestContract {
         bump_instance_ttl(&env);
 
         payout::execute_clawback(&env, &caller, &quest_id, &recipient)
+    }
+
+    /// Awards experience points (XP) to multiple users in a batch, accumulating
+    /// per-address reputation/XP deltas in memory to minimize storage operations.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `grants` - Vector of (Address, u64) tuples representing target user and XP amount.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` on success, or `Err(Error)` if index/storage operations fail.
+    pub fn award_xp_batch(env: Env, grants: Vec<(Address, u64)>) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+        reputation::award_xp_batch(&env, &grants)
     }
 
     /// Returns the core statistics for a user (XP, level, quests completed).
@@ -1144,6 +1192,15 @@ impl EarnQuestContract {
         escrow::get_info(&env, &quest_id)
     }
 
+    /// Returns the total amount ever deposited into a quest's escrow.
+    ///
+    /// Read-only view over the cumulative `total_deposited` counter, letting
+    /// integrators query a quest's full escrow size without inspecting raw
+    /// storage. See [`Self::get_escrow_balance`] for the *remaining* balance.
+    pub fn get_escrow_total_deposited(env: Env, quest_id: Symbol) -> Result<i128, Error> {
+        escrow::get_total_deposited(&env, &quest_id)
+    }
+
     /// Returns the details of a quest by its symbol ID.
     ///
     /// # Arguments
@@ -1175,6 +1232,21 @@ impl EarnQuestContract {
         submitter: Address,
     ) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
+    }
+
+    /// Returns just the current status of a submission by ID, without loading
+    /// the full record.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(status)` with the submission's [`SubmissionStatus`], or
+    /// `Err(Error::SubmissionNotFound)` if no submission exists.
+    pub fn get_submission_status(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+    ) -> Result<SubmissionStatus, Error> {
+        submission::get_submission_status(&env, &quest_id, &submitter)
     }
 
     /// Sets the number of approvals required to unpause the contract (Admin only).

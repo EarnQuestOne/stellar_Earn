@@ -13,6 +13,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { LoginDto, ChallengeResponseDto } from './dto/auth.dto';
 import { Role } from '../../common/enums/role.enum';
 import { UsersService } from '../users/users.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import {
   generateChallengeMessage,
   verifyStellarSignature,
@@ -44,6 +45,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly referralsService: ReferralsService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
@@ -83,13 +85,17 @@ export class AuthService {
       return { id: idOrAddress, stellarAddress: idOrAddress, role: Role.USER };
     }
 
-    const user = await this.usersService.findById(idOrAddress);
-    if (user) {
-      return {
-        id: user.id,
-        stellarAddress: user.stellarAddress ?? '',
-        role: user.role,
-      };
+    try {
+      const user = await this.usersService.findById(idOrAddress);
+      if (user) {
+        return {
+          id: user.id,
+          stellarAddress: user.stellarAddress ?? '',
+          role: user.role,
+        };
+      }
+    } catch {
+      // unknown id — fall through to default
     }
     return { id: idOrAddress, stellarAddress: '', role: Role.USER };
   }
@@ -131,6 +137,13 @@ export class AuthService {
         username: stellarAddress,
         role: Role.USER,
       });
+      // New signup: attribute to a referrer when a valid code is supplied.
+      // Invalid/self/circular/duplicate codes are ignored (no-op) so signup
+      // never fails on referral handling.
+      await this.referralsService.recordSignupAttribution(
+        user.id,
+        dto.referralCode,
+      );
     }
 
     const tokens = await this.generateTokens(

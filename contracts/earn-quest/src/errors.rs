@@ -44,6 +44,8 @@ pub enum Error {
     InvalidProofHash = 24,
     /// Submission has already been processed.
     SubmissionAlreadyProcessed = 25,
+    /// Submission has already been approved.
+    SubmissionAlreadyApproved = 26,
 
     // ── Payout Errors ──
     /// Contract has insufficient balance for payout.
@@ -106,10 +108,17 @@ pub enum Error {
     DisputeAlreadyExists = 82,
     DisputeNotPending = 83,
     DisputeNotAuthorized = 84,
+    /// Dispute has already been resolved and cannot be resolved again.
     DisputeAlreadyResolved = 85,
+    /// Dispute is not in `Appealed` state for the requested operation.
     DisputeNotAppealed = 86,
+    /// Dispute has already been appealed and cannot be appealed again.
     DisputeAlreadyAppealed = 87,
     DisputeNotResolved = 95,
+
+    // Expiry validation
+    /// Quest expiry grace period exceeds the maximum allowed.
+    GracePeriodTooLarge = 96,
 
     // Additional validation / escrow
     InvalidDeadline = 88,
@@ -131,6 +140,9 @@ pub enum Error {
     InvalidOracleData = 105,
     LowOracleConfidence = 106,
     RewardDeviationTooHigh = 107,
+    OracleLimitReached = 108,
+    OracleAlreadyExists = 109,
+    OracleNotFound = 115,
 
     // Arithmetic
     ArithmeticOverflow = 110,
@@ -143,6 +155,7 @@ pub enum Error {
     BadgeTypeNotFound = 142,
 
     // Payout Errors
+    /// Reward-claim amount is zero or negative.
     InvalidClaimAmount = 143,
 
     // Verifier Stake Errors
@@ -171,4 +184,12 @@ pub enum Error {
     // Gas / Resource Errors
     /// Instruction or resource limit exceeded for entrypoint.
     GasBudgetExceeded = 160,
+
+    // Self-approval guard (issue #2287)
+    /// The quest creator is not permitted to approve submissions on their own quest.
+    SelfApprovalDisallowed = 161,
+
+    // Self-verification guard (issue #2281)
+    /// A submitter cannot act as their own verifier to approve their submission.
+    SelfVerificationNotAllowed = 162,
 }

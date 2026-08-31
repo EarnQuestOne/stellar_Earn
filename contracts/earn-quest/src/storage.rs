@@ -737,17 +737,30 @@ pub fn set_oracle_addresses(env: &Env, addrs: &Vec<Address>) {
 
 pub fn add_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
     let mut addrs = get_oracle_addresses(env);
-    if !addrs.contains(&config.oracle_address) {
-        addrs.push_back(config.oracle_address.clone());
-        set_oracle_addresses(env, &addrs);
+    if addrs.contains(&config.oracle_address) {
+        return Err(Error::OracleAlreadyExists);
     }
+    // Cap the number of distinct registered oracles so aggregation cost
+    // (which iterates every config) stays bounded. Updating an already
+    // registered oracle is always allowed, even at the cap.
+    if addrs.len() >= crate::oracle::MAX_ORACLE_CONFIGS {
+        return Err(Error::OracleLimitReached);
+    }
+    addrs.push_back(config.oracle_address.clone());
+    set_oracle_addresses(env, &addrs);
     set_oracle_config(env, config);
     Ok(())
 }
 
 pub fn update_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
-    // Accept update even if address not yet tracked; keep list consistent.
-    add_oracle_config(env, config)
+    // Update is only valid for an already-registered oracle; it must not be
+    // used to register a brand-new address, and never affects the address index.
+    let addrs = get_oracle_addresses(env);
+    if !addrs.contains(&config.oracle_address) {
+        return Err(Error::OracleNotFound);
+    }
+    set_oracle_config(env, config);
+    Ok(())
 }
 
 pub fn remove_oracle_config(env: &Env, oracle_address: &Address) -> Result<(), Error> {

@@ -111,6 +111,9 @@ pub fn register_quest_with_category_and_grace_period(
     validation::validate_reward_asset(reward_asset)?;
     validation::validate_reward_amount(reward_amount)?;
     validation::validate_deadline(env, deadline)?;
+    if let Some(grace) = grace_period_seconds {
+        validation::validate_grace_period(grace)?;
+    }
     validation::validate_addresses_distinct(creator, verifier)?;
 
     // Check minimum creator level requirement

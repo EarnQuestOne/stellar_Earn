@@ -32,15 +32,19 @@ import { ModerationModule } from './modules/moderation/moderation.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { PostmortemsModule } from './modules/postmortems/postmortems.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
 import { QueryMonitoringModule } from './modules/query-monitoring/query-monitoring.module';
 import { QuestsModule } from './modules/quests/quests.module';
 import { QuotaModule } from './modules/quota/quota.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
 import { StellarModule } from './modules/stellar/stellar.module';
 import { MultiSigModule } from './modules/stellar/multisig/multisig.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
+import { DisputesModule } from './modules/disputes/disputes.module';
 import { TraceModule } from './modules/trace/trace.module';
 import { UsersModule } from './modules/users/users.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { WebhooksOutboundModule } from './modules/webhooks-outbound/webhooks-outbound.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { TraceInterceptor } from './modules/trace/trace.interceptor';
 import { EventsModule } from './events/events.module';
@@ -91,16 +95,20 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     JobsModule,
     ModerationModule,
     MultiSigModule,
+    PrivacyModule,
     NotificationsModule,
     PayoutsModule,
     ...(process.env.NODE_ENV !== 'production' ? [PostmortemsModule] : []),
     QueryMonitoringModule,
     QuestsModule,
     QuotaModule,
+    ReferralsModule,
     StellarModule,
     SubmissionsModule,
+    DisputesModule,
     UsersModule,
     WebhooksModule,
+    WebhooksOutboundModule,
     WebsocketModule,
     ProcessResourceModule,
   ],

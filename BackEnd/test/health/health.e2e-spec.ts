@@ -13,6 +13,8 @@ import { CacheHealthService } from '#src/modules/health/services/cache-health.se
 import { ExternalHealthService } from '#src/modules/health/services/external-health.service';
 import { HealthCheckResult } from '#src/modules/health/types/health.types';
 import { MetricsService } from '#src/common/services/metrics.service';
+import { JobsService } from '#src/modules/jobs/jobs.service';
+import { HealthCacheService } from '#src/common/services/health-cache.service';
 
 const mockDatabaseHealth = {
   check: jest.fn(),
@@ -31,6 +33,15 @@ const mockMetricsService = {
   getPrometheusOutput: jest.fn().mockReturnValue(''),
 };
 
+const mockJobsHealth = {
+  checkHealth: jest.fn().mockResolvedValue({ status: 'ok', latency: 10 }),
+};
+
+const mockHealthCache = {
+  get: jest.fn().mockReturnValue(null),
+  set: jest.fn(),
+};
+
 describe('Health (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -43,6 +54,8 @@ describe('Health (e2e)', () => {
         { provide: CacheHealthService, useValue: mockCacheHealth },
         { provide: ExternalHealthService, useValue: mockExternalHealth },
         { provide: MetricsService, useValue: mockMetricsService },
+        { provide: JobsService, useValue: mockJobsHealth },
+        { provide: HealthCacheService, useValue: mockHealthCache },
       ],
     }).compile();
 
@@ -63,6 +76,7 @@ describe('Health (e2e)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockJobsHealth.checkHealth.mockResolvedValue({ status: 'ok', latency: 10 });
   });
 
   describe('GET /health/live', () => {
@@ -266,6 +280,29 @@ describe('Health (e2e)', () => {
       expect(res.body.services.database.status).toBe('ok');
       expect(res.body.services.cache.status).toBe('ok');
       expect(res.body.services.external.status).toBe('ok');
+      expect(res.body.services.jobs.status).toBe('ok');
+      expect(mockJobsHealth.checkHealth).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns 503 when the BullMQ queue health check is down', async () => {
+      const okResult: HealthCheckResult = { status: 'ok', latency: 50 };
+      const downResult: HealthCheckResult = {
+        status: 'down',
+        latency: 3000,
+        error: 'Redis connection refused',
+      };
+      mockDatabaseHealth.check.mockResolvedValue(okResult);
+      mockCacheHealth.check.mockResolvedValue(okResult);
+      mockExternalHealth.check.mockResolvedValue(okResult);
+      mockJobsHealth.checkHealth.mockResolvedValue(downResult);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/health/deep')
+        .expect(503);
+
+      expect(res.body.status).toBe('down');
+      expect(res.body.services.jobs.status).toBe('down');
+      expect(res.body.services.jobs.error).toBe('Redis connection refused');
     });
 
     it('returns 200 with status degraded when external service is degraded', async () => {

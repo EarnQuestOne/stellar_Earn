@@ -1,6 +1,6 @@
 use crate::errors::Error;
-use crate::types::{QuestStatus, SubmissionStatus};
-use soroban_sdk::{Address, Env};
+use crate::types::{DisputeStatus, QuestStatus, SubmissionStatus};
+use soroban_sdk::{Address, Env, Symbol};
 
 //================================================================================
 // Constants — Validation Limits
@@ -27,6 +27,11 @@ pub const MAX_BATCH_QUEST_REGISTRATION: u32 = 50;
 /// Maximum number of submissions that can be approved in a single batch call
 pub const MAX_BATCH_APPROVALS: u32 = 50;
 
+/// Maximum total number of individual submission approvals across all inputs in
+/// a single batch-approval call. Bounds the inner-vector fan-out that
+/// `MAX_BATCH_APPROVALS` (which only counts inputs) does not.
+pub const MAX_BATCH_APPROVAL_TOTAL: u32 = 200;
+
 /// Maximum total number of quests allowed in the system (prevents global index bloat)
 pub const MAX_QUEST_IDS_TOTAL: u32 = 5000;
 
@@ -41,6 +46,15 @@ pub const MAX_DEADLINE_DURATION: u64 = 86400 * 365; // 1 year
 
 /// Minimum expiry buffer in seconds (absorbs normal validator clock drift)
 pub const MIN_EXPIRY_BUFFER: u64 = 10; // 10 seconds
+
+/// Maximum quest expiry grace period in seconds.
+///
+/// Bounds the *effective* quest expiry (`deadline + grace_period_seconds`):
+/// even when a quest's deadline is within `MAX_DEADLINE_DURATION`, an
+/// unbounded grace period would let the quest effectively live arbitrarily far
+/// in the future. Capping the grace period keeps the effective expiry within
+/// `MAX_DEADLINE_DURATION + MAX_GRACE_PERIOD_SECONDS` of the current time.
+pub const MAX_GRACE_PERIOD_SECONDS: u64 = 86400 * 30; // 30 days
 
 //================================================================================
 // Address Validation
@@ -58,34 +72,29 @@ pub const MIN_EXPIRY_BUFFER: u64 = 10; // 10 seconds
 /// # Returns
 /// * `Ok(())` if addresses are valid and distinct
 /// * `Err(Error::InvalidAddress)` if creator == verifier
-pub fn validate_addresses_distinct(
-    creator: &soroban_sdk::Address,
-    verifier: &soroban_sdk::Address,
-) -> Result<(), Error> {
+pub fn validate_addresses_distinct(creator: &Address, verifier: &Address) -> Result<(), Error> {
     if creator == verifier {
         return Err(Error::InvalidAddress);
     }
     Ok(())
 }
 
-/// Validates that the reward asset address is set and is not the zero/default
-/// address.
+/// Validates the common arguments shared by all quest registration entrypoints.
 ///
-/// A quest must reference a real token contract for rewards. The zero address
-/// (`Address::from_contract_id(&[0u8; 32])`) is the default/uninitialized value
-/// and would cause payouts to fail or be misdirected, so it is rejected here.
-///
-/// # Arguments
-/// * `reward_asset` - The reward asset address to validate
-///
-/// # Returns
-/// * `Ok(())` if the address is set and non-default
-/// * `Err(Error::InvalidAsset)` if the address is the zero/default address
-pub fn validate_reward_asset(reward_asset: &Address) -> Result<(), Error> {
-    let zero = Address::from_contract_id(&[0u8; 32]);
-    if *reward_asset == zero {
-        return Err(Error::InvalidAsset);
-    }
+/// Keeping this sequence centralized ensures `register_quest`, category-aware
+/// registration, and metadata registration return the same validation errors.
+pub fn validate_quest_registration(
+    env: &Env,
+    id: &Symbol,
+    creator: &Address,
+    verifier: &Address,
+    reward_amount: i128,
+    deadline: u64,
+) -> Result<(), Error> {
+    validate_symbol_length(id)?;
+    validate_addresses_distinct(creator, verifier)?;
+    validate_reward_amount(reward_amount)?;
+    validate_deadline(env, deadline)?;
     Ok(())
 }
 
@@ -106,6 +115,24 @@ pub fn validate_reward_amount(amount: i128) -> Result<(), Error> {
     if amount <= 0 {
         return Err(Error::InvalidRewardAmount);
     }
+    validate_max_reward_amount(amount)?;
+    Ok(())
+}
+
+/// Validates that a reward amount does not exceed the maximum allowed bound.
+///
+/// Split out from [`validate_reward_amount`] so the upper-bound check has a
+/// single, explicitly named home. Quest registration relies on this to reject
+/// implausibly large rewards that would otherwise overflow downstream math
+/// (e.g. cumulative platform-reward accounting or reward × claims arithmetic).
+///
+/// # Arguments
+/// * `amount` - The reward amount to validate
+///
+/// # Returns
+/// * `Ok(())` if `amount <= MAX_REWARD_AMOUNT`
+/// * `Err(Error::AmountTooLarge)` if `amount > MAX_REWARD_AMOUNT`
+pub fn validate_max_reward_amount(amount: i128) -> Result<(), Error> {
     if amount > MAX_REWARD_AMOUNT {
         return Err(Error::AmountTooLarge);
     }
@@ -154,6 +181,25 @@ pub fn validate_deadline(env: &Env, deadline: u64) -> Result<(), Error> {
         return Err(Error::DeadlineTooFar);
     }
 
+    Ok(())
+}
+
+/// Validates that a quest expiry grace period is within allowed bounds.
+///
+/// The grace period extends the effective quest expiry (`deadline + grace`),
+/// so without this cap a quest could effectively expire arbitrarily far in the
+/// future even though its `deadline` itself is bounded by `validate_deadline`.
+///
+/// # Arguments
+/// * `grace_period_seconds` - The grace period to validate
+///
+/// # Returns
+/// * `Ok(())` if `grace_period_seconds <= MAX_GRACE_PERIOD_SECONDS`
+/// * `Err(Error::GracePeriodTooLarge)` if it exceeds the cap
+pub fn validate_grace_period(grace_period_seconds: u64) -> Result<(), Error> {
+    if grace_period_seconds > MAX_GRACE_PERIOD_SECONDS {
+        return Err(Error::GracePeriodTooLarge);
+    }
     Ok(())
 }
 
@@ -342,6 +388,51 @@ pub fn validate_submission_status_transition(
     Ok(())
 }
 
+/// Validates a dispute status transition is allowed.
+///
+/// Allowed transitions:
+/// * Pending -> UnderReview
+/// * Pending -> Resolved
+/// * Pending -> Withdrawn
+/// * UnderReview -> Resolved
+/// * Resolved -> Appealed
+/// * Appealed -> Resolved
+/// * Resolved -> Pending (re-opening after a resolution)
+/// * Withdrawn -> Pending (re-opening after a withdrawal)
+///
+/// Non-terminal active states (`Pending`, `UnderReview`, `Appealed`) can never
+/// be re-opened as a fresh dispute, and terminal states (`Withdrawn`, a second
+/// `Resolved`) can never move into review/appeal paths.
+///
+/// # Arguments
+/// * `from` - Current dispute status
+/// * `to` - Desired dispute status
+///
+/// # Returns
+/// * `Ok(())` if the transition is allowed
+/// * `Err(Error::InvalidStatusTransition)` if the transition is not allowed
+pub fn validate_dispute_status_transition(
+    from: &DisputeStatus,
+    to: &DisputeStatus,
+) -> Result<(), Error> {
+    let valid = matches!(
+        (from, to),
+        (DisputeStatus::Pending, DisputeStatus::UnderReview)
+            | (DisputeStatus::Pending, DisputeStatus::Resolved)
+            | (DisputeStatus::Pending, DisputeStatus::Withdrawn)
+            | (DisputeStatus::UnderReview, DisputeStatus::Resolved)
+            | (DisputeStatus::Resolved, DisputeStatus::Appealed)
+            | (DisputeStatus::Appealed, DisputeStatus::Resolved)
+            | (DisputeStatus::Resolved, DisputeStatus::Pending)
+            | (DisputeStatus::Withdrawn, DisputeStatus::Pending)
+    );
+
+    if !valid {
+        return Err(Error::InvalidStatusTransition);
+    }
+    Ok(())
+}
+
 /// Validates that a quest is currently active (required for submissions).
 ///
 /// # Arguments
@@ -393,6 +484,21 @@ pub fn validate_batch_approval_size(length: u32) -> Result<(), Error> {
         return Err(Error::ArrayTooLong);
     }
     if length > MAX_BATCH_APPROVALS {
+        return Err(Error::ArrayTooLong);
+    }
+    Ok(())
+}
+
+/// Validates the *total* number of individual submission approvals across every
+/// input in a single batch-approval call.
+///
+/// `validate_batch_approval_size` only bounds the number of `BatchApprovalInput`
+/// entries; each entry carries its own inner vector of submitter addresses, so
+/// without this check a single input with an arbitrarily long inner vector could
+/// still exhaust gas. Bounding the total fan-out keeps a batch call's work
+/// predictable.
+pub fn validate_batch_approval_total(total: u32) -> Result<(), Error> {
+    if total > MAX_BATCH_APPROVAL_TOTAL {
         return Err(Error::ArrayTooLong);
     }
     Ok(())
