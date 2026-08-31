@@ -1,3 +1,10 @@
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -11,6 +18,8 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
+  getUsers(@Query('page') page = 1, @Query('limit') limit = 20) {
+    return this.adminService.getUsers(Number(page), Number(limit));
   getUsers(@Query() query: GetUsersQueryDto = {}) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -27,3 +36,4 @@ export class AdminController {
     return this.adminService.getPlatformStats();
   }
 }
+

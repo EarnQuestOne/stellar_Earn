@@ -1,3 +1,4 @@
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -26,6 +27,7 @@ export class AdminService {
   async getUserById(id: string) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) {
+      throw new ForbiddenException('User not found');
       throw new NotFoundException(`User ${id} not found`);
     }
     return user;
@@ -41,6 +43,10 @@ export class AdminService {
     const adminCount = await this.userRepo.count({
       where: { role: Role.ADMIN },
     });
+    return { totalUsers, adminCount };
+  }
+}
+
     const data = { totalUsers, adminCount };
     this.statsCache = { data, expiresAt: now + this.STATS_CACHE_TTL_MS };
     return data;
