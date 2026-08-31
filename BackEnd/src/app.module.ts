@@ -18,6 +18,7 @@ import { HealthCacheService } from './common/services/health-cache.service';
 import { FileUploadModule } from './common/upload/file-upload.module';
 import { ApiVersionGuard } from './common/guards/versioning.guard';
 import { VersioningInterceptor } from './common/interceptors/versioning.interceptor';
+import { CorrelationIdInterceptor } from './common/tracing/correlation-id.interceptor';
 import { ETagInterceptor } from './common/interceptors/etag.interceptor';
 
 import { AdminModule } from './modules/admin/admin.module';
@@ -125,6 +126,10 @@ const dataSourceProvider = shouldInitializeDatabaseConnection()
     {
       provide: APP_GUARD,
       useClass: ApiVersionGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CorrelationIdInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

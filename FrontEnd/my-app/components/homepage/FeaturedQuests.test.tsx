@@ -48,7 +48,7 @@ describe('FeaturedQuests - Error Boundary and Timeout Integration', () => {
     const mockError = new Error('API request failed');
     mockGetQuests
       .mockRejectedValueOnce(mockError)
-      .mockResolvedValueOnce({ quests: [] });
+      .mockResolvedValueOnce({ data: [] });
 
     render(<FeaturedQuests />);
 
@@ -96,7 +96,7 @@ describe('FeaturedQuests - Error Boundary and Timeout Integration', () => {
     );
     mockGetQuests
       .mockRejectedValueOnce(timeoutError)
-      .mockResolvedValueOnce({ quests: [] });
+      .mockResolvedValueOnce({ data: [] });
 
     render(<FeaturedQuests />);
 
@@ -130,7 +130,7 @@ describe('FeaturedQuests - Error Boundary and Timeout Integration', () => {
     );
     mockGetQuests
       .mockRejectedValueOnce(timeoutError)
-      .mockResolvedValueOnce({ quests: [] });
+      .mockResolvedValueOnce({ data: [] });
 
     render(<FeaturedQuests />);
 

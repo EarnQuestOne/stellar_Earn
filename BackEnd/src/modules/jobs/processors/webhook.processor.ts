@@ -4,9 +4,11 @@ import {
   WebhookDeliverPayload,
   WebhookRetryPayload,
   JobResult,
+  JobMetadata,
 } from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 import * as crypto from 'crypto';
+import { AppLoggerService } from '../../../common/logger/logger.service';
 
 /**
  * Webhook Processor
@@ -22,10 +24,14 @@ export class WebhookProcessor {
   /**
    * Process webhook delivery job
    */
-  async processDelivery(job: Job<WebhookDeliverPayload>): Promise<JobResult> {
-    const { webhookId, event, payload, url, secret } = job.data;
+  async processDelivery(job: Job<WebhookDeliverPayload & JobMetadata>): Promise<JobResult> {
+    const { webhookId, event, payload, url, secret, __correlationId } = job.data;
 
     try {
+      // Restore correlation ID in logger context if present in job data
+      if (__correlationId) {
+        AppLoggerService.setRequestContext({ correlationId: __correlationId });
+      }
       await job.updateProgress(10);
       this.logger.log(
         `Processing webhook delivery job ${job.id}: webhookId=${webhookId}, event=${event}`,
@@ -61,6 +67,11 @@ export class WebhookProcessor {
         'X-Webhook-ID': webhookId,
         'X-Timestamp': new Date().toISOString(),
       };
+
+      // Add correlation ID to outbound webhook headers
+      if (__correlationId) {
+        headers['X-Correlation-ID'] = __correlationId;
+      }
 
       if (signature) {
         headers['X-Signature'] = signature;

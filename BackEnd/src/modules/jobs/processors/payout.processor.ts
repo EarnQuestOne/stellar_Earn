@@ -3,8 +3,14 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job } from 'bullmq';
-import { PayoutProcessPayload, JobResult, JobType } from '../job.types';
+import {
+  PayoutProcessPayload,
+  JobResult,
+  JobMetadata,
+  JobType,
+} from '../job.types';
 import { JobLogService } from '../services/job-log.service';
+import { AppLoggerService } from '../../../common/logger/logger.service';
 import { JobIdempotencyService } from '../services/job-idempotency.service';
 import { StellarPaymentService } from '../../stellar/stellar-payment.service';
 import { Payout, PayoutStatus } from '../../payouts/entities/payout.entity';
@@ -133,8 +139,8 @@ export class PayoutProcessor {
    * already been processed successfully.  Skips gracefully if another worker
    * currently holds the lock (in-flight duplicate).
    */
-  async process(job: Job<PayoutProcessPayload>): Promise<JobResult> {
-    const { payoutId, organizationId, amount, recipientAddress } = job.data;
+  async process(job: Job<PayoutProcessPayload & JobMetadata>): Promise<JobResult> {
+    const { payoutId, organizationId, amount, recipientAddress, __correlationId } = job.data;
 
     // ── 1. Idempotency check ────────────────────────────────────────────────
     const idempotencyKey = this.jobIdempotencyService.buildPayoutJobKey(
@@ -174,6 +180,10 @@ export class PayoutProcessor {
 
     // ── 2. Process the payout ───────────────────────────────────────────────
     try {
+      // Restore correlation ID in logger context if present in job data
+      if (__correlationId) {
+        AppLoggerService.setRequestContext({ correlationId: __correlationId });
+      }
       await job.updateProgress(10);
       this.logger.log(
         `Processing payout job ${job.id}: payoutId=${payoutId}, amount=${amount}`,

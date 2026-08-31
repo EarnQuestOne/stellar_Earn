@@ -7,6 +7,8 @@
  *  POST   /           – create quest (Admin)
  *  PATCH  /:id        – update quest (Admin)
  *  DELETE /:id        – delete quest (Admin)
+ *
+ * All API responses are mapped to UI domain models via mappers in lib/api/mappers.ts
  */
 
 import {
@@ -20,19 +22,19 @@ import {
 } from './client';
 import { cacheManager } from '@/lib/utils/cache';
 import type {
-  QuestResponse,
-  PaginatedQuestsResponse,
   CreateQuestRequest,
   UpdateQuestRequest,
   QuestQueryParams,
   QuestStatus,
 } from '@/lib/types/api.types';
+import type { Quest, PaginatedResponse } from '@/lib/types/quest';
+import { mapQuest, mapPaginatedQuests } from './mappers';
 
 const QUEST_LIST_TTL_MS = 3 * 60 * 1000;
 const QUEST_LIST_STALE_TTL_MS = 10 * 60 * 1000;
 
 type QuestListCacheOptions = {
-  onRevalidate?: (data: PaginatedQuestsResponse) => void;
+  onRevalidate?: (data: PaginatedResponse<Quest>) => void;
 };
 
 // Re-export legacy types for backward compatibility with existing hooks
@@ -191,13 +193,14 @@ function deserializePaginatedQuests(response: any): PaginatedQuestsResponse {
  * Results are cached for 3 minutes with automatic request deduplication.
  * Multiple simultaneous requests with identical parameters will share the same network call.
  * Retries up to 3 times on transient failures.
+ * API response (PaginatedQuestsResponse) is mapped to UI domain model (PaginatedResponse<Quest>).
  */
 export async function getQuests(
   filters?: QuestQueryParams,
   cancelToken?: CancelToken,
   timeout?: number,
   cacheOptions?: QuestListCacheOptions
-): Promise<PaginatedQuestsResponse> {
+): Promise<PaginatedResponse<Quest>> {
   const params = buildQuestParams(filters);
   const cacheKey = `${generateQuestsCacheKey(params)}${timeout ? `:t-${timeout}` : ''}`;
 
@@ -228,11 +231,12 @@ export async function getQuests(
 /**
  * Fetch a single quest by ID.
  * Results are cached for 60 s to avoid redundant network calls.
+ * API response (QuestResponse) is mapped to UI domain model (Quest).
  */
 export async function getQuestById(
   id: string,
   cancelToken?: CancelToken
-): Promise<QuestResponse> {
+): Promise<Quest> {
   return cacheManager.get(
     `quest-${id}`,
     async () => {
@@ -261,6 +265,10 @@ export async function getQuestById(
 // Create quest (Admin)
 // ---------------------------------------------------------------------------
 
+/**
+ * Create a new quest (Admin only).
+ * API response (QuestResponse) is mapped to UI domain model (Quest).
+ */
 export async function createQuest(
   payload: CreateQuestRequest
 ): Promise<QuestResponse> {
@@ -279,6 +287,10 @@ export async function createQuest(
 // Update quest (Admin)
 // ---------------------------------------------------------------------------
 
+/**
+ * Update an existing quest (Admin only).
+ * API response (QuestResponse) is mapped to UI domain model (Quest).
+ */
 export async function updateQuest(
   id: string,
   payload: UpdateQuestRequest

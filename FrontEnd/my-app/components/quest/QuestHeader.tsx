@@ -130,7 +130,7 @@ export function QuestHeader({
         >
           {category}
         </span>
-        {difficulty && difficultyInfo && (
+        {difficultyInfo && (
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${difficultyInfo.className}`}
             aria-label={`Difficulty: ${difficultyInfo.label}`}

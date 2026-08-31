@@ -534,8 +534,8 @@ describe('getQuests – integration via MSW fixture', () => {
 
     const result = await getQuests();
 
-    expect(Array.isArray(result.quests)).toBe(true);
-    expect(result.quests).toHaveLength(questPaginatedFixture.quests.length);
+    expect(Array.isArray(result.data)).toBe(true);
+    expect(result.data).toHaveLength(questPaginatedFixture.quests.length);
     expect(result.total).toBe(questPaginatedFixture.total);
     expect(result.page).toBe(questPaginatedFixture.page);
     expect(result.limit).toBe(questPaginatedFixture.limit);
@@ -554,7 +554,7 @@ describe('getQuests – integration via MSW fixture', () => {
 
     const result = await getQuests();
 
-    result.quests.forEach((quest) => {
+    result.data.forEach((quest) => {
       assertRequiredQuestFields(quest);
     });
   });
@@ -571,7 +571,7 @@ describe('getQuests – integration via MSW fixture', () => {
 
     const result = await getQuests();
 
-    expect(result.quests).toHaveLength(0);
+    expect(result.data).toHaveLength(0);
     expect(result.total).toBe(0);
   });
 

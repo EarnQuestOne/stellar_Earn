@@ -27,9 +27,12 @@ import type {
   UpdateProfileRequest,
   UserSearchParams,
   PaginationParams,
+  QuestResponse,
+  SubmissionResponse,
 } from '@/lib/types/api.types';
 
-import type { QuestResponse, SubmissionResponse } from '@/lib/types/api.types';
+import type { Quest } from '@/lib/types/quest';
+import { mapQuest, mapSubmission, mapUserStats, mapBadgeIdToBadge } from './mappers';
 
 // Re-export legacy dashboard types for backward compat
 export type {
@@ -211,11 +214,12 @@ export async function fetchUserStats(
   address: string,
   cancelToken?: CancelToken
 ): Promise<UserStatsResponse> {
-  return withRetry(() =>
+  const raw = await withRetry(() =>
     get<UserStatsResponse>(`/users/${address}/stats`, {
       signal: cancelToken?.signal,
     })
   );
+  return mapUserStats(raw);
 }
 
 // ---------------------------------------------------------------------------
@@ -294,9 +298,10 @@ export async function deleteAccount(address: string): Promise<void> {
 // Legacy dashboard helpers (backward compatibility for existing UI)
 // ---------------------------------------------------------------------------
 
-export async function fetchActiveQuests(): Promise<QuestResponse[]> {
+export async function fetchActiveQuests(): Promise<Quest[]> {
   await dashboardDelay(250);
-  return [...mockActiveQuests];
+  const responses: QuestResponse[] = [...mockActiveQuests];
+  return responses.map(mapQuest);
 }
 
 export async function fetchRecentSubmissions(): Promise<SubmissionResponse[]> {
@@ -323,15 +328,30 @@ export async function fetchBadges(): Promise<Badge[]> {
  */
 export async function fetchDashboardData(
   address?: string
-): Promise<
-  DashboardData | { userProfile: UserResponse; userStats: UserStatsResponse }
-> {
+): Promise<DashboardData> {
   if (address) {
-    const [userProfile, userStats] = await Promise.all([
-      fetchUserByAddress(address),
-      fetchUserStats(address),
-    ]);
-    return { userProfile, userStats };
+    const [userStats, activeQuests, recentSubmissions, earningsHistory, badges] =
+      await Promise.all([
+        fetchUserStats(address),
+        fetchActiveQuests(),
+        fetchRecentSubmissions(),
+        fetchEarningsHistory(),
+        fetchBadges(),
+      ]);
+
+    const stats = mapUserStats(userStats);
+
+    const mappedBadges = stats.badges && stats.badges.length > 0
+      ? stats.badges.map(mapBadgeIdToBadge)
+      : badges;
+
+    return {
+      stats,
+      activeQuests: activeQuests.map(mapQuest),
+      recentSubmissions: recentSubmissions.map(mapSubmission),
+      earningsHistory,
+      badges: mappedBadges,
+    };
   }
 
   const [activeQuests, recentSubmissions, earningsHistory, badges] =
@@ -343,9 +363,9 @@ export async function fetchDashboardData(
     ]);
 
   return {
-    stats: mockUserStats,
-    activeQuests,
-    recentSubmissions,
+    stats: mapUserStats(mockUserStats),
+    activeQuests: activeQuests.map(mapQuest),
+    recentSubmissions: recentSubmissions.map(mapSubmission),
     earningsHistory,
     badges,
   };

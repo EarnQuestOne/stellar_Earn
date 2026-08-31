@@ -17,6 +17,7 @@ const baseQuest = (id: string, title: string): Quest => ({
   status: QuestStatus.ACTIVE,
   verifierAddress: 'GTEST000000000000000000000000000000000000',
   requirements: [],
+  tags: [],
   maxParticipants: 5,
   currentParticipants: 1,
   totalClaims: 0,
