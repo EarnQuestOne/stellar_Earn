@@ -13,6 +13,8 @@ governance change is limited to files inside this `Governance/` folder.
 
 - **Charter & principles** â€” mission, scope, guiding values, and how this
   governance itself is amended.
+- **Working groups and SIGs** - [WORKING_GROUPS.md](WORKING_GROUPS.md)
+  defines how groups are formed, report to the TSC, and dissolve.
 - **Postmortem template** - [templates/POSTMORTEM_TEMPLATE.md](templates/POSTMORTEM_TEMPLATE.md)
   is the blameless template for writing incident postmortems.
 - **RFC template** - [templates/RFC_TEMPLATE.md](templates/RFC_TEMPLATE.md) is
