@@ -42,6 +42,13 @@ governance change is limited to files inside this `Governance/` folder.
 - **Archival Policy** â€” [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
   documents are archived and stored.
 
+## New governance documents
+
+- [Issue lifecycle](ISSUE_LIFECYCLE.md): states, transitions, labels, and ownership.
+- [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
+- [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
+- [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
+
 ## How to contribute to governance
 
 1. Pick a governance issue (each is scoped to at most two files in this folder).
