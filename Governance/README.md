@@ -13,6 +13,8 @@ governance change is limited to files inside this `Governance/` folder.
 
 - **Charter & principles** â€” mission, scope, guiding values, and how this
   governance itself is amended.
+- **Postmortem template** - [templates/POSTMORTEM_TEMPLATE.md](templates/POSTMORTEM_TEMPLATE.md)
+  is the blameless template for writing incident postmortems.
 - **RFC template** - [templates/RFC_TEMPLATE.md](templates/RFC_TEMPLATE.md) is
   the reusable template for writing RFC proposals, with a status field.
 - **Subproject acceptance** - [SUBPROJECT_ACCEPTANCE.md](SUBPROJECT_ACCEPTANCE.md)
