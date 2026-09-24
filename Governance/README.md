@@ -13,6 +13,8 @@ governance change is limited to files inside this `Governance/` folder.
 
 - **Charter & principles** â€” mission, scope, guiding values, and how this
   governance itself is amended.
+- **Security disclosure template** - [templates/DISCLOSURE_TEMPLATE.md](templates/DISCLOSURE_TEMPLATE.md)
+  is the private form for reporting a security vulnerability.
 - **Roles** â€” maintainers, reviewers, triagers, security team, release managers,
   and how people move between them.
 - **Decision-making** â€” consensus, voting, quorum, RFCs, tie-breaking, and how
