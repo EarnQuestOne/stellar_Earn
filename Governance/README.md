@@ -13,6 +13,8 @@ governance change is limited to files inside this `Governance/` folder.
 
 - **Charter & principles** â€” mission, scope, guiding values, and how this
   governance itself is amended.
+- **Security disclosure template** - [templates/DISCLOSURE_TEMPLATE.md](templates/DISCLOSURE_TEMPLATE.md)
+  is the private form for reporting a security vulnerability.
 - **Working groups and SIGs** - [WORKING_GROUPS.md](WORKING_GROUPS.md)
   defines how groups are formed, report to the TSC, and dissolve.
 - **Postmortem template** - [templates/POSTMORTEM_TEMPLATE.md](templates/POSTMORTEM_TEMPLATE.md)
