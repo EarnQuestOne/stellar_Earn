@@ -13,6 +13,8 @@ governance change is limited to files inside this `Governance/` folder.
 
 - **Charter & principles** â€” mission, scope, guiding values, and how this
   governance itself is amended.
+- **Working groups and SIGs** - [WORKING_GROUPS.md](WORKING_GROUPS.md)
+  defines how groups are formed, report to the TSC, and dissolve.
 - **Roles** â€” maintainers, reviewers, triagers, security team, release managers,
   and how people move between them.
 - **Decision-making** â€” consensus, voting, quorum, RFCs, tie-breaking, and how
