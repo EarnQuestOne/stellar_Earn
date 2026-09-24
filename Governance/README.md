@@ -39,6 +39,8 @@ governance change is limited to files inside this `Governance/` folder.
 - **Finance** â€” treasury, grants, sponsorship, and transparency reporting.
 - **Records & templates** â€” decision logs, meeting minutes, ADRs, and reusable
   templates.
+- **Architecture Decision Records** - [decisions/README.md](decisions/README.md)
+  contains the ADR index and numbering scheme for architectural decisions.
 - **Archival Policy** â€” [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
   documents are archived and stored.
 
