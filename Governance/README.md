@@ -48,6 +48,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
 - [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
 - [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
+- [Bug bounty program](BUG_BOUNTY.md): program scope, reward tiers, eligibility, and safe-harbor protections.
 
 ## How to contribute to governance
 
