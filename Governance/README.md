@@ -37,6 +37,8 @@ governance change is limited to files inside this `Governance/` folder.
 - **Security & compliance** â€” disclosure, incident response, secrets, access
   control, and data governance.
 - **Finance** â€” treasury, grants, sponsorship, and transparency reporting.
+- **Bounty funding and payouts** - [BOUNTY_FUNDING.md](BOUNTY_FUNDING.md)
+  defines bounty funding sources, escrow verification, payout execution, and dispute resolution.
 - **Records & templates** â€” decision logs, meeting minutes, ADRs, and reusable
   templates.
 - **Architecture Decision Records** - [decisions/README.md](decisions/README.md)
@@ -50,6 +52,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
 - [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
 - [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
+- [Bounty funding and payouts](BOUNTY_FUNDING.md): funding rules, payout process, and dispute handling.
 
 ## How to contribute to governance
 
