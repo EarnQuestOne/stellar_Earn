@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AsyncLocalStorage } from 'async_hooks';
 import {
   FeatureFlag,
   RolloutStrategy,
@@ -19,6 +20,16 @@ import {
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { UpdateFeatureFlagDto } from './dto/update-feature-flag.dto';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { CacheService } from '../cache/cache.service';
+
+// Cache tags for feature flags to enable tag-based invalidation
+export const FeatureFlagCacheTags = {
+  flag: (key: string) => `ff:${key}`,
+  allFlags: () => 'ff:all',
+};
+
+/** Per-request flag evaluation cache stored in AsyncLocalStorage. */
+const requestFlagCache = new AsyncLocalStorage<Map<string, boolean>>();
 
 @Injectable()
 export class FeatureFlagsService {
@@ -31,6 +42,7 @@ export class FeatureFlagsService {
     @InjectRepository(FeatureFlagAuditLog)
     private readonly auditLogRepository: Repository<FeatureFlagAuditLog>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
@@ -52,10 +64,18 @@ export class FeatureFlagsService {
     },
   ): Promise<boolean> {
     try {
-      // Check cache first
+      // Check request-scoped cache first (zero-cost lookup within same request)
+      const reqCache = requestFlagCache.getStore();
+      const reqCacheKey = userId ? `${flagKey}:${userId}` : flagKey;
+      if (reqCache?.has(reqCacheKey)) {
+        return reqCache.get(reqCacheKey)!;
+      }
+
+      // Check shared Redis cache
       const cacheKey = userId ? `ff:${flagKey}:${userId}` : `ff:${flagKey}`;
       const cached = await this.cacheManager.get<boolean>(cacheKey);
       if (cached !== undefined) {
+        reqCache?.set(reqCacheKey, cached);
         return cached;
       }
 
@@ -70,18 +90,36 @@ export class FeatureFlagsService {
 
       // Check if flag is globally disabled
       if (!flag.enabled || flag.status !== FlagStatus.ACTIVE) {
-        await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        await this.cacheService.set(
+          cacheKey,
+          false,
+          this.CACHE_TTL,
+          [FeatureFlagCacheTags.flag(flagKey)],
+        );
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
 
       // Check scheduled activation/deactivation
       const now = new Date();
       if (flag.scheduledActivationAt && now < flag.scheduledActivationAt) {
-        await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        await this.cacheService.set(
+          cacheKey,
+          false,
+          this.CACHE_TTL,
+          [FeatureFlagCacheTags.flag(flagKey)],
+        );
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
       if (flag.scheduledDeactivationAt && now > flag.scheduledDeactivationAt) {
-        await this.cacheManager.set(cacheKey, false, this.CACHE_TTL);
+        await this.cacheService.set(
+          cacheKey,
+          false,
+          this.CACHE_TTL,
+          [FeatureFlagCacheTags.flag(flagKey)],
+        );
+        reqCache?.set(reqCacheKey, false);
         return false;
       }
 
@@ -100,11 +138,11 @@ export class FeatureFlagsService {
           break;
 
         case RolloutStrategy.USER_WHITELIST:
-          result = userId ? flag.whitelistedUsers?.includes(userId) : false;
+          result = userId ? (flag.whitelistedUsers?.includes(userId) ?? false) : false;
           break;
 
         case RolloutStrategy.USER_BLACKLIST:
-          result = userId ? !flag.blacklistedUsers?.includes(userId) : true;
+          result = userId ? !(flag.blacklistedUsers?.includes(userId) ?? false) : true;
           break;
 
         case RolloutStrategy.SEGMENT_BASED:
@@ -115,7 +153,13 @@ export class FeatureFlagsService {
           result = false;
       }
 
-      await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+      await this.cacheService.set(
+        cacheKey,
+        result,
+        this.CACHE_TTL,
+        [FeatureFlagCacheTags.flag(flagKey)],
+      );
+      reqCache?.set(reqCacheKey, result);
       return result;
     } catch (error) {
       this.logger.error(`Error checking flag "${flagKey}": ${error.message}`);
@@ -242,19 +286,27 @@ export class FeatureFlagsService {
 
     const saved = await this.featureFlagRepository.save(flag);
 
-    // Log audit
-    await this.auditLogRepository.save({
-      flagId: saved.id,
-      flagKey: saved.key,
-      action: AuditAction.CREATED,
-      newValue: saved,
-      performedBy,
-      reason,
-      ipAddress,
-    });
+    // Log audit (do this before cache invalidation to ensure audit is recorded)
+    try {
+      await this.auditLogRepository.save({
+        flagId: saved.id,
+        flagKey: saved.key,
+        action: AuditAction.CREATED,
+        newValue: saved,
+        performedBy,
+        reason,
+        ipAddress,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to save audit log for flag creation: ${saved.key}`,
+        error,
+      );
+      // Don't throw; audit failure should not prevent flag creation
+    }
 
-    // Invalidate cache
-    await this.invalidateFlagCache(saved.key);
+    // Invalidate all related caches to prevent stale reads
+    await this.invalidateFlagCaches(saved.key);
 
     this.logger.log(`Created feature flag: ${saved.key}`);
     return saved;
@@ -277,12 +329,13 @@ export class FeatureFlagsService {
     }
 
     const previousValue = { ...flag };
+    const flagKeyBeforeUpdate = flag.key;
 
     Object.assign(flag, updateDto, { updatedBy: performedBy });
 
     const saved = await this.featureFlagRepository.save(flag);
 
-    // Determine audit action
+    // Determine audit action based on what changed
     let action = AuditAction.UPDATED;
     if (previousValue.enabled !== saved.enabled) {
       action = saved.enabled ? AuditAction.ACTIVATED : AuditAction.DEACTIVATED;
@@ -302,20 +355,28 @@ export class FeatureFlagsService {
       action = AuditAction.SEGMENT_CHANGED;
     }
 
-    // Log audit
-    await this.auditLogRepository.save({
-      flagId: saved.id,
-      flagKey: saved.key,
-      action,
-      previousValue,
-      newValue: saved,
-      performedBy,
-      reason,
-      ipAddress,
-    });
+    // Log audit BEFORE cache invalidation to ensure audit trail is complete
+    try {
+      await this.auditLogRepository.save({
+        flagId: saved.id,
+        flagKey: saved.key,
+        action,
+        previousValue,
+        newValue: saved,
+        performedBy,
+        reason,
+        ipAddress,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to save audit log for flag update: ${saved.key}`,
+        error,
+      );
+      // Don't throw; audit failure should not prevent flag update
+    }
 
-    // Invalidate cache
-    await this.invalidateFlagCache(saved.key);
+    // Invalidate all related caches to prevent stale reads
+    await this.invalidateFlagCaches(flagKeyBeforeUpdate);
 
     this.logger.log(`Updated feature flag: ${saved.key}`);
     return saved;
@@ -338,19 +399,27 @@ export class FeatureFlagsService {
 
     await this.featureFlagRepository.remove(flag);
 
-    // Log audit
-    await this.auditLogRepository.save({
-      flagId: flag.id,
-      flagKey: flag.key,
-      action: AuditAction.DELETED,
-      previousValue: flag,
-      performedBy,
-      reason,
-      ipAddress,
-    });
+    // Log audit BEFORE cache invalidation to ensure audit trail is complete
+    try {
+      await this.auditLogRepository.save({
+        flagId: flag.id,
+        flagKey: flag.key,
+        action: AuditAction.DELETED,
+        previousValue: flag,
+        performedBy,
+        reason,
+        ipAddress,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to save audit log for flag deletion: ${flag.key}`,
+        error,
+      );
+      // Don't throw; audit failure should not prevent flag deletion
+    }
 
-    // Invalidate cache
-    await this.invalidateFlagCache(flag.key);
+    // Invalidate all related caches to prevent stale reads
+    await this.invalidateFlagCaches(flag.key);
 
     this.logger.log(`Deleted feature flag: ${flag.key}`);
   }
@@ -401,19 +470,40 @@ export class FeatureFlagsService {
   }
 
   /**
-   * Invalidate cache for a specific flag
+   * Invalidate all cache entries related to a feature flag.
+   * Clears both the global flag cache and all user-specific variants using tag-based invalidation.
+   * @param flagKey - The feature flag key to invalidate
    */
-  private async invalidateFlagCache(flagKey: string): Promise<void> {
-    // Note: In a real implementation, you might need to use pattern-based cache invalidation
-    // This is a simplified version
-    await this.cacheManager.del(`ff:${flagKey}`);
+  private async invalidateFlagCaches(flagKey: string): Promise<void> {
+    try {
+      // Use CacheService tag-based invalidation to clear all variants
+      const tag = FeatureFlagCacheTags.flag(flagKey);
+      await this.cacheService.invalidateTag(tag);
+
+      // Also invalidate the global flag list cache
+      await this.cacheService.invalidateTag(FeatureFlagCacheTags.allFlags());
+
+      this.logger.debug(
+        `Invalidated all cache entries for feature flag: ${flagKey}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to invalidate cache for flag ${flagKey}`,
+        error,
+      );
+      // Don't throw; cache invalidation failure should not prevent operations
+    }
   }
 
   /**
    * Clear all flag caches (use with caution)
    */
   async clearAllCaches(): Promise<void> {
-    // In a real implementation, you might need to iterate through all flag keys
-    this.logger.warn('Clearing all feature flag caches');
+    try {
+      await this.cacheService.invalidateTag(FeatureFlagCacheTags.allFlags());
+      this.logger.warn('Cleared all feature flag caches');
+    } catch (error) {
+      this.logger.error('Failed to clear all feature flag caches', error);
+    }
   }
 }

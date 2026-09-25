@@ -4,9 +4,27 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
+    alias: [
+      {
+        find: '@contracts',
+        replacement: path.resolve(__dirname, '../../contracts'),
+      },
+      {
+        find: '@stellar/stellar-sdk/contract',
+        replacement: path.resolve(
+          __dirname,
+          'node_modules/@stellar/stellar-sdk/lib/contract/index'
+        ),
+      },
+      {
+        find: '@stellar/stellar-sdk',
+        replacement: path.resolve(
+          __dirname,
+          'node_modules/@stellar/stellar-sdk/lib/index'
+        ),
+      },
+      { find: '@', replacement: path.resolve(__dirname, '.') },
+    ],
   },
   test: {
     environment: 'jsdom',

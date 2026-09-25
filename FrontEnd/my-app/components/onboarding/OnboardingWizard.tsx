@@ -13,8 +13,8 @@ interface OnboardingWizardProps {
 
 export function OnboardingWizard({ forceOpen = false }: OnboardingWizardProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const pathname = usePathname()!;
+  const searchParams = useSearchParams()!;
   const lastRoutedStepIndexRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const {

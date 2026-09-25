@@ -53,6 +53,7 @@ export class QuestsController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 409, description: 'Quest ID already exists' })
   async create(
     @Body() createQuestDto: CreateQuestDto,
     @CurrentUser() user: AuthUser,

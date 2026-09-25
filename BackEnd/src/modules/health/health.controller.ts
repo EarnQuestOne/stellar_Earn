@@ -7,6 +7,7 @@ import { CacheHealthService } from './services/cache-health.service';
 import { ExternalHealthService } from './services/external-health.service';
 import { MetricsService } from '../../common/services/metrics.service';
 import { HealthCacheService } from '../../common/services/health-cache.service';
+import { JobsService } from '../jobs/jobs.service';
 import {
   LiveHealthResponse,
   ReadyHealthResponse,
@@ -27,6 +28,7 @@ export class HealthController {
     private readonly externalHealth: ExternalHealthService,
     private readonly metricsService: MetricsService,
     private readonly healthCache: HealthCacheService,
+    private readonly jobsService: JobsService,
   ) {}
 
   @Get('live')
@@ -57,22 +59,26 @@ export class HealthController {
   ): Promise<DeepHealthResponse> {
     this.logger.debug('Legacy health check (/) - collecting dependency status');
 
-    const [dbResult, cacheResult, externalResult] = await Promise.all([
-      this.dbHealth.check(),
-      this.cacheHealth.check(),
-      this.externalHealth.check(),
-    ]);
+    const [dbResult, cacheResult, externalResult, jobsResult] =
+      await Promise.all([
+        this.dbHealth.check(),
+        this.cacheHealth.check(),
+        this.externalHealth.check(),
+        this.jobsService.checkHealth(),
+      ]);
 
     const services = {
       database: this.mapServiceHealth(dbResult),
       cache: this.mapServiceHealth(cacheResult),
       external: this.mapServiceHealth(externalResult),
+      jobs: this.mapServiceHealth(jobsResult),
     };
 
     const overallStatus = this.calculateLegacyOverallStatus([
       dbResult,
       cacheResult,
       externalResult,
+      jobsResult,
     ]);
 
     res.status(overallStatus === 'down' ? 503 : 200);
@@ -218,22 +224,26 @@ export class HealthController {
     this.logger.debug('Deep health check starting');
 
     // Run all checks in parallel
-    const [dbResult, cacheResult, externalResult] = await Promise.all([
-      this.dbHealth.check(),
-      this.cacheHealth.check(),
-      this.externalHealth.check(),
-    ]);
+    const [dbResult, cacheResult, externalResult, jobsResult] =
+      await Promise.all([
+        this.dbHealth.check(),
+        this.cacheHealth.check(),
+        this.externalHealth.check(),
+        this.jobsService.checkHealth(),
+      ]);
 
     const services = {
       database: this.mapServiceHealth(dbResult),
       cache: this.mapServiceHealth(cacheResult),
       external: this.mapServiceHealth(externalResult),
+      jobs: this.mapServiceHealth(jobsResult),
     };
 
     const overallStatus = this.calculateOverallStatus([
       dbResult,
       cacheResult,
       externalResult,
+      jobsResult,
     ]);
 
     // Set HTTP status code based on overall status
@@ -243,6 +253,7 @@ export class HealthController {
       dbLatency: dbResult.latency,
       cacheLatency: cacheResult.latency,
       externalLatency: externalResult.latency,
+      jobsLatency: jobsResult.latency,
     });
 
     return {
@@ -299,9 +310,13 @@ export class HealthController {
   private calculateLegacyOverallStatus(
     results: HealthCheckResult[],
   ): ServiceStatus {
-    const [databaseResult, cacheResult, externalResult] = results;
+    const [databaseResult, cacheResult, externalResult, jobsResult] = results;
 
-    if (databaseResult?.status === 'down' || cacheResult?.status === 'down') {
+    if (
+      databaseResult?.status === 'down' ||
+      cacheResult?.status === 'down' ||
+      jobsResult?.status === 'down'
+    ) {
       return 'down';
     }
 

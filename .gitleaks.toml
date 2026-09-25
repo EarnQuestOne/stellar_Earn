@@ -1,0 +1,67 @@
+# Gitleaks config for stellar_Earn (#1917).
+# Extends the default rule set and allowlists known placeholders / test fixtures
+# so CI fails on new secrets without blocking documented dummy values.
+
+title = "stellar_Earn"
+
+[extend]
+useDefault = true
+
+# Placeholder PEM headers and dummy keys in committed example env files.
+[[allowlists]]
+description = "Committed .env.example files (placeholders only, never real secrets)"
+paths = [
+  '''(^|/)\.env\.example$''',
+]
+
+# Test JWT material used by e2e/integration env loaders. These are fixtures,
+# not production credentials, and are not BackEnd/.env contents.
+[[allowlists]]
+description = "Test-only JWT signing key fixtures"
+paths = [
+  '''(^|/)BackEnd/jwt-keys\.pem$''',
+  '''(^|/)BackEnd/jwt-keys\.pub$''',
+  '''(^|/)BackEnd/jwt-keys-output\.txt$''',
+]
+
+# These files contain regexes that match PEM headers so tests can parse fixtures.
+[[allowlists]]
+description = "PEM header regexes in test environment loaders"
+paths = [
+  '''(^|/)BackEnd/test/setup-e2e-env\.ts$''',
+  '''(^|/)BackEnd/test/setup-integration-env\.ts$''',
+]
+
+# Deterministic local-network Stellar keypairs. setup-local-env.sh documents
+# that they must never be used on testnet/mainnet.
+[[allowlists]]
+description = "Local-only Stellar sandbox keypairs for contract tests"
+paths = [
+  '''(^|/)contracts/earn-quest/setup-local-env\.sh$''',
+]
+
+# Obvious fake webhook secrets in tests (failure_secret_456, test_api_secret_67890).
+[[allowlists]]
+description = "Webhook tests that use obviously fake shared secrets"
+paths = [
+  '''(^|/)BackEnd/test/integration/jobs-webhooks\.integration-spec\.ts$''',
+  '''(^|/)BackEnd/test/webhooks/webhooks\.e2e-spec\.ts$''',
+]
+
+# Docs curl snippets use Bearer YOUR_TOKEN / generated_signature.
+[[allowlists]]
+description = "Documentation curl examples with placeholder Authorization headers"
+paths = [
+  '''\.md$''',
+]
+regexes = [
+  '''YOUR_TOKEN''',
+  '''generated_signature''',
+]
+
+# generic-api-key trips on prose like "Key integrations:" in the DR runbook.
+[[allowlists]]
+description = "Frontend DR runbook prose false positive for generic-api-key"
+paths = [
+  '''docs/Frontend disaster recovery runbook\.md$''',
+]

@@ -1,9 +1,6 @@
 ﻿import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { StellarService } from '#src/modules/stellar/stellar.service';
-import { TracingService } from '#src/common/tracing/tracing.service';
-import { MetricsService } from '#src/common/services/metrics.service';
 import {
   Account,
   Asset,
@@ -11,7 +8,6 @@ import {
   Operation,
   TransactionBuilder,
 } from 'stellar-sdk';
-import { EventStore } from '#src/events/entities/event-store.entity';
 
 describe('Transaction Signing Security', () => {
   let service: StellarService;
@@ -30,27 +26,6 @@ describe('Transaction Signing Security', () => {
               if (key === 'STELLAR_NETWORK') return 'TESTNET';
               return 'https://horizon-testnet.stellar.org';
             }),
-          },
-        },
-        {
-          provide: getRepositoryToken(EventStore),
-          useValue: {
-            findOne: jest.fn(),
-            save: jest.fn(),
-            create: jest.fn(),
-          },
-        },
-        {
-          provide: TracingService,
-          useValue: {
-            trace: jest.fn((_, fn) => fn({ attributes: {}, status: 'ok' })),
-          },
-        },
-        {
-          provide: MetricsService,
-          useValue: {
-            incrementCounter: jest.fn(),
-            observeHistogram: jest.fn(),
           },
         },
       ],

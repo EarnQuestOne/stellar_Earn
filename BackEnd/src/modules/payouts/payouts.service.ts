@@ -2,14 +2,24 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  EntityManager,
+  LessThanOrEqual,
+  OptimisticLockVersionMismatchError,
+} from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payout, PayoutStatus, PayoutType } from './entities/payout.entity';
+import {
+  PayoutOutbox,
+  PayoutOutboxStatus,
+} from './entities/payout-outbox.entity';
 import { ClaimPayoutDto, CreatePayoutDto } from './dto/claim-payout.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PayoutProcessedEvent } from '../../events/dto/payout-processed.event';
@@ -31,6 +41,9 @@ import { MetricsService } from '../../common/services/metrics.service';
 import { JobsService } from '../jobs/jobs.service';
 import { QUEUES } from '../jobs/jobs.constants';
 import { BulkheadService } from '../../common/services/bulkhead.service';
+import { StellarService } from '../stellar/stellar.service';
+import { JobResultStatusCacheService } from '../jobs/services/job-result-status-cache.service';
+import { IdempotencyService } from './services/idempotency.service';
 
 @Injectable()
 export class PayoutsService {
@@ -49,7 +62,19 @@ export class PayoutsService {
     private readonly metricsService: MetricsService,
     private readonly jobsService: JobsService,
     private readonly bulkheadService: BulkheadService,
-  ) {}
+    private readonly stellarService: StellarService,
+    private readonly jobResultStatusCache: JobResultStatusCacheService,
+    private readonly idempotencyService: IdempotencyService,
+  ) {
+    this.metricsService.registerCounter(
+      'payout_status_poll_cache_hits_total',
+      'Payout status polls served from Redis cache',
+    );
+    this.metricsService.registerCounter(
+      'payout_status_poll_cache_misses_total',
+      'Payout status polls that required a database read',
+    );
+  }
 
   // ─── Create ────────────────────────────────────────────────────────────────
 
@@ -73,10 +98,53 @@ export class PayoutsService {
           maxRetries: this.maxAutomaticPayoutRetries,
         });
 
-        return this.payoutRepository.save(payout);
+        return this.persistPayoutWithOutbox(payout);
       },
       this.getPayoutBulkheadOptions(),
     );
+  }
+
+  /**
+   * Persist a payout and write its on-chain execution intent to the outbox in
+   * the **same** DB transaction (#2158). Either both land or neither does, so a
+   * crash can never leave a payout without a queued execution (or vice-versa).
+   * The relay worker then submits the payment out-of-band, exactly once.
+   */
+  private async persistPayoutWithOutbox(payout: Payout): Promise<Payout> {
+    const saved = await this.payoutRepository.manager.transaction(
+      async (manager) => {
+        const persisted = await manager.save(payout);
+        await this.enqueuePayoutOutbox(manager, persisted);
+        return persisted;
+      },
+    );
+    await this.jobResultStatusCache.invalidatePayout(saved.id);
+    return saved;
+  }
+
+  /**
+   * Insert the payout's execution intent into the outbox using the supplied
+   * transactional `manager`. Keyed on a deterministic `idempotencyKey` and
+   * `orIgnore()`d, so re-running the enclosing operation never double-queues a
+   * payout (#2158).
+   */
+  async enqueuePayoutOutbox(
+    manager: EntityManager,
+    payout: Payout,
+  ): Promise<void> {
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(PayoutOutbox)
+      .values({
+        payoutId: payout.id,
+        idempotencyKey: `payout-outbox:${payout.id}`,
+        recipientAddress: payout.stellarAddress,
+        amount: payout.amount.toString(),
+        status: PayoutOutboxStatus.PENDING,
+      })
+      .orIgnore()
+      .execute();
   }
 
   // ─── Claim ─────────────────────────────────────────────────────────────────
@@ -88,36 +156,83 @@ export class PayoutsService {
     return this.bulkheadService.runWithBulkhead(
       'payouts',
       async () => {
-        const payout = await this.payoutRepository.findOne({
-          where: {
-            submissionId: claimPayoutDto.submissionId,
-            stellarAddress: userAddress,
-          },
-        });
+        // Deterministic idempotency key so that client retries for the same
+        // submission+address are safely deduplicated via the idempotency-key
+        // entity, preventing double payouts on race-condition retries (#2204).
+        const idempotencyKey = `payout-claim:${claimPayoutDto.submissionId}:${userAddress}`;
+        const bodyHash = this.idempotencyService.computeBodyHash(
+          claimPayoutDto as unknown as Record<string, unknown>,
+        );
+        const fingerprint = this.idempotencyService.computeFingerprint(
+          'SERVICE',
+          'payout-claim',
+          claimPayoutDto as unknown as Record<string, unknown>,
+        );
 
-        if (!payout) {
-          throw new NotFoundException('Payout not found for this submission');
+        const lockResult = await this.idempotencyService.tryAcquire(
+          idempotencyKey,
+          fingerprint,
+          'SERVICE',
+          'payout-claim',
+          bodyHash,
+        );
+
+        // A completed record means this exact claim was already processed;
+        // replay the cached response instead of touching the database again.
+        if (!lockResult.acquired && lockResult.existing) {
+          if (lockResult.existing.locked) {
+            throw new ConflictException(
+              'Payout claim is already being processed',
+            );
+          }
+          if (lockResult.existing.responseBody) {
+            return lockResult.existing
+              .responseBody as unknown as PayoutResponseDto;
+          }
         }
 
-        if (!payout.isClaimable()) {
-          throw new BadRequestException(
-            `Payout cannot be claimed. Current status: ${payout.status}`,
-          );
+        try {
+          const payout = await this.payoutRepository.findOne({
+            where: {
+              submissionId: claimPayoutDto.submissionId,
+              stellarAddress: userAddress,
+            },
+          });
+
+          if (!payout) {
+            throw new NotFoundException('Payout not found for this submission');
+          }
+
+          if (!payout.isClaimable()) {
+            throw new BadRequestException(
+              `Payout cannot be claimed. Current status: ${payout.status}`,
+            );
+          }
+
+          if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
+            throw new BadRequestException('Stellar address mismatch');
+          }
+
+          payout.claimedAt = new Date();
+          payout.status = PayoutStatus.PROCESSING;
+          await this.persistPayout(payout);
+
+          const response = this.mapToResponse(payout);
+          await this.idempotencyService.complete(idempotencyKey, 200, response);
+          return response;
+        } catch (error) {
+          // On business-logic or concurrency errors the idempotency record is
+          // removed so that the caller can retry with the same key instead of
+          // being stuck behind a stale lock.
+          if (
+            error instanceof NotFoundException ||
+            error instanceof BadRequestException ||
+            error instanceof ConflictException
+          ) {
+            await this.idempotencyService.remove(idempotencyKey);
+          }
+          throw error;
         }
-
-        if (payout.stellarAddress !== claimPayoutDto.stellarAddress) {
-          throw new BadRequestException('Stellar address mismatch');
-        }
-
-        payout.claimedAt = new Date();
-        payout.status = PayoutStatus.PROCESSING;
-        await this.payoutRepository.save(payout);
-
-        this.processPayout(payout.id).catch((error) => {
-          this.logger.error(`Failed to process payout ${payout.id}`, error);
-        });
-
-        return this.mapToResponse(payout);
       },
       this.getPayoutBulkheadOptions(),
     );
@@ -166,7 +281,7 @@ export class PayoutsService {
             payout.nextRetryAt = new Date(
               Date.now() + this.settlementRetryDelayMs,
             );
-            await this.payoutRepository.save(payout);
+            await this.persistPayout(payout);
             this.logger.log(
               `Payout ${payoutId} submitted and waiting for settlement finality (${settlement.confirmations}/${settlement.requiredConfirmations} confirmations)`,
             );
@@ -174,7 +289,7 @@ export class PayoutsService {
           }
 
           this.markPayoutCompleted(payout);
-          await this.payoutRepository.save(payout);
+          await this.persistPayout(payout);
           this.logger.log(`Payout ${payoutId} completed successfully`);
 
           this.emitPayoutProcessed(payout);
@@ -186,7 +301,7 @@ export class PayoutsService {
             payout.nextRetryAt = new Date(
               Date.now() + this.settlementRetryDelayMs,
             );
-            await this.payoutRepository.save(payout);
+            await this.persistPayout(payout);
             this.logger.warn(
               `Payout ${payout.id} transaction submitted but settlement confirmation is unavailable; retry scheduled`,
             );
@@ -276,7 +391,7 @@ export class PayoutsService {
 
     if (!settlement.isFinal) {
       payout.nextRetryAt = new Date(Date.now() + this.settlementRetryDelayMs);
-      await this.payoutRepository.save(payout);
+      await this.persistPayout(payout);
       this.logger.log(
         `Payout ${payout.id} settlement still pending (${settlement.confirmations}/${settlement.requiredConfirmations} confirmations)`,
       );
@@ -284,7 +399,7 @@ export class PayoutsService {
     }
 
     this.markPayoutCompleted(payout);
-    await this.payoutRepository.save(payout);
+    await this.persistPayout(payout);
     this.emitPayoutProcessed(payout);
     this.logger.log(`Payout ${payout.id} settlement finality confirmed`);
   }
@@ -378,10 +493,6 @@ export class PayoutsService {
   private async executeStellarPayment(
     payout: Payout,
   ): Promise<{ transactionHash: string; ledger: number }> {
-    const stellarNetwork = this.configService.get<string>(
-      'STELLAR_NETWORK',
-      'testnet',
-    );
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
 
     if (nodeEnv === 'development' || nodeEnv === 'test') {
@@ -394,19 +505,11 @@ export class PayoutsService {
       };
     }
 
-    const sourceSecretKey = this.configService.get<string>(
-      'STELLAR_SOURCE_SECRET_KEY',
+    return this.stellarService.sendPayment(
+      payout.stellarAddress,
+      Number(payout.amount),
+      payout.asset || 'XLM',
     );
-
-    if (!sourceSecretKey) {
-      throw new Error('Stellar source secret key not configured');
-    }
-
-    this.logger.log(
-      `Executing Stellar payment: ${payout.amount} ${payout.asset} to ${payout.stellarAddress} on ${stellarNetwork}`,
-    );
-
-    throw new Error('Stellar payment not implemented for production');
   }
 
   // ─── Failure / retry ───────────────────────────────────────────────────────
@@ -442,7 +545,7 @@ export class PayoutsService {
       );
     }
 
-    await this.payoutRepository.save(payout);
+    await this.persistPayout(payout);
   }
 
   private shouldRetryPayout(payout: Payout): boolean {
@@ -528,11 +631,89 @@ export class PayoutsService {
 
     for (const payout of payoutsToRetry) {
       payout.status = PayoutStatus.PROCESSING;
-      await this.payoutRepository.save(payout);
+      await this.persistPayout(payout);
 
       this.processPayout(payout.id).catch((error) => {
         this.logger.error(`Retry failed for payout ${payout.id}`, error);
       });
+    }
+  }
+
+  // ─── Batch processing ──────────────────────────────────────────────────────
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async processPendingBatch(): Promise<void> {
+    await this.processBatchPayouts();
+  }
+
+  async processBatchPayouts(): Promise<void> {
+    const pendingPayouts = await this.payoutRepository.find({
+      where: { status: PayoutStatus.PENDING },
+      take: 200,
+    });
+
+    const retryPayouts = await this.payoutRepository.find({
+      where: {
+        status: PayoutStatus.RETRY_SCHEDULED,
+        nextRetryAt: LessThanOrEqual(new Date()),
+      },
+      take: 200,
+    });
+
+    const payouts = [...pendingPayouts, ...retryPayouts];
+    if (payouts.length === 0) return;
+
+    const groups = new Map<string, Payout[]>();
+    for (const payout of payouts) {
+      const asset = payout.asset || 'XLM';
+      if (!groups.has(asset)) groups.set(asset, []);
+      groups.get(asset)!.push(payout);
+    }
+
+    for (const [asset, assetPayouts] of groups) {
+      for (let i = 0; i < assetPayouts.length; i += 100) {
+        const batch = assetPayouts.slice(i, i + 100);
+        const stellarBatch = batch.map((p) => ({
+          destination: p.stellarAddress,
+          amount: Number(p.amount),
+          asset,
+        }));
+
+        try {
+          const results =
+            await this.stellarService.sendBatchPayments(stellarBatch);
+
+          for (const txResult of results) {
+            for (let j = 0; j < txResult.operations.length; j++) {
+              const payout = batch[j];
+              payout.transactionHash = txResult.transactionHash;
+              payout.stellarLedger = txResult.ledger;
+              payout.failureReason = null;
+              payout.status = PayoutStatus.PROCESSING;
+              await this.payoutRepository.save(payout);
+            }
+          }
+
+          this.metricsService.incrementCounter('batch_payout_total', { asset });
+          this.metricsService.incrementCounter(
+            'batch_payout_operations',
+            { asset },
+            batch.length,
+          );
+          this.metricsService.observeHistogram(
+            'batch_payout_size',
+            batch.length,
+            { asset },
+          );
+        } catch (error) {
+          for (const payout of batch) {
+            await this.handlePayoutFailure(
+              payout,
+              error instanceof Error ? error : new Error(String(error)),
+            );
+          }
+        }
+      }
     }
   }
 
@@ -542,6 +723,21 @@ export class PayoutsService {
     payoutId: string,
     userAddress?: string,
   ): Promise<PayoutResponseDto> {
+    const viewerScope = userAddress ?? '__admin__';
+    const cached = await this.jobResultStatusCache.getPayoutPoll(
+      payoutId,
+      viewerScope,
+    );
+    if (cached) {
+      this.metricsService.incrementCounter(
+        'payout_status_poll_cache_hits_total',
+      );
+      return cached;
+    }
+    this.metricsService.incrementCounter(
+      'payout_status_poll_cache_misses_total',
+    );
+
     const whereClause: Record<string, unknown> = { id: payoutId };
     if (userAddress) whereClause.stellarAddress = userAddress;
 
@@ -551,7 +747,13 @@ export class PayoutsService {
 
     if (!payout) throw new NotFoundException('Payout not found');
 
-    return this.mapToResponse(payout);
+    const response = this.mapToResponse(payout);
+    await this.jobResultStatusCache.setPayoutPoll(
+      payoutId,
+      viewerScope,
+      response,
+    );
+    return response;
   }
 
   // ─── List (cursor-paginated) ───────────────────────────────────────────────
@@ -569,7 +771,7 @@ export class PayoutsService {
     query: PayoutQueryDto,
     userAddress?: string,
   ): Promise<PayoutHistoryResponseDto> {
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? 10;
     const address = query.stellarAddress || userAddress;
 
     const qb = this.payoutRepository.createQueryBuilder('payout');
@@ -678,7 +880,7 @@ export class PayoutsService {
     payout.maxRetries = this.maxAutomaticPayoutRetries;
     payout.status = PayoutStatus.PROCESSING;
     payout.failureReason = null;
-    await this.payoutRepository.save(payout);
+    await this.persistPayout(payout);
 
     this.processPayout(payout.id).catch((error) => {
       this.logger.error(`Manual retry failed for payout ${payout.id}`, error);
@@ -687,7 +889,85 @@ export class PayoutsService {
     return this.mapToResponse(payout);
   }
 
+  // ─── Force reset (recovery) ───────────────────────────────────────────────
+
+  /**
+   * Force-reset a stuck payout so the reconciliation processor can re-drive it.
+   *
+   * * PROCESSING without a transaction hash and within the retry budget is
+   *   reset to PENDING so the next batch-payout cron picks it up.
+   * * PROCESSING without a tx-hash but past the retry budget is dead-lettered.
+   * * RETRY_SCHEDULED payouts whose `nextRetryAt` has passed are pushed back
+   *   to PENDING so the next batch cycle retries them immediately.
+   *
+   * Returns the updated payout, or `null` when the payout was not found.
+   */
+  async forceResetPayout(payoutId: string): Promise<Payout | null> {
+    const payout = await this.payoutRepository.findOne({
+      where: { id: payoutId },
+    });
+    if (!payout) return null;
+
+    if (payout.status === PayoutStatus.PROCESSING && !payout.transactionHash) {
+      if (payout.retryCount < this.maxAutomaticPayoutRetries) {
+        payout.status = PayoutStatus.PENDING;
+        payout.failureReason = 'Reset to PENDING by reconciliation recovery';
+        this.logger.warn(
+          `Force-reset stuck payout ${payout.id} → PENDING (retry ${payout.retryCount}/${this.maxAutomaticPayoutRetries})`,
+        );
+      } else {
+        payout.status = PayoutStatus.DEAD_LETTER;
+        payout.nextRetryAt = null;
+        payout.failureReason = 'Exceeded retries during stuck-payout recovery';
+        this.logger.error(
+          `Stuck payout ${payout.id} exceeded retries → DEAD_LETTER`,
+        );
+      }
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    if (
+      payout.status === PayoutStatus.RETRY_SCHEDULED &&
+      payout.nextRetryAt &&
+      payout.nextRetryAt <= new Date()
+    ) {
+      payout.status = PayoutStatus.PENDING;
+      payout.failureReason = null;
+      this.logger.warn(
+        `Force-reset overdue RETRY_SCHEDULED payout ${payout.id} → PENDING`,
+      );
+      await this.persistPayout(payout);
+      return payout;
+    }
+
+    // Nothing to do – payout is not in a recoverable stuck state.
+    return payout;
+  }
+
   // ─── Mapper ────────────────────────────────────────────────────────────────
+
+  private async persistPayout(payout: Payout): Promise<Payout> {
+    try {
+      const saved = await this.payoutRepository.save(payout);
+      await this.jobResultStatusCache.invalidatePayout(saved.id);
+      return saved;
+    } catch (error) {
+      // A concurrent write bumped the payout's @VersionColumn between load and
+      // save. Reject with a 409 instead of silently overwriting the other
+      // update (lost update), so the caller can re-read and retry (#2157).
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        this.logger.warn(
+          `Optimistic lock conflict persisting payout ${payout.id}; ` +
+            `a concurrent update won — rejecting to prevent a lost update.`,
+        );
+        throw new ConflictException(
+          'Payout was modified concurrently; please retry.',
+        );
+      }
+      throw error;
+    }
+  }
 
   private mapToResponse(payout: Payout): PayoutResponseDto {
     return {

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -224,11 +225,14 @@ describe('WebhooksService', () => {
       const result = await service.processWebhook(event);
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain('Failed to process webhook');
+      expect(result.message).toBe('webhook processing failed');
     });
 
     it('should return a failure response when a handler rejects unexpectedly', async () => {
       const event = buildEvent();
+      const loggerErrorSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation();
       jest
         .spyOn(githubHandler, 'handleEvent')
         .mockRejectedValueOnce(new Error('downstream failure'));
@@ -236,8 +240,11 @@ describe('WebhooksService', () => {
       const result = await service.processWebhook(event);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe(
-        'Failed to process webhook: downstream failure',
+      expect(result.message).toBe('webhook processing failed');
+      expect(result.message).not.toContain('downstream failure');
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to process webhook ${event.id}:`),
+        expect.stringContaining('downstream failure'),
       );
     });
 
@@ -299,6 +306,8 @@ describe('WebhooksService', () => {
         }),
       );
       const saved = repo.save.mock.calls[0][0] as FailedWebhookEvent;
+      expect(saved.failureReason).toBe('webhook processing failed');
+      expect(saved.errorHistory[0].error).toBe('webhook processing failed');
       expect(saved.nextRetryAt).not.toBeNull();
     });
 

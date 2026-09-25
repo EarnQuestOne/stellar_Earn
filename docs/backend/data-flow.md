@@ -120,7 +120,7 @@ flowchart LR
  
 ## 4. Event-driven backbone
  
-Modules stay decoupled by talking through the event bus (`@nestjs/event-emitter`) instead of importing each other — this is what broke the original circular dependencies (see `BackEnd/CIRCULAR_DEPENDENCY_RESOLUTION.md`). Emitters and listeners below reflect the modules that actually use the bus.
+Modules stay decoupled by talking through the event bus (`@nestjs/event-emitter`) instead of importing each other — this is what broke the original circular dependencies (see `BackEnd/docs/CIRCULAR_DEPENDENCIES.md`). Emitters and listeners below reflect the modules that actually use the bus.
  
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'background':'#ffffff','primaryColor':'#ffffff','primaryTextColor':'#000000','primaryBorderColor':'#000000','lineColor':'#000000','textColor':'#000000','secondaryColor':'#ffffff','secondaryTextColor':'#000000','secondaryBorderColor':'#000000','tertiaryColor':'#ffffff','tertiaryTextColor':'#000000','tertiaryBorderColor':'#000000','mainBkg':'#ffffff','nodeBorder':'#000000','nodeTextColor':'#000000','clusterBkg':'#ffffff','clusterBorder':'#000000','titleColor':'#000000','edgeLabelBackground':'#ffffff','actorBkg':'#ffffff','actorBorder':'#000000','actorTextColor':'#000000','actorLineColor':'#000000','signalColor':'#000000','signalTextColor':'#000000','labelBoxBkgColor':'#ffffff','labelBoxBorderColor':'#000000','labelTextColor':'#000000','loopTextColor':'#000000','noteBkgColor':'#ffffff','noteTextColor':'#000000','noteBorderColor':'#000000','sequenceNumberColor':'#ffffff'}}}%%

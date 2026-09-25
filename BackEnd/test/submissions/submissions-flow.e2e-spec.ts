@@ -10,7 +10,7 @@ import { App } from 'supertest/types';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SubmissionsService } from '#src/modules/submissions/submissions.service';
-import { StellarService } from '#src/modules/stellar/stellar.service';
+import { StellarSubmissionService } from '#src/modules/stellar/stellar-submission.service';
 import { NotificationsService } from '#src/modules/notifications/notifications.service';
 import { SubmissionsController } from '#src/modules/submissions/submissions.controller';
 import { JwtAuthGuard } from '#src/modules/auth/guards/jwt-auth.guard';
@@ -202,7 +202,7 @@ describe('Submission Create + Approve flow (e2e)', () => {
       controllers: [SubmissionsController],
       providers: [
         SubmissionsService,
-        { provide: StellarService, useValue: stellarService },
+        { provide: StellarSubmissionService, useValue: stellarService },
         { provide: NotificationsService, useValue: notificationsService },
         { provide: EventEmitter2, useValue: eventEmitter },
         {

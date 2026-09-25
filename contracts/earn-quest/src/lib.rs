@@ -25,6 +25,33 @@ mod test_token;
 #[cfg(test)]
 mod test_clawback;
 
+#[cfg(test)]
+mod test_oracle_deviation;
+
+#[cfg(test)]
+mod test_oracle_cap;
+
+#[cfg(test)]
+mod test_incremental_stats;
+
+#[cfg(test)]
+mod test_arithmetic_overflow;
+
+#[cfg(test)]
+mod test_self_approval;
+
+#[cfg(test)]
+mod test_expiry_bounds;
+
+#[cfg(test)]
+mod test_reward_and_escrow_views;
+
+#[cfg(test)]
+mod test_submission_status;
+
+#[cfg(test)]
+mod test_claim_and_batch_bounds;
+
 use crate::errors::Error;
 use crate::storage::{get_badge_type, list_badge_types};
 
@@ -35,6 +62,7 @@ pub use crate::types::{
     UserBadges, UserCore, UserStats, VerifierStake,
 };
 
+use soroban_sdk::token::TokenClient;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec, U256};
 
 /// Bumps the contract instance TTL at the start of a state-mutating entrypoint.
@@ -48,6 +76,37 @@ fn bump_instance_ttl(env: &Env) {
     env.storage()
         .instance()
         .extend_ttl(crate::ttl::DEFAULT_TTL_THRESHOLD, target);
+}
+
+/// Rejects a reward amount that deviates from the oracle-reported fair price by
+/// more than `max_deviation_percent` percent.
+///
+/// The check is integer-only (no floating point): it rejects when
+/// `|reward_amount - oracle_price| * 100 > oracle_price * max_deviation_percent`.
+/// A deviation exactly equal to `max_deviation_percent` is accepted.
+fn check_reward_deviation(
+    reward_amount: i128,
+    oracle_price: i128,
+    max_deviation_percent: u32,
+) -> Result<(), Error> {
+    if reward_amount < 0 {
+        return Err(Error::InvalidRewardAmount);
+    }
+    if oracle_price <= 0 {
+        return Err(Error::InvalidOracleData);
+    }
+
+    let diff = reward_amount.abs_diff(oracle_price);
+    let lhs = diff.checked_mul(100).ok_or(Error::ArithmeticOverflow)?;
+    let rhs = (oracle_price as u128)
+        .checked_mul(u128::from(max_deviation_percent))
+        .ok_or(Error::ArithmeticOverflow)?;
+
+    if lhs > rhs {
+        return Err(Error::RewardDeviationTooHigh);
+    }
+
+    Ok(())
 }
 
 #[contract]
@@ -118,14 +177,15 @@ impl EarnQuestContract {
     ///
     /// # Returns
     ///
-    /// The `Address` of the current contract administrator.
+    /// `Ok(admin)` with the `Address` of the current contract administrator, or
+    /// `Err(Error::NotInitialized)` if the contract has not been initialized yet.
     ///
     /// # Example
     ///
     /// ```rust
-    /// let admin = client.get_admin();
+    /// let admin = client.try_get_admin()?;
     /// ```
-    pub fn get_admin(env: Env) -> Address {
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
         storage::get_admin(&env)
     }
 
@@ -283,10 +343,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest(
             &env,
             &id,
@@ -317,10 +381,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_category(
             &env,
             &id,
@@ -359,10 +427,14 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         creator.require_auth();
-        validation::validate_symbol_length(&id)?;
-        validation::validate_addresses_distinct(&creator, &verifier)?;
-        validation::validate_reward_amount(reward_amount)?;
-        validation::validate_deadline(&env, deadline)?;
+        validation::validate_quest_registration(
+            &env,
+            &id,
+            &creator,
+            &verifier,
+            reward_amount,
+            deadline,
+        )?;
         quest::register_quest_with_metadata(
             &env,
             &id,
@@ -546,6 +618,19 @@ impl EarnQuestContract {
 
         security::require_not_paused(&env)?;
         verifier.require_auth();
+
+        // Bound the total fan-out across all inputs' inner submission vectors,
+        // not just the number of inputs, to prevent gas exhaustion from an
+        // arbitrarily long single input.
+        let mut total: u32 = 0;
+        for i in 0u32..submissions.len() {
+            let input = submissions.get(i).ok_or(Error::IndexOutOfBounds)?;
+            total = total
+                .checked_add(input.submissions.len())
+                .ok_or(Error::ArithmeticOverflow)?;
+        }
+        validation::validate_batch_approval_total(total)?;
+
         submission::approve_submissions_batch(&env, &verifier, &submissions)
     }
 
@@ -563,6 +648,10 @@ impl EarnQuestContract {
         gas_budget::enforce_budget(&env, &soroban_sdk::symbol_short!("clm_rwd"))?;
         submitter.require_auth();
 
+        // Reject a zero/negative claim up front with a clear, typed error
+        // instead of silently proceeding.
+        payout::validate_claim_positive(amount)?;
+
         // Single read of quest and submission for all subsequent operations
         let quest = storage::get_quest(&env, &quest_id)?;
         let submission = storage::get_submission(&env, &quest_id, &submitter)?;
@@ -575,7 +664,10 @@ impl EarnQuestContract {
         // transfer. If a malicious token re-enters during the transfer the
         // AlreadyClaimed check in validate_claim_data rejects the second call.
         let mut submission = submission;
-        submission.claimed_amount += amount;
+        submission.claimed_amount = submission
+            .claimed_amount
+            .checked_add(amount)
+            .ok_or(Error::ArithmeticOverflow)?;
         submission.status = if submission.claimed_amount == quest.reward_amount {
             types::SubmissionStatus::Paid
         } else {
@@ -585,7 +677,10 @@ impl EarnQuestContract {
 
         // Increment claims: directly update quest to avoid extra read
         let mut quest = quest;
-        quest.total_claims += 1;
+        quest.total_claims = quest
+            .total_claims
+            .checked_add(1)
+            .ok_or(Error::ArithmeticOverflow)?;
         storage::set_quest(&env, &quest_id, &quest);
 
         payout::transfer_reward_from_escrow(
@@ -641,6 +736,22 @@ impl EarnQuestContract {
         bump_instance_ttl(&env);
 
         payout::execute_clawback(&env, &caller, &quest_id, &recipient)
+    }
+
+    /// Awards experience points (XP) to multiple users in a batch, accumulating
+    /// per-address reputation/XP deltas in memory to minimize storage operations.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `grants` - Vector of (Address, u64) tuples representing target user and XP amount.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` on success, or `Err(Error)` if index/storage operations fail.
+    pub fn award_xp_batch(env: Env, grants: Vec<(Address, u64)>) -> Result<(), Error> {
+        bump_instance_ttl(&env);
+        reputation::award_xp_batch(&env, &grants)
     }
 
     /// Returns the core statistics for a user (XP, level, quests completed).
@@ -1093,6 +1204,15 @@ impl EarnQuestContract {
         escrow::get_info(&env, &quest_id)
     }
 
+    /// Returns the total amount ever deposited into a quest's escrow.
+    ///
+    /// Read-only view over the cumulative `total_deposited` counter, letting
+    /// integrators query a quest's full escrow size without inspecting raw
+    /// storage. See [`Self::get_escrow_balance`] for the *remaining* balance.
+    pub fn get_escrow_total_deposited(env: Env, quest_id: Symbol) -> Result<i128, Error> {
+        escrow::get_total_deposited(&env, &quest_id)
+    }
+
     /// Returns the details of a quest by its symbol ID.
     ///
     /// # Arguments
@@ -1105,6 +1225,24 @@ impl EarnQuestContract {
     /// A `Result<Quest, Error>` containing the quest details.
     pub fn get_quest(env: Env, quest_id: Symbol) -> Result<Quest, Error> {
         storage::get_quest(&env, &quest_id)
+    }
+
+    /// Returns the remaining claim capacity for a quest id (Issue #2365).
+    ///
+    /// The remaining capacity is calculated as `MAX_QUEST_CLAIMS.saturating_sub(quest.total_claims)`.
+    /// Returns an error if the quest does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `env` - The environment.
+    /// * `quest_id` - The symbol of the quest.
+    ///
+    /// # Returns
+    ///
+    /// A `Result<u32, Error>` containing the remaining claims allowed.
+    pub fn get_remaining_claim_capacity(env: Env, quest_id: Symbol) -> Result<u32, Error> {
+        let quest = storage::get_quest(&env, &quest_id)?;
+        Ok(validation::MAX_QUEST_CLAIMS.saturating_sub(quest.total_claims))
     }
 
     /// Returns the submission details for a specific user and quest.
@@ -1124,6 +1262,21 @@ impl EarnQuestContract {
         submitter: Address,
     ) -> Result<Submission, Error> {
         storage::get_submission(&env, &quest_id, &submitter)
+    }
+
+    /// Returns just the current status of a submission by ID, without loading
+    /// the full record.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(status)` with the submission's [`SubmissionStatus`], or
+    /// `Err(Error::SubmissionNotFound)` if no submission exists.
+    pub fn get_submission_status(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+    ) -> Result<SubmissionStatus, Error> {
+        submission::get_submission_status(&env, &quest_id, &submitter)
     }
 
     /// Sets the number of approvals required to unpause the contract (Admin only).
@@ -1370,13 +1523,28 @@ impl EarnQuestContract {
             return Ok(amount);
         }
 
-        let price = Self::get_price(env.clone(), from_asset, to_asset, 300)?; // 5 minutes max age
+        let price = Self::get_price(env.clone(), from_asset.clone(), to_asset.clone(), 300)?; // 5 minutes max age
 
-        // Convert amount using price (assuming 7 decimals)
+        // Look up each asset's actual decimals via the SEP-41 token interface
+        // instead of assuming a hardcoded 7-decimal convention.
+        let from_decimals = TokenClient::new(&env, &from_asset).decimals();
+        let to_decimals = TokenClient::new(&env, &to_asset).decimals();
+        let price_decimals = price.decimals;
+
+        // Convert amount using each asset's actual decimals:
+        //   converted = amount * price * 10^to_decimals
+        //                / (10^from_decimals * 10^price_decimals)
         let amount_u256 = U256::from_u128(&env, amount as u128);
-        let converted_amount = amount_u256
-            .mul(&price.weighted_price)
-            .div(&U256::from_u32(&env, 10_000_000)); // Adjust for 7 decimals
+        let scaled_amount = amount_u256.mul(&price.weighted_price);
+
+        let exponent = from_decimals as i32 + price_decimals as i32 - to_decimals as i32;
+        let converted_amount = if exponent > 0 {
+            scaled_amount.div(&U256::from_u32(&env, 10).pow(exponent as u32))
+        } else if exponent < 0 {
+            scaled_amount.mul(&U256::from_u32(&env, 10).pow((-exponent) as u32))
+        } else {
+            scaled_amount
+        };
 
         // Convert back to i128 safely
         let converted_value = converted_amount.to_u128().ok_or(Error::AmountTooLarge)? as i128;
@@ -1391,25 +1559,29 @@ impl EarnQuestContract {
     /// * `reward_asset` - The asset used for rewards.
     /// * `reward_amount` - The reward amount to validate.
     /// * `reference_asset` - The reference asset (e.g., USD stablecoin).
-    /// * `max_deviation_percent` - Maximum allowed deviation from the oracle price.
+    /// * `max_deviation_percent` - Maximum allowed deviation (in percent) of the
+    ///   reward amount from the oracle-reported price.
     pub fn validate_reward_with_oracle(
         env: Env,
         reward_asset: Address,
-        _reward_amount: i128,
+        reward_amount: i128,
         reference_asset: Address,
-        _max_deviation_percent: u32,
+        max_deviation_percent: u32,
     ) -> Result<(), Error> {
         let price = Self::get_price(env, reward_asset, reference_asset, 300)?;
 
-        // Check if price confidence is sufficient
+        // Reject prices the oracle isn't confident enough about.
         if price.confidence_score < 80 {
             return Err(Error::LowOracleConfidence);
         }
 
-        // Additional validation logic could be added here
-        // For example, checking against historical prices, volatility limits, etc.
+        // The oracle-reported fair price, as i128 for comparison.
+        let oracle_price = price
+            .weighted_price
+            .to_u128()
+            .ok_or(Error::AmountTooLarge)? as i128;
 
-        Ok(())
+        check_reward_deviation(reward_amount, oracle_price, max_deviation_percent)
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,19 @@
+{
+  "label": "baseline",
+  "generatedAt": "2026-08-17T21:41:54.481Z",
+  "iterations": 3,
+  "results": [
+    {
+      "n": 200,
+      "mountMs": 237.84,
+      "updateMs": 181.18,
+      "renderedRows": 200
+    },
+    {
+      "n": 1000,
+      "mountMs": 856.12,
+      "updateMs": 535.67,
+      "renderedRows": 1000
+    }
+  ]
+}

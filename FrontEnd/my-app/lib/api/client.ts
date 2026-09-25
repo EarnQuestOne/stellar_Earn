@@ -7,6 +7,8 @@
  * - CSRF double-submit cookie protection (token captured from responses,
  *   attached to mutating requests automatically)
  * - Configurable retry with exponential back-off for network / 5xx errors
+ * - Automatic bounded retry for idempotent GET requests, with equal jitter
+ *   and `Retry-After` support (see `lib/api/retry-policy`)
  * - Per-request cancellation via AbortController
  * - 30-second default timeout
  * - Typed error transformation
@@ -24,6 +26,13 @@ import {
   type AppError,
 } from '@/lib/utils/error-handler';
 import { mapApiError, inferDomainFromUrl } from '@/lib/api/api-error-mapper';
+import {
+  DEFAULT_RETRY_POLICY,
+  isRetryableStatus,
+  parseRetryAfterMs,
+  withRetryPolicy,
+  type RetryPolicy,
+} from '@/lib/api/retry-policy';
 import type { ApiErrorResponse, AuthTokens } from '@/lib/types/api.types';
 import { env } from '@/lib/config/env';
 
@@ -37,6 +46,23 @@ export const API_VERSION_NUM = '1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1_000;
+
+/**
+ * Retry timing for automatic GET replay.
+ *
+ * Deliberately tighter than `DEFAULT_RETRY_POLICY`. A browser user is waiting
+ * on the response, so inheriting the 1s/2s/4s schedule meant a persistent 5xx
+ * stalled the UI for ~7s before the error surfaced. A 250ms base with a 2s cap
+ * bounds the worst case at ~1.75s, which is a better experience and also keeps
+ * request-level tests inside the default 5s test timeout.
+ *
+ * A server-sent `Retry-After` still takes precedence, capped at `maxDelayMs`.
+ */
+const GET_RETRY_POLICY: RetryPolicy = {
+  ...DEFAULT_RETRY_POLICY,
+  initialDelayMs: 250,
+  maxDelayMs: 2_000,
+};
 
 // ---------------------------------------------------------------------------
 // Token management (httpOnly cookies – tokens are not accessible via JS)
@@ -157,7 +183,17 @@ function transformAxiosError(error: unknown): AppError {
             ? ERROR_CODES.NOT_FOUND
             : ERROR_CODES.SERVER_ERROR;
 
-  return createAppError(userMessage, errorCode, status);
+  // Preserve the server's Retry-After hint. This error is about to lose its
+  // Axios shape, and with it `response.headers`, so the retry layer would
+  // otherwise never see the header the backend documents sending on 429.
+  const retryAfter = error.response?.headers?.['retry-after'];
+
+  return createAppError(
+    userMessage,
+    errorCode,
+    status,
+    retryAfter === undefined ? undefined : { retryAfter }
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -300,13 +336,50 @@ export function getApiClient(): AxiosInstance {
 // Retry helper
 // ---------------------------------------------------------------------------
 
-function isRetryableError(error: unknown): boolean {
-  // Non-Axios errors are generally retryable (network errors, timeouts, etc)
-  if (!isAxiosError(error)) return true;
+/**
+ * Decides whether a failure is worth replaying.
+ *
+ * Important: by the time an error surfaces from the Axios instance it has
+ * usually been through `transformAxiosError` in the response interceptor, so
+ * it is an `AppError` and no longer carries `isAxiosError` or `response`.
+ * Classifying only on the Axios shape would therefore treat every failed
+ * request as retryable, including permanent 4xx responses. Both shapes are
+ * handled here.
+ */
+export function isRetryableError(error: unknown): boolean {
   if (axios.isCancel(error)) return false;
-  if (!error.response) return true; // network error
-  const status = error.response.status;
-  return status >= 500 && status !== 501;
+
+  if (isAxiosError(error)) {
+    if (!error.response) return true; // network error
+    return isRetryableStatus(error.response.status);
+  }
+
+  // Transformed shape: `statusCode` 0 means the request never got a response
+  // (offline, DNS failure, timeout), which is exactly the transient case.
+  const statusCode = (error as AppError | null | undefined)?.statusCode;
+  if (typeof statusCode === 'number') {
+    return statusCode === 0 || isRetryableStatus(statusCode);
+  }
+
+  // Unrecognised errors stay retryable, preserving the long-standing
+  // behaviour of the exported `withRetry` helper for non-HTTP operations.
+  return true;
+}
+
+/**
+ * Extracts a server-supplied `Retry-After` hint from an error.
+ * Returns null when the header is absent or unparseable, in which case the
+ * caller falls back to computed exponential back-off.
+ */
+export function getRetryAfterMs(error: unknown): number | null {
+  if (isAxiosError(error)) {
+    return parseRetryAfterMs(error.response?.headers?.['retry-after']);
+  }
+
+  // `transformAxiosError` stashes the header here before the Axios shape is
+  // lost, so the hint still reaches the retry layer.
+  const details = (error as AppError | null | undefined)?.details;
+  return parseRetryAfterMs(details?.retryAfter);
 }
 
 /**
@@ -409,24 +482,31 @@ function buildGetKey(url: string, params?: Record<string, unknown>): string {
 }
 
 export async function get<T>(url: string, config?: RequestConfig): Promise<T> {
-  // Requests carrying an abort signal bypass coalescing: one caller aborting
-  // must not cancel the shared promise for other callers.
-  if (config?.signal) {
-    const { data } = await getApiClient().get<T>(url, {
-      params: config.params,
-      signal: config.signal,
-      timeout: config.timeout,
-    });
-    return data;
-  }
-
-  return coalesceRequest<T>(buildGetKey(url, config?.params), async () => {
+  const runRequest = async (): Promise<T> => {
     const { data } = await getApiClient().get<T>(url, {
       params: config?.params,
+      signal: config?.signal,
       timeout: config?.timeout,
     });
     return data;
-  });
+  };
+
+  // GET is idempotent, so replaying it after a transient failure cannot cause
+  // duplicate side effects. Retries are bounded and jittered.
+  const runWithRetry = (): Promise<T> =>
+    withRetryPolicy(runRequest, {
+      policy: GET_RETRY_POLICY,
+      isRetryable: isRetryableError,
+      retryAfterMs: getRetryAfterMs,
+    });
+
+  // Requests carrying an abort signal bypass coalescing: one caller aborting
+  // must not cancel the shared promise for other callers.
+  if (config?.signal) {
+    return runWithRetry();
+  }
+
+  return coalesceRequest<T>(buildGetKey(url, config?.params), runWithRetry);
 }
 
 export async function post<T>(
@@ -464,4 +544,9 @@ export async function del<T = void>(
   return data;
 }
 
-export { transformAxiosError, DEFAULT_TIMEOUT_MS, MAX_RETRIES };
+export {
+  transformAxiosError,
+  DEFAULT_TIMEOUT_MS,
+  MAX_RETRIES,
+  GET_RETRY_POLICY,
+};

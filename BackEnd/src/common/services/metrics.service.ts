@@ -28,6 +28,15 @@ const DEFAULT_BUCKETS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 @Injectable()
 export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private readonly registry = new Map<string, Metric>();
+  private readonly routeHistograms = new Map<
+    string,
+    {
+      bucketCounts: number[];
+      sum: number;
+      count: number;
+      buckets: number[];
+    }
+  >();
   private readonly startTime = Date.now();
   private systemInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -101,6 +110,59 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     for (let i = 0; i < m.buckets.length; i++) {
       if (value <= m.buckets[i]) entry.bucketCounts[i]++;
     }
+
+    // Track per-route histograms for percentile computation
+    if (labels['route']) {
+      const routeKey = `${name}:${labels['route']}`;
+      if (!this.routeHistograms.has(routeKey)) {
+        this.routeHistograms.set(routeKey, {
+          bucketCounts: new Array<number>(m.buckets.length).fill(0),
+          sum: 0,
+          count: 0,
+          buckets: m.buckets,
+        });
+      }
+      const rEntry = this.routeHistograms.get(routeKey)!;
+      rEntry.sum += value;
+      rEntry.count += 1;
+      for (let i = 0; i < rEntry.buckets.length; i++) {
+        if (value <= rEntry.buckets[i]) rEntry.bucketCounts[i]++;
+      }
+    }
+  }
+
+  /** Compute p50/p95/p99 latency percentiles for a metric + route. */
+  getLatencyPercentiles(
+    metricName: string,
+    route: string,
+  ): { p50: number; p95: number; p99: number; count: number } | null {
+    const entry = this.routeHistograms.get(`${metricName}:${route}`);
+    if (!entry || entry.count === 0) return null;
+
+    const total = entry.count;
+    const percentiles = [0.5, 0.95, 0.99];
+    const results: number[] = [];
+
+    for (const pct of percentiles) {
+      const target = Math.ceil(total * pct);
+      let cumulative = 0;
+      let value = 0;
+      for (let i = 0; i < entry.bucketCounts.length; i++) {
+        cumulative += entry.bucketCounts[i];
+        if (cumulative >= target) {
+          value = entry.buckets[i];
+          break;
+        }
+      }
+      results.push(value);
+    }
+
+    return {
+      p50: results[0],
+      p95: results[1],
+      p99: results[2],
+      count: total,
+    };
   }
 
   // ─── Export ────────────────────────────────────────────────────────────────
@@ -192,6 +254,30 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private registerBuiltins(): void {
+    // Outbound webhook delivery metrics (#2306). Also registered by the
+    // delivery processor on init; declared here so they exist even before the
+    // first delivery is attempted.
+    this.registerCounter(
+      'webhook_outbound_delivery_success_total',
+      'Outbound webhook deliveries that succeeded',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_failure_total',
+      'Outbound webhook delivery attempts that failed',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_retry_total',
+      'Outbound webhook delivery retries scheduled',
+    );
+    this.registerCounter(
+      'webhook_outbound_delivery_dead_letter_total',
+      'Outbound webhook deliveries dead-lettered',
+    );
+    this.registerHistogram(
+      'webhook_outbound_delivery_latency_ms',
+      'Outbound webhook delivery latency in milliseconds',
+    );
+
     this.registerCounter('http_requests_total', 'Total HTTP requests received');
     this.registerCounter(
       'http_errors_total',
@@ -269,6 +355,16 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     this.registerHistogram(
       'stellar_contract_invocation_duration_ms',
       'Smart contract invocation latency in milliseconds',
+    );
+
+    // Verification dedup metrics
+    this.registerCounter(
+      'submission_approval_dedup_hits_total',
+      'Number of times an in-flight approval operation was reused for a duplicate request',
+    );
+    this.registerCounter(
+      'submission_approval_cache_hits_total',
+      'Number of times a recent cached approval result was returned',
     );
   }
 

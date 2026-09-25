@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { WebsocketService } from './websocket.service';
 import { WsSubscription, WsChannel } from './entities/ws-subscription.entity';
 import { WsMessage } from './entities/ws-message.entity';
@@ -54,6 +55,12 @@ describe('WebsocketService', () => {
           useValue: mockSubscriptionRepo,
         },
         { provide: getRepositoryToken(WsMessage), useValue: mockMessageRepo },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('redis://localhost:6379'),
+          },
+        },
       ],
     }).compile();
 

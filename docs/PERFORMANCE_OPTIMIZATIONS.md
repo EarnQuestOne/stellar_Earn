@@ -66,3 +66,12 @@ equivalent, with locale data provided by the browser for free.
 If `Intl` ever proves insufficient (e.g. complex date arithmetic), the
 sanctioned fallback is `date-fns`: it is tree-shakeable and already covered by
 `modularizeImports`/`optimizePackageImports` in `next.config.ts`.
+
+## Backend: Batch Payout Transactions
+
+`StellarService.sendBatchPayments()` batches up to 100 payment operations into a
+single Stellar transaction, reducing per-transaction fees and RPC round-trips.
+The `PayoutsService.processBatchPayouts()` cron (every 30s) groups pending and
+retry-scheduled payouts by asset, calls `sendBatchPayments`, and handles
+partial failures per batch. Batches exceeding 100 operations are automatically
+split into multiple transactions (#1981).

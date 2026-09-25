@@ -7,6 +7,7 @@ import type { Submission } from '@/lib/types/submission';
 import { FocusTrap } from '@/components/a11y/FocusTrap';
 import { formatDate } from '@/lib/utils/date';
 import { useQuestSocket } from '@/lib/hooks/useQuestSocket';
+import { DisputePanel } from '@/components/dispute/DisputePanel';
 
 interface SubmissionDetailProps {
   submission: Submission | null;
@@ -234,6 +235,11 @@ export function SubmissionDetail({
                 </p>
               </div>
             )}
+
+            <DisputePanel
+              submissionId={localSubmission.id}
+              canOpen={localSubmission.status === 'Rejected'}
+            />
 
             {/* Actions */}
             <div className="flex gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">

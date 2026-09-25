@@ -16,12 +16,14 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { CustomValidationPipe } from './common/pipes/validation.pipe';
 import { SanitizationPipe } from './common/pipes/sanitization.pipe';
+import { FieldSelectionPipe } from './common/pipes/field-selection.pipe';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
 import { AppExceptionFilter } from './common/filters/app-exception.filter';
 import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { RequestTimeoutMiddleware } from './common/middleware/request-timeout.middleware';
 import {
   getApplicationSecurityConfig,
   getSecurityConfig,
@@ -97,6 +99,11 @@ async function bootstrap() {
       }),
     );
     app.use(app.get(SecurityMiddleware).use.bind(app.get(SecurityMiddleware)));
+    app.use(
+      app
+        .get(RequestTimeoutMiddleware)
+        .use.bind(app.get(RequestTimeoutMiddleware)),
+    );
     app.use(helmet(getSecurityConfig(configService)));
 
     app.enableCors(getCorsConfig());
@@ -104,6 +111,7 @@ async function bootstrap() {
     app.useGlobalPipes(
       new SanitizationPipe(),
       new CustomValidationPipe(),
+      new FieldSelectionPipe(),
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

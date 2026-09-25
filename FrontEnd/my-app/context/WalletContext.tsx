@@ -1,9 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'react';
 import { useStore } from '@/lib/store';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 import * as authApi from '@/lib/api/auth';
+import type { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit';
 
 interface WalletContextType {
   connect: (moduleId: string) => Promise<void>;
@@ -27,6 +34,19 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+// ── Static wallet catalogue ─────────────────────────────────────────────────
+// This list never changes at runtime, so it is hoisted to module scope.
+// Allocating it inside the provider used to hand every consumer a brand-new
+// array identity on each render, which (together with the fresh `value`
+// object) defeated any consumer-side memoization.
+const SUPPORTED_WALLETS: WalletContextType['supportedWallets'] = [
+  { id: 'freighter', name: 'Freighter', icon: '/icons/freighter.png' },
+  { id: 'albedo', name: 'Albedo', icon: '/icons/albedo.png' },
+  { id: 'xbull', name: 'xBull', icon: '/icons/xbull.png' },
+  { id: 'rabet', name: 'Rabet', icon: '/icons/rabet.png' },
+  { id: 'lobstr', name: 'Lobstr', icon: '/icons/lobstr.png' },
+];
+
 // ── Lazy, cached wallet kit loader ──────────────────────────────────────────
 // The @creit.tech/stellar-wallets-kit SDK is heavy, so it must not load until
 // it's actually needed (session verification or an explicit connect). A
@@ -34,9 +54,9 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 // instantiation only ever happens once per page session — every caller
 // (verification effect, connect()) awaits and reuses the same instance
 // instead of re-importing/re-constructing it.
-let kitPromise: Promise<any> | null = null;
+let kitPromise: Promise<StellarWalletsKit> | null = null;
 
-function loadWalletKit(): Promise<any> {
+function loadWalletKit(): Promise<StellarWalletsKit> {
   if (!kitPromise) {
     kitPromise = import('@creit.tech/stellar-wallets-kit')
       .then((walletKitModule) => {
@@ -81,7 +101,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const disconnectWallet = useStore((s) => s.disconnectWallet);
 
   // kit lives outside the store (not serialisable)
-  const [kit, setKit] = React.useState<any>(null);
+  const [kit, setKit] = React.useState<StellarWalletsKit | null>(null);
 
   const hydrated = useHydrated();
 
@@ -184,39 +204,41 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     verify();
   }, [hydrated]);
 
-  const supportedWallets = [
-    { id: 'freighter', name: 'Freighter', icon: '/icons/freighter.png' },
-    { id: 'albedo', name: 'Albedo', icon: '/icons/albedo.png' },
-    { id: 'xbull', name: 'xBull', icon: '/icons/xbull.png' },
-    { id: 'rabet', name: 'Rabet', icon: '/icons/rabet.png' },
-    { id: 'lobstr', name: 'Lobstr', icon: '/icons/lobstr.png' },
-  ];
+  const connect = useCallback(
+    async (moduleId: string) => {
+      setIsConnecting(true);
+      setWalletError(null);
 
-  const connect = async (moduleId: string) => {
-    setIsConnecting(true);
-    setWalletError(null);
+      try {
+        // Loads the kit on first use if the mount-time verification effect
+        // never ran (no persisted session) — otherwise reuses the same
+        // cached instance it already loaded.
+        const kitInstance = kit ?? (await loadWalletKit());
+        if (!kit) setKit(kitInstance);
 
-    try {
-      // Loads the kit on first use if the mount-time verification effect
-      // never ran (no persisted session) — otherwise reuses the same
-      // cached instance it already loaded.
-      const kitInstance = kit ?? (await loadWalletKit());
-      if (!kit) setKit(kitInstance);
+        kitInstance.setWallet(moduleId);
+        const { address: walletAddress } = await kitInstance.getAddress();
+        setWalletAddress(walletAddress);
+        setSelectedWalletId(moduleId);
+        setWalletModalOpen(false);
+      } catch (err: any) {
+        setWalletError(err?.message ?? 'Connection failed');
+        console.error('Wallet connection failed:', err);
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [
+      kit,
+      setIsConnecting,
+      setWalletError,
+      setWalletAddress,
+      setSelectedWalletId,
+      setWalletModalOpen,
+    ]
+  );
 
-      kitInstance.setWallet(moduleId);
-      const { address: walletAddress } = await kitInstance.getAddress();
-      setWalletAddress(walletAddress);
-      setSelectedWalletId(moduleId);
-      setWalletModalOpen(false);
-    } catch (err: any) {
-      setWalletError(err?.message ?? 'Connection failed');
-      console.error('Wallet connection failed:', err);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const disconnect = async () => {
+  const disconnect = useCallback(async () => {
     if (kit) {
       try {
         await kit.disconnect();
@@ -225,7 +247,17 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     disconnectWallet();
-  };
+  }, [kit, disconnectWallet]);
+
+  const openModal = useCallback(() => {
+    setWalletError(null);
+    setWalletModalOpen(true);
+  }, [setWalletError, setWalletModalOpen]);
+
+  const closeModal = useCallback(() => {
+    setWalletError(null);
+    setWalletModalOpen(false);
+  }, [setWalletError, setWalletModalOpen]);
 
   const getNetworkPassphrase = () => {
     const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet';
@@ -234,65 +266,96 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       : 'Test SDF Network ; September 2015';
   };
 
-  const signMessage = async (message: string) => {
-    if (!kit) {
-      throw new Error('Wallet kit not loaded');
-    }
-    if (!address) {
-      throw new Error('Wallet not connected');
-    }
-    try {
-      const { result } = await kit.sign({
-        payload: message,
-      });
-      return result;
-    } catch (err: any) {
-      console.error('Signing failed:', err);
-      throw new Error(err?.message || 'Signing failed');
-    }
-  };
+  const signMessage = useCallback(
+    async (message: string) => {
+      if (!kit) {
+        throw new Error('Wallet kit not loaded');
+      }
+      if (!address) {
+        throw new Error('Wallet not connected');
+      }
+      try {
+        const { signedMessage } = await kit.signMessage(message, {
+          address,
+        });
+        return signedMessage;
+      } catch (err: any) {
+        console.error('Signing failed:', err);
+        throw new Error(err?.message || 'Signing failed');
+      }
+    },
+    [kit, address]
+  );
 
-  const signTransaction = async (
-    xdr: string,
-    opts: { networkPassphrase: string; address: string }
-  ) => {
-    if (!kit) {
-      throw new Error('Wallet kit not loaded');
-    }
-    const { signedTxXdr } = await kit.signTransaction(xdr, {
-      networkPassphrase: opts.networkPassphrase,
-      address: opts.address,
-    });
-    return signedTxXdr;
-  };
+  const signTransaction = useCallback(
+    async (
+      xdr: string,
+      opts: { networkPassphrase: string; address: string }
+    ) => {
+      if (!kit) {
+        throw new Error('Wallet kit not loaded');
+      }
+      try {
+        const { signedTxXdr } = await kit.signTransaction(xdr, {
+          networkPassphrase: opts.networkPassphrase,
+          address: opts.address,
+        });
+        return signedTxXdr;
+      } catch (err: any) {
+        console.error('Transaction signing failed:', err);
+        const message = err?.message || 'Transaction signing failed';
+        setWalletError(message);
+        throw new Error(message);
+      }
+    },
+    [kit, setWalletError]
+  );
+
+  // ── Memoized context value ────────────────────────────────────────────────
+  // The provider re-renders whenever *any* subscribed store slice changes
+  // (including transient ones like isConnecting/isVerifyingWallet). Without
+  // useMemo, every one of those renders allocated a fresh `value` object and
+  // forced every useWallet() consumer to re-render too — even when the data
+  // a consumer actually reads had not changed. Keying the memo on the exact
+  // wallet state fields + stabilized callbacks means the context value only
+  // gets a new identity when some part of the exposed wallet state truly
+  // changed.
+  const value = useMemo<WalletContextType>(
+    () => ({
+      connect,
+      disconnect,
+      address,
+      isConnected,
+      isConnecting,
+      isVerifyingWallet,
+      selectedWalletId,
+      openModal,
+      closeModal,
+      isModalOpen,
+      supportedWallets: SUPPORTED_WALLETS,
+
+      error: walletError,
+      signMessage,
+      signTransaction,
+    }),
+    [
+      connect,
+      disconnect,
+      address,
+      isConnected,
+      isConnecting,
+      isVerifyingWallet,
+      selectedWalletId,
+      openModal,
+      closeModal,
+      isModalOpen,
+      walletError,
+      signMessage,
+      signTransaction,
+    ]
+  );
 
   return (
-    <WalletContext.Provider
-      value={{
-        connect,
-        disconnect,
-        address,
-        isConnected,
-        isConnecting,
-        isVerifyingWallet,
-        selectedWalletId,
-        openModal: () => {
-          setWalletError(null);
-          setWalletModalOpen(true);
-        },
-        closeModal: () => {
-          setWalletError(null);
-          setWalletModalOpen(false);
-        },
-        isModalOpen,
-        supportedWallets,
-
-        error: walletError,
-        signMessage,
-        signTransaction,
-      }}
-    >
-      {children}
-    </WalletContext.Provider>
+    <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
   );
 };

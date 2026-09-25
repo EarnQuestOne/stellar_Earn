@@ -34,6 +34,9 @@ export class IdempotencyKey {
   @Column({ type: 'jsonb', nullable: true })
   responseBody: Record<string, unknown> | null;
 
+  @Column({ type: 'varchar', default: 'http' })
+  purpose: string;
+
   @Column({ type: 'boolean', default: false })
   locked: boolean;
 

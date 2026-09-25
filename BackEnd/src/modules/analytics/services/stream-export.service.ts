@@ -39,7 +39,10 @@ export class StreamExportService {
       const values = columns.map((col) =>
         this.escapeCsvField(String(row[col.key] ?? '')),
       );
-      response.write(values.join(',') + '\n');
+      const canWrite = response.write(values.join(',') + '\n');
+      if (!canWrite) {
+        await new Promise((resolve) => response.once('drain', resolve));
+      }
     }
 
     response.end();
@@ -64,7 +67,10 @@ export class StreamExportService {
     );
 
     for await (const item of data) {
-      response.write(JSON.stringify(item) + '\n');
+      const canWrite = response.write(JSON.stringify(item) + '\n');
+      if (!canWrite) {
+        await new Promise((resolve) => response.once('drain', resolve));
+      }
     }
 
     response.end();
@@ -99,7 +105,10 @@ export class StreamExportService {
         if (!first) {
           response.write(',\n');
         }
-        response.write(JSON.stringify(item, null, 2));
+        const canWrite = response.write(JSON.stringify(item, null, 2));
+        if (!canWrite) {
+          await new Promise((resolve) => response.once('drain', resolve));
+        }
         first = false;
       }
       response.write('\n]');
@@ -118,21 +127,24 @@ export class StreamExportService {
    * @param filename Name of the file to download
    * @param contentType Content type for the response
    */
-  streamWithTransform(
+  async streamWithTransform(
     response: Response,
-    data: any[],
+    data: any[] | AsyncIterable<any> | Iterable<any>,
     transformFn: (item: any) => string,
     filename: string,
     contentType: string,
-  ): void {
+  ): Promise<void> {
     response.setHeader('Content-Type', `${contentType}; charset=utf-8`);
     response.setHeader(
       'Content-Disposition',
       `attachment; filename="${filename}"`,
     );
 
-    for (const item of data) {
-      response.write(transformFn(item));
+    for await (const item of data) {
+      const canWrite = response.write(transformFn(item));
+      if (!canWrite) {
+        await new Promise((resolve) => response.once('drain', resolve));
+      }
     }
 
     response.end();
@@ -188,25 +200,10 @@ export class StreamExportService {
    */
   async *getQueryIterator<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
-    chunkSize: number = 1000,
   ): AsyncGenerator<T, void, unknown> {
-    let offset = 0;
-    while (true) {
-      const chunk = await queryBuilder.skip(offset).take(chunkSize).getMany();
-
-      if (chunk.length === 0) {
-        break;
-      }
-
-      for (const item of chunk) {
-        yield item;
-      }
-
-      if (chunk.length < chunkSize) {
-        break;
-      }
-
-      offset += chunkSize;
+    const stream = await queryBuilder.stream();
+    for await (const chunk of stream) {
+      yield chunk as T;
     }
   }
 }

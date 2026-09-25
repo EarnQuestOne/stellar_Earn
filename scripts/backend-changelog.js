@@ -17,6 +17,7 @@
  * The logic is exported as pure functions so it can be unit tested without git.
  */
 const fs = require('fs');
+
 const path = require('path');
 const { execFileSync } = require('child_process');
 

@@ -1,9 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Job } from 'bullmq';
 import { PayoutProcessPayload, JobResult, JobType } from '../job.types';
 import { JobLogService } from '../services/job-log.service';
 import { JobIdempotencyService } from '../services/job-idempotency.service';
-import { StellarService } from '../../stellar/stellar.service';
+import { StellarPaymentService } from '../../stellar/stellar-payment.service';
+import { Payout, PayoutStatus } from '../../payouts/entities/payout.entity';
+import {
+  PayoutOutbox,
+  PayoutOutboxStatus,
+} from '../../payouts/entities/payout-outbox.entity';
 
 /**
  * Payout Processor
@@ -31,11 +39,92 @@ import { StellarService } from '../../stellar/stellar.service';
 export class PayoutProcessor {
   private readonly logger = new Logger(PayoutProcessor.name);
 
+  /** Max relay attempts before a row is parked as FAILED for reconciliation. */
+  private readonly maxOutboxAttempts = 5;
+
   constructor(
     private readonly jobLogService: JobLogService,
     private readonly jobIdempotencyService: JobIdempotencyService,
-    private readonly stellarService: StellarService,
+    private readonly stellarPaymentService: StellarPaymentService,
+    @InjectRepository(PayoutOutbox)
+    private readonly outboxRepository: Repository<PayoutOutbox>,
+    @InjectRepository(Payout)
+    private readonly payoutRepository: Repository<Payout>,
   ) {}
+
+  /**
+   * Transactional-outbox relay (#2158).
+   *
+   * Drains PENDING outbox rows and submits each on-chain exactly once:
+   * a row is claimed with an atomic `PENDING → PROCESSING` update, so only the
+   * worker that flips it (`affected === 1`) submits the payment. On success the
+   * row is marked DONE and the payout records the transaction hash; on failure
+   * the attempt count is bumped and the row is either retried (left PENDING) or
+   * parked as FAILED for the reconciliation job to pick up.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async relayPayoutOutbox(): Promise<void> {
+    const pending = await this.outboxRepository.find({
+      where: { status: PayoutOutboxStatus.PENDING },
+      order: { createdAt: 'ASC' },
+      take: 20,
+    });
+
+    for (const entry of pending) {
+      const claim = await this.outboxRepository.update(
+        { id: entry.id, status: PayoutOutboxStatus.PENDING },
+        { status: PayoutOutboxStatus.PROCESSING },
+      );
+      // Another worker claimed it first — never submit the same row twice.
+      if (claim.affected !== 1) {
+        continue;
+      }
+
+      try {
+        const { transactionHash } =
+          await this.stellarPaymentService.sendPayment(
+            entry.recipientAddress,
+            Number(entry.amount),
+          );
+
+        await this.outboxRepository.update(
+          { id: entry.id },
+          {
+            status: PayoutOutboxStatus.DONE,
+            transactionHash,
+            processedAt: new Date(),
+            lastError: null,
+          },
+        );
+
+        await this.payoutRepository.update(
+          { id: entry.payoutId },
+          { status: PayoutStatus.PROCESSING, transactionHash },
+        );
+
+        this.logger.log(
+          `Relayed payout outbox ${entry.id} (payoutId=${entry.payoutId}) → ${transactionHash}`,
+        );
+      } catch (error) {
+        const attempts = entry.attempts + 1;
+        const parked = attempts >= this.maxOutboxAttempts;
+        await this.outboxRepository.update(
+          { id: entry.id },
+          {
+            status: parked
+              ? PayoutOutboxStatus.FAILED
+              : PayoutOutboxStatus.PENDING,
+            attempts,
+            lastError: error instanceof Error ? error.message : String(error),
+          },
+        );
+        this.logger.error(
+          `Relay failed for payout outbox ${entry.id} (attempt ${attempts})`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
+    }
+  }
 
   /**
    * Process a payout job.
@@ -113,7 +202,7 @@ export class PayoutProcessor {
       await job.updateProgress(50);
 
       // Execute the Stellar payment transaction
-      const stellarResult = await this.stellarService.sendPayment(
+      const stellarResult = await this.stellarPaymentService.sendPayment(
         recipientAddress,
         amount,
       );

@@ -24,6 +24,7 @@ import {
   ChallengeRequestDto,
   ChallengeResponseDto,
   LoginDto,
+  LoginResponseDto,
   RefreshTokenDto,
 } from './dto/auth.dto';
 import {
@@ -55,10 +56,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate with a signed Stellar challenge' })
+  @ApiResponse({ status: HttpStatus.OK, type: LoginResponseDto })
   async login(
     @Body() loginDto: LoginDto,
+    // `passthrough: true` is kept because this handler sets the session
+    // cookies directly on the response; the body itself is returned as a DTO
+    // so Nest's serialization/interceptor pipeline applies to it.
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<LoginResponseDto> {
     const result = await this.authService.verifyAndLogin(loginDto);
     const securityConfig = getApplicationSecurityConfig(this.configService);
 
@@ -92,7 +97,13 @@ export class AuthController {
       ),
     );
 
-    return res.json({ success: true, user: result.user });
+    return {
+      success: true,
+      user: {
+        stellarAddress: result.user.stellarAddress,
+        role: result.user.role,
+      },
+    };
   }
 
   @Post('refresh')

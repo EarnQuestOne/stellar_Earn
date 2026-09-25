@@ -22,7 +22,7 @@ function NavDot({ active }: { active: boolean }) {
 }
 
 export function Sidebar({ collapsed = false }: SidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const { navigationItems } = useTranslatedNavigation();
 
   return (

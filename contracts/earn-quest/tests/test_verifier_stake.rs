@@ -2,8 +2,8 @@
 
 #![cfg(test)]
 
-use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
-use soroban_sdk::{symbol_short, token, Address, BytesN, Env};
+use soroban_sdk::testutils::{Address as _, Events, Ledger, LedgerInfo};
+use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, Symbol};
 
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
@@ -224,4 +224,48 @@ fn test_return_verifier_stake_by_creator() {
         .return_verifier_stake(&quest_id, &verifier, &creator);
 
     assert_eq!(tok.balance(&verifier), 500); // fully returned
+}
+
+// ─── event emission tests ────────────────────────────────────────────────────
+
+/// Verifies that `return_verifier_stake` emits a `verifier_stake_returned`
+/// event with the correct topic (symbol `"vstk_ret"`) and data (amount).
+#[test]
+fn test_return_verifier_stake_emits_event() {
+    let ctx = setup();
+    let (quest_id, verifier, creator) = register_quest(&ctx, symbol_short!("q009"));
+
+    ctx.token_admin.mint(&verifier, &750);
+    ctx.client
+        .deposit_verifier_stake(&quest_id, &verifier, &ctx.token_addr, &750_u128);
+
+    // Clear events accumulated during setup / deposit so we can check just
+    // the return event in isolation.
+    let _ = ctx.env.events().all();
+
+    ctx.client
+        .return_verifier_stake(&quest_id, &verifier, &creator);
+
+    // The last event emitted should be `verifier_stake_returned`.
+    let events = ctx.env.events().all();
+    let (_contract, topics, data) = events.last().expect("expected at least one event");
+
+    // Topic 0: event name — "vstk_ret"
+    let event_name: Symbol = topics.get(0).unwrap().into_val(&ctx.env);
+    assert_eq!(event_name, symbol_short!("vstk_ret"), "wrong event name");
+
+    // Topic 1: quest_id
+    let t_quest_id: Symbol = topics.get(1).unwrap().into_val(&ctx.env);
+    assert_eq!(t_quest_id, quest_id, "wrong quest_id in event topics");
+
+    // Topic 2: verifier address
+    let t_verifier: Address = topics.get(2).unwrap().into_val(&ctx.env);
+    assert_eq!(
+        t_verifier, verifier,
+        "wrong verifier address in event topics"
+    );
+
+    // Data: (amount,) — the full returned stake amount
+    let (returned_amount,): (u128,) = data.into_val(&ctx.env);
+    assert_eq!(returned_amount, 750_u128, "wrong amount in event data");
 }

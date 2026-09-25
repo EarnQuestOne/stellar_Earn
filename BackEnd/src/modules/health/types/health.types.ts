@@ -28,6 +28,7 @@ export interface DeepHealthResponse {
     database: ServiceHealth;
     cache: ServiceHealth;
     external: ServiceHealth;
+    jobs: ServiceHealth;
   };
 }
 

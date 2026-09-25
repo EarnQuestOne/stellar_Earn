@@ -16,6 +16,8 @@
     "test:integration": "vitest run --include '**/*.integration.test.ts'",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "benchmark": "npm run benchmark:quest-table",
+    "benchmark:quest-table": "vitest run --config vitest.benchmark.config.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "changelog:check": "node scripts/check-changelog.mjs",

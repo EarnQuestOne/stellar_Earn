@@ -477,6 +477,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       [JobType.QUEST_COMPLETION_VERIFY]: 'quests',
       [JobType.DEPENDENCY_FRESHNESS_CHECK]: 'maintenance',
       [JobType.QUEST_STATE_RECONCILE]: 'quests',
+      [JobType.ACCOUNT_ERASURE]: 'erasure',
     };
     return queueMap[jobType] || 'default';
   }

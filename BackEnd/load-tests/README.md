@@ -21,3 +21,17 @@ k6 run BackEnd/load-tests/critical-endpoints.k6.ts \
 - The suite uses the same route shape as the NestJS API prefix (`/api`).
 - Thresholds are tuned around the reliability roadmap targets for p95 latency and error rate.
 - The benchmark config is also covered by a Jest spec in `test/load-tests/benchmark-config.spec.ts`.
+
+## Pagination-specific benchmarks
+
+The submissions-list endpoint uses keyset (cursor) pagination backed by a
+composite `(userId, createdAt, id)` index. To measure the before/after impact
+of that optimization (offset vs keyset at increasing page depths), run:
+
+```bash
+cd BackEnd
+pnpm benchmark:submission-pagination
+```
+
+See `docs/SUBMISSION_KEYSET_PAGINATION.md` for the measured numbers and a
+walkthrough.

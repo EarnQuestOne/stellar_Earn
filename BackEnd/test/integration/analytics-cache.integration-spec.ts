@@ -3,6 +3,7 @@ import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { LoggerModule } from '#src/common/logger/logger.module';
 import { AnalyticsModule } from '#src/modules/analytics/analytics.module';
 import { CacheModule } from '#src/modules/cache/cache.module';
 import { CacheService } from '#src/modules/cache/cache.service';
@@ -19,6 +20,10 @@ describe('Analytics-Cache Integration', () => {
           envFilePath: '.env.test',
         }),
         EventEmitterModule.forRoot(),
+        LoggerModule.forRoot({
+          enableInterceptor: false,
+          enableErrorFilter: false,
+        }),
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST || 'localhost',

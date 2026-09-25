@@ -18,13 +18,13 @@ pnpm-lock.yaml
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables (.env.example files stay tracked)
 .env
-.env.local
-.env.*.local
-*/.env
-*/.env.local
+.env.*
+!.env.example
 **/.env
+**/.env.*
+!**/.env.example
 
 # Dependencies
 node_modules/
@@ -85,6 +85,10 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Generated lint / tooling output (see #1916)
+lint-output*.txt
+output.txt
 
 # Database
 *.sqlite

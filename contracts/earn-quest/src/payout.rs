@@ -3,6 +3,18 @@ use crate::escrow;
 use crate::storage;
 use soroban_sdk::{token, Address, Env, Symbol};
 
+/// Validates that a reward-claim amount is strictly positive.
+///
+/// Claiming a zero (or negative) amount is a no-op that previously proceeded
+/// silently; this surfaces the clear, typed `Error::InvalidClaimAmount` instead
+/// so callers get an unambiguous error rather than a silent success.
+pub fn validate_claim_positive(amount: i128) -> Result<(), Error> {
+    if amount <= 0 {
+        return Err(Error::InvalidClaimAmount);
+    }
+    Ok(())
+}
+
 /// Transfer rewards from the contract escrow to the user (gas-optimized).
 ///
 /// This function handles the low-level token transfer and ensures

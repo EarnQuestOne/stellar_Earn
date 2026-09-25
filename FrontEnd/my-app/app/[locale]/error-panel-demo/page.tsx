@@ -11,8 +11,14 @@
  */
 
 import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
 
 export default function ErrorPanelDemoPage() {
+  // Debug/demo route — never publicly reachable in production (see #1922).
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {

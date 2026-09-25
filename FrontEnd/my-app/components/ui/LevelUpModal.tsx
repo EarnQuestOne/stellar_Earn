@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LevelBadge } from '@/components/reputation/LevelBadge';
 import { FocusTrap } from '@/components/a11y/FocusTrap';
+import { usePrefersReducedMotion } from '@/lib/animations';
 
 /**
  * Props for the level-up celebration modal.
@@ -51,6 +52,7 @@ function ConfettiParticle({
 export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [confettiParticles] = useState(() => {
     return Array.from({ length: 50 }, (_, i) => ({
       id: i,
@@ -102,23 +104,27 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
 
   if (!isOpen) return null;
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const entranceClass = prefersReducedMotion ? '' : ' animate-modal-entrance';
+
+  const handleBackdropClick = (_e: React.MouseEvent<HTMLButtonElement>) => {
     onClose();
   };
 
   return (
     <>
       {/* Confetti Container */}
-      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {confettiParticles.map((particle) => (
-          <ConfettiParticle
-            key={particle.id}
-            delay={particle.delay}
-            duration={particle.duration}
-            left={particle.left}
-          />
-        ))}
-      </div>
+      {!prefersReducedMotion && (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+          {confettiParticles.map((particle) => (
+            <ConfettiParticle
+              key={particle.id}
+              delay={particle.delay}
+              duration={particle.duration}
+              left={particle.left}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modal Overlay */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -135,7 +141,7 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="level-up-title"
-            className="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-zinc-900 animate-modal-entrance"
+            className={`relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-zinc-900${entranceClass}`}
             tabIndex={-1}
           >
             {/* Close Button */}
@@ -162,7 +168,11 @@ export function LevelUpModal({ isOpen, newLevel, onClose }: LevelUpModalProps) {
             {/* Content */}
             <div className="px-8 py-12 text-center">
               {/* Level Up Text */}
-              <div className="mb-6 animate-bounce">
+              <div
+                className={
+                  prefersReducedMotion ? 'mb-6' : 'mb-6 animate-bounce'
+                }
+              >
                 <h2
                   id="level-up-title"
                   className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2"

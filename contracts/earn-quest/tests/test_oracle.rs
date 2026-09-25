@@ -603,7 +603,9 @@ fn test_validate_reward_with_oracle_confidence_limits() {
         },
     );
 
-    // Case 1: Oracle confidence is 85. Aggregation avg confidence will be 85 (>= 80 threshold in validate_reward)
+    // Case 1: Oracle confidence is 85 (>= 80 threshold in validate_reward) and
+    // the reward amount matches the oracle price (0% deviation, within the 5%
+    // tolerance), so validation succeeds.
     oracle_client.set_price_data(
         &reward_asset,
         &reference_asset,
@@ -612,7 +614,7 @@ fn test_validate_reward_with_oracle_confidence_limits() {
         &1000,
         &85,
     );
-    client.validate_reward_with_oracle(&reward_asset, &100, &reference_asset, &5);
+    client.validate_reward_with_oracle(&reward_asset, &10_000_000, &reference_asset, &5);
 
     // Case 2: Oracle confidence is 75 (valid for config, but average confidence 75 < 80 threshold in validate_reward)
     oracle_client.set_price_data(

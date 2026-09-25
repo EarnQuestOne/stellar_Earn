@@ -16,6 +16,7 @@ export const QUEUES = {
   MAINTENANCE: 'maintenance',
   WEBHOOKS: 'webhooks',
   QUESTS: 'quests',
+  ERASURE: 'erasure',
 };
 
 /**
@@ -27,6 +28,10 @@ export const DEFAULT_JOB_OPTIONS = policyToBullMQOptions(DEFAULT_RETRY_POLICY);
 export const JOB_QUEUE_CONFIG = {
   [QUEUES.PAYOUTS]: {
     concurrency: 10,
+    limiter: {
+      max: 25,
+      duration: 1000,
+    },
     priority: 'HIGH',
     timeout: 60000,
   },
@@ -74,5 +79,10 @@ export const JOB_QUEUE_CONFIG = {
     concurrency: 20,
     priority: 'MEDIUM',
     timeout: 30000,
+  },
+  [QUEUES.ERASURE]: {
+    concurrency: 1,
+    priority: 'LOW',
+    timeout: 120000, // 2 minutes — bounded by the erasure transaction
   },
 };

@@ -2,6 +2,7 @@ use crate::errors::Error;
 use crate::events;
 use crate::storage;
 use crate::types::Role;
+use crate::validation;
 use soroban_sdk::{Address, Env};
 
 /// Adds a new administrator to the contract.
@@ -199,6 +200,7 @@ pub fn set_quest_grace_period(
     grace_period_seconds: u64,
 ) -> Result<(), Error> {
     require_admin(env, caller)?;
+    validation::validate_grace_period(grace_period_seconds)?;
     storage::set_quest_grace_period(env, grace_period_seconds);
     Ok(())
 }
