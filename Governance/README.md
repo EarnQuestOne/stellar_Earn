@@ -50,6 +50,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
 - [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
 - [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
+- [Release and versioning policy](RELEASE_POLICY.md): versioning scheme, release types, approval requirements, and rollback. (Closes #2558)
+- [Dependency management policy](DEPENDENCY_POLICY.md): vetting, pinning, vulnerability SLAs, and prohibited packages. (Closes #2561)
+- [Code of Conduct incident reporting](COC_REPORTING.md): reporting channels, process, confidentiality, and appeals. (Closes #2550)
+- [Branching strategy](BRANCHING_STRATEGY.md): branch types, naming conventions, flow, and cleanup rules. (Closes #2562)
 
 ## How to contribute to governance
 
