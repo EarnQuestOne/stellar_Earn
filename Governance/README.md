@@ -54,6 +54,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Semantic versioning policy](VERSIONING.md): MAJOR/MINOR/PATCH rules, pre-release identifiers, and build metadata. (Closes #2559)
 - [Deprecation and breaking-change policy](DEPRECATION_POLICY.md): notice periods, migration requirements, and removal process. (Closes #2560)
 - [Anti-harassment and safety policy](SAFETY_POLICY.md): prohibited behaviours, reporting, consequences, and support resources. (Closes #2557)
+- [Release and versioning policy](RELEASE_POLICY.md): versioning scheme, release types, approval requirements, and rollback. (Closes #2558)
+- [Dependency management policy](DEPENDENCY_POLICY.md): vetting, pinning, vulnerability SLAs, and prohibited packages. (Closes #2561)
+- [Code of Conduct incident reporting](COC_REPORTING.md): reporting channels, process, confidentiality, and appeals. (Closes #2550)
+- [Branching strategy](BRANCHING_STRATEGY.md): branch types, naming conventions, flow, and cleanup rules. (Closes #2562)
 
 ## How to contribute to governance
 
