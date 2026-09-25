@@ -1,6 +1,6 @@
 # Governance
 
-This folder holds the project's **governance documentation** for StellarEarn â€” how
+This folder holds the project's **governance documentation** for StellarEarn — how
 decisions are made, who is responsible for what, and the policies that keep the
 project healthy, secure, and sustainable.
 
@@ -11,7 +11,7 @@ governance change is limited to files inside this `Governance/` folder.
 
 ## Structure
 
-- **Charter & principles** â€” mission, scope, guiding values, and how this
+- **Charter & principles** — mission, scope, guiding values, and how this
   governance itself is amended.
 - **Security disclosure template** - [templates/DISCLOSURE_TEMPLATE.md](templates/DISCLOSURE_TEMPLATE.md)
   is the private form for reporting a security vulnerability.
@@ -25,23 +25,24 @@ governance change is limited to files inside this `Governance/` folder.
   defines how new subprojects are proposed, incubated, and accepted.
 - **Maintainers roster** - [MAINTAINERS.md](MAINTAINERS.md) lists current
   maintainers, their areas, and how the roster is updated.
-- **Roles** â€” maintainers, reviewers, triagers, security team, release managers,
+- **Roles** — maintainers, reviewers, triagers, security team, release managers,
   and how people move between them.
-- **Decision-making** â€” consensus, voting, quorum, RFCs, tie-breaking, and how
+- **Decision-making** — consensus, voting, quorum, RFCs, tie-breaking, and how
   decisions are recorded.
-- **Contribution & review** â€” review policy, approvals, triage, merge and commit
+- **Contribution & review** — review policy, approvals, triage, merge and commit
   policies, and the contribution ladder.
-- **Community** â€” Code of Conduct, enforcement, communication norms, and safety.
-- **Technical policies** â€” release/versioning, deprecation, dependencies, CI/CD,
+- **Community** — Code of Conduct, enforcement, communication norms, and safety.
+- **Technical policies** — release/versioning, deprecation, dependencies, CI/CD,
   testing, contract-upgrade governance, and audits.
-- **Security & compliance** â€” disclosure, incident response, secrets, access
+- **Security & compliance** — disclosure, incident response, secrets, access
   control, and data governance.
-- **Finance** â€” treasury, grants, sponsorship, and transparency reporting.
-- **Records & templates** â€” decision logs, meeting minutes, ADRs, and reusable
+- **Finance** — treasury, grants, sponsorship, and transparency reporting.
+- **Sponsorship acceptance** — [SPONSORSHIP.md](SPONSORSHIP.md) defines criteria, disclosure, and process for accepting sponsorships.
+- **Records & templates** — decision logs, meeting minutes, ADRs, and reusable
   templates.
 - **Architecture Decision Records** - [decisions/README.md](decisions/README.md)
   contains the ADR index and numbering scheme for architectural decisions.
-- **Archival Policy** â€” [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
+- **Archival Policy** — [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
   documents are archived and stored.
 
 ## New governance documents
