@@ -38,6 +38,7 @@ governance change is limited to files inside this `Governance/` folder.
   control, and data governance.
 - **Finance** — treasury, grants, sponsorship, and transparency reporting.
 - **Sponsorship acceptance** — [SPONSORSHIP.md](SPONSORSHIP.md) defines criteria, disclosure, and process for accepting sponsorships.
+- **Grant application & disbursement** — [GRANTS.md](GRANTS.md) defines the grant application process, review criteria, and milestone-based disbursement.
 - **Records & templates** — decision logs, meeting minutes, ADRs, and reusable
   templates.
 - **Architecture Decision Records** - [decisions/README.md](decisions/README.md)
