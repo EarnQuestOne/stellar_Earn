@@ -5,7 +5,7 @@ on:
     branches:
       - release/v*
     paths:
-      - 'contracts/**'
+      - "contracts/**"
 
 jobs:
   canary_promotion:
@@ -32,7 +32,7 @@ jobs:
           # Deploy using soroban-cli toolsets
           CANARY_ADDRESS=$(soroban contract deploy --wasm target/wasm32-unknown-unknown/release/splitter_v3.wasm --source-account TESTNET_SECRET --network testnet)
           echo "CANARY_ADDR=$CANARY_ADDRESS" >> $GITHUB_ENV
-          
+
           echo "Configuring traffic split router to direct 10% load allocations..."
           curl -X POST -H "Content-Type: application/json" \
             -d '{"contractId": "'$CANARY_ADDRESS'", "weight": 10}' \

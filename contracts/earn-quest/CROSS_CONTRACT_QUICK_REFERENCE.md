@@ -19,49 +19,57 @@ cargo test test_cross_contract -- --nocapture
 
 ## Mock Contracts
 
-| Contract | Purpose | Key Methods |
-|----------|---------|-------------|
-| MockTokenContract | SEP-41 token | transfer, balance, approve |
-| MockOracleContract | Price feeds | lastprice, price |
-| MockExternalContract | External caller | create_quest, check_status |
-| MockAggregatorContract | Multi-instance | get_total_xp, is_admin |
+| Contract               | Purpose         | Key Methods                |
+| ---------------------- | --------------- | -------------------------- |
+| MockTokenContract      | SEP-41 token    | transfer, balance, approve |
+| MockOracleContract     | Price feeds     | lastprice, price           |
+| MockExternalContract   | External caller | create_quest, check_status |
+| MockAggregatorContract | Multi-instance  | get_total_xp, is_admin     |
 
 ## Test Categories
 
 ### Token Tests (4 tests)
+
 - Balance queries
 - Transfers
 - Approve/allowance
 - Metadata
 
 ### Oracle Tests (2 tests)
+
 - Price queries
 - Integration with EarnQuest
 
 ### External Contract Tests (3 tests)
+
 - Quest creation
 - Status queries
 - Proof submission
 
 ### Aggregation Tests (2 tests)
+
 - XP aggregation
 - Admin status checks
 
 ### Error Handling Tests (2 tests)
+
 - Quest not found
 - Duplicate quest
 
 ### Workflow Tests (2 tests)
+
 - Complete quest lifecycle
 - Multi-contract coordination
 
 ### Performance Tests (2 tests)
+
 - Call overhead
 - Batch operations
 
 ## Common Patterns
 
 ### Setup
+
 ```rust
 let env = Env::default();
 env.mock_all_auths();
@@ -74,6 +82,7 @@ client.initialize(&admin);
 ```
 
 ### External Contract Call
+
 ```rust
 let external = setup_external_contract(&env);
 let external_client = MockExternalContractClient::new(&env, &external);
@@ -90,6 +99,7 @@ external_client.create_quest_on_earn_quest(
 ```
 
 ### Multi-Instance Aggregation
+
 ```rust
 let (addr1, client1) = setup_earn_quest(&env);
 let (addr2, client2) = setup_earn_quest(&env);
@@ -106,6 +116,7 @@ let total = aggregator.get_total_user_xp(&addresses, &user);
 Total: **17 comprehensive tests**
 
 Coverage:
+
 - ✅ Token contract interactions
 - ✅ Oracle integration
 - ✅ External contract calls
@@ -116,12 +127,12 @@ Coverage:
 
 ## Quick Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Auth errors | Add `env.mock_all_auths()` |
-| Contract not found | Register contract first |
-| Type mismatch | Check mock interface matches |
-| Snapshot mismatch | Run `make snapshots` |
+| Issue              | Solution                     |
+| ------------------ | ---------------------------- |
+| Auth errors        | Add `env.mock_all_auths()`   |
+| Contract not found | Register contract first      |
+| Type mismatch      | Check mock interface matches |
+| Snapshot mismatch  | Run `make snapshots`         |
 
 ## Documentation
 

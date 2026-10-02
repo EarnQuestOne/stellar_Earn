@@ -7,8 +7,9 @@
 ## Executive Summary
 
 Successfully eliminated all stack trace leakage vectors from production API responses. The system now strictly enforces a safe error response contract that prevents exposure of:
+
 - Stack traces and file paths
-- Database query details and schema information  
+- Database query details and schema information
 - ORM framework internals
 - Internal error messages
 - Server environment details
@@ -20,6 +21,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 **File:** [src/common/filter/error-logger.filter.ts](src/common/filter/error-logger.filter.ts)
 
 **Key Changes:**
+
 - Updated `buildErrorResponse()` to enforce strict environment-based filtering
 - Added explicit `stack` parameter passing to response builder
 - Implemented environment detection for NODE_ENV
@@ -27,6 +29,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 - Development mode: Full stack traces and debug info for debuggability
 
 **Safe Response Contract (Production):**
+
 ```json
 {
   "statusCode": 500,
@@ -42,6 +45,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 **File:** [src/main.ts](src/main.ts)
 
 **Changes:**
+
 - Added import: `import { ErrorLoggerFilter } from './common/filter/error-logger.filter'`
 - Registered filter in correct order in `app.useGlobalFilters()`:
   1. SentryExceptionFilter (external error tracking)
@@ -52,15 +56,17 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 
 ### 3. Security Assertion Utilities
 
-**File:** [src/common/filter/__tests__/stack-trace-security.util.ts](src/common/filter/__tests__/stack-trace-security.util.ts)
+**File:** [src/common/filter/**tests**/stack-trace-security.util.ts](src/common/filter/__tests__/stack-trace-security.util.ts)
 
 **Utilities:**
+
 - `assertNoStackLeakage()` - Primary security check for response bodies
 - `assertSafeErrorContract()` - Validates response structure
 - `isOperationalError()` - Classifies 4xx vs 5xx
 - `assertGenericMessage()` - Ensures 5xx messages are generic
 
 **Detection Patterns:**
+
 - Stack frame patterns: `at Object.<anonymous> (/path:123:45)`
 - File paths: `*.ts:line:col` patterns
 - Server paths: `/app/`, `/home/`, `/usr/`, `C:\Users\`, etc.
@@ -70,7 +76,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 
 ### 4. Comprehensive Test Suite
 
-**File:** [src/common/filter/__tests__/error-logger.filter.spec.ts](src/common/filter/__tests__/error-logger.filter.spec.ts)
+**File:** [src/common/filter/**tests**/error-logger.filter.spec.ts](src/common/filter/__tests__/error-logger.filter.spec.ts)
 
 **Test Coverage:** 95%+ on exception filter module
 
@@ -127,52 +133,61 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ## Security Verification Checklist
 
 ### ✅ No Stack Traces in Production
+
 - Error responses never include `stack` field in production mode
 - Stack frames are detected and eliminated via regex patterns
 - File path patterns are sanitized before sending to client
 
 ### ✅ No Raw Error Messages
+
 - Unexpected errors (5xx) return: "An unexpected error occurred"
 - Operational errors (4xx) return safe, user-facing messages
 - Database internals (constraint names, columns) never exposed
 
 ### ✅ No Internal Details Exposed
+
 - Query text and parameters redacted in logs, never in responses
 - ORM names and versions never in responses
 - Server file paths never in responses
 - node_modules references never in responses
 
 ### ✅ Full Logging Preserved
+
 - Stack traces written to logger service
 - Correlations via requestId (not stack)
 - Log aggregator receives full error details
 - Production logs vs responses are properly separated
 
 ### ✅ requestId/Correlation
+
 - Present on ALL error responses
 - Matches X-Correlation-ID header
 - Used for production log tracing without exposing details
 - Format: UUID v4
 
 ### ✅ Development Experience Preserved
+
 - Development mode shows stack traces in responses
 - Debug info included in development responses
 - Staging environment (non-production) shows debug info
 - Only production mode is strict
 
 ### ✅ Unhandled Rejections
+
 - Process-level handlers in main.ts catch unhandled rejections
 - Errors logged with full stack
 - Application exits gracefully
 - Never sends response without proper sanitization
 
 ### ✅ Database Errors
+
 - QueryFailedError exceptions are caught
 - Generic 500 response sent
 - No query text, schema info, or constraint names exposed
 - Full error logged server-side
 
 ### ✅ Validation Errors
+
 - Field-level validation errors exposed (intentional, user-facing)
 - No stack traces from validation libraries
 - Validation framework internals not leaked
@@ -180,6 +195,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ## Response Examples
 
 ### Production - Unexpected Error
+
 ```json
 {
   "statusCode": 500,
@@ -191,6 +207,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ```
 
 ### Production - Not Found Error
+
 ```json
 {
   "statusCode": 404,
@@ -202,6 +219,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ```
 
 ### Production - Validation Error
+
 ```json
 {
   "statusCode": 400,
@@ -213,6 +231,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ```
 
 ### Development - Unexpected Error (WITH debug info)
+
 ```json
 {
   "statusCode": 500,
@@ -241,12 +260,12 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 
 ## Files Created
 
-1. **src/common/filter/__tests__/stack-trace-security.util.ts**
+1. **src/common/filter/**tests**/stack-trace-security.util.ts**
    - Security assertion utilities (300+ lines)
    - Used in all error response tests
    - Comprehensive stack leakage detection
 
-2. **src/common/filter/__tests__/error-logger.filter.spec.ts**
+2. **src/common/filter/**tests**/error-logger.filter.spec.ts**
    - 30+ unit tests (650+ lines)
    - 95%+ code coverage
    - All security scenarios covered
@@ -254,6 +273,7 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 ## How Stack Traces Are Protected
 
 ### The Safe Flow:
+
 1. Exception thrown in controller/service
 2. Exception caught by global exception filter chain
 3. ErrorLoggerFilter receives exception last
@@ -263,12 +283,13 @@ Successfully eliminated all stack trace leakage vectors from production API resp
 7. If development mode: response includes stack for debugging
 
 ### The Secure Path:
+
 ```
 Exception
   ↓
 [SentryExceptionFilter]
   ↓
-[SecurityExceptionFilter] 
+[SecurityExceptionFilter]
   ↓
 [ValidationExceptionFilter]
   ↓
@@ -282,12 +303,14 @@ Exception
 ## Testing Instructions
 
 ### Run Unit Tests:
+
 ```bash
 cd BackEnd
 npm test -- src/common/filter/__tests__/error-logger.filter.spec.ts --verbose
 ```
 
 ### Expected Output:
+
 ```
 PASS  src/common/filter/__tests__/error-logger.filter.spec.ts
   ErrorLoggerFilter - Stack Trace Security
@@ -295,7 +318,7 @@ PASS  src/common/filter/__tests__/error-logger.filter.spec.ts
       ✓ Production: 500 error should NOT contain stack trace
       ✓ Production: 500 error should NOT expose error message
       ... (30+ tests total)
-    
+
     Test Suites: 1 passed, 1 total
     Tests:       30 passed, 30 total
     Coverage:    ~95% of filter module
@@ -308,7 +331,7 @@ security: eliminate stack trace leakage in production responses
 
 CRITICAL SECURITY FIX
 
-This commit implements comprehensive stack trace sanitization for all API 
+This commit implements comprehensive stack trace sanitization for all API
 error responses, preventing information disclosure attacks that could enable:
 - Stack fingerprinting to identify vulnerable versions
 - File path disclosure revealing server structure

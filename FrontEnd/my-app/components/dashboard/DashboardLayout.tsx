@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -132,7 +133,11 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
           </Link>
         </header>
 
-        <main className="p-6 lg:p-8">{children}</main>
+        <main className="p-6 lg:p-8">
+          <ComponentErrorBoundary componentName="DashboardWidget">
+            {children}
+          </ComponentErrorBoundary>
+        </main>
       </div>
     </div>
   );

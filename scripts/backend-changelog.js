@@ -16,35 +16,35 @@
  *
  * The logic is exported as pure functions so it can be unit tested without git.
  */
-const fs = require('fs');
+const fs = require("fs");
 
-const path = require('path');
-const { execFileSync } = require('child_process');
+const path = require("path");
+const { execFileSync } = require("child_process");
 
-const MODULES_ROOT = 'BackEnd/src/modules';
+const MODULES_ROOT = "BackEnd/src/modules";
 const ZERO_SHA_PATTERN = /^0+$/;
 
 /** Conventional-commit type -> Keep a Changelog category. */
 const TYPE_TO_CATEGORY = {
-  feat: 'Added',
-  fix: 'Fixed',
-  perf: 'Changed',
-  refactor: 'Changed',
-  revert: 'Removed',
-  deprecate: 'Deprecated',
+  feat: "Added",
+  fix: "Fixed",
+  perf: "Changed",
+  refactor: "Changed",
+  revert: "Removed",
+  deprecate: "Deprecated",
 };
 
 const CATEGORY_ORDER = [
-  'Added',
-  'Changed',
-  'Deprecated',
-  'Removed',
-  'Fixed',
-  'Security',
+  "Added",
+  "Changed",
+  "Deprecated",
+  "Removed",
+  "Fixed",
+  "Security",
 ];
 
 function normalizePath(filePath) {
-  return filePath.replace(/\\/g, '/');
+  return filePath.replace(/\\/g, "/");
 }
 
 /** Files that count as a module's public/implementation surface. */
@@ -70,7 +70,7 @@ function moduleOf(filePath) {
     return null;
   }
   const rest = normalized.slice(prefix.length);
-  const segment = rest.split('/')[0];
+  const segment = rest.split("/")[0];
   return segment || null;
 }
 
@@ -98,16 +98,16 @@ function wasModuleChangelogUpdated(changedFiles, moduleName) {
 }
 
 function isBreakingConventionalHeader(line) {
-  return /^[a-z]+(?:\([^)]+\))?!: .+/.test((line || '').trim());
+  return /^[a-z]+(?:\([^)]+\))?!: .+/.test((line || "").trim());
 }
 
 function hasBreakingFooter(text) {
-  return /(^|\r?\n)BREAKING CHANGE: .+/.test(text || '');
+  return /(^|\r?\n)BREAKING CHANGE: .+/.test(text || "");
 }
 
 /** Parses a `git log %B` blob (commits separated by ---END---) into headers. */
 function parseConventionalCommits(commitMessages) {
-  const blocks = (commitMessages || '')
+  const blocks = (commitMessages || "")
     .split(/---END---/)
     .map((block) => block.trim())
     .filter(Boolean);
@@ -132,7 +132,7 @@ function parseConventionalCommits(commitMessages) {
 }
 
 function categoryForType(type) {
-  return TYPE_TO_CATEGORY[type] || 'Changed';
+  return TYPE_TO_CATEGORY[type] || "Changed";
 }
 
 /**
@@ -159,19 +159,19 @@ function groupCommitsByModule(commits, knownModules) {
 function buildUnreleasedBody(commits) {
   const buckets = {};
   for (const commit of commits) {
-    const category = commit.breaking ? 'Changed' : categoryForType(commit.type);
+    const category = commit.breaking ? "Changed" : categoryForType(commit.type);
     buckets[category] = buckets[category] || [];
-    const prefix = commit.breaking ? '**BREAKING** ' : '';
+    const prefix = commit.breaking ? "**BREAKING** " : "";
     buckets[category].push(`- ${prefix}${commit.subject}`);
   }
 
   const sections = [];
   for (const category of CATEGORY_ORDER) {
     if (buckets[category] && buckets[category].length > 0) {
-      sections.push(`### ${category}\n${buckets[category].join('\n')}`);
+      sections.push(`### ${category}\n${buckets[category].join("\n")}`);
     }
   }
-  return sections.join('\n\n');
+  return sections.join("\n\n");
 }
 
 function emptyChangelogTemplate(moduleName) {
@@ -194,7 +194,7 @@ function upsertUnreleased(changelogContent, generatedBody) {
     return changelogContent;
   }
   const lines = changelogContent.split(/\r?\n/);
-  const start = lines.findIndex((line) => line.trim() === '## [Unreleased]');
+  const start = lines.findIndex((line) => line.trim() === "## [Unreleased]");
 
   if (start === -1) {
     // No Unreleased section — prepend one after the first heading block.
@@ -209,8 +209,8 @@ function upsertUnreleased(changelogContent, generatedBody) {
     }
   }
 
-  const before = lines.slice(0, start + 1).join('\n');
-  const after = lines.slice(end).join('\n');
+  const before = lines.slice(0, start + 1).join("\n");
+  const after = lines.slice(end).join("\n");
   const merged = `${before}\n\n${generatedBody}\n`;
   return after ? `${merged}\n${after}` : `${merged}`;
 }
@@ -221,9 +221,9 @@ function upsertUnreleased(changelogContent, generatedBody) {
  */
 function evaluateBackendChangelogDiscipline({
   changedFiles = [],
-  commitMessages = '',
-  prTitle = '',
-  prBody = '',
+  commitMessages = "",
+  prTitle = "",
+  prBody = "",
 }) {
   const normalized = changedFiles.map(normalizePath);
   const affected = getAffectedModules(normalized);
@@ -243,7 +243,7 @@ function evaluateBackendChangelogDiscipline({
     }
   }
 
-  const commitLines = (commitMessages || '').split(/\r?\n/);
+  const commitLines = (commitMessages || "").split(/\r?\n/);
   const breakingSignal =
     isBreakingConventionalHeader(prTitle) ||
     hasBreakingFooter(commitMessages) ||
@@ -256,12 +256,12 @@ function evaluateBackendChangelogDiscipline({
       commitLines.some(isBreakingConventionalHeader);
     if (!hasMetadata) {
       errors.push(
-        'Breaking module changes must use Conventional Commit breaking metadata (`type(scope)!:`).',
+        "Breaking module changes must use Conventional Commit breaking metadata (`type(scope)!:`).",
       );
     }
     if (!hasBreakingFooter(commitMessages) && !hasBreakingFooter(prBody)) {
       errors.push(
-        'Breaking module changes must include a `BREAKING CHANGE:` explanation in the commit history or PR body.',
+        "Breaking module changes must include a `BREAKING CHANGE:` explanation in the commit history or PR body.",
       );
     }
   }
@@ -276,29 +276,33 @@ function evaluateBackendChangelogDiscipline({
 // ── git helpers (CLI only) ───────────────────────────────────────────────────
 
 function runGit(repoRoot, args) {
-  return execFileSync('git', args, {
+  return execFileSync("git", args, {
     cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
 function resolveBaseAndHead(repoRoot, options = {}) {
-  let base = options.base || process.env.CHANGELOG_BASE_SHA || '';
-  const head = options.head || process.env.CHANGELOG_HEAD_SHA || 'HEAD';
+  let base = options.base || process.env.CHANGELOG_BASE_SHA || "";
+  const head = options.head || process.env.CHANGELOG_HEAD_SHA || "HEAD";
   if (!base || ZERO_SHA_PATTERN.test(base)) {
-    base = runGit(repoRoot, ['rev-parse', `${head}^`]);
+    base = runGit(repoRoot, ["rev-parse", `${head}^`]);
   }
   return { base, head };
 }
 
 function getChangedFiles(repoRoot, base, head) {
-  const output = runGit(repoRoot, ['diff', '--name-only', `${base}...${head}`]);
+  const output = runGit(repoRoot, ["diff", "--name-only", `${base}...${head}`]);
   return output ? output.split(/\r?\n/).map(normalizePath).filter(Boolean) : [];
 }
 
 function getCommitMessages(repoRoot, base, head) {
-  return runGit(repoRoot, ['log', '--format=%B%n---END---', `${base}..${head}`]);
+  return runGit(repoRoot, [
+    "log",
+    "--format=%B%n---END---",
+    `${base}..${head}`,
+  ]);
 }
 
 function discoverModules(repoRoot) {
@@ -313,14 +317,14 @@ function discoverModules(repoRoot) {
 }
 
 function parseArgs(argv) {
-  const result = { command: argv[2] || 'check', dryRun: false };
+  const result = { command: argv[2] || "check", dryRun: false };
   for (let i = 3; i < argv.length; i += 1) {
     const token = argv[i];
-    if (token === '--base') {
+    if (token === "--base") {
       result.base = argv[++i];
-    } else if (token === '--head') {
+    } else if (token === "--head") {
       result.head = argv[++i];
-    } else if (token === '--dry-run') {
+    } else if (token === "--dry-run") {
       result.dryRun = true;
     }
   }
@@ -329,9 +333,11 @@ function parseArgs(argv) {
 
 function runCheck(repoRoot, options) {
   let changedFiles = process.env.CHANGELOG_CHANGED_FILES
-    ? process.env.CHANGELOG_CHANGED_FILES.split(/\r?\n|;/).map(normalizePath).filter(Boolean)
+    ? process.env.CHANGELOG_CHANGED_FILES.split(/\r?\n|;/)
+        .map(normalizePath)
+        .filter(Boolean)
     : null;
-  let commitMessages = process.env.CHANGELOG_COMMIT_MESSAGES || '';
+  let commitMessages = process.env.CHANGELOG_COMMIT_MESSAGES || "";
   let base = options.base;
   let head = options.head;
 
@@ -348,21 +354,23 @@ function runCheck(repoRoot, options) {
   const result = evaluateBackendChangelogDiscipline({
     changedFiles,
     commitMessages,
-    prTitle: process.env.CHANGELOG_PR_TITLE || '',
-    prBody: process.env.CHANGELOG_PR_BODY || '',
+    prTitle: process.env.CHANGELOG_PR_TITLE || "",
+    prBody: process.env.CHANGELOG_PR_BODY || "",
   });
 
   if (!result.details.checked) {
-    console.log('No backend module changes detected; changelog discipline check skipped.');
+    console.log(
+      "No backend module changes detected; changelog discipline check skipped.",
+    );
     return 0;
   }
   if (!result.ok) {
-    console.error('\nBackend module changelog discipline check failed:');
+    console.error("\nBackend module changelog discipline check failed:");
     result.errors.forEach((error) => console.error(` - ${error}`));
     return 1;
   }
   console.log(
-    `Backend module changelog discipline check passed (modules: ${result.details.affected.join(', ')}).`,
+    `Backend module changelog discipline check passed (modules: ${result.details.affected.join(", ")}).`,
   );
   return 0;
 }
@@ -376,29 +384,35 @@ function runGenerate(repoRoot, options) {
 
   const moduleNames = Object.keys(byModule).sort();
   if (moduleNames.length === 0) {
-    console.log('No module-scoped Conventional Commits found in range; nothing to generate.');
+    console.log(
+      "No module-scoped Conventional Commits found in range; nothing to generate.",
+    );
   }
 
   for (const moduleName of moduleNames) {
     const body = buildUnreleasedBody(byModule[moduleName]);
     const filePath = path.join(repoRoot, changelogPathForModule(moduleName));
     const existing = fs.existsSync(filePath)
-      ? fs.readFileSync(filePath, 'utf8')
+      ? fs.readFileSync(filePath, "utf8")
       : emptyChangelogTemplate(moduleName);
     const updated = upsertUnreleased(existing, body);
 
     if (options.dryRun) {
-      console.log(`\n--- ${changelogPathForModule(moduleName)} (dry-run) ---\n${body}`);
+      console.log(
+        `\n--- ${changelogPathForModule(moduleName)} (dry-run) ---\n${body}`,
+      );
     } else {
       fs.writeFileSync(filePath, updated);
-      console.log(`Updated ${changelogPathForModule(moduleName)} (${byModule[moduleName].length} commit(s)).`);
+      console.log(
+        `Updated ${changelogPathForModule(moduleName)} (${byModule[moduleName].length} commit(s)).`,
+      );
     }
   }
 
   if (unscoped.length > 0) {
     console.log(
       `\nNote: ${unscoped.length} commit(s) had no module scope and were skipped. ` +
-        'Use `type(module): subject` to attribute them to a module.',
+        "Use `type(module): subject` to attribute them to a module.",
     );
   }
   return 0;
@@ -407,7 +421,7 @@ function runGenerate(repoRoot, options) {
 function main() {
   const repoRoot = process.cwd();
   const options = parseArgs(process.argv);
-  if (options.command === 'generate') {
+  if (options.command === "generate") {
     return runGenerate(repoRoot, options);
   }
   return runCheck(repoRoot, options);
@@ -417,7 +431,7 @@ if (require.main === module) {
   try {
     process.exit(main());
   } catch (error) {
-    console.error('Unable to complete backend changelog automation.');
+    console.error("Unable to complete backend changelog automation.");
     console.error(error && error.stack ? error.stack : error);
     process.exit(1);
   }

@@ -3,13 +3,7 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
 export type LogLevel =
-  | 'error'
-  | 'warn'
-  | 'info'
-  | 'http'
-  | 'verbose'
-  | 'debug'
-  | 'silly';
+  'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
 
 export interface LoggerConfig {
   level: LogLevel;

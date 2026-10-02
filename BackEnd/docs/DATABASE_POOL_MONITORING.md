@@ -10,23 +10,23 @@ The following metrics are exposed via the `/health/metrics` endpoint in Promethe
 
 ### Connection Pool Metrics
 
-| Metric Name | Type | Description |
-|-------------|------|-------------|
-| `db_pool_active_connections` | Gauge | Number of active database connections currently in use |
-| `db_pool_idle_connections` | Gauge | Number of idle database connections available in the pool |
-| `db_pool_total_connections` | Gauge | Total number of database connections (active + idle) |
-| `db_pool_waiting_requests` | Gauge | Number of requests waiting for a connection from the pool |
-| `db_pool_utilization_percent` | Gauge | Pool utilization as percentage of max connections |
+| Metric Name                   | Type  | Description                                               |
+| ----------------------------- | ----- | --------------------------------------------------------- |
+| `db_pool_active_connections`  | Gauge | Number of active database connections currently in use    |
+| `db_pool_idle_connections`    | Gauge | Number of idle database connections available in the pool |
+| `db_pool_total_connections`   | Gauge | Total number of database connections (active + idle)      |
+| `db_pool_waiting_requests`    | Gauge | Number of requests waiting for a connection from the pool |
+| `db_pool_utilization_percent` | Gauge | Pool utilization as percentage of max connections         |
 
 ### Acquisition Metrics
 
-| Metric Name | Type | Description |
-|-------------|------|-------------|
-| `db_pool_acquire_duration_ms` | Histogram | Time to acquire a connection from pool in milliseconds |
-| `db_pool_timeout_total` | Counter | Total connection timeout events |
-| `db_pool_failed_connections_total` | Counter | Total failed connection attempts |
-| `db_pool_retry_total` | Counter | Total connection retry attempts |
-| `db_pool_exhaustion_total` | Counter | Total pool exhaustion events |
+| Metric Name                        | Type      | Description                                            |
+| ---------------------------------- | --------- | ------------------------------------------------------ |
+| `db_pool_acquire_duration_ms`      | Histogram | Time to acquire a connection from pool in milliseconds |
+| `db_pool_timeout_total`            | Counter   | Total connection timeout events                        |
+| `db_pool_failed_connections_total` | Counter   | Total failed connection attempts                       |
+| `db_pool_retry_total`              | Counter   | Total connection retry attempts                        |
+| `db_pool_exhaustion_total`         | Counter   | Total pool exhaustion events                           |
 
 ## API Endpoints
 
@@ -67,20 +67,20 @@ The following alert rules are configured in the AlertService:
 
 ### Critical Alerts
 
-| Alert Name | Condition | Cooldown | Description |
-|------------|-----------|----------|-------------|
-| `db_pool_high_utilization` | Utilization > 90% | 5 minutes | Pool utilization is critically high, immediate attention required |
-| `high_error_rate` | HTTP error rate > 10% | 2 minutes | High error rate across the application |
+| Alert Name                 | Condition             | Cooldown  | Description                                                       |
+| -------------------------- | --------------------- | --------- | ----------------------------------------------------------------- |
+| `db_pool_high_utilization` | Utilization > 90%     | 5 minutes | Pool utilization is critically high, immediate attention required |
+| `high_error_rate`          | HTTP error rate > 10% | 2 minutes | High error rate across the application                            |
 
 ### Warning Alerts
 
-| Alert Name | Condition | Cooldown | Description |
-|------------|-----------|----------|-------------|
-| `db_pool_elevated_utilization` | Utilization > 75% | 5 minutes | Pool utilization is elevated, monitor closely |
-| `db_pool_waiting_queue_growth` | Waiting requests > 5 | 2 minutes | Requests are queuing for connections |
-| `db_pool_slow_acquisition` | Avg acquisition time > 500ms | 3 minutes | Connection acquisition is slow |
-| `high_p95_latency` | p95 latency > 2000ms | 1 minute | Request latency is elevated |
-| `high_heap_usage` | Heap used > 900MB | 5 minutes | Memory usage is high |
+| Alert Name                     | Condition                    | Cooldown  | Description                                   |
+| ------------------------------ | ---------------------------- | --------- | --------------------------------------------- |
+| `db_pool_elevated_utilization` | Utilization > 75%            | 5 minutes | Pool utilization is elevated, monitor closely |
+| `db_pool_waiting_queue_growth` | Waiting requests > 5         | 2 minutes | Requests are queuing for connections          |
+| `db_pool_slow_acquisition`     | Avg acquisition time > 500ms | 3 minutes | Connection acquisition is slow                |
+| `high_p95_latency`             | p95 latency > 2000ms         | 1 minute  | Request latency is elevated                   |
+| `high_heap_usage`              | Heap used > 900MB            | 5 minutes | Memory usage is high                          |
 
 ## Dashboard
 
@@ -108,18 +108,21 @@ A Grafana dashboard configuration is provided at `monitoring/grafana/dashboards/
 ### Identifying Pool Exhaustion
 
 **Symptoms:**
+
 - `db_pool_total_connections` equals `db_pool_active_connections` (no idle connections)
 - `db_pool_waiting_requests` > 0
 - `db_pool_exhaustion_total` counter increasing
 - Alert `db_pool_high_utilization` firing
 
 **Root Causes:**
+
 - Insufficient max pool size for current load
 - Long-running queries holding connections
 - Connection leaks (connections not released properly)
 - Sudden traffic spikes
 
 **Actions:**
+
 1. Check `/health/pool` endpoint for current state
 2. Review slow query logs for long-running queries
 3. Increase `max` pool size in database configuration
@@ -129,17 +132,20 @@ A Grafana dashboard configuration is provided at `monitoring/grafana/dashboards/
 ### High Acquisition Latency
 
 **Symptoms:**
+
 - `db_pool_acquire_duration_ms` histogram shows high values
 - `db_pool_slow_acquisition` alert firing
 - Increased `db_pool_waiting_requests`
 
 **Root Causes:**
+
 - Pool exhaustion (all connections in use)
 - Database server under heavy load
 - Network latency to database
 - Contention for database resources
 
 **Actions:**
+
 1. Check pool utilization
 2. Review database server metrics (CPU, memory, I/O)
 3. Check network latency to database
@@ -149,17 +155,20 @@ A Grafana dashboard configuration is provided at `monitoring/grafana/dashboards/
 ### Connection Timeouts
 
 **Symptoms:**
+
 - `db_pool_timeout_total` counter increasing
 - Application errors with "connection timeout"
 - `db_pool_failed_connections_total` increasing
 
 **Root Causes:**
+
 - Pool exhaustion with long wait times
 - Database server unresponsive
 - Network issues
 - Connection timeout too low
 
 **Actions:**
+
 1. Check pool utilization and waiting queue
 2. Verify database server health
 3. Check network connectivity
@@ -169,16 +178,19 @@ A Grafana dashboard configuration is provided at `monitoring/grafana/dashboards/
 ### Connection Leaks
 
 **Symptoms:**
+
 - `db_pool_active_connections` consistently high
 - `db_pool_idle_connections` consistently low or zero
 - Pool exhaustion even under moderate load
 
 **Root Causes:**
+
 - Connections not properly released in code
 - Unhandled exceptions preventing connection release
 - Long-running transactions
 
 **Actions:**
+
 1. Review code for proper connection handling
 2. Ensure connections are released in finally blocks
 3. Use connection pooling best practices
@@ -190,6 +202,7 @@ A Grafana dashboard configuration is provided at `monitoring/grafana/dashboards/
 ### When to Increase Pool Size
 
 Increase the `max` pool size when:
+
 - Consistent utilization > 75%
 - Frequent waiting queue growth
 - Connection timeouts occurring
@@ -200,12 +213,14 @@ Increase the `max` pool size when:
 **Formula:** `max_connections = (number_of_app_instances * average_concurrent_queries_per_instance) + buffer`
 
 **Example:**
+
 - 3 application instances
 - 10 concurrent queries per instance
 - 20% buffer
 - `max = (3 * 10) * 1.2 = 36`
 
 **Database Server Considerations:**
+
 - Ensure PostgreSQL `max_connections` setting is sufficient
 - Monitor database server resource usage
 - Consider connection pooling at the database level (PgBouncer)
@@ -242,11 +257,13 @@ DB_POOL_IDLE_TIMEOUT=60000
 ### Manual Verification
 
 1. **Check metrics endpoint:**
+
    ```bash
    curl http://localhost:3001/health/metrics
    ```
 
 2. **Check pool status:**
+
    ```bash
    curl http://localhost:3001/health/pool
    ```
@@ -288,6 +305,7 @@ The monitoring service is designed to fail safely:
 ### Monitoring Service
 
 The `DatabasePoolMonitorService`:
+
 - Polls pool statistics every 15 seconds
 - Updates metrics via `MetricsService`
 - Detects exhaustion conditions with cooldown periods

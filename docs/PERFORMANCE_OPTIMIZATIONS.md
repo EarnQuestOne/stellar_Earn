@@ -24,9 +24,9 @@ The frontend (`FrontEnd/my-app`) ships **zero date-library code**. All date
 parsing/formatting goes through native `Intl` APIs wrapped by two first-party
 utilities:
 
-| Utility | Responsibility |
-| --- | --- |
-| `lib/utils/date.ts` | Safe parsing, validation, timezone-aware formatting (`Intl.DateTimeFormat`) |
+| Utility                        | Responsibility                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `lib/utils/date.ts`            | Safe parsing, validation, timezone-aware formatting (`Intl.DateTimeFormat`)  |
 | `lib/utils/i18n-formatters.ts` | Localised date/number formatting, relative dates (`Intl.RelativeTimeFormat`) |
 
 Verified via `package.json`, `package-lock.json` (no direct **or transitive**
@@ -40,12 +40,12 @@ them would require forking upstream packages.
 
 ### Bundle-weight comparison (minified, per Bundlephobia)
 
-| Approach | Client bundle cost |
-| --- | --- |
-| `moment` | ≈72 KB (≈295 KB with locales, not tree-shakeable) |
-| `luxon` | ≈80 KB |
-| `dayjs` | ≈7 KB core (+ per-plugin) |
-| `date-fns` (tree-shaken) | ≈1–2 KB per imported function |
+| Approach                    | Client bundle cost                                              |
+| --------------------------- | --------------------------------------------------------------- |
+| `moment`                    | ≈72 KB (≈295 KB with locales, not tree-shakeable)               |
+| `luxon`                     | ≈80 KB                                                          |
+| `dayjs`                     | ≈7 KB core (+ per-plugin)                                       |
+| `date-fns` (tree-shaken)    | ≈1–2 KB per imported function                                   |
 | **Native `Intl` (current)** | **0 KB** — built into every supported browser, locales included |
 
 Staying on `Intl` keeps the date-handling contribution to every route's

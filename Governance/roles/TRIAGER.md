@@ -58,7 +58,7 @@ A triager may **not**:
 - resolve a security report on their own — those stay with the security
   response team.
 
-Triage authority applies to issue and pull-request *metadata*, not to the code
+Triage authority applies to issue and pull-request _metadata_, not to the code
 or the decision about whether a change is accepted.
 
 ## Relationship to other roles

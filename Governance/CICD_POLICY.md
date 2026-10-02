@@ -30,15 +30,15 @@ Each area exposes a single **gate** job that aggregates its workflow's granular
 jobs, so the required set stays stable when a sub-job is added or renamed.
 Requiring the gate — not each sub-job — is deliberate.
 
-| Required check | Workflow | Covers |
-| --- | --- | --- |
-| **Backend CI Gate** | `backend-ci.yml` | Toolchain preflight, build, lint/format, and the OpenAPI generation check. |
-| **Integration Tests Gate** | `backend-integration.yml` | Backend integration tests. |
-| **Contract CI Gate** | `contract-ci.yml` | Soroban contract build and tests. |
-| **Lint, Typecheck, Format, Test & Build** | `frontend-ci.yml` | Frontend lint, typecheck, format, unit tests, and production build. |
-| **Module changelog discipline** | `backend-changelog.yml` | Every backend module change carries its changelog entry. |
-| **Gitleaks & .env guard** | `secret-scan.yml` | Secret scanning and the `.env` guard. |
-| **Axe Accessibility Smoke Tests** | `accessibility.yml` | Automated accessibility smoke tests. |
+| Required check                            | Workflow                  | Covers                                                                     |
+| ----------------------------------------- | ------------------------- | -------------------------------------------------------------------------- |
+| **Backend CI Gate**                       | `backend-ci.yml`          | Toolchain preflight, build, lint/format, and the OpenAPI generation check. |
+| **Integration Tests Gate**                | `backend-integration.yml` | Backend integration tests.                                                 |
+| **Contract CI Gate**                      | `contract-ci.yml`         | Soroban contract build and tests.                                          |
+| **Lint, Typecheck, Format, Test & Build** | `frontend-ci.yml`         | Frontend lint, typecheck, format, unit tests, and production build.        |
+| **Module changelog discipline**           | `backend-changelog.yml`   | Every backend module change carries its changelog entry.                   |
+| **Gitleaks & .env guard**                 | `secret-scan.yml`         | Secret scanning and the `.env` guard.                                      |
+| **Axe Accessibility Smoke Tests**         | `accessibility.yml`       | Automated accessibility smoke tests.                                       |
 
 Notes:
 

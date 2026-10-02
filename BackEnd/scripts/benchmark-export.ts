@@ -7,7 +7,7 @@ async function benchmark() {
 
   // Create a large dataset (e.g. 500,000 items)
   const ITEM_COUNT = 500_000;
-  
+
   async function* generateData() {
     for (let i = 0; i < ITEM_COUNT; i++) {
       yield {
@@ -60,9 +60,15 @@ async function benchmark() {
   console.log(`Exported ${ITEM_COUNT.toLocaleString()} rows.`);
   console.log(`Total time: ${(endTime - startTime) / 1000}s`);
   console.log(`Bytes written: ${(writtenBytes / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`Initial Memory (Heap Used): ${(initialMemory / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`Final Memory (Heap Used): ${(finalMemory / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`Memory Difference: ${((finalMemory - initialMemory) / 1024 / 1024).toFixed(2)} MB`);
+  console.log(
+    `Initial Memory (Heap Used): ${(initialMemory / 1024 / 1024).toFixed(2)} MB`,
+  );
+  console.log(
+    `Final Memory (Heap Used): ${(finalMemory / 1024 / 1024).toFixed(2)} MB`,
+  );
+  console.log(
+    `Memory Difference: ${((finalMemory - initialMemory) / 1024 / 1024).toFixed(2)} MB`,
+  );
   console.log('--- Benchmark Complete ---');
 }
 

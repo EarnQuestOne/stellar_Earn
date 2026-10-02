@@ -74,7 +74,9 @@ function toCoreMetadata(metadata = {}) {
 
 function toExtendedMetadata(metadata = {}) {
   return {
-    requirements: Array.isArray(metadata.requirements) ? metadata.requirements : [],
+    requirements: Array.isArray(metadata.requirements)
+      ? metadata.requirements
+      : [],
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
   };
 }
@@ -83,7 +85,8 @@ function splitEscrow(quest = {}) {
   const legacyEscrow = quest.escrow ?? {};
   const rewardAsset = quest.reward_asset ?? legacyEscrow.token ?? null;
   const depositor = legacyEscrow.depositor ?? quest.creator ?? null;
-  const totalDeposited = legacyEscrow.total_deposited ?? legacyEscrow.balance ?? 0;
+  const totalDeposited =
+    legacyEscrow.total_deposited ?? legacyEscrow.balance ?? 0;
   const totalPaidOut = legacyEscrow.total_paid_out ?? 0;
   const totalRefunded = legacyEscrow.total_refunded ?? 0;
 
@@ -92,7 +95,8 @@ function splitEscrow(quest = {}) {
       total_deposited: totalDeposited,
       total_paid_out: totalPaidOut,
       total_refunded: totalRefunded,
-      is_active: legacyEscrow.is_active ?? totalDeposited > totalPaidOut + totalRefunded,
+      is_active:
+        legacyEscrow.is_active ?? totalDeposited > totalPaidOut + totalRefunded,
       deposit_count: legacyEscrow.deposit_count ?? (totalDeposited > 0 ? 1 : 0),
     },
     escrow_meta: {
@@ -113,8 +117,14 @@ function normalizePlatformCounters(platformStats = {}) {
   };
 }
 
-export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA_VERSION) {
-  if (!Number.isInteger(targetVersion) || targetVersion < CURRENT_SCHEMA_VERSION) {
+export function migrateStateSnapshot(
+  sourceState,
+  targetVersion = CURRENT_SCHEMA_VERSION,
+) {
+  if (
+    !Number.isInteger(targetVersion) ||
+    targetVersion < CURRENT_SCHEMA_VERSION
+  ) {
     throw new Error(`Unsupported target schema version: ${targetVersion}`);
   }
 
@@ -128,7 +138,9 @@ export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA
   const migrated = deepClone(sourceState);
   const actions = [];
   const summary = {
-    questsScanned: Array.isArray(sourceState.quests) ? sourceState.quests.length : 0,
+    questsScanned: Array.isArray(sourceState.quests)
+      ? sourceState.quests.length
+      : 0,
     metadataSplits: 0,
     escrowSplits: 0,
     platformStatsNormalized: 0,
@@ -142,7 +154,11 @@ export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA
   migrated.quests = migrated.quests.map((quest) => {
     const nextQuest = { ...quest };
 
-    if (nextQuest.metadata && !nextQuest.metadata_core && !nextQuest.metadata_extended) {
+    if (
+      nextQuest.metadata &&
+      !nextQuest.metadata_core &&
+      !nextQuest.metadata_extended
+    ) {
       nextQuest.metadata_core = toCoreMetadata(nextQuest.metadata);
       nextQuest.metadata_extended = toExtendedMetadata(nextQuest.metadata);
       delete nextQuest.metadata;
@@ -152,7 +168,11 @@ export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA
       );
     }
 
-    if (nextQuest.escrow && !nextQuest.escrow_balances && !nextQuest.escrow_meta) {
+    if (
+      nextQuest.escrow &&
+      !nextQuest.escrow_balances &&
+      !nextQuest.escrow_meta
+    ) {
       const { escrow_balances, escrow_meta } = splitEscrow(nextQuest);
       nextQuest.escrow_balances = escrow_balances;
       nextQuest.escrow_meta = escrow_meta;
@@ -167,7 +187,9 @@ export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA
   });
 
   if (migrated.platform_stats && !migrated.platform_counters) {
-    migrated.platform_counters = normalizePlatformCounters(migrated.platform_stats);
+    migrated.platform_counters = normalizePlatformCounters(
+      migrated.platform_stats,
+    );
     delete migrated.platform_stats;
     summary.platformStatsNormalized += 1;
     actions.push("platform_stats normalized into platform_counters");
@@ -177,7 +199,9 @@ export function migrateStateSnapshot(sourceState, targetVersion = CURRENT_SCHEMA
     migrated.schema_version = targetVersion;
     delete migrated.version;
     summary.versionBumps += 1;
-    actions.push(`schema_version bumped from ${sourceVersion} to ${targetVersion}`);
+    actions.push(
+      `schema_version bumped from ${sourceVersion} to ${targetVersion}`,
+    );
   }
 
   return {
@@ -226,7 +250,9 @@ export async function runCli(argv = process.argv.slice(2)) {
   process.stdout.write(`Version bumps: ${plan.summary.versionBumps}\n`);
 
   if (plan.actions.length === 0) {
-    process.stdout.write("Actions:\n- none; snapshot already matches target schema\n");
+    process.stdout.write(
+      "Actions:\n- none; snapshot already matches target schema\n",
+    );
   } else {
     process.stdout.write("Actions:\n");
     for (const action of plan.actions) {
@@ -240,12 +266,21 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   const outputPath = path.resolve(options.output);
-  await writeFile(outputPath, `${JSON.stringify(plan.migrated, null, 2)}\n`, "utf8");
-  process.stdout.write(`Migration applied. Wrote migrated snapshot to ${outputPath}\n`);
+  await writeFile(
+    outputPath,
+    `${JSON.stringify(plan.migrated, null, 2)}\n`,
+    "utf8",
+  );
+  process.stdout.write(
+    `Migration applied. Wrote migrated snapshot to ${outputPath}\n`,
+  );
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   runCli().catch((error) => {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;

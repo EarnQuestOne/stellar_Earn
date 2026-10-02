@@ -1,7 +1,7 @@
 # EarnQuest Contract - Invariants & Properties
 
 **Version:** 1.0  
-**Date:** May 30, 2026  
+**Date:** May 30, 2026
 
 ## Overview
 
@@ -14,17 +14,20 @@ This document defines the mathematical and operational invariants that must hold
 **Statement:** Every sensitive state-changing operation must be preceded by verification that the caller has the required role.
 
 **Formal Definition:**
+
 ```
 ∀ operation in {create_quest, approve_submission, update_settings}:
     operation.execute() ⟹ verify_role(caller, required_role)
 ```
 
 **Implications:**
+
 - No operation bypasses role checks
 - Role verification occurs before state modifications
 - SuperAdmin role cannot be revoked from all users
 
 **Verification Points:**
+
 ```rust
 // Every sensitive function must start with:
 admin::require_role(&env, &caller, required_role)?;
@@ -33,6 +36,7 @@ address.require_auth();
 ```
 
 **Test Scenarios:**
+
 - Unauthorized user attempts operation → Must fail
 - Authorized user attempts operation → Must succeed
 - Role is revoked then operation attempted → Must fail
@@ -45,6 +49,7 @@ address.require_auth();
 **Statement:** The total value of funds in the contract is conserved across all operations.
 
 **Formal Definition:**
+
 ```
 Total_Funds_Before = Total_Funds_After
 Where:
@@ -52,11 +57,13 @@ Where:
 ```
 
 **Implications:**
+
 - No funds are created or destroyed arbitrarily
 - Fund transfers are atomic
 - Fractional amounts are handled consistently
 
 **Verification Method:**
+
 ```rust
 // Pseudocode for verification
 let total_before = sum(all_balances) + sum(all_escrows) + reserves;
@@ -66,6 +73,7 @@ assert!(total_before == total_after);
 ```
 
 **Critical Operations to Verify:**
+
 1. Quest creation with reward pool
 2. Submission approval with payout
 3. Escrow creation and release
@@ -79,13 +87,14 @@ assert!(total_before == total_after);
 **Statement:** Each quest follows a defined state machine with valid transitions only.
 
 **State Machine:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │                   Quest States                       │
 └─────────────────────────────────────────────────────┘
 
   [Created] → [Active] → [Completed]
-     │          │              
+     │          │
      │          └─→ [Cancelled] ──→ [Archived]
      │
      └──────────────→ [Cancelled]
@@ -103,17 +112,20 @@ Invalid Transitions (must be prevented):
 ```
 
 **Formal Definition:**
+
 ```
 ∀ quest q: state_transition(q.current_state, q.new_state) ∈ valid_transitions
 ```
 
 **Invariant Properties:**
+
 1. A quest can only be in one state at a time
 2. Terminal states (Completed, Cancelled, Archived) are irreversible
 3. Active quests must have reward pool allocated
 4. All submissions must be resolved before completing quest
 
 **Verification Points:**
+
 ```rust
 // Verify state consistency
 match quest.status {
@@ -135,6 +147,7 @@ match quest.status {
 **Statement:** User reputation is non-negative, accumulates through valid activities, and decays over time.
 
 **Formal Definition:**
+
 ```
 reputation(user, t) ≥ 0
 reputation(user, t2) ≤ reputation(user, t1) where t2 > t1 (due to decay)
@@ -142,6 +155,7 @@ reputation(user, t2) ≤ reputation(user, t1) where t2 > t1 (due to decay)
 ```
 
 **Reputation Rules:**
+
 1. **Accumulation:**
    - Quest completion: +10 base reputation + difficulty_bonus
    - Badge award: +5 reputation
@@ -159,6 +173,7 @@ reputation(user, t2) ≤ reputation(user, t1) where t2 > t1 (due to decay)
    - Ban prevents all reputation changes
 
 **Verification Properties:**
+
 ```rust
 // Reputation bounds check
 assert!(user.reputation >= 0);
@@ -178,6 +193,7 @@ assert!(reputation_change > 0 ⟹ quest_completed(user, quest));
 **Statement:** Each submission follows a defined approval workflow with proper state transitions and validations.
 
 **Workflow State Machine:**
+
 ```
 ┌──────────────────────────────────────────┐
 │        Submission States                  │
@@ -197,6 +213,7 @@ State Rules:
 ```
 
 **Verification Rules:**
+
 ```rust
 // Each submission must satisfy:
 match submission.status {
@@ -226,6 +243,7 @@ match submission.status {
 **Statement:** Escrowed funds are held securely and released only when all conditions are met.
 
 **Escrow Rules:**
+
 ```
 Escrowed_Funds = Sum of all active escrow amounts
 Contract_Balance ≥ Escrowed_Funds (always true)
@@ -238,6 +256,7 @@ For each escrow:
 ```
 
 **Verification Invariants:**
+
 ```rust
 // Escrow amount verification
 assert!(escrow.amount > 0);
@@ -253,6 +272,7 @@ assert!(contract.escrow_total <= contract.balance);
 ```
 
 **Fund Transfer Safety:**
+
 ```
 When releasing escrow:
 1. Check: release_time condition met
@@ -269,6 +289,7 @@ When releasing escrow:
 **Statement:** Badges are only assigned according to defined rules and cannot be duplicated or revoked arbitrarily.
 
 **Badge Rules:**
+
 ```
 Badge Assignment Rules:
 - Each badge type has strict assignment criteria
@@ -284,6 +305,7 @@ Badge Types:
 ```
 
 **Verification Invariants:**
+
 ```rust
 // No duplicate badges
 let user_badges = get_user_badges(&env, &user);
@@ -305,6 +327,7 @@ for badge in user_badges {
 **Statement:** Oracle data is fresh, validated, and within acceptable bounds.
 
 **Oracle Rules:**
+
 ```
 Oracle Data Requirements:
 1. Data Must Be Fresh:
@@ -324,6 +347,7 @@ Oracle Data Requirements:
 ```
 
 **Verification Invariants:**
+
 ```rust
 // Data freshness
 assert!(now() - oracle_data.timestamp <= MAX_AGE);
@@ -344,6 +368,7 @@ assert!(price_variance <= MAX_VARIANCE_PCT);
 **Statement:** Storage operations maintain consistency across all data structures and never leave storage in an invalid state.
 
 **Storage Consistency Rules:**
+
 ```
 1. Atomic Operations:
    - All related updates happen together or not at all
@@ -361,6 +386,7 @@ assert!(price_variance <= MAX_VARIANCE_PCT);
 ```
 
 **Verification Properties:**
+
 ```rust
 // Consistency check after operations
 for (index, data) in storage.iter() {
@@ -382,6 +408,7 @@ assert!(all_escrows_reference_valid_users());
 **Statement:** Role-based access control is enforced consistently throughout the contract.
 
 **RBAC Rules:**
+
 ```
 Role Hierarchy:
 SuperAdmin (root)
@@ -417,6 +444,7 @@ Regular Users
 ```
 
 **Verification Invariants:**
+
 ```rust
 // Role-based access check
 if function_requires_role(Role::SuperAdmin) {
@@ -537,6 +565,7 @@ assert!(total_escrow <= contract_balance);
 **Violation:** User without role successfully calls admin function
 
 **Prevention:**
+
 - All admin functions must check roles
 - Role checks must occur before state mutation
 
@@ -547,6 +576,7 @@ assert!(total_escrow <= contract_balance);
 **Violation:** Funds leave contract without visible recipient
 
 **Prevention:**
+
 - All transfers tracked
 - Fund conservation verified after operations
 
@@ -557,6 +587,7 @@ assert!(total_escrow <= contract_balance);
 **Violation:** Quest exists in invalid state combination
 
 **Prevention:**
+
 - State machine enforced at update points
 - State consistency checked after modifications
 
@@ -567,6 +598,7 @@ assert!(total_escrow <= contract_balance);
 **Violation:** User gains reputation without valid activity
 
 **Prevention:**
+
 - Reputation changes only on valid quest events
 - Change history tracked and auditable
 
@@ -577,6 +609,7 @@ assert!(total_escrow <= contract_balance);
 **Violation:** Submission approved without proper review
 
 **Prevention:**
+
 - Approval requires reviewer specification
 - Evidence must be present
 - Audit trail maintained
@@ -592,13 +625,13 @@ assert!(total_escrow <= contract_balance);
 fn test_invariant_<NAME>() {
     let env = Env::default();
     setup_contract(&env, &admin);
-    
+
     // Record initial state
     let initial_state = capture_state(&env);
-    
+
     // Execute operation
     execute_operation(&env, &operation);
-    
+
     // Verify invariant holds
     assert!(verify_invariant(&env, &initial_state));
 }
@@ -612,7 +645,7 @@ proptest! {
     fn prop_invariant_<NAME>(inputs in strategy()) {
         let env = Env::default();
         setup_contract(&env, &admin);
-        
+
         for input in inputs {
             execute_operation(&env, &input);
             assert!(verify_invariant(&env));
@@ -625,9 +658,9 @@ proptest! {
 
 ## Revision History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-05-30 | 1.0 | Initial invariants documentation |
+| Date       | Version | Changes                          |
+| ---------- | ------- | -------------------------------- |
+| 2026-05-30 | 1.0     | Initial invariants documentation |
 
 ---
 

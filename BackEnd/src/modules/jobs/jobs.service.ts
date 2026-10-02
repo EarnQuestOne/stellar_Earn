@@ -52,8 +52,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private queues: Record<string, Queue> = {};
   private workers: Worker[] = [];
   private emailProcessor:
-    | ((messageId: string, dto: any) => Promise<void>)
-    | null = null;
+    ((messageId: string, dto: any) => Promise<void>) | null = null;
 
   constructor(
     private readonly tracing: TracingService,
@@ -498,8 +497,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         if (!job) return;
 
         const jobType: JobType | undefined = job.data?.__jobType as
-          | JobType
-          | undefined;
+          JobType | undefined;
 
         // Determine max attempts: prefer per-type policy, fall back to job opts
         const maxAttempts: number = jobType

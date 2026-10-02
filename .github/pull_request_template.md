@@ -74,9 +74,9 @@ BREAKING CHANGE:
 
 **Endpoints tested:**
 
-| Method | Endpoint | Expected | Result |
-|--------|----------|----------|--------|
-| `GET`  | `/api/...` | 200 OK | [x] |
+| Method | Endpoint   | Expected | Result |
+| ------ | ---------- | -------- | ------ |
+| `GET`  | `/api/...` | 200 OK   | [x]    |
 
 ---
 
@@ -157,7 +157,6 @@ BREAKING CHANGE:
 - [ ] If breaking, my entry includes a before/after `Migration:` code block.
 - [ ] `cd FrontEnd/my-app && npm run changelog:check` passes locally.
 - [ ] If I am asserting this change is non-breaking despite touching a watched file, I added the `changelog-skip` label or `[changelog-skip]` to the PR title.
-
 
 ## Final Pre-Merge Checklist
 

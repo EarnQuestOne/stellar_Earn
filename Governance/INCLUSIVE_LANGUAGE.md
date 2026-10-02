@@ -30,20 +30,20 @@ treating such requests the same as any other code-quality comment.
 
 Use the preferred term in the left column; avoid the term in the right column.
 
-| Preferred | Avoid | Notes |
-|-----------|-------|-------|
-| `primary` / `main` | `master` | Branch names, database roles, device roles. |
-| `secondary` / `replica` | `slave` | Database replication, device bus roles. |
-| `allowlist` | `whitelist` | Access control, firewall rules. |
-| `denylist` / `blocklist` | `blacklist` | Access control, firewall rules. |
-| `placeholder` / `example value` | `dummy` | Test data, stub values. |
-| `mock` / `stub` / `fake` | `dummy` (as a noun for test doubles) | Use precise test-double terminology. |
-| `sanity check` → `confidence check` / `quick check` | `sanity check` | Code review and testing language. |
-| `kill` → `stop` / `terminate` / `cancel` | `kill` (where a neutral term works) | Process management, signal names are excepted. |
-| `hang` → `block` / `stall` / `freeze` | `hang` (where ambiguous) | Describing blocked processes. |
-| `native` → `built-in` / `core` | `native` (when meaning "built-in") | Avoid conflating with indigenous peoples. |
-| `guys` → `folks` / `team` / `everyone` | `guys` (as a gender-neutral address) | Community communication. |
-| `man-hours` → `person-hours` / `engineer-hours` | `man-hours` | Effort estimation. |
+| Preferred                                              | Avoid                                | Notes                                                       |
+| ------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------------- |
+| `primary` / `main`                                     | `master`                             | Branch names, database roles, device roles.                 |
+| `secondary` / `replica`                                | `slave`                              | Database replication, device bus roles.                     |
+| `allowlist`                                            | `whitelist`                          | Access control, firewall rules.                             |
+| `denylist` / `blocklist`                               | `blacklist`                          | Access control, firewall rules.                             |
+| `placeholder` / `example value`                        | `dummy`                              | Test data, stub values.                                     |
+| `mock` / `stub` / `fake`                               | `dummy` (as a noun for test doubles) | Use precise test-double terminology.                        |
+| `sanity check` → `confidence check` / `quick check`    | `sanity check`                       | Code review and testing language.                           |
+| `kill` → `stop` / `terminate` / `cancel`               | `kill` (where a neutral term works)  | Process management, signal names are excepted.              |
+| `hang` → `block` / `stall` / `freeze`                  | `hang` (where ambiguous)             | Describing blocked processes.                               |
+| `native` → `built-in` / `core`                         | `native` (when meaning "built-in")   | Avoid conflating with indigenous peoples.                   |
+| `guys` → `folks` / `team` / `everyone`                 | `guys` (as a gender-neutral address) | Community communication.                                    |
+| `man-hours` → `person-hours` / `engineer-hours`        | `man-hours`                          | Effort estimation.                                          |
 | `man-in-the-middle` → `on-path attack` / `interceptor` | `man-in-the-middle` (in new writing) | Security terminology; existing protocol names are excepted. |
 
 This list is not exhaustive. When in doubt, choose the clearest, most neutral

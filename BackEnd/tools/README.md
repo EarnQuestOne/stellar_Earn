@@ -5,25 +5,28 @@ This directory contains various utility and ad-hoc scripts that were previously 
 ## Overview of Scripts
 
 ### Database Utilities
-* **`test-db-connection.ts` (and variants `test-db-connection2.ts` to `test-db-connection5.ts`)**: 
+
+- **`test-db-connection.ts` (and variants `test-db-connection2.ts` to `test-db-connection5.ts`)**:
   Scripts used to test, profile, and debug database connectivity and connection pool behaviors under different configurations.
-* **`create-database.ts`**: 
+- **`create-database.ts`**:
   A script to programmatically create the primary PostgreSQL database if it does not exist.
-* **`check-database-structure.ts`**: 
+- **`check-database-structure.ts`**:
   Validates the structure and schema of the database against expected patterns to catch inconsistencies.
-* **`check-all-ids.ts`**, **`check-max-id.ts`**, **`check-simple-ids.ts`**: 
+- **`check-all-ids.ts`**, **`check-max-id.ts`**, **`check-simple-ids.ts`**:
   Utility scripts to verify, repair, and debug ID generation, especially auto-increment sequences and UUID states across the database tables.
 
 ### Migration Utilities
-* **`check-migrations.ts`**, **`check-migrations2.ts`**: 
+
+- **`check-migrations.ts`**, **`check-migrations2.ts`**:
   Tools to verify the status of applied TypeORM migrations against the local migration files.
-* **`check-migrations-table.ts`**: 
+- **`check-migrations-table.ts`**:
   Inspects the internal TypeORM `migrations` table to view exactly what the database has recorded.
-* **`mark-initial-migration.ts`**, **`mark-all-migrations.ts`**: 
+- **`mark-initial-migration.ts`**, **`mark-all-migrations.ts`**:
   Ad-hoc scripts used to manually mark specific migrations (or all migrations) as "executed" in the database to forcefully synchronize state without running the migration code.
 
 ### Security Utilities
-* **`generate-jwt-keys.ts`**, **`generate-jwt-keys-simple.ts`**: 
+
+- **`generate-jwt-keys.ts`**, **`generate-jwt-keys-simple.ts`**:
   Scripts to generate private/public RSA key pairs (`.pem` / `.pub` files) required for JWT authentication signing and verification in the application.
 
 ## Usage

@@ -60,11 +60,11 @@ Pre-release versions are denoted by appending a hyphen and a dot-separated
 sequence of identifiers after the PATCH component. StellarEarn uses the
 following identifiers in order:
 
-| Identifier | Meaning |
-|------------|---------|
-| `alpha.N` | Early, unstable build. May have incomplete features or known bugs. Not for production use. |
-| `beta.N` | Feature-complete but may have bugs. Suitable for testing by early adopters. |
-| `rc.N` | Release candidate. Code-frozen; only blocking-bug fixes land. Intended to become the final release if no issues are found. |
+| Identifier | Meaning                                                                                                                    |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `alpha.N`  | Early, unstable build. May have incomplete features or known bugs. Not for production use.                                 |
+| `beta.N`   | Feature-complete but may have bugs. Suitable for testing by early adopters.                                                |
+| `rc.N`     | Release candidate. Code-frozen; only blocking-bug fixes land. Intended to become the final release if no issues are found. |
 
 `N` starts at `1` and increments for each successive pre-release at the same
 stage (e.g. `1.2.0-rc.1`, `1.2.0-rc.2`).

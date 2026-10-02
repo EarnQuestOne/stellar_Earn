@@ -25,25 +25,25 @@ reliable, and it lets tooling derive version bumps from the commit stream (see
 - **`!`** — optional breaking-change marker, placed immediately before the `:`.
 - **short description** — required, imperative mood, lowercase, no trailing
   period, at most 72 characters.
-- **body** — optional; explain *what* and *why*, not *how*. Wrap at 72 columns.
+- **body** — optional; explain _what_ and _why_, not _how_. Wrap at 72 columns.
 - **footers** — optional; `Closes #<issue>`, `Refs #<issue>`, `BREAKING CHANGE:`,
   `Co-authored-by:`, `Signed-off-by:`.
 
 ## Allowed types
 
-| Type | Purpose |
-|------|---------|
-| `feat` | A new user-facing feature. |
-| `fix` | A bug fix. |
-| `docs` | Documentation only (including `Governance/`). |
-| `style` | Formatting, whitespace, or lint fixes with no behaviour change. |
-| `refactor` | Code restructuring with no behaviour change. |
-| `perf` | A change that improves performance. |
-| `test` | Adding or correcting tests only. |
-| `build` | Build system, toolchain, or dependency changes. |
-| `ci` | CI/CD configuration and workflow changes. |
-| `chore` | Maintenance that does not fit the types above. |
-| `revert` | Reverting a previous commit. |
+| Type       | Purpose                                                         |
+| ---------- | --------------------------------------------------------------- |
+| `feat`     | A new user-facing feature.                                      |
+| `fix`      | A bug fix.                                                      |
+| `docs`     | Documentation only (including `Governance/`).                   |
+| `style`    | Formatting, whitespace, or lint fixes with no behaviour change. |
+| `refactor` | Code restructuring with no behaviour change.                    |
+| `perf`     | A change that improves performance.                             |
+| `test`     | Adding or correcting tests only.                                |
+| `build`    | Build system, toolchain, or dependency changes.                 |
+| `ci`       | CI/CD configuration and workflow changes.                       |
+| `chore`    | Maintenance that does not fit the types above.                  |
+| `revert`   | Reverting a previous commit.                                    |
 
 Any type outside this list is rejected in review. If a change spans several
 types, split it into separate commits or choose the type of the primary intent.
@@ -53,22 +53,22 @@ types, split it into separate commits or choose the type of the primary intent.
 Scopes name the area of the repository a commit touches. Use the smallest scope
 that is accurate.
 
-| Scope | Area |
-|-------|------|
-| `backend` | Cross-cutting `BackEnd/` changes. |
-| `frontend` | Cross-cutting `FrontEnd/` changes. |
-| `contracts` | Soroban smart contracts. |
-| `quests` | Quest lifecycle and quest APIs. |
-| `submissions` | Submission handling and verification. |
-| `payouts` | Payout, settlement, and outbox processing. |
-| `auth` | Authentication, sessions, and tokens. |
-| `db` | Migrations, schema, and query tuning. |
-| `api` | Public HTTP API surface and versioning. |
-| `ci` | Pipelines, workflows, and release automation. |
-| `deps` | Dependency additions, bumps, and removals. |
-| `docs` | Documentation, including `Governance/`. |
-| `security` | Security hardening and vulnerability fixes. |
-| `governance` | Changes scoped to the `Governance/` folder. |
+| Scope         | Area                                          |
+| ------------- | --------------------------------------------- |
+| `backend`     | Cross-cutting `BackEnd/` changes.             |
+| `frontend`    | Cross-cutting `FrontEnd/` changes.            |
+| `contracts`   | Soroban smart contracts.                      |
+| `quests`      | Quest lifecycle and quest APIs.               |
+| `submissions` | Submission handling and verification.         |
+| `payouts`     | Payout, settlement, and outbox processing.    |
+| `auth`        | Authentication, sessions, and tokens.         |
+| `db`          | Migrations, schema, and query tuning.         |
+| `api`         | Public HTTP API surface and versioning.       |
+| `ci`          | Pipelines, workflows, and release automation. |
+| `deps`        | Dependency additions, bumps, and removals.    |
+| `docs`        | Documentation, including `Governance/`.       |
+| `security`    | Security hardening and vulnerability fixes.   |
+| `governance`  | Changes scoped to the `Governance/` folder.   |
 
 A scope that is not listed may be used when it clearly names a module or
 directory, but reviewers may ask for it to be added to this table in the same

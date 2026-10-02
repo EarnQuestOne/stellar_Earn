@@ -150,7 +150,7 @@ jest.spyOn(eventEmitter, 'emit').mockResolvedValue(true);
 ```typescript
 describe('getUserStats', () => {
   it('should return cached stats if available', async () => {
-    const cachedStats = { /* ... */ };
+    const cachedStats = {/* ... */};
     jest.spyOn(cacheManager, 'get').mockResolvedValue(cachedStats);
 
     const result = await service.getUserStats(address);
@@ -169,7 +169,7 @@ describe('getUserStats', () => {
     expect(cacheManager.set).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Object),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 });
@@ -181,18 +181,18 @@ describe('getUserStats', () => {
 it('should throw NotFoundException when user not found', async () => {
   jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
-  await expect(
-    service.findById('non-existent-id')
-  ).rejects.toThrow(NotFoundException);
+  await expect(service.findById('non-existent-id')).rejects.toThrow(
+    NotFoundException,
+  );
 });
 
 it('should throw UnauthorizedException with expired token', async () => {
   const expiredToken = { expiresAt: new Date(Date.now() - 1000) };
   jest.spyOn(repository, 'findOne').mockResolvedValue(expiredToken);
 
-  await expect(
-    service.validateToken(token)
-  ).rejects.toThrow(UnauthorizedException);
+  await expect(service.validateToken(token)).rejects.toThrow(
+    UnauthorizedException,
+  );
 });
 ```
 
@@ -210,11 +210,7 @@ it('should handle async operations in sequence', async () => {
 });
 
 it('should handle parallel async operations', async () => {
-  const promises = [
-    service.asyncOp1(),
-    service.asyncOp2(),
-    service.asyncOp3(),
-  ];
+  const promises = [service.asyncOp1(), service.asyncOp2(), service.asyncOp3()];
 
   const results = await Promise.all(promises);
 
@@ -272,8 +268,8 @@ it('should handle pagination correctly', async () => {
 ```typescript
 describe('POST /auth/login', () => {
   it('should return tokens on successful login', async () => {
-    const loginDto = { /* ... */ };
-    const expectedResponse = { accessToken: 'token', /* ... */ };
+    const loginDto = {/* ... */};
+    const expectedResponse = { accessToken: 'token' /* ... */ };
 
     jest.spyOn(service, 'login').mockResolvedValue(expectedResponse);
 
@@ -286,9 +282,9 @@ describe('POST /auth/login', () => {
   it('should handle validation errors', async () => {
     const invalidDto = {};
 
-    await expect(
-      controller.login(invalidDto)
-    ).rejects.toThrow(BadRequestException);
+    await expect(controller.login(invalidDto)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });
 ```
@@ -308,7 +304,7 @@ it('should emit user created event', async () => {
     expect.objectContaining({
       userId: expect.any(String),
       username: userData.username,
-    })
+    }),
   );
 });
 ```
@@ -317,7 +313,8 @@ it('should emit user created event', async () => {
 
 ```typescript
 it('should retry operation on transient failure', async () => {
-  const operation = jest.fn()
+  const operation = jest
+    .fn()
     .mockRejectedValueOnce(new Error('Temporary failure'))
     .mockResolvedValueOnce({ success: true });
 
@@ -334,9 +331,9 @@ it('should retry operation on transient failure', async () => {
 it('should validate input before processing', async () => {
   const invalidInput = { email: 'not-an-email' };
 
-  await expect(
-    service.createUser(invalidInput)
-  ).rejects.toThrow(BadRequestException);
+  await expect(service.createUser(invalidInput)).rejects.toThrow(
+    BadRequestException,
+  );
 });
 
 it('should accept valid input', async () => {
@@ -361,7 +358,7 @@ it('should cache results', async () => {
   expect(cacheManager.set).toHaveBeenCalledWith(
     cacheKey,
     expect.any(Object),
-    expect.any(Number) // ttl
+    expect.any(Number), // ttl
   );
 });
 
@@ -379,12 +376,12 @@ it('should return cached value when available', async () => {
 
 ### Minimum Coverage Targets
 
-| Metric | Target |
-|--------|--------|
-| Line Coverage | > 80% |
-| Branch Coverage | > 75% |
-| Function Coverage | > 80% |
-| Statement Coverage | > 80% |
+| Metric             | Target |
+| ------------------ | ------ |
+| Line Coverage      | > 80%  |
+| Branch Coverage    | > 75%  |
+| Function Coverage  | > 80%  |
+| Statement Coverage | > 80%  |
 
 ### Critical Areas (100% Coverage Required)
 
@@ -509,7 +506,7 @@ const mockHttpClient = {
 
 // Mock external service
 const mockExternalService = {
-  fetchData: jest.fn().mockResolvedValue({ /* ... */ }),
+  fetchData: jest.fn().mockResolvedValue({/* ... */}),
 };
 ```
 

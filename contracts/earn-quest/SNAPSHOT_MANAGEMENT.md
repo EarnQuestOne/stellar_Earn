@@ -7,6 +7,7 @@ This document describes the automated snapshot management system for the Earn Qu
 ## What are Snapshots?
 
 Test snapshots are JSON files that record the complete state of a Soroban contract test execution, including:
+
 - Contract storage state
 - Authentication records
 - Ledger entries
@@ -166,6 +167,7 @@ make snapshots-restore
 ### Automatic Backups
 
 Backups are created automatically when updating snapshots:
+
 - Timestamped format: `test_snapshots_backup_YYYYMMDD_HHMMSS`
 - Last 5 backups are kept automatically
 - Older backups are automatically cleaned up
@@ -223,7 +225,7 @@ For automated snapshot updates:
   run: |
     cd contracts/earn-quest
     make snapshots
-    
+
 - name: Commit Updated Snapshots
   run: |
     git config user.name "CI Bot"
@@ -238,6 +240,7 @@ For automated snapshot updates:
 ### Problem: Snapshots Won't Update
 
 **Solution:**
+
 ```bash
 # Clean and regenerate
 make snapshots-clean
@@ -249,6 +252,7 @@ ls -la test_snapshots/
 ### Problem: Tests Fail After Snapshot Update
 
 **Solution:**
+
 ```bash
 # Restore previous snapshots
 make snapshots-restore
@@ -262,6 +266,7 @@ git diff test_snapshots/
 ### Problem: Too Many Snapshots
 
 **Solution:**
+
 ```bash
 # Check statistics
 make snapshots-stats
@@ -273,6 +278,7 @@ rm -rf test_snapshots_backup_*
 ### Problem: Snapshot Verification Fails
 
 **Solution:**
+
 ```bash
 # Run tests with verbose output
 make test-verbose
@@ -289,6 +295,7 @@ make snapshots
 ### 1. Always Review Changes
 
 Before committing snapshot updates:
+
 ```bash
 git diff test_snapshots/
 ```
@@ -298,6 +305,7 @@ Review the changes to ensure they match your expectations.
 ### 2. Update Incrementally
 
 When making multiple changes:
+
 - Update snapshots after each logical change
 - Verify after each update
 - Commit snapshots with related code changes
@@ -305,6 +313,7 @@ When making multiple changes:
 ### 3. Use Specific Updates
 
 When possible, update only affected test categories:
+
 ```bash
 # Instead of updating everything
 make snapshots
@@ -316,6 +325,7 @@ make snapshots-admin
 ### 4. Keep Backups
 
 Before major refactoring:
+
 ```bash
 # Create a manual backup
 make snapshots-backup
@@ -330,6 +340,7 @@ make snapshots-restore
 ### 5. Verify Before Committing
 
 Always verify snapshots before pushing:
+
 ```bash
 make snapshots-verify
 ```
@@ -352,11 +363,13 @@ contracts/earn-quest/
 ## Snapshot Naming Convention
 
 Snapshots follow this pattern:
+
 ```
 <test_name>.<iteration>.json
 ```
 
 Examples:
+
 - `test_admin_can_add_admin.1.json`
 - `test_quest_creation_succeeds.1.json`
 - `malicious_token_cannot_double_claim_via_reentrancy.1.json`
@@ -368,6 +381,7 @@ The iteration number (`.1`, `.2`, etc.) indicates multiple snapshots for the sam
 ### SOROBAN_UPDATE_SNAPSHOTS
 
 Set this variable to enable snapshot updates:
+
 ```bash
 export SOROBAN_UPDATE_SNAPSHOTS=1
 cargo test
@@ -397,6 +411,7 @@ make clean-all
 ## Support
 
 For issues or questions:
+
 1. Check this documentation
 2. Review the script help: `./update-snapshots.sh --help`
 3. Check logs: `/tmp/snapshot_update.log` or `/tmp/snapshot_verify.log`
@@ -427,11 +442,11 @@ A single instance-TTL bump keeps all instance-stored data alive together.
 
 ### Access Pattern Classification
 
-| Tier | Key Examples | Extension Strategy |
-|------|-------------|-------------------|
-| Hot | Quest, UserStats, Submission, Escrow | Extend on every write |
-| Warm | CreatorStats, OracleConfig, ContractAdmin | Extend on write |
-| Cold | BadgeType, QuestMetadataExt | Lazy bump on read |
+| Tier | Key Examples                              | Extension Strategy    |
+| ---- | ----------------------------------------- | --------------------- |
+| Hot  | Quest, UserStats, Submission, Escrow      | Extend on every write |
+| Warm | CreatorStats, OracleConfig, ContractAdmin | Extend on write       |
+| Cold | BadgeType, QuestMetadataExt               | Lazy bump on read     |
 
 ### Ledger ↔ Time Conversion (assuming ~5s ledger close)
 
@@ -443,6 +458,7 @@ A single instance-TTL bump keeps all instance-stored data alive together.
 ### Tests
 
 TTL extension is covered by `contracts/earn-quest/tests/test_storage.rs`:
+
 - `test_ttl_constants_are_valid` — verifies constants are sane
 - `test_extend_instance_entry_ttl_no_panic` — verifies extension in contract context
 - `test_extend_contract_instance_ttl_no_panic` — verifies instance extension

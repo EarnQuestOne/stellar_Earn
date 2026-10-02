@@ -76,7 +76,7 @@ sustained, unresolved objection remains, even if not every participant is
 enthusiastic. See [VOTING.md](VOTING.md).
 
 **Sensitive change** — A license or treasury change, requiring three-fourths of
-*all* eligible voters. See [THRESHOLDS.md](THRESHOLDS.md).
+_all_ eligible voters. See [THRESHOLDS.md](THRESHOLDS.md).
 
 **SIG (Special Interest Group)** — An ongoing group that sustains an area of
 interest (for example accessibility). See [WORKING_GROUPS.md](WORKING_GROUPS.md).

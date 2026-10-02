@@ -5,6 +5,7 @@ A comprehensive runtime feature-flag system for progressive rollout of unstable 
 ## Overview
 
 This feature flag system provides:
+
 - **Database-backed persistence** - Flags are stored in PostgreSQL with full audit trail
 - **Multiple rollout strategies** - Boolean, percentage-based, user whitelist/blacklist, segment-based
 - **Runtime evaluation** - Flags are evaluated at runtime with caching for performance
@@ -15,6 +16,7 @@ This feature flag system provides:
 ## Rollout Strategies
 
 ### 1. Boolean (On/Off)
+
 Simple on/off switch for features.
 
 ```typescript
@@ -25,6 +27,7 @@ Simple on/off switch for features.
 ```
 
 ### 2. Percentage Rollout
+
 Gradually roll out to a percentage of users. Uses consistent hashing to ensure the same users always see the same state.
 
 ```typescript
@@ -36,6 +39,7 @@ Gradually roll out to a percentage of users. Uses consistent hashing to ensure t
 ```
 
 ### 3. User Whitelist
+
 Only specific users can access the feature.
 
 ```typescript
@@ -47,6 +51,7 @@ Only specific users can access the feature.
 ```
 
 ### 4. User Blacklist
+
 All users except specific ones can access the feature.
 
 ```typescript
@@ -58,6 +63,7 @@ All users except specific ones can access the feature.
 ```
 
 ### 5. Segment-Based
+
 Target users based on attributes like role, level, XP, or custom criteria.
 
 ```typescript
@@ -89,7 +95,7 @@ export class MyService {
     const isEnabled = await this.featureFlagsService.isEnabled(
       'NEW_DASHBOARD',
       userId,
-      { role: 'USER', level: 5, xp: 1000 }
+      { role: 'USER', level: 5, xp: 1000 },
     );
 
     if (isEnabled) {
@@ -165,6 +171,7 @@ GET /feature-flags/NEW_DASHBOARD/check
 ```
 
 Response:
+
 ```json
 {
   "flagKey": "NEW_DASHBOARD",
@@ -182,6 +189,7 @@ Authorization: Bearer <jwt-token>
 ```
 
 Response:
+
 ```json
 {
   "logs": [
@@ -191,7 +199,7 @@ Response:
       "flagKey": "NEW_DASHBOARD",
       "action": "CREATED",
       "previousValue": null,
-      "newValue": { /* flag data */ },
+      "newValue": {/* flag data */},
       "performedBy": "user-123",
       "reason": "Initial creation",
       "ipAddress": "192.168.1.1",
@@ -202,8 +210,8 @@ Response:
       "flagId": "flag-1",
       "flagKey": "NEW_DASHBOARD",
       "action": "ROLLOUT_CHANGED",
-      "previousValue": { rolloutPercentage: 10 },
-      "newValue": { rolloutPercentage: 50 },
+      "previousValue": { "rolloutPercentage": 10 },
+      "newValue": { "rolloutPercentage": 50 },
       "performedBy": "user-456",
       "reason": "Increasing rollout",
       "ipAddress": "192.168.1.2",
@@ -217,12 +225,14 @@ Response:
 ## API Endpoints
 
 ### Public Endpoints
+
 - `GET /feature-flags` - Get all feature flags
 - `GET /feature-flags/:id` - Get specific flag by ID
 - `GET /feature-flags/key/:key` - Get specific flag by key
 - `GET /feature-flags/:key/check` - Check if flag is enabled for current user
 
 ### Protected Endpoints (Requires Authentication)
+
 - `POST /feature-flags` - Create new feature flag
 - `PUT /feature-flags/:id` - Update feature flag
 - `DELETE /feature-flags/:id` - Delete feature flag
@@ -231,6 +241,7 @@ Response:
 ## Best Practices
 
 ### 1. Progressive Rollout Strategy
+
 Start with a small percentage and gradually increase:
 
 1. Create flag with 5-10% rollout
@@ -241,21 +252,23 @@ Start with a small percentage and gradually increase:
 6. Remove flag once feature is fully rolled out
 
 ### 2. Use Descriptive Keys
+
 Use clear, descriptive flag keys:
 
 ```typescript
 // Good
-'NEW_DASHBOARD_V2'
-'ADVANCED_ANALYTICS'
-'BETA_QUESTS'
+'NEW_DASHBOARD_V2';
+'ADVANCED_ANALYTICS';
+'BETA_QUESTS';
 
 // Bad
-'FEATURE1'
-'FLAG_A'
-'TEST'
+'FEATURE1';
+'FLAG_A';
+'TEST';
 ```
 
 ### 3. Document Flag Purpose
+
 Always include a clear description:
 
 ```typescript
@@ -265,6 +278,7 @@ Always include a clear description:
 ```
 
 ### 4. Use Audit Trail
+
 Always provide a reason when changing flags:
 
 ```typescript
@@ -276,6 +290,7 @@ Always provide a reason when changing flags:
 ```
 
 ### 5. Clean Up Old Flags
+
 Remove flags that are no longer needed to avoid confusion:
 
 ```bash
@@ -283,6 +298,7 @@ DELETE /feature-flags/{id}
 ```
 
 ### 6. Test Before Rollout
+
 Test new features with a small group before wider rollout:
 
 ```typescript
@@ -295,6 +311,7 @@ Test new features with a small group before wider rollout:
 ## Database Schema
 
 ### feature_flags table
+
 - `id` (UUID, primary key)
 - `key` (VARCHAR, unique)
 - `name` (VARCHAR)
@@ -315,6 +332,7 @@ Test new features with a small group before wider rollout:
 - `updatedAt` (TIMESTAMP)
 
 ### feature_flag_audit_logs table
+
 - `id` (UUID, primary key)
 - `flagId` (UUID)
 - `flagKey` (VARCHAR)
@@ -362,16 +380,20 @@ npm test -- feature-flags.controller.spec.ts
 ## Troubleshooting
 
 ### Flag Not Working
+
 1. Check if flag is enabled and status is ACTIVE
 2. Verify rollout strategy matches your use case
 3. Check audit logs for recent changes
 4. Clear cache if changes aren't reflected immediately
 
 ### Cache Issues
+
 If flag changes aren't reflected immediately, the cache may need to be cleared. The service automatically invalidates cache on updates, but you can manually clear it if needed.
 
 ### Performance Issues
+
 If experiencing performance issues with flag evaluation:
+
 1. Check database query performance
 2. Review cache hit rates
 3. Consider reducing cache TTL for faster updates

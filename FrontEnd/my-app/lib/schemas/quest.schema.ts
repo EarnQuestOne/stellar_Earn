@@ -13,10 +13,7 @@ export type RewardAssetType = 'XLM' | 'USDC' | 'AQUA' | 'yXLM';
 export type VerificationMode = 'auto' | 'manual';
 
 export type QuestDifficulty =
-  | 'beginner'
-  | 'intermediate'
-  | 'advanced'
-  | 'expert';
+  'beginner' | 'intermediate' | 'advanced' | 'expert';
 
 export interface DeliverableItem {
   id: string;

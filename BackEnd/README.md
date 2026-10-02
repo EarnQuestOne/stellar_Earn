@@ -101,19 +101,20 @@ npm run check:toolchain
 
 The script checks every tool the project needs and prints a colour-coded report:
 
-| Tool | Min Version | Required? |
-|------|-------------|-----------|
-| Node.js | 22.x | ✅ Required |
-| npm | 10.x | ✅ Required |
-| Bun | 1.x | ⚠️ Recommended |
-| TypeScript (tsc) | 5.x | ✅ Required |
-| Git | 2.x | ✅ Required |
-| Rust (rustc) | 1.80.x | ✅ Required |
-| Cargo | 1.80.x | ✅ Required |
-| Docker | 24.x | ⚠️ Recommended |
-| Stellar CLI | 22.x | ⚠️ Recommended |
+| Tool             | Min Version | Required?      |
+| ---------------- | ----------- | -------------- |
+| Node.js          | 22.x        | ✅ Required    |
+| npm              | 10.x        | ✅ Required    |
+| Bun              | 1.x         | ⚠️ Recommended |
+| TypeScript (tsc) | 5.x         | ✅ Required    |
+| Git              | 2.x         | ✅ Required    |
+| Rust (rustc)     | 1.80.x      | ✅ Required    |
+| Cargo            | 1.80.x      | ✅ Required    |
+| Docker           | 24.x        | ⚠️ Recommended |
+| Stellar CLI      | 22.x        | ⚠️ Recommended |
 
 **Exit codes:**
+
 - `0` – All required tools pass (warnings about recommended tools are non-fatal).
 - `1` – One or more **required** tools are missing or below minimum version.
 
@@ -237,12 +238,12 @@ bun run migration:revert && bun run migration:revert
 
 Migrations are configured via `src/database/data-source.ts`, which reads `DATABASE_URL` from `.env`. Key settings:
 
-| Setting | Value | Description |
-|---------|-------|-------------|
-| `migrationsTableName` | `typeorm_migrations` | Table that tracks which migrations have run |
-| `synchronize` | `false` | Always false — schema changes go through migrations only |
-| `entities` | glob pattern | Auto-discovers all `*.entity.{ts,js}` files |
-| `migrations` | `src/database/migrations/*` | Directory where migration files live |
+| Setting               | Value                       | Description                                              |
+| --------------------- | --------------------------- | -------------------------------------------------------- |
+| `migrationsTableName` | `typeorm_migrations`        | Table that tracks which migrations have run              |
+| `synchronize`         | `false`                     | Always false — schema changes go through migrations only |
+| `entities`            | glob pattern                | Auto-discovers all `*.entity.{ts,js}` files              |
+| `migrations`          | `src/database/migrations/*` | Directory where migration files live                     |
 
 #### Best Practices
 
@@ -368,7 +369,7 @@ export class QuestsService {
   async submitProof(questId: string, userId: string, proof: ProofDto) {
     // 1. Validate proof
     const isValid = await this.verifyProof(questId, proof);
-    
+
     if (!isValid) {
       throw new BadRequestException('Invalid proof');
     }
@@ -385,7 +386,10 @@ export class QuestsService {
     return submission;
   }
 
-  private async verifyProof(questId: string, proof: ProofDto): Promise<boolean> {
+  private async verifyProof(
+    questId: string,
+    proof: ProofDto,
+  ): Promise<boolean> {
     // Implement verification logic (webhooks, API calls, etc.)
     return true;
   }
@@ -426,7 +430,13 @@ export class StellarService {
     // Build and submit transaction to register task
     const transaction = new TransactionBuilder(/* ... */)
       .addOperation(
-        this.contract.call('register_task', taskId, rewardAsset, amount, verifier)
+        this.contract.call(
+          'register_task',
+          taskId,
+          rewardAsset,
+          amount,
+          verifier,
+        ),
       )
       .build();
 
@@ -437,9 +447,7 @@ export class StellarService {
   async approveSubmission(taskId: string, userAddress: string, amount: number) {
     // Call contract to approve and trigger payout
     const transaction = new TransactionBuilder(/* ... */)
-      .addOperation(
-        this.contract.call('approve', taskId, userAddress, amount)
-      )
+      .addOperation(this.contract.call('approve', taskId, userAddress, amount))
       .build();
 
     const result = await this.server.sendTransaction(transaction);

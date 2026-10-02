@@ -64,11 +64,11 @@ Work in these areas follows its normal process even during an emergency.
 
 ## Who may act
 
-| Situation | Default acting decision-maker |
-| --------- | ----------------------------- |
-| Security incident (disclosure, key or data compromise) | Security owner, or the security team member on call |
-| Production outage or defective release | Release manager, or the incident commander for the incident |
-| Contract or fund-affecting exploit | On-call maintainer, escalating to a second maintainer as soon as reachable |
+| Situation                                              | Default acting decision-maker                                              |
+| ------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Security incident (disclosure, key or data compromise) | Security owner, or the security team member on call                        |
+| Production outage or defective release                 | Release manager, or the incident commander for the incident                |
+| Contract or fund-affecting exploit                     | On-call maintainer, escalating to a second maintainer as soon as reachable |
 
 The acting decision-maker must be a current maintainer or a role holder
 explicitly delegated by the TSC for that class of incident. When the primary

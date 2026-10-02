@@ -8,32 +8,35 @@
 
 **New focused services:**
 
-| Service | Responsibility | Lines |
-|---|---|---|
-| `StellarSubmissionService` | Soroban contract calls: `approveSubmission`, `signAndSubmit`, `_signAndSubmitContract` | ~280 |
-| `StellarPaymentService` | Native XLM/asset transfers via Horizon: `sendPayment` | ~80 |
-| `StellarEventIngestionService` | Cron-based Soroban event ingestion with deduplication | ~230 |
+| Service                        | Responsibility                                                                         | Lines |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ----- |
+| `StellarSubmissionService`     | Soroban contract calls: `approveSubmission`, `signAndSubmit`, `_signAndSubmitContract` | ~280  |
+| `StellarPaymentService`        | Native XLM/asset transfers via Horizon: `sendPayment`                                  | ~80   |
+| `StellarEventIngestionService` | Cron-based Soroban event ingestion with deduplication                                  | ~230  |
 
 **Slimmed `StellarService`** (now ~60 lines):
+
 - Shared infrastructure provider — `getHorizon()`, `getRpc()`, `getNetworkPassphrase()`
 - All three focused services inject `StellarService` for low-level SDK clients
 
 **DI wiring (`stellar.module.ts`):**
+
 - All 5 services registered and exported (including existing `SorobanQuestReaderService`)
 
 **Consumer updates:**
+
 - `SubmissionsService` → now injects `StellarSubmissionService` (was `StellarService`)
 - `PayoutProcessor` → now injects `StellarPaymentService` (was `StellarService`)
 
 **Test coverage:**
 
-| Spec file | Tests | Status |
-|---|---|---|
-| `stellar.service.spec.ts` | 5 | ✅ Pass |
-| `stellar-submission.service.spec.ts` | 6 | ✅ Pass |
-| `stellar-payment.service.spec.ts` | 3 | ✅ Pass |
-| `stellar-event-ingestion.service.spec.ts` | 4 | ✅ Pass |
-| All affected e2e/integration tests | — | ✅ Updated |
+| Spec file                                 | Tests | Status     |
+| ----------------------------------------- | ----- | ---------- |
+| `stellar.service.spec.ts`                 | 5     | ✅ Pass    |
+| `stellar-submission.service.spec.ts`      | 6     | ✅ Pass    |
+| `stellar-payment.service.spec.ts`         | 3     | ✅ Pass    |
+| `stellar-event-ingestion.service.spec.ts` | 4     | ✅ Pass    |
+| All affected e2e/integration tests        | —     | ✅ Updated |
 
 ### Files Changed (19 files)
 

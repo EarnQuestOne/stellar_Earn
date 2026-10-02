@@ -34,6 +34,6 @@ When a vote monitored under [VOTING.md](VOTING.md) expires with a tied outcome:
 
 ## Rules and Constraints
 
-- **No Self-Voting Multiplier:** The Tie-Breaking Authority does not receive two votes during initial voting. Their tie-breaking vote is invoked *only* after a vote closes in a tie.
+- **No Self-Voting Multiplier:** The Tie-Breaking Authority does not receive two votes during initial voting. Their tie-breaking vote is invoked _only_ after a vote closes in a tie.
 - **Transparency:** Tie-breaking decisions cannot be made privately; the written decision and rationale must be posted publicly on the relevant GitHub issue or PR.
 - **Finality:** A decision issued by the Tie-Breaking Authority is final for the relevant issue/PR cycle. The topic cannot be re-voted on without substantial new technical evidence or a new RFC submitted per [RFC_PROCESS.md](RFC_PROCESS.md).

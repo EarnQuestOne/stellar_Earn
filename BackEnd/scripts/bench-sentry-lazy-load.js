@@ -107,8 +107,14 @@ function print(res) {
 
 console.log(`Benchmarking @sentry/node eager load over ${RUNS} runs...`);
 
-const eager = bench('BEFORE (eager): require("@sentry/node") at boot', EAGER_CHILD);
-const lazy = bench('AFTER (lazy, Sentry disabled): no require at boot', LAZY_CHILD);
+const eager = bench(
+  'BEFORE (eager): require("@sentry/node") at boot',
+  EAGER_CHILD,
+);
+const lazy = bench(
+  'AFTER (lazy, Sentry disabled): no require at boot',
+  LAZY_CHILD,
+);
 
 print(eager);
 print(lazy);
@@ -117,7 +123,9 @@ const savedMs = eager.loadMs.mean - lazy.loadMs.mean;
 const savedHeap = eager.heapMB.mean - lazy.heapMB.mean;
 const savedRss = eager.rssMB.mean - lazy.rssMB.mean;
 
-console.log('\nStartup work removed when Sentry is disabled (SENTRY_DSN unset):');
+console.log(
+  '\nStartup work removed when Sentry is disabled (SENTRY_DSN unset):',
+);
 console.log(`  time saved:     ${savedMs.toFixed(2)} ms`);
 console.log(`  heapUsed saved: ${savedHeap.toFixed(2)} MB`);
 console.log(`  rss saved:      ${savedRss.toFixed(2)} MB`);

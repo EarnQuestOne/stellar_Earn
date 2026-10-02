@@ -28,8 +28,8 @@ Without a clear versioning policy, breaking HTTP contract changes can:
 
 The API uses **integer major versions** in URLs and headers. Each major version maps to a [Semantic Versioning](https://semver.org/) release family:
 
-| API version | SemVer family | Example release | Status |
-| ----------- | ------------- | --------------- | ------ |
+| API version | SemVer family | Example release   | Status |
+| ----------- | ------------- | ----------------- | ------ |
 | `v1`        | `1.x.x`       | `1.0.0` (current) | Active |
 
 - **Major API version** (`1`, `2`, …): incremented only for **breaking** HTTP contract changes. Exposed as `/api/v1/...` or header `X-API-Version: 1`.
@@ -54,11 +54,11 @@ POST /api/v1/auth/login
 
 Send any of these headers (first match wins):
 
-| Header            | Example value |
-| ----------------- | ------------- |
-| `X-API-Version`   | `1` or `v1`   |
-| `Accept-Version`  | `1`           |
-| `API-Version`     | `1`           |
+| Header           | Example value |
+| ---------------- | ------------- |
+| `X-API-Version`  | `1` or `v1`   |
+| `Accept-Version` | `1`           |
+| `API-Version`    | `1`           |
 
 Path and header may be combined; **path takes precedence** when both are present.
 
@@ -70,14 +70,14 @@ If no version is specified, the server defaults to **v1**.
 
 Every HTTP response includes version metadata:
 
-| Header          | When set | Consumer action |
-| --------------- | -------- | --------------- |
-| `X-API-Version` | Always   | Log or assert the resolved major version matches your pin |
-| `Vary`          | Always   | `Accept, X-API-Version` — caches must vary on these |
-| `Deprecation`   | Deprecated version or route | Plan migration; do not ignore |
-| `Sunset`        | Deprecated version with known end date | ISO 8601 date after which the version may be removed |
-| `Link`          | Deprecated version | `rel="sunset"` URL with migration documentation |
-| `Warning`       | Deprecated version | RFC 7234 human-readable deprecation notice |
+| Header          | When set                               | Consumer action                                           |
+| --------------- | -------------------------------------- | --------------------------------------------------------- |
+| `X-API-Version` | Always                                 | Log or assert the resolved major version matches your pin |
+| `Vary`          | Always                                 | `Accept, X-API-Version` — caches must vary on these       |
+| `Deprecation`   | Deprecated version or route            | Plan migration; do not ignore                             |
+| `Sunset`        | Deprecated version with known end date | ISO 8601 date after which the version may be removed      |
+| `Link`          | Deprecated version                     | `rel="sunset"` URL with migration documentation           |
+| `Warning`       | Deprecated version                     | RFC 7234 human-readable deprecation notice                |
 
 **Recommended client behaviour:**
 
@@ -91,24 +91,24 @@ Every HTTP response includes version metadata:
 
 ### 5.1 Breaking changes (require new major version)
 
-| Change | Example |
-| ------ | ------- |
-| Removing or renaming a response field | `rewardAmount` removed |
-| Changing a field's type or format | `id: number` → `id: string` |
-| Making an optional request field required | `cursor` becomes mandatory |
+| Change                                        | Example                            |
+| --------------------------------------------- | ---------------------------------- |
+| Removing or renaming a response field         | `rewardAmount` removed             |
+| Changing a field's type or format             | `id: number` → `id: string`        |
+| Making an optional request field required     | `cursor` becomes mandatory         |
 | Changing HTTP status codes for the same input | `200` → `404` for missing resource |
-| Removing or renaming an endpoint | `GET /quests/active` removed |
-| Changing authentication requirements | Public route now requires JWT |
+| Removing or renaming an endpoint              | `GET /quests/active` removed       |
+| Changing authentication requirements          | Public route now requires JWT      |
 
 Breaking changes **must** ship under a new major version (e.g. `v2`) with a documented migration guide.
 
 ### 5.2 Non-breaking changes (same major version)
 
-| Change | Example |
-| ------ | ------- |
-| Adding optional response fields | New `metadata` object |
-| Adding new endpoints | `GET /quests/trending` |
-| Adding optional query parameters | `?sort=createdAt` |
+| Change                                      | Example                   |
+| ------------------------------------------- | ------------------------- |
+| Adding optional response fields             | New `metadata` object     |
+| Adding new endpoints                        | `GET /quests/trending`    |
+| Adding optional query parameters            | `?sort=createdAt`         |
 | Bug fixes that restore documented behaviour | Fix incorrect status code |
 
 Non-breaking changes are released as minor (`1.1.0`) or patch (`1.0.1`) SemVer bumps within the `1.x.x` family.

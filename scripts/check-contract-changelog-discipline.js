@@ -1,15 +1,17 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const { execFileSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execFileSync } = require("child_process");
 
-const CHANGELOG_PATH = 'contracts/earn-quest/CHANGELOG.md';
-const CONTRACT_IMPLEMENTATION_PREFIXES = ['contracts/earn-quest/src/'];
-const CONTRACT_IMPLEMENTATION_FILES = new Set(['contracts/earn-quest/Cargo.toml']);
+const CHANGELOG_PATH = "contracts/earn-quest/CHANGELOG.md";
+const CONTRACT_IMPLEMENTATION_PREFIXES = ["contracts/earn-quest/src/"];
+const CONTRACT_IMPLEMENTATION_FILES = new Set([
+  "contracts/earn-quest/Cargo.toml",
+]);
 const ZERO_SHA_PATTERN = /^0+$/;
 
 function normalizePath(filePath) {
-  return filePath.replace(/\\/g, '/');
+  return filePath.replace(/\\/g, "/");
 }
 
 function isContractImplementationFile(filePath) {
@@ -18,7 +20,9 @@ function isContractImplementationFile(filePath) {
     return true;
   }
 
-  return CONTRACT_IMPLEMENTATION_PREFIXES.some(prefix => normalized.startsWith(prefix));
+  return CONTRACT_IMPLEMENTATION_PREFIXES.some((prefix) =>
+    normalized.startsWith(prefix),
+  );
 }
 
 function hasContractImplementationChanges(changedFiles) {
@@ -30,18 +34,22 @@ function wasChangelogUpdated(changedFiles) {
 }
 
 function isBreakingConventionalHeader(line) {
-  return /^[a-z]+(?:\([^)]+\))?!: .+/.test((line || '').trim());
+  return /^[a-z]+(?:\([^)]+\))?!: .+/.test((line || "").trim());
 }
 
 function hasBreakingFooter(text) {
-  return /(^|\r?\n)BREAKING CHANGE: .+/.test(text || '');
+  return /(^|\r?\n)BREAKING CHANGE: .+/.test(text || "");
 }
 
 function hasBreakingCheckbox(text) {
-  return /(^|\r?\n)- \[[xX]\] Breaking change\b/.test(text || '');
+  return /(^|\r?\n)- \[[xX]\] Breaking change\b/.test(text || "");
 }
 
-function detectBreakingSignal({ commitMessages = '', prTitle = '', prBody = '' }) {
+function detectBreakingSignal({
+  commitMessages = "",
+  prTitle = "",
+  prBody = "",
+}) {
   const commitLines = commitMessages.split(/\r?\n/);
   return (
     isBreakingConventionalHeader(prTitle) ||
@@ -51,14 +59,17 @@ function detectBreakingSignal({ commitMessages = '', prTitle = '', prBody = '' }
   );
 }
 
-function hasBreakingMetadata({ commitMessages = '', prTitle = '' }) {
+function hasBreakingMetadata({ commitMessages = "", prTitle = "" }) {
   const commitLines = commitMessages.split(/\r?\n/);
-  return isBreakingConventionalHeader(prTitle) || commitLines.some(isBreakingConventionalHeader);
+  return (
+    isBreakingConventionalHeader(prTitle) ||
+    commitLines.some(isBreakingConventionalHeader)
+  );
 }
 
 function extractUnreleasedSection(changelogContent) {
-  const lines = (changelogContent || '').split(/\r?\n/);
-  const start = lines.findIndex(line => line.trim() === '## [Unreleased]');
+  const lines = (changelogContent || "").split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === "## [Unreleased]");
   if (start === -1) {
     return null;
   }
@@ -71,12 +82,12 @@ function extractUnreleasedSection(changelogContent) {
     }
   }
 
-  return lines.slice(start, end).join('\n');
+  return lines.slice(start, end).join("\n");
 }
 
 function extractSubsectionBody(sectionContent, heading) {
-  const lines = (sectionContent || '').split(/\r?\n/);
-  const start = lines.findIndex(line => line.trim() === heading);
+  const lines = (sectionContent || "").split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === heading);
   if (start === -1) {
     return null;
   }
@@ -89,18 +100,21 @@ function extractSubsectionBody(sectionContent, heading) {
     }
   }
 
-  return lines.slice(start + 1, end).join('\n').trim();
+  return lines
+    .slice(start + 1, end)
+    .join("\n")
+    .trim();
 }
 
 function parseBreakingEntries(sectionBody) {
-  const lines = (sectionBody || '').split(/\r?\n/);
+  const lines = (sectionBody || "").split(/\r?\n/);
   const entries = [];
   let currentEntry = null;
 
   for (const line of lines) {
     if (/^#### /.test(line)) {
       if (currentEntry) {
-        entries.push(currentEntry.join('\n').trim());
+        entries.push(currentEntry.join("\n").trim());
       }
       currentEntry = [line];
       continue;
@@ -112,7 +126,7 @@ function parseBreakingEntries(sectionBody) {
   }
 
   if (currentEntry) {
-    entries.push(currentEntry.join('\n').trim());
+    entries.push(currentEntry.join("\n").trim());
   }
 
   return entries.filter(Boolean);
@@ -124,15 +138,22 @@ function validateBreakingEntries(changelogContent) {
   if (!unreleasedSection) {
     return {
       ok: false,
-      errors: ['contracts/earn-quest/CHANGELOG.md must include an `## [Unreleased]` section.'],
+      errors: [
+        "contracts/earn-quest/CHANGELOG.md must include an `## [Unreleased]` section.",
+      ],
     };
   }
 
-  const breakingBody = extractSubsectionBody(unreleasedSection, '### Breaking Changes');
+  const breakingBody = extractSubsectionBody(
+    unreleasedSection,
+    "### Breaking Changes",
+  );
   if (!breakingBody) {
     return {
       ok: false,
-      errors: ['Breaking changes must be documented under `## [Unreleased]` -> `### Breaking Changes`.'],
+      errors: [
+        "Breaking changes must be documented under `## [Unreleased]` -> `### Breaking Changes`.",
+      ],
     };
   }
 
@@ -140,14 +161,18 @@ function validateBreakingEntries(changelogContent) {
   if (entries.length === 0) {
     return {
       ok: false,
-      errors: ['`### Breaking Changes` must contain at least one `#### Component - Summary` entry.'],
+      errors: [
+        "`### Breaking Changes` must contain at least one `#### Component - Summary` entry.",
+      ],
     };
   }
 
   entries.forEach((entry, index) => {
     const prefix = `Breaking change entry ${index + 1}`;
     if (!/^#### .+ - .+/m.test(entry)) {
-      errors.push(`${prefix} must start with a level-4 heading in the form \`#### Component - Summary\`.`);
+      errors.push(
+        `${prefix} must start with a level-4 heading in the form \`#### Component - Summary\`.`,
+      );
     }
     if (!/^- \*\*Impact\*\*: .+/m.test(entry)) {
       errors.push(`${prefix} must include an \`Impact\` bullet.`);
@@ -165,14 +190,15 @@ function validateBreakingEntries(changelogContent) {
 
 function evaluateContractChangelogDiscipline({
   changedFiles = [],
-  changelogContent = '',
-  commitMessages = '',
-  prTitle = '',
-  prBody = '',
+  changelogContent = "",
+  commitMessages = "",
+  prTitle = "",
+  prBody = "",
 }) {
   const errors = [];
   const normalizedFiles = changedFiles.map(normalizePath);
-  const hasImplementationChanges = hasContractImplementationChanges(normalizedFiles);
+  const hasImplementationChanges =
+    hasContractImplementationChanges(normalizedFiles);
 
   if (!hasImplementationChanges) {
     return { ok: true, errors: [], details: { checked: false } };
@@ -180,21 +206,28 @@ function evaluateContractChangelogDiscipline({
 
   if (!wasChangelogUpdated(normalizedFiles)) {
     errors.push(
-      'Contract implementation changes require an update to contracts/earn-quest/CHANGELOG.md in the same PR.'
+      "Contract implementation changes require an update to contracts/earn-quest/CHANGELOG.md in the same PR.",
     );
   }
 
-  const breakingSignal = detectBreakingSignal({ commitMessages, prTitle, prBody });
+  const breakingSignal = detectBreakingSignal({
+    commitMessages,
+    prTitle,
+    prBody,
+  });
   if (breakingSignal) {
     if (!hasBreakingMetadata({ commitMessages, prTitle })) {
       errors.push(
-        'Breaking contract changes must use Conventional Commit breaking metadata (`type(scope)!:` or equivalent PR title).'
+        "Breaking contract changes must use Conventional Commit breaking metadata (`type(scope)!:` or equivalent PR title).",
       );
     }
 
-    if (!hasBreakingFooter(commitMessages) && !/BREAKING CHANGE: .+/.test(prBody || '')) {
+    if (
+      !hasBreakingFooter(commitMessages) &&
+      !/BREAKING CHANGE: .+/.test(prBody || "")
+    ) {
       errors.push(
-        'Breaking contract changes must include a `BREAKING CHANGE:` explanation in the commit history or PR body.'
+        "Breaking contract changes must include a `BREAKING CHANGE:` explanation in the commit history or PR body.",
       );
     }
 
@@ -219,10 +252,10 @@ function parseArgs(argv) {
   const result = {};
   for (let index = 2; index < argv.length; index += 1) {
     const token = argv[index];
-    if (token === '--base') {
+    if (token === "--base") {
       result.base = argv[index + 1];
       index += 1;
-    } else if (token === '--head') {
+    } else if (token === "--head") {
       result.head = argv[index + 1];
       index += 1;
     }
@@ -237,31 +270,31 @@ function parseChangedFilesOverride(value) {
 
   return value
     .split(/\r?\n|;/)
-    .map(file => normalizePath(file.trim()))
+    .map((file) => normalizePath(file.trim()))
     .filter(Boolean);
 }
 
 function runGit(repoRoot, args) {
-  return execFileSync('git', args, {
+  return execFileSync("git", args, {
     cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
 function resolveBaseAndHead(repoRoot, options = {}) {
-  let base = options.base || process.env.CHANGELOG_BASE_SHA || '';
-  const head = options.head || process.env.CHANGELOG_HEAD_SHA || 'HEAD';
+  let base = options.base || process.env.CHANGELOG_BASE_SHA || "";
+  const head = options.head || process.env.CHANGELOG_HEAD_SHA || "HEAD";
 
   if (!base || ZERO_SHA_PATTERN.test(base)) {
-    base = runGit(repoRoot, ['rev-parse', `${head}^`]);
+    base = runGit(repoRoot, ["rev-parse", `${head}^`]);
   }
 
   return { base, head };
 }
 
 function getChangedFiles(repoRoot, base, head) {
-  const output = runGit(repoRoot, ['diff', '--name-only', `${base}...${head}`]);
+  const output = runGit(repoRoot, ["diff", "--name-only", `${base}...${head}`]);
   if (!output) {
     return [];
   }
@@ -270,22 +303,30 @@ function getChangedFiles(repoRoot, base, head) {
 }
 
 function getCommitMessages(repoRoot, base, head) {
-  return runGit(repoRoot, ['log', '--format=%B%n---END---', `${base}..${head}`]);
+  return runGit(repoRoot, [
+    "log",
+    "--format=%B%n---END---",
+    `${base}..${head}`,
+  ]);
 }
 
 function readChangelog(repoRoot) {
-  return fs.readFileSync(path.join(repoRoot, CHANGELOG_PATH), 'utf8');
+  return fs.readFileSync(path.join(repoRoot, CHANGELOG_PATH), "utf8");
 }
 
 function main() {
   const repoRoot = process.cwd();
   const options = parseArgs(process.argv);
-  const changedFilesOverride = parseChangedFilesOverride(process.env.CHANGELOG_CHANGED_FILES || '');
-  const changelogContent = fs.existsSync(path.join(repoRoot, CHANGELOG_PATH)) ? readChangelog(repoRoot) : '';
+  const changedFilesOverride = parseChangedFilesOverride(
+    process.env.CHANGELOG_CHANGED_FILES || "",
+  );
+  const changelogContent = fs.existsSync(path.join(repoRoot, CHANGELOG_PATH))
+    ? readChangelog(repoRoot)
+    : "";
   let changedFiles = changedFilesOverride;
-  let commitMessages = process.env.CHANGELOG_COMMIT_MESSAGES || '';
-  let base = process.env.CHANGELOG_BASE_SHA || options.base || '';
-  let head = process.env.CHANGELOG_HEAD_SHA || options.head || 'HEAD';
+  let commitMessages = process.env.CHANGELOG_COMMIT_MESSAGES || "";
+  let base = process.env.CHANGELOG_BASE_SHA || options.base || "";
+  let head = process.env.CHANGELOG_HEAD_SHA || options.head || "HEAD";
 
   if (!changedFiles) {
     const range = resolveBaseAndHead(repoRoot, options);
@@ -300,24 +341,26 @@ function main() {
       base = range.base;
       head = range.head;
     }
-    commitMessages = base ? getCommitMessages(repoRoot, base, head) : '';
+    commitMessages = base ? getCommitMessages(repoRoot, base, head) : "";
   }
 
   const result = evaluateContractChangelogDiscipline({
     changedFiles,
     changelogContent,
     commitMessages,
-    prTitle: process.env.CHANGELOG_PR_TITLE || '',
-    prBody: process.env.CHANGELOG_PR_BODY || '',
+    prTitle: process.env.CHANGELOG_PR_TITLE || "",
+    prBody: process.env.CHANGELOG_PR_BODY || "",
   });
 
   if (!result.details.checked) {
-    console.log('No contract implementation changes detected; changelog discipline check skipped.');
+    console.log(
+      "No contract implementation changes detected; changelog discipline check skipped.",
+    );
     return;
   }
 
   if (!result.ok) {
-    console.error('\nContract changelog discipline check failed:');
+    console.error("\nContract changelog discipline check failed:");
     for (const error of result.errors) {
       console.error(` - ${error}`);
     }
@@ -327,14 +370,14 @@ function main() {
     process.exit(1);
   }
 
-  console.log('Contract changelog discipline check passed.');
+  console.log("Contract changelog discipline check passed.");
 }
 
 if (require.main === module) {
   try {
     main();
   } catch (error) {
-    console.error('Unable to complete contract changelog discipline check.');
+    console.error("Unable to complete contract changelog discipline check.");
     console.error(error && error.stack ? error.stack : error);
     process.exit(1);
   }

@@ -5,15 +5,15 @@ to contributors.
 
 ## States
 
-| State | Meaning | Required next action |
-| --- | --- | --- |
-| Triage | The report is received, but scope, priority, or ownership is not confirmed. | A maintainer confirms that it is actionable and assigns an owner. |
-| Ready | Scope and acceptance criteria are clear, and the issue is ready to be worked. | The assignee starts implementation or records why work is blocked. |
-| In progress | An assignee is actively working on the issue. | Keep the issue updated with the branch or pull request. |
-| Blocked | Work cannot proceed because an external decision, dependency, or missing detail is required. | Record the blocker and the condition needed to resume. |
-| In review | A pull request addresses the issue and is awaiting review or requested changes. | Reviewers assess the change against the acceptance criteria. |
-| Done | The change is merged and the acceptance criteria are satisfied. | Close the issue, referencing the merged pull request. |
-| Closed | The issue is complete, superseded, or intentionally not being pursued. | Add a closing explanation when it is not marked Done. |
+| State       | Meaning                                                                                      | Required next action                                               |
+| ----------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Triage      | The report is received, but scope, priority, or ownership is not confirmed.                  | A maintainer confirms that it is actionable and assigns an owner.  |
+| Ready       | Scope and acceptance criteria are clear, and the issue is ready to be worked.                | The assignee starts implementation or records why work is blocked. |
+| In progress | An assignee is actively working on the issue.                                                | Keep the issue updated with the branch or pull request.            |
+| Blocked     | Work cannot proceed because an external decision, dependency, or missing detail is required. | Record the blocker and the condition needed to resume.             |
+| In review   | A pull request addresses the issue and is awaiting review or requested changes.              | Reviewers assess the change against the acceptance criteria.       |
+| Done        | The change is merged and the acceptance criteria are satisfied.                              | Close the issue, referencing the merged pull request.              |
+| Closed      | The issue is complete, superseded, or intentionally not being pursued.                       | Add a closing explanation when it is not marked Done.              |
 
 ## Transitions
 

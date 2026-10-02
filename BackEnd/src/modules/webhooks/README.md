@@ -18,51 +18,63 @@ The Webhooks module provides automated verification capabilities through GitHub 
 ## Endpoints
 
 ### GitHub Webhooks
+
 ```
 POST /webhooks/github
 ```
+
 Handles GitHub events with signature verification.
 
 **Headers:**
+
 - `X-GitHub-Event`: Event type (push, pull_request, issues)
 - `X-GitHub-Delivery`: Unique delivery ID
 - `X-Hub-Signature-256`: HMAC SHA256 signature
 
 **Environment Variable:**
+
 ```
 GITHUB_WEBHOOK_SECRET=your_github_secret_here
 ```
 
 ### API Verification Webhooks
+
 ```
 POST /webhooks/api-verify
 ```
+
 Handles custom verification events from external services.
 
 **Headers:**
+
 - `X-Event-Type`: Event type (submission_verify, auto_approve, external_validation)
 - `X-Webhook-ID`: Unique webhook ID
 - `Authorization`: Bearer token with HMAC SHA256 signature
 
 **Environment Variable:**
+
 ```
 API_WEBHOOK_SECRET=your_api_secret_here
 ```
 
 ### Health Check
+
 ```
 POST /webhooks/health
 ```
+
 Returns service health status.
 
 ## Webhook Event Types
 
 ### GitHub Events
+
 - **push**: Repository push events
 - **pull_request**: Pull request events (opened, closed, merged)
 - **issues**: Issue events (opened, closed)
 
 ### API Events
+
 - **submission_verify**: Submission verification requests
 - **auto_approve**: Automatic approval triggers
 - **external_validation**: External service validation results
@@ -70,20 +82,25 @@ Returns service health status.
 ## Security
 
 ### Signature Verification
+
 All webhooks are verified using HMAC SHA256 signatures:
 
 **GitHub Format:**
+
 ```
 sha256=hex_encoded_signature
 ```
 
 **API Format:**
+
 ```
 hmac-sha256=hex_encoded_signature
 ```
 
 ### Secret Management
+
 Store secrets in environment variables:
+
 - `GITHUB_WEBHOOK_SECRET`
 - `API_WEBHOOK_SECRET`
 
@@ -106,6 +123,7 @@ Store secrets in environment variables:
 ## Testing
 
 Run the webhook tests:
+
 ```bash
 npm run test:e2e -- test/webhooks/webhooks.e2e-spec.ts
 ```
@@ -113,6 +131,7 @@ npm run test:e2e -- test/webhooks/webhooks.e2e-spec.ts
 ## Implementation Details
 
 ### File Structure
+
 ```
 src/modules/webhooks/
 ├── webhooks.module.ts          # Main module
@@ -126,6 +145,7 @@ src/modules/webhooks/
 ```
 
 ### Retry Logic
+
 Failed webhook events (signature/handler/processing failures) are persisted to the
 `failed_webhook_events` table instead of being dropped. Retryable failures are
 scheduled for reprocessing with exponential backoff (30s, 1m, 2m, 4m, 8m, 16m,
@@ -142,7 +162,9 @@ POST /webhooks/admin/failed/:eventId/retry
 ```
 
 ### Logging
+
 All webhook events are logged with appropriate log levels:
+
 - INFO: Successful processing
 - WARN: Invalid signatures, unsupported events
 - ERROR: Processing failures
@@ -150,6 +172,7 @@ All webhook events are logged with appropriate log levels:
 ## Example Usage
 
 ### GitHub Push Event
+
 ```bash
 curl -X POST http://localhost:3000/webhooks/github \
   -H "X-GitHub-Event: push" \
@@ -159,6 +182,7 @@ curl -X POST http://localhost:3000/webhooks/github \
 ```
 
 ### API Verification
+
 ```bash
 curl -X POST http://localhost:3000/webhooks/api-verify \
   -H "X-Event-Type: submission_verify" \
@@ -170,6 +194,7 @@ curl -X POST http://localhost:3000/webhooks/api-verify \
 ## Error Handling
 
 Common error responses:
+
 - `400 Bad Request`: Missing required headers
 - `401 Unauthorized`: Invalid signature
 - `500 Internal Server Error`: Processing failures

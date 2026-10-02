@@ -7,6 +7,7 @@ This directory contains the **Automated Payout Distribution System** for the Ste
 ## Quick Start
 
 ### Prerequisites
+
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -17,6 +18,7 @@ cargo install --locked soroban-cli
 ```
 
 ### Build
+
 ```bash
 # Build for testing
 cargo build
@@ -78,6 +80,7 @@ SKIP_CONTRACT_HOOKS=1 git commit -m "..."
 ```
 
 ### Test
+
 ```bash
 # Run all tests
 cargo test
@@ -114,6 +117,7 @@ cargo test test_cross_contract
 ```
 
 ### Snapshot Management
+
 ```bash
 # Update test snapshots (174 files)
 make snapshots
@@ -145,6 +149,7 @@ make local-env-clean
 ```
 
 **Variants:**
+
 ```bash
 # Skip Docker if you already have a local node running
 make local-env-setup SKIP_DOCKER=1
@@ -160,6 +165,7 @@ make local-env-test VERBOSE=1
 ```
 
 **What the scripts do:**
+
 - `setup-local-env.sh` — Pulls and starts the `stellar/quickstart` Docker image in standalone mode, creates 5 **fixed deterministic keypairs** (Admin, Creator, Verifier, Contributor, Oracle), funds them via local friendbot, builds and deploys the `earn_quest` WASM, initialises the contract, and writes all IDs and keys to `.env.local` in the project root.
 - `verify-local-env.sh` — Loads `.env.local` and exercises a full quest lifecycle on the live local network: quest registration → proof submission → verifier approval → reward claim → XP verification → pause/resume.
 
@@ -192,11 +198,13 @@ contracts/earn-quest/
 ## Core Features
 
 ### ✅ Automated Payout Distribution
+
 - Trustless reward transfers from contract escrow to users
 - Integration with Stellar token standard
 - Balance validation before transfers
 
 ### ✅ Claim Reward Function
+
 ```rust
 pub fn claim_reward(
     env: Env,
@@ -207,6 +215,7 @@ pub fn claim_reward(
 ```
 
 **Flow:**
+
 1. User authentication
 2. Validate submission is approved or partially paid
 3. Validate requested amount against remaining reward balance
@@ -215,12 +224,14 @@ pub fn claim_reward(
 6. Emit claim event
 
 ### ✅ Comprehensive Error Handling
+
 - `InsufficientBalance` - Contract lacks funds
 - `AlreadyClaimed` - Duplicate claim prevention
 - `InvalidSubmissionStatus` - Wrong workflow state
 - `TransferFailed` - Token transfer errors
 
 ### ✅ Event Emission
+
 ```rust
 env.events().publish(
     (symbol_short!("claimed"), quest_id),
@@ -295,16 +306,16 @@ Optimized for deployment to Stellar network.
 
 ## Acceptance Criteria ✅
 
-| Requirement | Status |
-|-------------|--------|
-| Rewards transfer correctly | ✅ |
-| Asset validation | ✅ |
-| Balance checking | ✅ |
-| Claim reward function | ✅ |
-| Partial claims supported | ✅ |
-| Duplicate prevention | ✅ |
-| Event emission | ✅ |
-| Comprehensive tests | ✅ |
+| Requirement                | Status |
+| -------------------------- | ------ |
+| Rewards transfer correctly | ✅     |
+| Asset validation           | ✅     |
+| Balance checking           | ✅     |
+| Claim reward function      | ✅     |
+| Partial claims supported   | ✅     |
+| Duplicate prevention       | ✅     |
+| Event emission             | ✅     |
+| Comprehensive tests        | ✅     |
 
 ## Usage Example
 
@@ -341,6 +352,7 @@ client.claim_reward(&quest_id, &user, &100);
 ## Next Steps
 
 1. **Deploy to Testnet**
+
    ```bash
    soroban contract deploy \
      --wasm target/wasm32-unknown-unknown/release/earn_quest.wasm \
@@ -363,6 +375,7 @@ client.claim_reward(&quest_id, &user, &100);
 ## Contributing
 
 This implementation follows the contribution guidelines:
+
 - ✅ Assignment completed
 - ✅ Timeframe: Completed within 48-72 hours
 - ✅ Ready for PR with "Close #24"

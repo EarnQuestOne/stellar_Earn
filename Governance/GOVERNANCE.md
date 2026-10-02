@@ -21,13 +21,13 @@ Steering Committee ([TSC.md](TSC.md)). The model is a maintainer collective with
 a rotating chair rather than a board or a single owner
 ([LEADERSHIP.md](LEADERSHIP.md)).
 
-| Layer                    | Body / role                                | Holds                                           |
-| ------------------------ | ------------------------------------------ | ----------------------------------------------- |
-| Founding rules           | [CHARTER.md](CHARTER.md)                   | Scope, authority, amendment rules               |
-| Top-level decisions      | Maintainers / [TSC.md](TSC.md)             | Merges, governance, releases, appointments      |
-| Area direction and review | Area owners ([SUBPROJECTS.md](SUBPROJECTS.md)) | Technical review within an area              |
-| Runtime tasks            | Reviewers, triagers, release manager, security team ([ROLES.md](ROLES.md)) | Review, triage, releases, security response |
-| Proposals                | Anyone ([roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md)) | Change proposals, issues, pull requests |
+| Layer                     | Body / role                                                                | Holds                                       |
+| ------------------------- | -------------------------------------------------------------------------- | ------------------------------------------- |
+| Founding rules            | [CHARTER.md](CHARTER.md)                                                   | Scope, authority, amendment rules           |
+| Top-level decisions       | Maintainers / [TSC.md](TSC.md)                                             | Merges, governance, releases, appointments  |
+| Area direction and review | Area owners ([SUBPROJECTS.md](SUBPROJECTS.md))                             | Technical review within an area             |
+| Runtime tasks             | Reviewers, triagers, release manager, security team ([ROLES.md](ROLES.md)) | Review, triage, releases, security response |
+| Proposals                 | Anyone ([roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md))                      | Change proposals, issues, pull requests     |
 
 The duties and permissions of each role are tabulated once in
 [ROLES.md](ROLES.md); the current holders are in [MAINTAINERS.md](MAINTAINERS.md).
@@ -59,7 +59,7 @@ three-fourths of all eligible voters ([THRESHOLDS.md](THRESHOLDS.md)).
 ## Escalation
 
 Questions about **scope** are settled by the charter. Technical disagreements
-*within* an area are settled by its owner; *between* areas they escalate to the
+_within_ an area are settled by its owner; _between_ areas they escalate to the
 maintainers. Unresolved personal or procedural conflicts follow the escalation
 ladder in [CONFLICT_RESOLUTION.md](CONFLICT_RESOLUTION.md), with dissent
 recorded per [DISSENT.md](DISSENT.md).

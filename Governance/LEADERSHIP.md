@@ -28,12 +28,12 @@ heavier structure would add layers without adding accountability.
 
 ## Roles in the model
 
-| Position          | Who                              | What they are accountable for                                                        |
-| ----------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
-| Maintainer council | Active maintainers ([MAINTAINERS.md](MAINTAINERS.md)) | Final decisions: merging changes, governance, releases, and appointments |
-| Chair / facilitator | One maintainer, rotated by the council | Running the decision process, being the external point of contact, and reporting outcomes |
-| Area owners        | Maintainer or reviewer per area ([SUBPROJECTS.md](SUBPROJECTS.md)) | Technical direction and review within their area |
-| Security lead      | Coordinating member of the [security response team](roles/SECURITY_TEAM.md) | Security incidents and disclosure |
+| Position            | Who                                                                         | What they are accountable for                                                             |
+| ------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Maintainer council  | Active maintainers ([MAINTAINERS.md](MAINTAINERS.md))                       | Final decisions: merging changes, governance, releases, and appointments                  |
+| Chair / facilitator | One maintainer, rotated by the council                                      | Running the decision process, being the external point of contact, and reporting outcomes |
+| Area owners         | Maintainer or reviewer per area ([SUBPROJECTS.md](SUBPROJECTS.md))          | Technical direction and review within their area                                          |
+| Security lead       | Coordinating member of the [security response team](roles/SECURITY_TEAM.md) | Security incidents and disclosure                                                         |
 
 The chair does **not** have a veto. On a deadlock, the tie-breaking rules in
 [TIE_BREAKING.md](TIE_BREAKING.md) apply, and the chair's role is to run that

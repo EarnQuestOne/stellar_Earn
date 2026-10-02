@@ -68,7 +68,11 @@ function dim(s: string): string {
 function parseVersion(raw: string): [number, number, number] | null {
   const match = raw.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
   if (!match) return null;
-  return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3] ?? '0', 10)];
+  return [
+    parseInt(match[1], 10),
+    parseInt(match[2], 10),
+    parseInt(match[3] ?? '0', 10),
+  ];
 }
 
 /**
@@ -155,7 +159,8 @@ const TOOLS: ToolCheck[] = [
     ],
     minVersion: [5, 0, 0],
     minVersionDisplay: '5.x',
-    installHint: 'npm install -g typescript  OR  installed as devDependency (npm ci)',
+    installHint:
+      'npm install -g typescript  OR  installed as devDependency (npm ci)',
   },
   // ── Git ─────────────────────────────────────────────────────────────────
   {
@@ -175,7 +180,7 @@ const TOOLS: ToolCheck[] = [
     minVersion: [1, 80, 0],
     minVersionDisplay: '1.80.x (stable)',
     installHint:
-      'curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh\n' +
+      "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\n" +
       '    Then: rustup default stable',
   },
   // ── Cargo ───────────────────────────────────────────────────────────────
@@ -201,8 +206,8 @@ const TOOLS: ToolCheck[] = [
     name: 'Stellar CLI (soroban)',
     required: false, // recommended – needed to deploy/invoke contracts
     commands: [
-      { cmd: 'stellar', args: ['--version'] },  // v21+ binary name
-      { cmd: 'soroban', args: ['--version'] },  // legacy binary name
+      { cmd: 'stellar', args: ['--version'] }, // v21+ binary name
+      { cmd: 'soroban', args: ['--version'] }, // legacy binary name
     ],
     outputSource: 'both',
     minVersion: [22, 0, 0],
@@ -317,7 +322,9 @@ function printHeader(): void {
   const line = '─'.repeat(72);
   console.log('');
   console.log(bold(cyan('  stellar_Earn – Toolchain Preflight Check')));
-  console.log(dim(`  Run: npm run check:toolchain  |  ${new Date().toISOString()}`));
+  console.log(
+    dim(`  Run: npm run check:toolchain  |  ${new Date().toISOString()}`),
+  );
   console.log(dim(`  ${line}`));
   console.log(
     '  ' +
@@ -365,7 +372,9 @@ function printFooter(results: CheckResult[]): void {
       ),
     );
     console.log(
-      red('     Please install the listed tools and re-run: npm run check:toolchain'),
+      red(
+        '     Please install the listed tools and re-run: npm run check:toolchain',
+      ),
     );
   } else if (warns > 0) {
     console.log('');
@@ -379,10 +388,14 @@ function printFooter(results: CheckResult[]): void {
         '     but Soroban contract work and Docker-based services may not be available.',
       ),
     );
-    console.log(green('  ✔  All REQUIRED tools are present. You\'re good to go!'));
+    console.log(
+      green("  ✔  All REQUIRED tools are present. You're good to go!"),
+    );
   } else {
     console.log('');
-    console.log(green('  ✔  All toolchain requirements satisfied. Happy coding!'));
+    console.log(
+      green('  ✔  All toolchain requirements satisfied. Happy coding!'),
+    );
   }
   console.log('');
 }

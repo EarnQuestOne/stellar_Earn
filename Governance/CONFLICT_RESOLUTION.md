@@ -14,12 +14,13 @@ This document defines the formal conflict resolution framework and escalation la
 ## Scope
 
 This process applies to:
+
 - Code review disputes and technical architecture disagreements.
 - RFC proposal deadlocks.
 - Governance, policy, or role interpretation disputes.
 - Working group and SIG operational disagreements.
 
-*Note: Code of Conduct violations follow the reporting and enforcement procedures defined in [COC_REPORTING.md](COC_REPORTING.md) and are handled separately by the CoC Committee.*
+_Note: Code of Conduct violations follow the reporting and enforcement procedures defined in [COC_REPORTING.md](COC_REPORTING.md) and are handled separately by the CoC Committee._
 
 ## Escalation Ladder & Timelines
 
@@ -47,18 +48,21 @@ The conflict resolution process follows a 4-tier escalation ladder:
 ```
 
 ### Level 1: Peer Resolution (Direct Discussion)
+
 - **Description:** The primary participants in the disagreement engage directly on the relevant GitHub issue, pull request, or discussion thread.
 - **Process:** Participants present technical arguments, benchmark data, architectural trade-offs, or precedent.
 - **Timeline:** Resolution must be sought within **3 to 5 business days** of the disagreement arising.
 - **Outcome:** Consensus reached, or explicit agreement to escalate to Level 2 if consensus cannot be reached within 5 business days.
 
 ### Level 2: Area Maintainer / Working Group Lead Mediation
+
 - **Description:** If direct discussion stalls, either party may request mediation by the designated area maintainer (from [MAINTAINERS.md](MAINTAINERS.md) or `.github/CODEOWNERS`) or Working Group lead.
 - **Process:** The maintainer acts as a neutral facilitator, reviews the arguments, requests additional data or compromise options, and suggests a recommended resolution path.
 - **Timeline:** Mediation must conclude within **5 to 7 business days** from the escalation request.
 - **Outcome:** Consensus achieved on the proposed compromise, or formal escalation to Level 3 if any core party objects to the maintainer's recommendation.
 
 ### Level 3: Technical Steering Committee (TSC) Escalation
+
 - **Description:** Unresolved technical or procedural conflicts are formally submitted to the maintainers acting as the Technical Steering Committee (TSC).
 - **Process:**
   1. A formal escalation issue is opened summarizing the background, trade-offs, previous Level 1/2 attempts, and specific questions for the TSC.
@@ -68,6 +72,7 @@ The conflict resolution process follows a 4-tier escalation ladder:
 - **Outcome:** The vote passes per the majority rules in [VOTING.md](VOTING.md) and the decision is published as binding.
 
 ### Level 4: Tie-Breaking Authority Final Determination
+
 - **Description:** In the event that a TSC vote results in a deadlock or tied outcome, the conflict is escalated to the Tie-Breaking Authority.
 - **Process:** The designated Tie-Breaking Authority evaluates the TSC vote, reviews all submitted materials, and issues a final, binding determination per [TIE_BREAKING.md](TIE_BREAKING.md).
 - **Timeline:** Final determination must be issued within **3 business days** following the conclusion of the tied TSC vote.

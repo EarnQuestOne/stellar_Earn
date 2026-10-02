@@ -43,7 +43,7 @@ may:
 - **Reject a report** as out of scope or not a vulnerability, with a written
   explanation, or **escalate** it when it concerns a dependency or upstream.
 
-The team's authority is over the *process and priority* of security work, not
+The team's authority is over the _process and priority_ of security work, not
 over the project's direction: product and roadmap decisions remain with the
 maintainers, and any emergency action is reviewed by them afterwards.
 

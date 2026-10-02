@@ -3,7 +3,10 @@ import { check, sleep, group } from 'k6';
 import { Rate, Trend, Counter } from 'k6/metrics';
 import { createBenchmarkConfig, buildRoute } from './benchmark-config';
 
-const benchmarkConfig = createBenchmarkConfig(__ENV.BASE_URL || 'http://localhost:3000', !!__ENV.JWT_TOKEN);
+const benchmarkConfig = createBenchmarkConfig(
+  __ENV.BASE_URL || 'http://localhost:3000',
+  !!__ENV.JWT_TOKEN,
+);
 
 const metrics = {
   healthLiveErrorRate: new Rate('health_live_errors'),
@@ -45,21 +48,27 @@ function getScenarioParams(scenarioName: string): Record<string, string> {
   }
 
   if (scenarioName === 'submissions-list') {
-    return { questId: __ENV.QUEST_ID || '00000000-0000-0000-0000-000000000000' };
+    return {
+      questId: __ENV.QUEST_ID || '00000000-0000-0000-0000-000000000000',
+    };
   }
 
   return {};
 }
 
 export default function () {
-  const scenario = benchmarkConfig.scenarios[Math.floor(Math.random() * benchmarkConfig.scenarios.length)];
+  const scenario =
+    benchmarkConfig.scenarios[
+      Math.floor(Math.random() * benchmarkConfig.scenarios.length)
+    ];
   const targetUrl = `${benchmarkConfig.baseUrl}${buildRoute(scenario.route, getScenarioParams(scenario.name))}`;
 
   group(scenario.name, () => {
     const start = Date.now();
-    const response = scenario.method === 'POST'
-      ? http.post(targetUrl, JSON.stringify(scenario.body), { headers })
-      : http.get(targetUrl, { headers });
+    const response =
+      scenario.method === 'POST'
+        ? http.post(targetUrl, JSON.stringify(scenario.body), { headers })
+        : http.get(targetUrl, { headers });
 
     const duration = Date.now() - start;
     metrics.totalRequests.add(1);

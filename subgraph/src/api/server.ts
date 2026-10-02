@@ -2,19 +2,26 @@
 // GraphQL API Server — exposes indexed data via GraphQL
 // =============================================================================
 
-import express from 'express';
-import cors from 'cors';
-import { graphqlHTTP } from 'express-graphql';
-import { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLList, GraphQLNonNull } from 'graphql';
-import { config } from '../config';
-import { resolvers } from './resolvers';
+import express from "express";
+import cors from "cors";
+import { graphqlHTTP } from "express-graphql";
+import {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLString,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLNonNull,
+} from "graphql";
+import { config } from "../config";
+import { resolvers } from "./resolvers";
 
 // =============================================================================
 // GraphQL Type Definitions
 // =============================================================================
 
 const QuestStatusType = new GraphQLObjectType({
-  name: 'QuestStatus',
+  name: "QuestStatus",
   fields: {
     Active: { type: GraphQLString },
     Paused: { type: GraphQLString },
@@ -25,7 +32,7 @@ const QuestStatusType = new GraphQLObjectType({
 });
 
 const QuestType = new GraphQLObjectType({
-  name: 'Quest',
+  name: "Quest",
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     creator: { type: new GraphQLNonNull(GraphQLString) },
@@ -41,7 +48,7 @@ const QuestType = new GraphQLObjectType({
 });
 
 const SubmissionType = new GraphQLObjectType({
-  name: 'Submission',
+  name: "Submission",
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     questId: { type: new GraphQLNonNull(GraphQLString) },
@@ -55,7 +62,7 @@ const SubmissionType = new GraphQLObjectType({
 });
 
 const EscrowType = new GraphQLObjectType({
-  name: 'Escrow',
+  name: "Escrow",
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     questId: { type: new GraphQLNonNull(GraphQLString) },
@@ -71,7 +78,7 @@ const EscrowType = new GraphQLObjectType({
 });
 
 const DisputeType = new GraphQLObjectType({
-  name: 'Dispute',
+  name: "Dispute",
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     questId: { type: new GraphQLNonNull(GraphQLString) },
@@ -83,7 +90,7 @@ const DisputeType = new GraphQLObjectType({
 });
 
 const UserStatsType = new GraphQLObjectType({
-  name: 'UserStats',
+  name: "UserStats",
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     xp: { type: GraphQLString },
@@ -97,7 +104,7 @@ const UserStatsType = new GraphQLObjectType({
 });
 
 const UserAggregatesType = new GraphQLObjectType({
-  name: 'UserAggregates',
+  name: "UserAggregates",
   fields: {
     totalSubmissions: { type: GraphQLInt },
     totalApprovals: { type: GraphQLInt },
@@ -109,7 +116,7 @@ const UserAggregatesType = new GraphQLObjectType({
 });
 
 const PlatformAggregatesType = new GraphQLObjectType({
-  name: 'PlatformAggregates',
+  name: "PlatformAggregates",
   fields: {
     totalQuests: { type: GraphQLInt },
     totalSubmissions: { type: GraphQLInt },
@@ -120,7 +127,7 @@ const PlatformAggregatesType = new GraphQLObjectType({
 });
 
 const EventType = new GraphQLObjectType({
-  name: 'Event',
+  name: "Event",
   fields: {
     id: { type: GraphQLString },
     event_type: { type: GraphQLString },
@@ -138,7 +145,7 @@ const EventType = new GraphQLObjectType({
 // =============================================================================
 
 const RootQueryType = new GraphQLObjectType({
-  name: 'Query',
+  name: "Query",
   fields: {
     quest: {
       type: QuestType,
@@ -159,7 +166,11 @@ const RootQueryType = new GraphQLObjectType({
         if (args.creator) filter.creator = args.creator;
         if (args.status) filter.status = args.status;
         if (args.rewardAsset) filter.rewardAsset = args.rewardAsset;
-        return resolvers.Query.quests(_, { filter, first: args.first, offset: args.offset });
+        return resolvers.Query.quests(_, {
+          filter,
+          first: args.first,
+          offset: args.offset,
+        });
       },
     },
     questsByCreator: {
@@ -239,7 +250,12 @@ const RootQueryType = new GraphQLObjectType({
         first: { type: GraphQLInt, defaultValue: 10 },
         offset: { type: GraphQLInt, defaultValue: 0 },
       },
-      resolve: (_: any, args: any) => resolvers.Query.events(_, { filter: { eventType: args.eventType }, first: args.first, offset: args.offset }),
+      resolve: (_: any, args: any) =>
+        resolvers.Query.events(_, {
+          filter: { eventType: args.eventType },
+          first: args.first,
+          offset: args.offset,
+        }),
     },
     platformStats: {
       type: PlatformAggregatesType,
@@ -260,7 +276,7 @@ export function createApiServer(): express.Application {
   const app = express();
   app.use(cors());
   app.use(
-    '/graphql',
+    "/graphql",
     graphqlHTTP({
       schema,
       graphiql: true,
@@ -268,8 +284,8 @@ export function createApiServer(): express.Application {
   );
 
   // Health check endpoint
-  app.get('/health', (_req: any, res: any) => {
-    res.json({ status: 'ok', service: 'stellar-earn-subgraph' });
+  app.get("/health", (_req: any, res: any) => {
+    res.json({ status: "ok", service: "stellar-earn-subgraph" });
   });
 
   return app;
@@ -278,7 +294,11 @@ export function createApiServer(): express.Application {
 export function startApiServer(): void {
   const app = createApiServer();
   app.listen(config.apiPort, () => {
-    console.log(`[API] GraphQL server running at http://localhost:${config.apiPort}/graphql`);
-    console.log(`[API] GraphiQL playground at http://localhost:${config.apiPort}/graphql`);
+    console.log(
+      `[API] GraphQL server running at http://localhost:${config.apiPort}/graphql`,
+    );
+    console.log(
+      `[API] GraphiQL playground at http://localhost:${config.apiPort}/graphql`,
+    );
   });
 }

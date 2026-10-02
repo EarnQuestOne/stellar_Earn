@@ -90,12 +90,9 @@ export class FeatureFlagsService {
 
       // Check if flag is globally disabled
       if (!flag.enabled || flag.status !== FlagStatus.ACTIVE) {
-        await this.cacheService.set(
-          cacheKey,
-          false,
-          this.CACHE_TTL,
-          [FeatureFlagCacheTags.flag(flagKey)],
-        );
+        await this.cacheService.set(cacheKey, false, this.CACHE_TTL, [
+          FeatureFlagCacheTags.flag(flagKey),
+        ]);
         reqCache?.set(reqCacheKey, false);
         return false;
       }
@@ -103,22 +100,16 @@ export class FeatureFlagsService {
       // Check scheduled activation/deactivation
       const now = new Date();
       if (flag.scheduledActivationAt && now < flag.scheduledActivationAt) {
-        await this.cacheService.set(
-          cacheKey,
-          false,
-          this.CACHE_TTL,
-          [FeatureFlagCacheTags.flag(flagKey)],
-        );
+        await this.cacheService.set(cacheKey, false, this.CACHE_TTL, [
+          FeatureFlagCacheTags.flag(flagKey),
+        ]);
         reqCache?.set(reqCacheKey, false);
         return false;
       }
       if (flag.scheduledDeactivationAt && now > flag.scheduledDeactivationAt) {
-        await this.cacheService.set(
-          cacheKey,
-          false,
-          this.CACHE_TTL,
-          [FeatureFlagCacheTags.flag(flagKey)],
-        );
+        await this.cacheService.set(cacheKey, false, this.CACHE_TTL, [
+          FeatureFlagCacheTags.flag(flagKey),
+        ]);
         reqCache?.set(reqCacheKey, false);
         return false;
       }
@@ -138,11 +129,15 @@ export class FeatureFlagsService {
           break;
 
         case RolloutStrategy.USER_WHITELIST:
-          result = userId ? (flag.whitelistedUsers?.includes(userId) ?? false) : false;
+          result = userId
+            ? (flag.whitelistedUsers?.includes(userId) ?? false)
+            : false;
           break;
 
         case RolloutStrategy.USER_BLACKLIST:
-          result = userId ? !(flag.blacklistedUsers?.includes(userId) ?? false) : true;
+          result = userId
+            ? !(flag.blacklistedUsers?.includes(userId) ?? false)
+            : true;
           break;
 
         case RolloutStrategy.SEGMENT_BASED:
@@ -153,12 +148,9 @@ export class FeatureFlagsService {
           result = false;
       }
 
-      await this.cacheService.set(
-        cacheKey,
-        result,
-        this.CACHE_TTL,
-        [FeatureFlagCacheTags.flag(flagKey)],
-      );
+      await this.cacheService.set(cacheKey, result, this.CACHE_TTL, [
+        FeatureFlagCacheTags.flag(flagKey),
+      ]);
       reqCache?.set(reqCacheKey, result);
       return result;
     } catch (error) {

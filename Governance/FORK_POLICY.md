@@ -4,8 +4,8 @@
 
 This policy states how the project may be forked and under what conditions its
 license may change. It exists so that contributors and downstream users can rely
-on a stable answer to two common questions: *may I fork this?* and *can the
-license change out from under me?*
+on a stable answer to two common questions: _may I fork this?_ and _can the
+license change out from under me?_
 
 ## Forking
 

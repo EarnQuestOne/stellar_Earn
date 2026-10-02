@@ -398,7 +398,9 @@ describe('FeatureFlagsService', () => {
       await service.create(createDto, 'user123');
 
       // Verify cache invalidation was called with correct tag
-      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:NEW_FLAG');
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:NEW_FLAG',
+      );
       expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:all');
     });
 
@@ -441,7 +443,9 @@ describe('FeatureFlagsService', () => {
 
       expect(result).toEqual(savedFlag);
       // Cache invalidation should still proceed
-      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith('ff:NEW_FLAG');
+      expect(mockCacheService.invalidateTag).toHaveBeenCalledWith(
+        'ff:NEW_FLAG',
+      );
     });
   });
 

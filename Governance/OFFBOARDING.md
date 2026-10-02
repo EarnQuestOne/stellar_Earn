@@ -32,8 +32,8 @@ or security violation does not confer emeritus status.
 1. **Announce.** The maintainer (or, for a removal, the vote initiator) records
    the decision and its effective date on the relevant issue or PR.
 2. **Update the roster.** Open a PR against [MAINTAINERS.md](MAINTAINERS.md)
-   moving the person from *Active maintainers* to *Emeritus / former
-   maintainers*, with their areas and the effective date.
+   moving the person from _Active maintainers_ to _Emeritus / former
+   maintainers_, with their areas and the effective date.
 3. **Reassign areas.** Ensure every area the person owned has an active owner so
    no path goes unowned; coordinate with the remaining maintainers.
 4. **Revoke access** using the checklist below.
@@ -99,7 +99,7 @@ item and notes any rotations performed on the offboarding record.
 **Emeritus maintainers** are former maintainers recognized for their
 contributions who left in good standing.
 
-- **Recognition.** They remain listed in the *Emeritus / former maintainers*
+- **Recognition.** They remain listed in the _Emeritus / former maintainers_
   section of [MAINTAINERS.md](MAINTAINERS.md) with their areas and tenure. They
   are credited in release notes and project history.
 - **No active authority.** Emeritus status carries **no** merge, admin, voting,
@@ -111,7 +111,7 @@ contributions who left in good standing.
 - **Returning to active.** An emeritus maintainer may be re-instated as an
   active maintainer through the same appointment process used for new
   maintainers ([MAINTAINERS.md](MAINTAINERS.md)); their emeritus entry is moved
-  back to *Active maintainers* and access is re-granted per onboarding.
+  back to _Active maintainers_ and access is re-granted per onboarding.
 - **Opt out.** An emeritus maintainer may request to be listed only as a former
   maintainer, or removed from the roster entirely; such a request is honored.
 

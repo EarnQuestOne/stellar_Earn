@@ -64,12 +64,12 @@ node scripts/bench-sentry-lazy-load.js
 
 Results on this machine (7 runs, Node 22):
 
-| Metric                     | BEFORE (eager at boot) | AFTER (disabled, lazy) | Removed from boot |
-| -------------------------- | ---------------------- | ---------------------- | ----------------- |
-| require time (median)      | ~1.4 - 2.2 s           | ~0.0 ms                | ~1.4 - 2.2 s      |
-| require time (min)         | ~0.8 - 1.3 s           | ~0.0 ms                | ~0.8 - 1.3 s      |
-| heapUsed delta             | ~27 MB                 | ~0 MB                  | ~27 MB            |
-| rss delta                  | ~69 MB                 | ~0 MB                  | ~69 MB            |
+| Metric                | BEFORE (eager at boot) | AFTER (disabled, lazy) | Removed from boot |
+| --------------------- | ---------------------- | ---------------------- | ----------------- |
+| require time (median) | ~1.4 - 2.2 s           | ~0.0 ms                | ~1.4 - 2.2 s      |
+| require time (min)    | ~0.8 - 1.3 s           | ~0.0 ms                | ~0.8 - 1.3 s      |
+| heapUsed delta        | ~27 MB                 | ~0 MB                  | ~27 MB            |
+| rss delta             | ~69 MB                 | ~0 MB                  | ~69 MB            |
 
 Load time varies with disk / OS file cache; the memory figures are stable across
 runs. When Sentry is disabled the boot no longer allocates ~27 MB of heap /

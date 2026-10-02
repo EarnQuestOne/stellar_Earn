@@ -8,11 +8,11 @@ the proposal passes.
 
 ## Change classes
 
-| Change class | Examples | Required approval |
-| --- | --- | --- |
-| Routine | Reversible operational decisions and non-substantive governance updates | Simple majority of non-abstaining ballots |
-| Material governance | Governance-policy changes, working-group charters, and maintainer elections or removal | Two-thirds of non-abstaining ballots |
-| Sensitive | License adoption, change, exception, or re-licensing; any treasury allocation, disbursement, commitment, authority, or control change | Three-fourths of all eligible voters |
+| Change class        | Examples                                                                                                                              | Required approval                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Routine             | Reversible operational decisions and non-substantive governance updates                                                               | Simple majority of non-abstaining ballots |
+| Material governance | Governance-policy changes, working-group charters, and maintainer elections or removal                                                | Two-thirds of non-abstaining ballots      |
+| Sensitive           | License adoption, change, exception, or re-licensing; any treasury allocation, disbursement, commitment, authority, or control change | Three-fourths of all eligible voters      |
 
 The sensitive threshold is a supermajority of the full eligible electorate, not
 only of ballots cast. A license or treasury change is not approved when quorum

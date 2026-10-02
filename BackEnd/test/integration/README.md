@@ -68,48 +68,56 @@ Integration tests use a separate database (`stellar_earn_test_integration`) to a
 Integration tests cover:
 
 ### Auth-Users Integration
+
 - User registration through authentication flow
 - Token generation and validation
 - User profile updates with auth context
 - Login count tracking
 
 ### Quests-Submissions Integration
+
 - Quest creation and user submission workflow
 - Submission status changes and quest completion
 - Duplicate submission prevention
 - Event emission for submission updates
 
 ### Payouts-Stellar Integration
+
 - Payout creation and processing workflow
 - Stellar address validation
 - Reward distribution to multiple users
 - Error handling for failed transactions
 
 ### Analytics-Cache Integration
+
 - Analytics data caching and cache invalidation
 - Performance optimization through caching
 - Cache hit/miss ratio tracking
 - Bulk cache operations for analytics data
 
 ### Email-Notifications Integration
+
 - Notification creation and email delivery
 - User email preferences and filtering
 - Bulk notification processing
 - Email delivery failure handling
 
 ### Jobs-Webhooks Integration
+
 - Background job processing with webhook notifications
 - Job completion and failure webhook triggers
 - Scheduled jobs and retry logic
 - Bulk job processing and batched notifications
 
 ### Moderation-Health Integration
+
 - Content moderation workflow and health monitoring
 - Moderation queue processing under load
 - System health checks for moderation services
 - Content escalation and performance monitoring
 
 ### Full Application Integration
+
 - Complete user journey from registration to payout
 - Concurrent user operations
 - Cross-module event propagation
@@ -118,16 +126,19 @@ Integration tests cover:
 ## Best Practices
 
 ### Test Isolation
+
 - Each test cleans up data before/after execution
 - Tests use unique identifiers to avoid conflicts
 - Database is reset between test runs
 
 ### Realistic Scenarios
+
 - Tests simulate real user workflows
 - Include error conditions and edge cases
 - Verify data integrity across module boundaries
 
 ### Performance
+
 - Tests run with extended timeouts (60 seconds)
 - Single worker to avoid database conflicts
 - Focused on integration logic, not performance benchmarks

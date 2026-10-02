@@ -112,9 +112,8 @@ async function runWithCache(): Promise<BenchmarkRow> {
       cacheHits: metrics.hits,
       cacheMisses: metrics.misses,
       dbReadsAvoided: metrics.dbReadsAvoided,
-      estimatedDbReadReductionPct: Math.round(
-        (1 - dbReads / polls) * 10000,
-      ) / 100,
+      estimatedDbReadReductionPct:
+        Math.round((1 - dbReads / polls) * 10000) / 100,
     } as Record<string, unknown>),
   } as BenchmarkRow;
 }
@@ -133,9 +132,8 @@ async function main(): Promise<void> {
           dbReadsBefore: withoutCache.dbReads,
           dbReadsAfter: withCache.dbReads,
           dbReadReductionPct:
-            Math.round(
-              (1 - withCache.dbReads / withoutCache.dbReads) * 10000,
-            ) / 100,
+            Math.round((1 - withCache.dbReads / withoutCache.dbReads) * 10000) /
+            100,
         },
       },
       null,

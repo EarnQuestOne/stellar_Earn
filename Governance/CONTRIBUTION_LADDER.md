@@ -27,11 +27,11 @@ every promotion decision is made by the process already documented in
 
 ## The ladder at a glance
 
-| Rung | Role | What you gain | What it costs you | Detail |
-| --- | --- | --- | --- | --- |
-| 1 | Contributor | Public standing; your work is credited | Nothing | [roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md) |
-| 2 | Reviewer | Your approval counts toward a review requirement in your area | A review turnaround expectation | [roles/REVIEWER.md](roles/REVIEWER.md) |
-| 3 | Maintainer | Merge authority, a TSC seat, a governance vote | Merge responsibility and response duties | [roles/MAINTAINER.md](roles/MAINTAINER.md) |
+| Rung | Role        | What you gain                                                 | What it costs you                        | Detail                                       |
+| ---- | ----------- | ------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
+| 1    | Contributor | Public standing; your work is credited                        | Nothing                                  | [roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md) |
+| 2    | Reviewer    | Your approval counts toward a review requirement in your area | A review turnaround expectation          | [roles/REVIEWER.md](roles/REVIEWER.md)       |
+| 3    | Maintainer  | Merge authority, a TSC seat, a governance vote                | Merge responsibility and response duties | [roles/MAINTAINER.md](roles/MAINTAINER.md)   |
 
 **Specialist roles sit alongside the ladder, not above it.** Triager, release
 manager, and security response team member are lateral appointments with their
@@ -90,13 +90,13 @@ sponsorship by anyone other than an area maintainer or reviewer.
 
 **Evidence.**
 
-| Signal | Where it is visible | What it demonstrates |
-| --- | --- | --- |
-| Merged pull requests in the area | Repository history | Working knowledge of the area |
-| Reviews left on others' pull requests | Pull-request threads | Judgement; the core signal |
-| Issues triaged, reproduced, or confirmed | Issue threads | Ability to assess a report on its merits |
-| A review that caught a real defect | The pull request it was caught on | The review was worth having |
-| Hand-offs and declines out of area | Review threads | Scope discipline |
+| Signal                                   | Where it is visible               | What it demonstrates                     |
+| ---------------------------------------- | --------------------------------- | ---------------------------------------- |
+| Merged pull requests in the area         | Repository history                | Working knowledge of the area            |
+| Reviews left on others' pull requests    | Pull-request threads              | Judgement; the core signal               |
+| Issues triaged, reproduced, or confirmed | Issue threads                     | Ability to assess a report on its merits |
+| A review that caught a real defect       | The pull request it was caught on | The review was worth having              |
+| Hand-offs and declines out of area       | Review threads                    | Scope discipline                         |
 
 Reviews are read as evidence of judgement, not as a count. A reviewer who
 catches three subtle regressions is better placed than one who leaves thirty
@@ -120,7 +120,7 @@ collectively — and a vote in governance decisions, per
 **Criteria.** All four must hold.
 
 1. **A sustained record in the specific area being proposed.** The record must
-   cover both contributions *and* reviews, and it must be scoped: an applicant
+   cover both contributions _and_ reviews, and it must be scoped: an applicant
    is proposed for named areas, not for the repository as a whole by default.
 2. **Sponsorship by an existing maintainer**, as recorded in
    [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md).
@@ -142,13 +142,13 @@ evidence.
 
 **Evidence.** The same signals as the reviewer rung, at greater depth, plus:
 
-| Signal | Where it is visible | What it demonstrates |
-| --- | --- | --- |
-| Merged changes a maintainer chose to merge | Repository history | Stewardship, not authorship |
-| Resolution of cross-area disagreements | [decisions/README.md](decisions/README.md) | Judgement beyond one area |
-| Incident or security participation | The relevant private record, summarised publicly | Can be trusted under pressure |
-| Governance participation — votes, reviews, amendments | Decision records | Takes the process seriously |
-| Mentorship of contributors and reviewers | [MENTORSHIP.md](MENTORSHIP.md) | Multiplies the project |
+| Signal                                                | Where it is visible                              | What it demonstrates          |
+| ----------------------------------------------------- | ------------------------------------------------ | ----------------------------- |
+| Merged changes a maintainer chose to merge            | Repository history                               | Stewardship, not authorship   |
+| Resolution of cross-area disagreements                | [decisions/README.md](decisions/README.md)       | Judgement beyond one area     |
+| Incident or security participation                    | The relevant private record, summarised publicly | Can be trusted under pressure |
+| Governance participation — votes, reviews, amendments | Decision records                                 | Takes the process seriously   |
+| Mentorship of contributors and reviewers              | [MENTORSHIP.md](MENTORSHIP.md)                   | Multiplies the project        |
 
 **Process.** Follow [ONBOARDING_MAINTAINER.md](ONBOARDING_MAINTAINER.md) end to
 end: nomination open at least **7 calendar days**, election, acceptance of the
@@ -219,14 +219,14 @@ The ladder is bidirectional, and that is deliberate.
 
 ## Common misconceptions
 
-| Claim | What the policy says |
-| --- | --- |
-| "You have to be a contributor for a year first." | No rung has a tenure requirement. Evidence of judgement, not elapsed time. |
-| "Merged PR count is the metric." | It is a weak signal. Judgement on other people's work is the strong one. |
-| "The triager role is a step toward maintainer." | It is lateral. It does not advance the ladder and is not required for it. |
-| "Promotion is the project repaying you." | It is a responsibility first — merge authority and review duty — and a privilege second, per [roles/MAINTAINER.md](roles/MAINTAINER.md). |
-| "You must ask permission to step down." | You may step down at any time, without a vote. |
-| "Governance changes need fewer approvals because they are just docs." | They need two maintainers, and a rule change is ratified at the material-governance threshold, per [APPROVALS.md](APPROVALS.md). |
+| Claim                                                                 | What the policy says                                                                                                                     |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| "You have to be a contributor for a year first."                      | No rung has a tenure requirement. Evidence of judgement, not elapsed time.                                                               |
+| "Merged PR count is the metric."                                      | It is a weak signal. Judgement on other people's work is the strong one.                                                                 |
+| "The triager role is a step toward maintainer."                       | It is lateral. It does not advance the ladder and is not required for it.                                                                |
+| "Promotion is the project repaying you."                              | It is a responsibility first — merge authority and review duty — and a privilege second, per [roles/MAINTAINER.md](roles/MAINTAINER.md). |
+| "You must ask permission to step down."                               | You may step down at any time, without a vote.                                                                                           |
+| "Governance changes need fewer approvals because they are just docs." | They need two maintainers, and a rule change is ratified at the material-governance threshold, per [APPROVALS.md](APPROVALS.md).         |
 
 ## Related documents
 

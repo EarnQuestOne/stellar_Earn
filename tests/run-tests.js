@@ -8,7 +8,9 @@ const {
   runAll: runLintStagedConfigTests,
 } = require("./lint-staged-config.test");
 const { runAll: runPreCommitHookTests } = require("./pre-commit-hook.test");
-const { runAll: runReleasePackageTests } = require("./contract-release-package.test");
+const {
+  runAll: runReleasePackageTests,
+} = require("./contract-release-package.test");
 const {
   runAll: runBackendChangelogTests,
 } = require("./backend-changelog.test");

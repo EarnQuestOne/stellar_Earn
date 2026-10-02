@@ -5,10 +5,10 @@ purpose, naming conventions, and the flow between them.
 
 ## Primary branches
 
-| Branch | Purpose | Direct push allowed |
-|--------|---------|---------------------|
-| `main` | Latest stable, shippable code. Every commit here is production-ready. | No – PRs only. |
-| `release/vX.Y.Z` | Stabilisation branch for a specific release. Created from `main`; merged back to `main` after tagging. | No – PRs only. |
+| Branch           | Purpose                                                                                                | Direct push allowed |
+| ---------------- | ------------------------------------------------------------------------------------------------------ | ------------------- |
+| `main`           | Latest stable, shippable code. Every commit here is production-ready.                                  | No – PRs only.      |
+| `release/vX.Y.Z` | Stabilisation branch for a specific release. Created from `main`; merged back to `main` after tagging. | No – PRs only.      |
 
 `main` is a protected branch. Force-pushes are prohibited. Merges require a
 passing CI run and at least one approving review.

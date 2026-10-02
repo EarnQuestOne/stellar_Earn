@@ -16,6 +16,7 @@ let item = vec.get(i).unwrap();
 ## ✅ Do This Instead
 
 ### Pattern 1: Critical Operations (Fail-Fast)
+
 Use when the operation must succeed or the transaction should fail:
 
 ```rust
@@ -24,12 +25,14 @@ let item = vec.get(i).ok_or(Error::IndexOutOfBounds)?;
 ```
 
 **Use cases:**
+
 - Batch operations
 - Data validation
 - Required data processing
 - State modifications
 
 **Example:**
+
 ```rust
 pub fn process_batch(items: &Vec<Item>) -> Result<(), Error> {
     for i in 0..items.len() {
@@ -43,6 +46,7 @@ pub fn process_batch(items: &Vec<Item>) -> Result<(), Error> {
 ---
 
 ### Pattern 2: Query Operations (Graceful Skip)
+
 Use when missing items can be safely skipped:
 
 ```rust
@@ -53,16 +57,18 @@ if let Some(item) = vec.get(i) {
 ```
 
 **Use cases:**
+
 - Query functions
 - Filtering operations
 - Optional data retrieval
 - Read-only operations
 
 **Example:**
+
 ```rust
 pub fn get_filtered_items(ids: &Vec<Symbol>) -> Vec<Item> {
     let mut results = Vec::new(env);
-    
+
     for i in 0..ids.len() {
         if let Some(id) = ids.get(i) {
             if let Ok(item) = storage::get_item(env, &id) {
@@ -70,7 +76,7 @@ pub fn get_filtered_items(ids: &Vec<Symbol>) -> Vec<Item> {
             }
         }
     }
-    
+
     results
 }
 ```
@@ -176,7 +182,7 @@ fn test_valid_bounds() {
     let mut vec = Vec::new(&env);
     vec.push_back(1);
     vec.push_back(2);
-    
+
     // Should succeed
     let item = vec.get(0).ok_or(Error::IndexOutOfBounds);
     assert!(item.is_ok());
@@ -190,7 +196,7 @@ fn test_valid_bounds() {
 fn test_invalid_bounds() {
     let env = Env::default();
     let vec = Vec::new(&env);
-    
+
     // Should return error, not panic
     let item = vec.get(0).ok_or(Error::IndexOutOfBounds);
     assert!(item.is_err());
@@ -203,11 +209,11 @@ fn test_invalid_bounds() {
 #[test]
 fn test_edge_cases() {
     let env = Env::default();
-    
+
     // Empty vector
     let empty = Vec::new(&env);
     assert!(empty.get(0).is_none());
-    
+
     // Large offset
     let mut vec = Vec::new(&env);
     vec.push_back(1);
@@ -220,6 +226,7 @@ fn test_edge_cases() {
 ## Performance Considerations
 
 ### Bounds Checking is Cheap
+
 - `.get()` already performs bounds checking internally
 - `.ok_or()` adds minimal overhead
 - Much cheaper than recovering from a panic
@@ -227,6 +234,7 @@ fn test_edge_cases() {
 ### Optimization Tips
 
 1. **Cache vector length:**
+
    ```rust
    let len = vec.len();
    for i in 0..len {
@@ -237,6 +245,7 @@ fn test_edge_cases() {
    ```
 
 2. **Use iterators when possible:**
+
    ```rust
    // Better than indexing
    for item in vec.iter() {
@@ -274,6 +283,7 @@ fn test_edge_cases() {
 ## Real-World Examples from This Codebase
 
 ### Example 1: Batch Quest Registration
+
 ```rust
 pub fn register_quests_batch(
     env: &Env,
@@ -286,7 +296,7 @@ pub fn register_quests_batch(
     for i in 0u32..len {
         // ✅ Safe bounds checking
         let q = quests.get(i).ok_or(Error::IndexOutOfBounds)?;
-        register_quest(env, &q.id, creator, &q.reward_asset, 
+        register_quest(env, &q.id, creator, &q.reward_asset,
                       q.reward_amount, &q.verifier, q.deadline)?;
     }
 
@@ -295,6 +305,7 @@ pub fn register_quests_batch(
 ```
 
 ### Example 2: Query by Status
+
 ```rust
 pub fn get_quests_by_status(
     env: &Env,
@@ -333,6 +344,7 @@ pub fn get_quests_by_status(
 ## Questions?
 
 If you're unsure which pattern to use:
+
 1. **Will missing data break the operation?** → Use `.ok_or()`
 2. **Can missing data be safely skipped?** → Use `if let Some()`
 3. **Can you avoid indexing entirely?** → Use iterators
@@ -341,5 +353,5 @@ If you're unsure which pattern to use:
 
 ---
 
-*Last updated: April 25, 2026*  
-*Part of the Array Bounds Checking Security Fix*
+_Last updated: April 25, 2026_  
+_Part of the Array Bounds Checking Security Fix_

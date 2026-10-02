@@ -12,14 +12,14 @@ This document defines the milestones used to track and gate backend reliability.
 
 ### Acceptance conditions
 
-| Check | Condition |
-| --- | --- |
-| TypeScript compilation | `nest build` exits 0 with zero type errors |
-| Unit tests | `npm test` exits 0; all `.spec.ts` files under `BackEnd/src/` pass |
-| E2E tests | `npm run test:e2e` exits 0 against a live Postgres + Redis test environment |
-| Integration tests | `npm run test:integration` exits 0 |
-| Lint | `npm run lint` exits 0 with zero ESLint errors (warnings are allowed) |
-| Format | `prettier --check` exits 0 for all `src/**/*.ts` and `test/**/*.ts` files |
+| Check                  | Condition                                                                   |
+| ---------------------- | --------------------------------------------------------------------------- |
+| TypeScript compilation | `nest build` exits 0 with zero type errors                                  |
+| Unit tests             | `npm test` exits 0; all `.spec.ts` files under `BackEnd/src/` pass          |
+| E2E tests              | `npm run test:e2e` exits 0 against a live Postgres + Redis test environment |
+| Integration tests      | `npm run test:integration` exits 0                                          |
+| Lint                   | `npm run lint` exits 0 with zero ESLint errors (warnings are allowed)       |
+| Format                 | `prettier --check` exits 0 for all `src/**/*.ts` and `test/**/*.ts` files   |
 
 ### Definition of "green"
 
@@ -39,21 +39,21 @@ A dedicated workflow `.github/workflows/backend-ci.yml` is the authoritative gat
 
 Coverage is measured by `npm run test:cov` (Jest + `--coverage`). The thresholds below are enforced in `BackEnd/jest.config.ts` (or the `jest` key in `package.json`) so that Jest fails if any target is missed.
 
-| Metric | Target |
-| --- | --- |
+| Metric     | Target |
+| ---------- | ------ |
 | Statements | ≥ 80 % |
-| Branches | ≥ 75 % |
-| Functions | ≥ 80 % |
-| Lines | ≥ 80 % |
+| Branches   | ≥ 75 % |
+| Functions  | ≥ 80 % |
+| Lines      | ≥ 80 % |
 
 ### Test-type requirements
 
-| Test type | Requirement |
-| --- | --- |
-| Unit (`.spec.ts`) | Every service and controller exported from a module must have a corresponding unit test file |
-| Integration | Each cross-module interaction listed in [Data Flow & Diagrams](./data-flow.md) must have at least one integration test |
-| E2E | Every public HTTP endpoint documented in [Module API Reference](./module-apis.md) must be exercised by at least one E2E spec |
-| Security | Auth bypass and input-injection cases must be covered in `test/security/` |
+| Test type         | Requirement                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Unit (`.spec.ts`) | Every service and controller exported from a module must have a corresponding unit test file                                 |
+| Integration       | Each cross-module interaction listed in [Data Flow & Diagrams](./data-flow.md) must have at least one integration test       |
+| E2E               | Every public HTTP endpoint documented in [Module API Reference](./module-apis.md) must be exercised by at least one E2E spec |
+| Security          | Auth bypass and input-injection cases must be covered in `test/security/`                                                    |
 
 ### Flaky-test policy
 
@@ -71,46 +71,46 @@ Test files must follow the pattern `<subject>.<type>.ts` where `<type>` is one o
 
 ### HTTP response-time SLOs (p95, production traffic)
 
-| Endpoint group | p95 target |
-| --- | --- |
-| Quest listing (`GET /api/v1/quests`) | < 500 ms |
-| Quest detail (`GET /api/v1/quests/:id`) | < 300 ms |
-| Quest submission (`POST /api/v1/submissions`) | < 800 ms |
-| Auth (login / token refresh) | < 400 ms |
-| Health probe (`GET /api/v1/health`) | < 100 ms |
+| Endpoint group                                | p95 target |
+| --------------------------------------------- | ---------- |
+| Quest listing (`GET /api/v1/quests`)          | < 500 ms   |
+| Quest detail (`GET /api/v1/quests/:id`)       | < 300 ms   |
+| Quest submission (`POST /api/v1/submissions`) | < 800 ms   |
+| Auth (login / token refresh)                  | < 400 ms   |
+| Health probe (`GET /api/v1/health`)           | < 100 ms   |
 
 These targets align with the thresholds already defined in the k6 load-test profile at `BackEnd/load-tests/quest-submissions.k6.ts`.
 
 ### Throughput and error-rate SLOs
 
-| Metric | Target |
-| --- | --- |
-| HTTP error rate (5xx) | < 1 % under sustained load |
+| Metric                | Target                       |
+| --------------------- | ---------------------------- |
+| HTTP error rate (5xx) | < 1 % under sustained load   |
 | HTTP error rate (5xx) | < 2 % during spike (150 VUs) |
-| Quest-list throughput | ≥ 100 req/s at 50 VUs |
-| Submission throughput | ≥ 30 req/s at 50 VUs |
+| Quest-list throughput | ≥ 100 req/s at 50 VUs        |
+| Submission throughput | ≥ 30 req/s at 50 VUs         |
 
 ### Load-test gate
 
 The k6 profile at `BackEnd/load-tests/quest-submissions.k6.ts` is the reference test. Stages:
 
-| Stage | VUs | Duration |
-| --- | --- | --- |
-| Ramp-up | 0 → 50 | 1 min |
-| Sustained | 50 | 3 min |
-| Spike | 50 → 150 | 30 s |
-| Sustained spike | 150 | 1 min |
-| Ramp-down | 150 → 0 | 1 min |
+| Stage           | VUs      | Duration |
+| --------------- | -------- | -------- |
+| Ramp-up         | 0 → 50   | 1 min    |
+| Sustained       | 50       | 3 min    |
+| Spike           | 50 → 150 | 30 s     |
+| Sustained spike | 150      | 1 min    |
+| Ramp-down       | 150 → 0  | 1 min    |
 
 A load-test run is considered passing when all `thresholds` defined in the k6 options block exit green.
 
 ### Database query targets
 
-| Metric | Target |
-| --- | --- |
-| Slow queries (> 500 ms) | Zero in steady state |
-| Index coverage | All foreign-key columns and columns used in `WHERE` / `ORDER BY` clauses on high-traffic tables must be indexed |
-| Connection pool exhaustion | Zero occurrences in production logs |
+| Metric                     | Target                                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Slow queries (> 500 ms)    | Zero in steady state                                                                                            |
+| Index coverage             | All foreign-key columns and columns used in `WHERE` / `ORDER BY` clauses on high-traffic tables must be indexed |
+| Connection pool exhaustion | Zero occurrences in production logs                                                                             |
 
 The Grafana dashboard at `BackEnd/monitoring/grafana/dashboards/database-pool-dashboard.json` is the reference for pool-exhaustion monitoring.
 
@@ -118,10 +118,10 @@ The Grafana dashboard at `BackEnd/monitoring/grafana/dashboards/database-pool-da
 
 ## Milestone tracking
 
-| Milestone | Status |
-| --- | --- |
-| M1 — Green CI | In progress |
-| M2 — Test quality | In progress |
+| Milestone                | Status      |
+| ------------------------ | ----------- |
+| M1 — Green CI            | In progress |
+| M2 — Test quality        | In progress |
 | M3 — Performance targets | In progress |
 
 Milestone status is updated here as conditions are met. A milestone moves to **Done** only when every acceptance condition in its section is satisfied in the `main` branch.

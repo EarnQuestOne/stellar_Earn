@@ -9,19 +9,19 @@ project-wide picture lives in one place.
 
 Every holder of a role is expected to follow the decisions, review, and
 security policies referenced throughout [README.md](README.md). A role grants
-authority *subject to those policies*, not in place of them.
+authority _subject to those policies_, not in place of them.
 
 ## Role index
 
-| Role                                    | Detail                                             |
-| --------------------------------------- | -------------------------------------------------- |
-| Contributor                             | [CONTRIBUTING.md](../CONTRIBUTING.md)              |
-| Reviewer                                | [roles/REVIEWER.md](roles/REVIEWER.md)             |
-| Maintainer                              | [roles/MAINTAINER.md](roles/MAINTAINER.md)         |
-| Triager                                 | [TRIAGE_POLICY.md](TRIAGE_POLICY.md)               |
-| Release manager                         | [RELEASE_POLICY.md](RELEASE_POLICY.md)             |
-| Security response team                  | [roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md)   |
-| Technical steering committee (TSC)      | [WORKING_GROUPS.md](WORKING_GROUPS.md)             |
+| Role                               | Detail                                           |
+| ---------------------------------- | ------------------------------------------------ |
+| Contributor                        | [CONTRIBUTING.md](../CONTRIBUTING.md)            |
+| Reviewer                           | [roles/REVIEWER.md](roles/REVIEWER.md)           |
+| Maintainer                         | [roles/MAINTAINER.md](roles/MAINTAINER.md)       |
+| Triager                            | [TRIAGE_POLICY.md](TRIAGE_POLICY.md)             |
+| Release manager                    | [RELEASE_POLICY.md](RELEASE_POLICY.md)           |
+| Security response team             | [roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md) |
+| Technical steering committee (TSC) | [WORKING_GROUPS.md](WORKING_GROUPS.md)           |
 
 The current holders of the reviewer, maintainer, and similar roles are listed
 in [MAINTAINERS.md](MAINTAINERS.md) and reflected in `.github/CODEOWNERS`.
@@ -44,17 +44,17 @@ in [MAINTAINERS.md](MAINTAINERS.md) and reflected in `.github/CODEOWNERS`.
 
 ## Permissions matrix
 
-| Permission                                   | Contributor | Reviewer | Maintainer | Triager | Release manager | Security team |
-| -------------------------------------------- | :---------: | :------: | :--------: | :-----: | :-------------: | :-----------: |
-| Push to personal fork / topic branches       |      P      |    P     |     P      |    P    |        P        |       P       |
-| Push to protected default branch             |      —      |    —     |     P      |    —    |        —        |       —       |
-| Approve a pull request                       |      —      |    P     |     P      |    —    |        —        |       P¹      |
-| Request changes (blocking review)            |      —      |    P     |     P      |    —    |        —        |       S       |
-| Apply / remove triage labels                 |      —      |    S     |     P      |    P    |        —        |       S       |
-| Merge to default branch                      |      —      |    —     |     P      |    —    |        S²       |       —       |
-| Create a release tag                         |      —      |    —     |     P      |    —    |        P        |       —       |
-| Access private vulnerability reports         |      —      |    —     |     S      |    —    |        —        |       P       |
-| Invoke emergency powers                      |      —      |    —     |     P      |    —    |        S        |       P³      |
+| Permission                             | Contributor | Reviewer | Maintainer | Triager | Release manager | Security team |
+| -------------------------------------- | :---------: | :------: | :--------: | :-----: | :-------------: | :-----------: |
+| Push to personal fork / topic branches |      P      |    P     |     P      |    P    |        P        |       P       |
+| Push to protected default branch       |      —      |    —     |     P      |    —    |        —        |       —       |
+| Approve a pull request                 |      —      |    P     |     P      |    —    |        —        |      P¹       |
+| Request changes (blocking review)      |      —      |    P     |     P      |    —    |        —        |       S       |
+| Apply / remove triage labels           |      —      |    S     |     P      |    P    |        —        |       S       |
+| Merge to default branch                |      —      |    —     |     P      |    —    |       S²        |       —       |
+| Create a release tag                   |      —      |    —     |     P      |    —    |        P        |       —       |
+| Access private vulnerability reports   |      —      |    —     |     S      |    —    |        —        |       P       |
+| Invoke emergency powers                |      —      |    —     |     P      |    —    |        S        |      P³       |
 
 ¹ Security team approvals count for security-sensitive paths; they do not
 replace code-owner review elsewhere.

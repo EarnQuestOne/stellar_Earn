@@ -10,14 +10,14 @@ covers the lifecycle of a brand-new subproject.
 
 ## Areas and ownership
 
-| Area        | Path          | Primary owner role | Review required                     |
-| ----------- | ------------- | ------------------ | ----------------------------------- |
-| Contracts   | `contracts/`  | Maintainer         | Contracts reviewer + maintainer     |
-| Backend     | `BackEnd/`    | Maintainer         | Backend reviewer + maintainer       |
-| Frontend    | `FrontEnd/`   | Maintainer         | Frontend reviewer + maintainer      |
-| Subgraph    | `subgraph/`   | Maintainer         | Area reviewer + maintainer          |
-| Tooling/CI  | `scripts/`, `.github/`, root config | Maintainer | Maintainer + area reviewer |
-| Governance  | `Governance/` | Maintainer         | Two maintainers (see [CHARTER.md](CHARTER.md)) |
+| Area       | Path                                | Primary owner role | Review required                                |
+| ---------- | ----------------------------------- | ------------------ | ---------------------------------------------- |
+| Contracts  | `contracts/`                        | Maintainer         | Contracts reviewer + maintainer                |
+| Backend    | `BackEnd/`                          | Maintainer         | Backend reviewer + maintainer                  |
+| Frontend   | `FrontEnd/`                         | Maintainer         | Frontend reviewer + maintainer                 |
+| Subgraph   | `subgraph/`                         | Maintainer         | Area reviewer + maintainer                     |
+| Tooling/CI | `scripts/`, `.github/`, root config | Maintainer         | Maintainer + area reviewer                     |
+| Governance | `Governance/`                       | Maintainer         | Two maintainers (see [CHARTER.md](CHARTER.md)) |
 
 The role names above are defined in [ROLES.md](ROLES.md), and the people
 currently holding them are listed in [MAINTAINERS.md](MAINTAINERS.md). The
@@ -67,7 +67,7 @@ Regardless of area, every change must satisfy the centralized standards:
 ## Escalation
 
 Disagreements within an area are resolved by that area's owner; disagreements
-*between* areas, or about whether a change is cross-area, escalate to the
+_between_ areas, or about whether a change is cross-area, escalate to the
 maintainers and are settled per
 [CONFLICT_RESOLUTION.md](CONFLICT_RESOLUTION.md). The charter
 ([CHARTER.md](CHARTER.md)) is the final tie-breaker on scope questions.

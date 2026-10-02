@@ -10,29 +10,31 @@ import * as process from 'process';
  */
 async function rollbackMigrations() {
   console.log('Starting rollback of two-step migrations...');
-  
+
   const dataSource = new DataSource(dataSourceOptions);
-  
+
   try {
     await dataSource.initialize();
     console.log('Database connection established');
-    
+
     // Get the migration table to see what migrations have been run
     const migrationTable = await dataSource.query(`
       SELECT * FROM "typeorm_migrations" 
       WHERE "name" LIKE '%DataMigrationStep%' 
       ORDER BY "timestamp" DESC
     `);
-    
+
     if (migrationTable.length === 0) {
       console.log('No data migrations found to rollback');
       return;
     }
-    
+
     console.log(`Found ${migrationTable.length} data migration(s) to rollback`);
-    
+
     // Rollback Step 2 first (data migration)
-    const step2Migration = migrationTable.find((m: any) => m.name.includes('DataMigrationStep2'));
+    const step2Migration = migrationTable.find((m: any) =>
+      m.name.includes('DataMigrationStep2'),
+    );
     if (step2Migration) {
       console.log('Rolling back Step 2: Data migration...');
       await dataSource.query(`
@@ -41,9 +43,11 @@ async function rollbackMigrations() {
       `);
       console.log('Step 2 rollback completed');
     }
-    
+
     // Rollback Step 1 second (schema sync)
-    const step1Migration = migrationTable.find((m: any) => m.name.includes('DataMigrationStep1'));
+    const step1Migration = migrationTable.find((m: any) =>
+      m.name.includes('DataMigrationStep1'),
+    );
     if (step1Migration) {
       console.log('Rolling back Step 1: Schema synchronization...');
       await dataSource.query(`
@@ -52,9 +56,8 @@ async function rollbackMigrations() {
       `);
       console.log('Step 1 rollback completed');
     }
-    
+
     console.log('Rollback completed successfully');
-    
   } catch (error) {
     console.error('Rollback failed:', error);
     throw error;
@@ -68,31 +71,35 @@ async function rollbackMigrations() {
 // Manual rollback execution
 async function manualRollback() {
   console.log('Starting manual rollback of two-step migrations...');
-  
+
   const dataSource = new DataSource(dataSourceOptions);
-  
+
   try {
     await dataSource.initialize();
     console.log('Database connection established');
-    
+
     // Manual rollback of Step 2
     console.log('Manually rolling back Step 2: Data migration...');
-    
+
     // Drop foreign key constraints
     const constraints = [
       'FK_submissions_user',
-      'FK_quests_creator', 
+      'FK_quests_creator',
       'FK_submissions_quest',
       'FK_notifications_user',
-      'FK_refresh_tokens_user'
+      'FK_refresh_tokens_user',
     ];
 
     for (const constraint of constraints) {
       try {
-        await dataSource.query(`ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`);
+        await dataSource.query(
+          `ALTER TABLE DROP CONSTRAINT IF EXISTS "${constraint}"`,
+        );
         console.log(`Dropped constraint: ${constraint}`);
       } catch (error) {
-        console.log(`Constraint ${constraint} does not exist or cannot be dropped`);
+        console.log(
+          `Constraint ${constraint} does not exist or cannot be dropped`,
+        );
       }
     }
 
@@ -108,7 +115,7 @@ async function manualRollback() {
       'IDX_payouts_status',
       'IDX_payouts_stellarAddress',
       'IDX_payouts_questId',
-      'IDX_payouts_submissionId'
+      'IDX_payouts_submissionId',
     ];
 
     for (const index of indexes) {
@@ -132,10 +139,10 @@ async function manualRollback() {
     `);
 
     console.log('Step 2 manual rollback completed');
-    
+
     // Manual rollback of Step 1
     console.log('Manually rolling back Step 1: Schema synchronization...');
-    
+
     // Reverse table renames if needed
     const tables = [
       { old: 'users', new: 'User' },
@@ -143,7 +150,7 @@ async function manualRollback() {
       { old: 'submissions', new: 'Submission' },
       { old: 'notifications', new: 'Notification' },
       { old: 'payouts', new: 'Payout' },
-      { old: 'refresh_tokens', new: 'RefreshToken' }
+      { old: 'refresh_tokens', new: 'RefreshToken' },
     ];
 
     for (const table of tables) {
@@ -154,14 +161,21 @@ async function manualRollback() {
             WHERE table_name = '${table.old}'
           )
         `);
-        
-        if (tableExists[0].exists && !(await dataSource.query(`
+
+        if (
+          tableExists[0].exists &&
+          !(
+            await dataSource.query(`
           SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_name = '${table.new}'
           )
-        `)).then((r: any) => r[0].exists)) {
-          await dataSource.query(`ALTER TABLE "${table.old}" RENAME TO "${table.new}"`);
+        `)
+          ).then((r: any) => r[0].exists)
+        ) {
+          await dataSource.query(
+            `ALTER TABLE "${table.old}" RENAME TO "${table.new}"`,
+          );
           console.log(`Renamed ${table.old} to ${table.new}`);
         }
       } catch (error) {
@@ -177,7 +191,6 @@ async function manualRollback() {
 
     console.log('Step 1 manual rollback completed');
     console.log('Manual rollback completed successfully');
-    
   } catch (error) {
     console.error('Manual rollback failed:', error);
     throw error;
@@ -191,7 +204,7 @@ async function manualRollback() {
 // Check if this file is being run directly
 if (require.main === module) {
   const command = process.argv[2];
-  
+
   if (command === 'manual') {
     manualRollback().catch(console.error);
   } else {

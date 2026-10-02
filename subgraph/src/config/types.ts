@@ -7,34 +7,34 @@
 // ── Enum types ────────────────────────────────────────────────────────────────
 
 export enum QuestStatus {
-  Active = 'Active',
-  Paused = 'Paused',
-  Completed = 'Completed',
-  Expired = 'Expired',
-  Cancelled = 'Cancelled',
+  Active = "Active",
+  Paused = "Paused",
+  Completed = "Completed",
+  Expired = "Expired",
+  Cancelled = "Cancelled",
 }
 
 export enum SubmissionStatus {
-  Pending = 'Pending',
-  Approved = 'Approved',
-  Rejected = 'Rejected',
-  Paid = 'Paid',
+  Pending = "Pending",
+  Approved = "Approved",
+  Rejected = "Rejected",
+  Paid = "Paid",
 }
 
 export enum DisputeStatus {
-  Pending = 'Pending',
-  UnderReview = 'UnderReview',
-  Resolved = 'Resolved',
-  Withdrawn = 'Withdrawn',
-  Appealed = 'Appealed',
+  Pending = "Pending",
+  UnderReview = "UnderReview",
+  Resolved = "Resolved",
+  Withdrawn = "Withdrawn",
+  Appealed = "Appealed",
 }
 
 export enum BadgeType {
-  Rookie = 'Rookie',
-  Explorer = 'Explorer',
-  Veteran = 'Veteran',
-  Master = 'Master',
-  Legend = 'Legend',
+  Rookie = "Rookie",
+  Explorer = "Explorer",
+  Veteran = "Veteran",
+  Master = "Master",
+  Legend = "Legend",
 }
 
 // ── Entity types ──────────────────────────────────────────────────────────────
@@ -43,9 +43,9 @@ export interface QuestEntity {
   id: string;
   creator: string;
   reward_asset: string;
-  reward_amount: string;   // BigInt as string
+  reward_amount: string; // BigInt as string
   verifier: string;
-  deadline: string;        // u64 as string
+  deadline: string; // u64 as string
   status: QuestStatus;
   total_claims: number;
   created_at: string;
@@ -58,12 +58,12 @@ export interface QuestMetadataEntity {
   title: string | null;
   description: string | null;
   category: string | null;
-  tags: string;           // JSON stringified array
-  requirements: string;   // JSON stringified array
+  tags: string; // JSON stringified array
+  requirements: string; // JSON stringified array
 }
 
 export interface SubmissionEntity {
-  id: string;             // "questId:submitter"
+  id: string; // "questId:submitter"
   quest_id: string;
   submitter: string;
   proof_hash: string;
@@ -100,7 +100,7 @@ export interface UserStatsEntity {
   xp: string;
   level: number;
   quests_completed: number;
-  badges: string;          // JSON stringified array
+  badges: string; // JSON stringified array
   total_submissions: number;
   total_payouts: number;
   total_payout_amount: string;
@@ -279,11 +279,11 @@ export type EventData =
   | SubmissionRevealedData;
 
 export interface IndexedEvent {
-  id: string;             // unique: "txHash:eventIndex"
+  id: string; // unique: "txHash:eventIndex"
   eventType: string;
   contractId: string;
-  topics: string[];       // raw topic strings
-  data: string;           // raw data string
+  topics: string[]; // raw topic strings
+  data: string; // raw data string
   parsedData: EventData;
   ledger: number;
   ledgerTimestamp: string;

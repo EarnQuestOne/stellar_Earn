@@ -64,6 +64,7 @@ This document provides a comprehensive mapping of the Stellar Earn frontend arch
 **Location**: `FrontEnd/my-app/app/`, `FrontEnd/my-app/components/`
 
 #### App Router Structure (`app/`)
+
 ```
 app/
 ├── layout.tsx          # Root layout with providers
@@ -81,6 +82,7 @@ app/
 ```
 
 #### Component Organization (`components/`)
+
 ```
 components/
 ├── a11y/               # Accessibility components
@@ -105,6 +107,7 @@ components/
 ```
 
 **Responsibilities**:
+
 - Render UI based on state and props
 - Handle user interactions and events
 - Present data in user-friendly formats
@@ -115,6 +118,7 @@ components/
 **Location**: `FrontEnd/my-app/context/`, `FrontEnd/my-app/lib/hooks/`
 
 #### Context Layer (`context/`)
+
 ```typescript
 context/
 ├── AuthContext.tsx     # Authentication state and methods
@@ -123,29 +127,33 @@ context/
 ```
 
 **Responsibilities**:
+
 - Provide global application state
 - Expose business logic methods
 - Handle cross-component state sharing
 - Manage authentication and wallet connections
 
 #### Custom Hooks (`lib/hooks/`)
+
 **Common Pattern**: Domain-specific hooks that encapsulate business logic
+
 ```typescript
 // Example hook pattern
 export function useQuests() {
   const quests = useStore(selectQuests);
   const filters = useStore(selectQuestFilters);
   const isLoading = useStore((s) => s.isLoading);
-  
+
   const fetchQuests = useCallback(async () => {
     // Business logic for fetching quests
   }, []);
-  
+
   return { quests, filters, isLoading, fetchQuests };
 }
 ```
 
 **Responsibilities**:
+
 - Encapsulate reusable business logic
 - Connect components to state management
 - Handle side effects and data fetching
@@ -156,6 +164,7 @@ export function useQuests() {
 **Location**: `FrontEnd/my-app/lib/store/`
 
 #### Store Structure
+
 ```typescript
 store/
 ├── index.ts            # Main store composition
@@ -173,6 +182,7 @@ store/
 #### State Slices Architecture
 
 **User Slice** (`userSlice.ts`)
+
 ```typescript
 interface UserSlice {
   // State
@@ -182,7 +192,7 @@ interface UserSlice {
   activities: Activity[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   setUserData: (data: UserData) => void;
   setLoading: (loading: boolean) => void;
@@ -191,6 +201,7 @@ interface UserSlice {
 ```
 
 **Quest Slice** (`questSlice.ts`)
+
 ```typescript
 interface QuestSlice {
   // State
@@ -198,7 +209,7 @@ interface QuestSlice {
   filters: QuestFilters;
   selectedQuest: Quest | null;
   isLoading: boolean;
-  
+
   // Actions
   setQuests: (quests: Quest[]) => void;
   setFilters: (filters: QuestFilters) => void;
@@ -207,13 +218,14 @@ interface QuestSlice {
 ```
 
 **Submission Slice** (`submissionSlice.ts`)
+
 ```typescript
 interface SubmissionSlice {
   // State
   submissions: Submission[];
   selectedSubmission: Submission | null;
   isLoading: boolean;
-  
+
   // Actions
   setSubmissions: (submissions: Submission[]) => void;
   addSubmission: (submission: Submission) => void;
@@ -222,13 +234,14 @@ interface SubmissionSlice {
 ```
 
 **Notification Slice** (`notificationSlice.ts`)
+
 ```typescript
 interface NotificationSlice {
   // State
   notifications: Notification[];
   unreadCount: number;
   notificationSettings: NotificationSettings;
-  
+
   // Actions
   addNotification: (notification: Notification) => void;
   markAsRead: (id: string) => void;
@@ -237,6 +250,7 @@ interface NotificationSlice {
 ```
 
 **Wallet Slice** (`walletSlice.ts`)
+
 ```typescript
 interface WalletSlice {
   // State
@@ -244,7 +258,7 @@ interface WalletSlice {
   isConnected: boolean;
   isConnecting: boolean;
   selectedWalletId: string | null;
-  
+
   // Actions
   setAddress: (address: string | null) => void;
   setConnected: (connected: boolean) => void;
@@ -253,21 +267,23 @@ interface WalletSlice {
 ```
 
 **UI Slice** (`uiSlice.ts`)
+
 ```typescript
 interface UISlice {
   // State
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   modal: ModalState | null;
   sidebarOpen: boolean;
-  
+
   // Actions
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: "light" | "dark") => void;
   setModal: (modal: ModalState | null) => void;
   toggleSidebar: () => void;
 }
 ```
 
 **Responsibilities**:
+
 - Centralize application state
 - Provide type-safe state access
 - Handle state updates through actions
@@ -279,6 +295,7 @@ interface UISlice {
 **Location**: `FrontEnd/my-app/lib/api/`, `FrontEnd/my-app/lib/types/`
 
 #### API Client Structure
+
 ```typescript
 api/
 ├── client.ts           # Axios instance with interceptors
@@ -299,6 +316,7 @@ api/
 #### API Client Architecture
 
 **Base Client** (`client.ts`)
+
 ```typescript
 // Features:
 - Axios-based HTTP client
@@ -312,27 +330,27 @@ api/
 
 **Domain API Modules**
 Each domain has its own API module following this pattern:
+
 ```typescript
 // Example: quests.ts
 export const questApi = {
-  getQuests: (params: QuestQueryParams) => 
-    apiClient.get<QuestResponse[]>('/quests', { params }),
-  
-  getQuestById: (id: string) => 
-    apiClient.get<QuestResponse>(`/quests/${id}`),
-  
-  createQuest: (data: CreateQuestRequest) => 
-    apiClient.post<QuestResponse>('/quests', data),
-  
-  updateQuest: (id: string, data: UpdateQuestRequest) => 
+  getQuests: (params: QuestQueryParams) =>
+    apiClient.get<QuestResponse[]>("/quests", { params }),
+
+  getQuestById: (id: string) => apiClient.get<QuestResponse>(`/quests/${id}`),
+
+  createQuest: (data: CreateQuestRequest) =>
+    apiClient.post<QuestResponse>("/quests", data),
+
+  updateQuest: (id: string, data: UpdateQuestRequest) =>
     apiClient.put<QuestResponse>(`/quests/${id}`, data),
-  
-  deleteQuest: (id: string) => 
-    apiClient.delete<void>(`/quests/${id}`)
+
+  deleteQuest: (id: string) => apiClient.delete<void>(`/quests/${id}`),
 };
 ```
 
 #### Type Definitions (`lib/types/`)
+
 ```typescript
 types/
 ├── api.types.ts        # API request/response types
@@ -346,12 +364,14 @@ types/
 ```
 
 **Key Type Categories**:
+
 - **API Types**: Request/response shapes, pagination, error formats
 - **Domain Types**: Business entities (Quest, User, Submission, etc.)
 - **UI Types**: Component props, state shapes, event handlers
 - **Configuration Types**: Settings, preferences, feature flags
 
 **Responsibilities**:
+
 - Provide type-safe API communication
 - Handle data serialization/deserialization
 - Manage authentication and authorization
@@ -363,6 +383,7 @@ types/
 **Location**: `FrontEnd/my-app/lib/utils/`, `FrontEnd/my-app/lib/config/`
 
 #### Utility Functions (`lib/utils/`)
+
 ```
 utils/
 ├── error-handler.ts    # Error handling utilities
@@ -373,6 +394,7 @@ utils/
 ```
 
 #### Configuration (`lib/config/`)
+
 ```
 config/
 ├── env.ts              # Environment variables
@@ -381,6 +403,7 @@ config/
 ```
 
 #### Validation (`lib/validation/`)
+
 ```
 validation/
 ├── schemas/            # Zod validation schemas
@@ -389,6 +412,7 @@ validation/
 ```
 
 #### Stellar Integration (`lib/stellar/`)
+
 ```
 stellar/
 ├── client.ts           # Stellar SDK client
@@ -398,6 +422,7 @@ stellar/
 ```
 
 #### Analytics (`lib/analytics/`)
+
 ```
 analytics/
 ├── tracking.ts         # Event tracking
@@ -418,15 +443,16 @@ User Action → Component → Hook/Context → Store Selector → API Client →
 ```
 
 **Example: Fetching Quests**
+
 ```typescript
 // Component
 function QuestList() {
   const { quests, isLoading, fetchQuests } = useQuests();
-  
+
   useEffect(() => {
     fetchQuests();
   }, []);
-  
+
   return <div>{quests.map(quest => <QuestCard key={quest.id} quest={quest} />)}</div>;
 }
 
@@ -435,7 +461,7 @@ function useQuests() {
   const dispatch = useStore((state) => state.dispatch);
   const quests = useStore(selectQuests);
   const isLoading = useStore((state) => state.isLoading);
-  
+
   const fetchQuests = useCallback(async () => {
     dispatch(setLoading(true));
     try {
@@ -447,7 +473,7 @@ function useQuests() {
       dispatch(setLoading(false));
     }
   }, [dispatch]);
-  
+
   return { quests, isLoading, fetchQuests };
 }
 ```
@@ -467,23 +493,24 @@ User Action → Component → Hook/Context → API Client → Backend API
 ```
 
 **Example: Creating a Submission**
+
 ```typescript
 // Component
 function SubmitQuestForm({ questId }) {
   const { createSubmission } = useSubmissions();
-  
+
   const handleSubmit = async (data) => {
     await createSubmission(questId, data);
     // Show success message, redirect, etc.
   };
-  
+
   return <form onSubmit={handleSubmit}>...</form>;
 }
 
 // Hook
 function useSubmissions() {
   const dispatch = useStore((state) => state.dispatch);
-  
+
   const createSubmission = useCallback(async (questId: string, data: CreateSubmissionRequest) => {
     try {
       const response = await submissionApi.create(questId, data);
@@ -493,7 +520,7 @@ function useSubmissions() {
       dispatch(addNotification({ type: 'error', message: error.message }));
     }
   }, [dispatch]);
-  
+
   return { createSubmission };
 }
 ```
@@ -505,22 +532,23 @@ Server Event → WebSocket Handler → Context/Store → Component Re-render
 ```
 
 **Example: Real-time Notifications**
+
 ```typescript
 // Context
 function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
-  
+
   useEffect(() => {
     const ws = new WebSocket(NOTIFICATION_WS_URL);
-    
+
     ws.onmessage = (event) => {
       const notification = JSON.parse(event.data);
       setNotifications(prev => [notification, ...prev]);
     };
-    
+
     return () => ws.close();
   }, []);
-  
+
   return (
     <NotificationContext.Provider value={{ notifications }}>
       {children}
@@ -535,7 +563,7 @@ function NotificationProvider({ children }) {
 async function optimisticUpdate(action: () => Promise<void>) {
   // 1. Update state immediately
   dispatch(setOptimisticState());
-  
+
   try {
     // 2. Execute API call
     await action();
@@ -558,6 +586,7 @@ async function optimisticUpdate(action: () => Promise<void>) {
 **Types**: `profile.ts`, `api.types.ts` (User types)
 
 **Data Flow**:
+
 1. User authenticates via Wallet Context
 2. Auth tokens stored and managed
 3. User profile fetched via API
@@ -572,6 +601,7 @@ async function optimisticUpdate(action: () => Promise<void>) {
 **Types**: `quest.ts`, `api.types.ts` (Quest types)
 
 **Data Flow**:
+
 1. Quests fetched via API with filters
 2. Data stored in Quest Slice
 3. Components display via quest cards
@@ -586,6 +616,7 @@ async function optimisticUpdate(action: () => Promise<void>) {
 **Types**: `submission.ts`, `api.types.ts` (Submission types)
 
 **Data Flow**:
+
 1. User creates submission via form
 2. Data validated and sent to API
 3. Optimistic update to store
@@ -600,6 +631,7 @@ async function optimisticUpdate(action: () => Promise<void>) {
 **Types**: `api.types.ts` (Notification types)
 
 **Data Flow**:
+
 1. WebSocket/Real-time events
 2. Notifications added to store
 3. Components display unread count
@@ -614,6 +646,7 @@ async function optimisticUpdate(action: () => Promise<void>) {
 **Types**: `api.types.ts` (Payout types)
 
 **Data Flow**:
+
 1. Submission approved triggers payout
 2. Payout processed via Stellar
 3. Transaction status tracked
@@ -661,11 +694,11 @@ async function optimisticUpdate(action: () => Promise<void>) {
 
 ```typescript
 // Route-based splitting
-const Dashboard = lazy(() => import('./app/dashboard/page'));
-const AdminPanel = lazy(() => import('./app/admin/page'));
+const Dashboard = lazy(() => import("./app/dashboard/page"));
+const AdminPanel = lazy(() => import("./app/admin/page"));
 
 // Component-based splitting
-const HeavyComponent = lazy(() => import('./components/HeavyComponent'));
+const HeavyComponent = lazy(() => import("./components/HeavyComponent"));
 ```
 
 ### State Persistence
@@ -676,13 +709,13 @@ persist(
   (state) => ({
     theme: state.theme,
     address: state.address,
-    notifications: state.notifications
+    notifications: state.notifications,
   }),
   {
-    name: 'stellar-earn-store',
-    storage: createJSONStorage(() => localStorage)
-  }
-)
+    name: "stellar-earn-store",
+    storage: createJSONStorage(() => localStorage),
+  },
+);
 ```
 
 ### Caching Strategy

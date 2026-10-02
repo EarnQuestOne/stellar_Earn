@@ -7,6 +7,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - `PooledHttpClientService` — a global NestJS service backed by keep-alive `http`/`https` agents (`maxSockets=50`, `maxFreeSockets=10`) that vends pre-configured Axios instances for three named timeout budgets:
   - `short` (3 s) — health checks and fast lookups
   - `medium` (8 s) — moderation APIs and webhook delivery

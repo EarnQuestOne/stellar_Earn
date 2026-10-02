@@ -2,7 +2,7 @@
 
 /**
  * Script to check for circular dependencies in the NestJS application
- * 
+ *
  * This script attempts to import all modules and reports any circular dependency errors
  */
 
@@ -12,11 +12,11 @@ const logger = new Logger('CircularDependencyChecker');
 
 async function checkCircularDependencies() {
   logger.log('Starting circular dependency check...');
-  
+
   const modules = [
     'app.module',
     'modules/auth/auth.module',
-    
+
     'modules/users/users.module',
     'modules/quests/quests.module',
     'modules/submissions/submissions.module',

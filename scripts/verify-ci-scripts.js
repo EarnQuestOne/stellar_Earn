@@ -15,7 +15,6 @@ const argv = process.argv.slice(2);
 const dryRun = argv.includes("--dry-run");
 const fix = argv.includes("--fix");
 
-
 // For tests we allow overriding the repo root.
 const ROOT = process.env.VERIFY_CI_ROOT || path.resolve(__dirname, "..");
 const WORKFLOW_DIR = path.join(ROOT, ".github", "workflows");
@@ -44,7 +43,8 @@ function listWorkflowFiles(dir) {
   for (const entry of entries) {
     const p = path.join(dir, entry.name);
     if (entry.isDirectory()) files.push(...listWorkflowFiles(p));
-    else if (entry.isFile() && (p.endsWith(".yml") || p.endsWith(".yaml"))) files.push(p);
+    else if (entry.isFile() && (p.endsWith(".yml") || p.endsWith(".yaml")))
+      files.push(p);
   }
   return files;
 }
@@ -53,8 +53,7 @@ function extractScriptsFromWorkflow(content) {
   const scripts = new Set();
 
   // `npm|pnpm|yarn run <script>` (supports optional pnpm --filter <pkg>)
-  const runRe =
-    /(?:npm|pnpm|yarn)\s+(?:--filter\s+\S+\s+)?run\s+([\w:.-]+)/g;
+  const runRe = /(?:npm|pnpm|yarn)\s+(?:--filter\s+\S+\s+)?run\s+([\w:.-]+)/g;
   let m;
   while ((m = runRe.exec(content)) !== null) scripts.add(m[1]);
 
@@ -127,4 +126,3 @@ function main() {
 }
 
 main();
-

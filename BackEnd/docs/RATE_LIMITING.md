@@ -9,9 +9,11 @@ Per-user rate limiting has been implemented to enforce different rate limits bas
 ### Components
 
 #### 1. PerUserRateLimitConfigService
+
 **File**: `src/config/per-user-rate-limit.config.ts`
 
 Service that manages per-user rate limit configurations based on user roles:
+
 - **Anonymous Users**: IP-based tracking with configurable limits
 - **Regular Users**: Standard authenticated user limits
 - **Verifiers**: Higher limits due to more frequent API operations
@@ -20,9 +22,11 @@ Service that manages per-user rate limit configurations based on user roles:
 Configuration is sourced from environment variables, allowing runtime customization without code changes.
 
 #### 2. AppThrottlerGuard
+
 **File**: `src/common/guards/throttler.guard.ts`
 
 Enhanced ThrottlerGuard that:
+
 - Extracts user role information from JWT tokens and request context
 - Tracks users by unique ID (Stellar address or database ID)
 - Falls back to IP-based tracking for anonymous users
@@ -30,6 +34,7 @@ Enhanced ThrottlerGuard that:
 - Bypasses rate limiting for admin users
 
 Key methods:
+
 - `shouldSkip()`: Returns true for admin users to bypass rate limiting
 - `getTracker()`: Extracts user identity for per-user tracking
 - `getThrottleMetadata()`: Applies role-based rate limits dynamically
@@ -37,16 +42,17 @@ Key methods:
 
 ### Rate Limit Tiers
 
-| User Type | Default Limit | Default TTL | Configurable |
-|-----------|---------------|-------------|--------------|
-| Anonymous (IP) | 50 | 60s | Yes |
-| Regular User | 100 | 60s | Yes |
-| Verifier | 200 | 60s | Yes |
-| Admin | Unlimited | N/A | No |
+| User Type      | Default Limit | Default TTL | Configurable |
+| -------------- | ------------- | ----------- | ------------ |
+| Anonymous (IP) | 50            | 60s         | Yes          |
+| Regular User   | 100           | 60s         | Yes          |
+| Verifier       | 200           | 60s         | Yes          |
+| Admin          | Unlimited     | N/A         | No           |
 
 ### Tracking Mechanism
 
 Users are tracked using a composite key format:
+
 - **Authenticated Users**: `user:{userId}` - Tracked by unique user ID
 - **Anonymous Users**: `ip:{ipAddress}` - Tracked by IP address
 
@@ -79,6 +85,7 @@ All limits are configurable via environment variables. If not specified, sensibl
 ## Implementation Highlights
 
 ### 1. Per-User Isolation
+
 Each user has a completely independent rate limit counter. One user hitting their limit does not affect other users.
 
 ```typescript
@@ -89,6 +96,7 @@ User B: user:stellar_address_B → 100 requests/minute limit
 ```
 
 ### 2. Role-Based Dynamic Limits
+
 Limits are applied based on user role, allowing different tiers of service:
 
 ```typescript
@@ -105,13 +113,17 @@ if (userRole === UserRole.ADMIN) {
 ```
 
 ### 3. Secure User Identification
+
 User role is extracted from:
+
 1. Request context (`req.user.role`) - Set by authentication guards
 2. JWT token payload (`payload.role`) - Fallback for token verification
 3. Falls back to 'anonymous' if no user information is found
 
 ### 4. HTTP Headers
+
 Rate limit information is exposed via standard HTTP headers:
+
 - `X-RateLimit-Limit`: Maximum number of requests allowed
 - `X-RateLimit-Remaining`: Requests remaining in current window
 - `X-RateLimit-Reset`: Unix timestamp when the rate limit resets
@@ -120,6 +132,7 @@ Rate limit information is exposed via standard HTTP headers:
 ## Testing
 
 Comprehensive tests verify:
+
 1. Default limits are enforced for anonymous users
 2. Per-user limits work correctly for authenticated users
 3. Different users have independent limit counters
@@ -129,6 +142,7 @@ Comprehensive tests verify:
 7. Rate-limited responses include Retry-After header
 
 Run tests with:
+
 ```bash
 npm run test:e2e
 ```
@@ -136,22 +150,26 @@ npm run test:e2e
 ## Acceptance Criteria Met
 
 ✅ **Per-user limits work**
+
 - Each user has independent rate limit tracking
 - Limits are applied based on user role
 - Anonymous users tracked by IP address
 - Authenticated users tracked by unique ID
 
 ✅ **Configured throttler for users**
+
 - ThrottlerGuard extended with per-user logic
 - Role-based configuration service created
 - Dynamic limit application per request
 
 ✅ **User-based filters**
+
 - User identification and extraction implemented
 - Role detection from JWT and request context
 - Fallback to IP-based tracking for anonymous
 
 ✅ **Limits tested**
+
 - E2E tests verify per-user rate limiting
 - Tests confirm admin bypass functionality
 - Tests verify separate counters per user
@@ -174,6 +192,7 @@ npm run test:e2e
 ## Future Enhancements
 
 Potential improvements:
+
 1. Per-endpoint rate limits (different limits for different routes)
 2. Dynamic rate limit adjustment based on system load
 3. Rate limit upgrade for premium users
@@ -187,9 +206,11 @@ This document is the canonical reference for per-user rate limiting. The previou
 ## Files Created / Modified
 
 ### Created
+
 1. `src/config/per-user-rate-limit.config.ts` — per-user rate limit configuration
 
 ### Modified
+
 1. `src/common/guards/throttler.guard.ts` — per-user limit tracking
 2. `src/app.module.ts` — throttler wiring
 3. `.env.example` — documented the `RATE_LIMIT_*` variables

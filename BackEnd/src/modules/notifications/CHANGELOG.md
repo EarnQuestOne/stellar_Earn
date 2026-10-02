@@ -11,6 +11,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Partial indexes (`WHERE "deletedAt" IS NULL`) on `Notification` for `userId` and `[userId, read]` columns to speed up active-notification queries (#2000).
 
 ### Changed
+
 - `WebhookChannel` now uses `PooledHttpClientService` (keep-alive connection pool, 8 s `medium` timeout budget) instead of an unbounded raw `axios` call for webhook delivery.
 - `NotificationsService` now supports batched mark-all-as-read updates plus preference reads and upserts without row-by-row writes.
 - Applied code-style formatting to `notifications.service.ts` (no logic change).

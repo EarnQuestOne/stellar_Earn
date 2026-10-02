@@ -81,7 +81,7 @@ body:
         - Resource fee (XLM): 
         - Inclusion fee (XLM): 
         - Total fee (XLM): 
-        - Transaction hash (if available): 
+        - Transaction hash (if available):
     validations:
       required: true
 
@@ -95,7 +95,7 @@ body:
       placeholder: |
         - Expected compute units: 
         - Expected fee range (XLM): 
-        - Basis for expectation (link / benchmark): 
+        - Basis for expectation (link / benchmark):
     validations:
       required: true
 

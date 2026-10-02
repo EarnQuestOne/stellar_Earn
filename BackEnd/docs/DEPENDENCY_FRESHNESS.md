@@ -57,7 +57,7 @@ import { JobsService } from './modules/jobs/jobs.service';
 await jobsService.addJob('dependency:freshness-check', {
   repositoryOwner: 'nnennaokoye',
   repositoryName: 'stellar_Earn',
-  branch: 'main'
+  branch: 'main',
 });
 ```
 
@@ -73,6 +73,7 @@ The generated GitHub issue includes:
 ## Risk Factors
 
 The current implementation includes placeholder logic for detecting:
+
 - Unusually high payout amounts (>10,000)
 - Multiple payouts to same address in 24 hours (>5)
 - Failed payout attempts (>2 retries)

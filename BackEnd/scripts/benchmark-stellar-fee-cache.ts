@@ -84,7 +84,9 @@ async function main(): Promise<void> {
 
   // "Before": uncached — every fee estimate pays the network round-trip.
   const before = await run('uncached (network fetch per call)', () =>
-    simulatedHorizon.feeStats().then((s) => Number.parseInt(s.last_ledger_base_fee, 10)),
+    simulatedHorizon
+      .feeStats()
+      .then((s) => Number.parseInt(s.last_ledger_base_fee, 10)),
   );
 
   // "After": cached — the estimate is served from memory.
@@ -105,7 +107,9 @@ async function main(): Promise<void> {
 
   const snapshot = metrics.getSnapshot().metrics as Record<string, unknown>;
   const feeMetrics = Object.fromEntries(
-    Object.entries(snapshot).filter(([name]) => name.startsWith('stellar_fee_')),
+    Object.entries(snapshot).filter(([name]) =>
+      name.startsWith('stellar_fee_'),
+    ),
   );
   console.log('\n=== Captured fee metrics ===');
   console.log(JSON.stringify(feeMetrics, null, 2));

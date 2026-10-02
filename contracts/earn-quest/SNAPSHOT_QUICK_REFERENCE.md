@@ -31,12 +31,14 @@ make snapshots-bounds       # Bounds checking
 ## When to Update Snapshots
 
 ✅ **Update when:**
+
 - You modify contract logic
 - You add new features
 - You fix bugs that change behavior
 - Tests pass but snapshots don't match
 
 ❌ **Don't update when:**
+
 - Tests are failing due to bugs
 - You haven't reviewed the changes
 - You're not sure what changed
@@ -66,12 +68,12 @@ git commit -m "test: update snapshots for admin changes"
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Snapshots won't update | `make snapshots-clean` |
-| Need to undo changes | `make snapshots-restore` |
-| Tests failing | Check `/tmp/snapshot_verify.log` |
-| Out of sync | `make snapshots-clean` then `make snapshots-verify` |
+| Problem                | Solution                                            |
+| ---------------------- | --------------------------------------------------- |
+| Snapshots won't update | `make snapshots-clean`                              |
+| Need to undo changes   | `make snapshots-restore`                            |
+| Tests failing          | Check `/tmp/snapshot_verify.log`                    |
+| Out of sync            | `make snapshots-clean` then `make snapshots-verify` |
 
 ## File Locations
 

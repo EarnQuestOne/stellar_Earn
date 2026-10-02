@@ -14,8 +14,8 @@ in the project-wide matrix.
 
 A moderator is a community member trusted to keep the project's shared spaces
 welcoming, on-topic, and free of spam and abuse. Where a
-[triager](TRIAGER.md) looks after the *content* of the issue queue, a moderator
-looks after the *conduct* in it and in every other community space.
+[triager](TRIAGER.md) looks after the _content_ of the issue queue, a moderator
+looks after the _conduct_ in it and in every other community space.
 
 Moderators are first responders, not judges. They act quickly on clear,
 low-severity problems and hand anything serious or contested to the people who
@@ -90,22 +90,22 @@ A moderator may **not**:
 - lock a thread beyond 72 hours, or lock one to end a technical disagreement
   that is still being decided.
 
-Moderation authority applies to *conduct and channel hygiene*, not to technical
+Moderation authority applies to _conduct and channel hygiene_, not to technical
 or governance decisions.
 
 ## Escalation path
 
 Moderators escalate by the nature of the problem, not by who is involved.
 
-| Situation | Escalate to | How | Target |
-| --- | --- | --- | --- |
-| Conduct beyond a simple correction: harassment, repeated violations, threats, doxxing | CoC Committee | Private channel in [../COC_REPORTING.md](../COC_REPORTING.md) | Same day |
-| Immediate risk to someone's safety | CoC Committee (and emergency services, per [../SAFETY_POLICY.md](../SAFETY_POLICY.md)) | Private channel, marked urgent | Immediately |
-| Suspected security vulnerability posted publicly | Security response team | Private disclosure process in [SECURITY_TEAM.md](SECURITY_TEAM.md) | Immediately, after hiding the post |
-| A lock or timeout needs to last longer than the moderator's limit | Any maintainer | Private message to a maintainer, linking the action log | Before the limit expires |
-| A dispute about project direction or a technical decision that has turned heated | Area maintainer, then per [../CONFLICT_RESOLUTION.md](../CONFLICT_RESOLUTION.md) | Comment on the thread tagging the area maintainer | Within 1 business day |
-| Access, permissions, or repository settings need to change | Maintainers | Private message to a maintainer | Within 1 business day |
-| The moderator is unsure whether or how to act | Any maintainer | Private message to a maintainer | As soon as practical |
+| Situation                                                                             | Escalate to                                                                            | How                                                                | Target                             |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| Conduct beyond a simple correction: harassment, repeated violations, threats, doxxing | CoC Committee                                                                          | Private channel in [../COC_REPORTING.md](../COC_REPORTING.md)      | Same day                           |
+| Immediate risk to someone's safety                                                    | CoC Committee (and emergency services, per [../SAFETY_POLICY.md](../SAFETY_POLICY.md)) | Private channel, marked urgent                                     | Immediately                        |
+| Suspected security vulnerability posted publicly                                      | Security response team                                                                 | Private disclosure process in [SECURITY_TEAM.md](SECURITY_TEAM.md) | Immediately, after hiding the post |
+| A lock or timeout needs to last longer than the moderator's limit                     | Any maintainer                                                                         | Private message to a maintainer, linking the action log            | Before the limit expires           |
+| A dispute about project direction or a technical decision that has turned heated      | Area maintainer, then per [../CONFLICT_RESOLUTION.md](../CONFLICT_RESOLUTION.md)       | Comment on the thread tagging the area maintainer                  | Within 1 business day              |
+| Access, permissions, or repository settings need to change                            | Maintainers                                                                            | Private message to a maintainer                                    | Within 1 business day              |
+| The moderator is unsure whether or how to act                                         | Any maintainer                                                                         | Private message to a maintainer                                    | As soon as practical               |
 
 When escalating:
 

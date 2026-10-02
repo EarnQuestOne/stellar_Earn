@@ -81,7 +81,7 @@ Returns:
 ```typescript
 const schedule = await jobSchedulerService.createSchedule(
   JobType.CLEANUP_OLD_LOGS,
-  '0 2 * * *',  // Daily at 2 AM
+  '0 2 * * *', // Daily at 2 AM
   { olderThanDays: 90 },
   { timezone: 'America/New_York' },
 );
@@ -89,29 +89,30 @@ const schedule = await jobSchedulerService.createSchedule(
 
 ## Job Types Quick Reference
 
-| Job Type | Queue | Priority | Timeout | Max Attempts | Use Case |
-|----------|-------|----------|---------|--------------|----------|
-| `PAYOUT_PROCESS` | payouts | HIGH | 60s | 3 | Process Stellar payment |
-| `EMAIL_SEND` | email | MEDIUM | 30s | 5 | Send single email |
-| `EMAIL_DIGEST` | email | MEDIUM | 30s | 5 | Send bulk digest |
-| `DATA_EXPORT` | exports | MEDIUM | 5m | 5 | Export data to CSV/JSON |
-| `REPORT_GENERATE` | reports | LOW | 10m | 3 | Generate report PDF |
-| `CLEANUP_EXPIRED_SESSIONS` | cleanup | LOW | 5m | 5 | Delete old sessions |
-| `CLEANUP_OLD_LOGS` | cleanup | LOW | 5m | 5 | Archive/delete old logs |
-| `DATABASE_MAINTENANCE` | maintenance | LOW | 15m | 2 | VACUUM/ANALYZE queries |
-| `WEBHOOK_DELIVER` | webhooks | MEDIUM | 30s | 10 | POST to webhook URL |
-| `WEBHOOK_RETRY` | webhooks | MEDIUM | 30s | 10 | Retry failed webhook |
-| `ANALYTICS_AGGREGATE` | analytics | LOW | 2m | 5 | Aggregate analytics |
-| `METRICS_COLLECT` | analytics | LOW | 2m | 5 | Collect system metrics |
-| `QUEST_DEADLINE_CHECK` | quests | MEDIUM | 60s | 5 | Check quest deadlines |
-| `QUEST_COMPLETION_VERIFY` | quests | MEDIUM | 60s | 5 | Verify quest completion |
-| `QUEST_STATE_RECONCILE` | cron | LOW | N/A | N/A | Compare on-chain quest state vs DB snapshot |
+| Job Type                   | Queue       | Priority | Timeout | Max Attempts | Use Case                                    |
+| -------------------------- | ----------- | -------- | ------- | ------------ | ------------------------------------------- |
+| `PAYOUT_PROCESS`           | payouts     | HIGH     | 60s     | 3            | Process Stellar payment                     |
+| `EMAIL_SEND`               | email       | MEDIUM   | 30s     | 5            | Send single email                           |
+| `EMAIL_DIGEST`             | email       | MEDIUM   | 30s     | 5            | Send bulk digest                            |
+| `DATA_EXPORT`              | exports     | MEDIUM   | 5m      | 5            | Export data to CSV/JSON                     |
+| `REPORT_GENERATE`          | reports     | LOW      | 10m     | 3            | Generate report PDF                         |
+| `CLEANUP_EXPIRED_SESSIONS` | cleanup     | LOW      | 5m      | 5            | Delete old sessions                         |
+| `CLEANUP_OLD_LOGS`         | cleanup     | LOW      | 5m      | 5            | Archive/delete old logs                     |
+| `DATABASE_MAINTENANCE`     | maintenance | LOW      | 15m     | 2            | VACUUM/ANALYZE queries                      |
+| `WEBHOOK_DELIVER`          | webhooks    | MEDIUM   | 30s     | 10           | POST to webhook URL                         |
+| `WEBHOOK_RETRY`            | webhooks    | MEDIUM   | 30s     | 10           | Retry failed webhook                        |
+| `ANALYTICS_AGGREGATE`      | analytics   | LOW      | 2m      | 5            | Aggregate analytics                         |
+| `METRICS_COLLECT`          | analytics   | LOW      | 2m      | 5            | Collect system metrics                      |
+| `QUEST_DEADLINE_CHECK`     | quests      | MEDIUM   | 60s     | 5            | Check quest deadlines                       |
+| `QUEST_COMPLETION_VERIFY`  | quests      | MEDIUM   | 60s     | 5            | Verify quest completion                     |
+| `QUEST_STATE_RECONCILE`    | cron        | LOW      | N/A     | N/A          | Compare on-chain quest state vs DB snapshot |
 
 ## Quest State Reconciliation (SC-076 / #1546)
 
 Processor: `src/modules/jobs/processors/quest-state-reconciliation.processor.ts`
 
 Environment variables:
+
 - `CONTRACT_ID` (required): Earn Quest contract ID to query.
 - `SOROBAN_RPC_URL` (optional): Soroban RPC URL (defaults to testnet).
 - `QUEST_STATE_RECONCILIATION_ENABLED` (optional): set to `false` to disable.
@@ -136,7 +137,7 @@ try {
 
 ```typescript
 // In processor
-await job.updateProgress(25);  // 25% complete
+await job.updateProgress(25); // 25% complete
 
 // Query progress
 const jobLog = await jobLogService.getJobLog(jobId);
@@ -184,11 +185,9 @@ await jobSchedulerService.createSchedule(
 );
 
 // Every Monday at 9 AM
-await jobSchedulerService.createSchedule(
-  JobType.REPORT_GENERATE,
-  '0 9 * * 1',
-  { reportType: 'weekly' },
-);
+await jobSchedulerService.createSchedule(JobType.REPORT_GENERATE, '0 9 * * 1', {
+  reportType: 'weekly',
+});
 
 // Every 15 minutes
 await jobSchedulerService.createSchedule(
@@ -201,75 +200,81 @@ await jobSchedulerService.createSchedule(
 ## Key Services
 
 ### JobsService
+
 Core queue management
 
 ```typescript
-addJob(queueName, data, options)    // Add job to queue
-getQueue(name)                      // Get queue instance
+addJob(queueName, data, options); // Add job to queue
+getQueue(name); // Get queue instance
 ```
 
 ### JobLogService
+
 Logging and querying
 
 ```typescript
-createJobLog(data)                  // Create log entry
-updateJobLog(id, updates)           // Update status/result
-queryJobLogs(filters)               // Search with filters
-getStatisticsByStatus()             // Status counts
-getPerformanceMetrics()             // Duration statistics
-getRecentlyFailedJobs()             // Recent failures
+createJobLog(data); // Create log entry
+updateJobLog(id, updates); // Update status/result
+queryJobLogs(filters); // Search with filters
+getStatisticsByStatus(); // Status counts
+getPerformanceMetrics(); // Duration statistics
+getRecentlyFailedJobs(); // Recent failures
 ```
 
 ### JobSchedulerService
+
 Cron scheduling
 
 ```typescript
-createSchedule(type, cron, payload, options)  // Create schedule
-getActiveSchedules()                          // List active
-triggerScheduleNow(scheduleId)                // Manual trigger
-disableSchedule/enableSchedule                // Toggle
+createSchedule(type, cron, payload, options); // Create schedule
+getActiveSchedules(); // List active
+triggerScheduleNow(scheduleId); // Manual trigger
+disableSchedule / enableSchedule; // Toggle
 ```
 
 ## Database Entities
 
 ### JobLog
+
 Main audit trail for all jobs
 
 ```typescript
-id                    // UUID, primary key
-jobType              // From JobType enum
-status               // From JobStatus enum
-attempt              // Current attempt number
-durationMs           // Execution time
-errorMessage         // Failure message
-result               // JSON result data
-organizationId       // Multi-tenancy
-userId               // Who triggered
-correlationId        // Link related jobs
-createdAt/updatedAt  // Timestamps
+id; // UUID, primary key
+jobType; // From JobType enum
+status; // From JobStatus enum
+attempt; // Current attempt number
+durationMs; // Execution time
+errorMessage; // Failure message
+result; // JSON result data
+organizationId; // Multi-tenancy
+userId; // Who triggered
+correlationId; // Link related jobs
+createdAt / updatedAt; // Timestamps
 ```
 
 ### JobSchedule
+
 Recurring scheduled jobs
 
 ```typescript
-id                    // UUID
-jobType              // Job to schedule
-cronExpression       // Cron format
-isActive             // Enable/disable
-nextRunAt            // When it runs next
-lastRunAt            // Last execution
-successCount         // Successful runs
-failureCount         // Failed runs
+id; // UUID
+jobType; // Job to schedule
+cronExpression; // Cron format
+isActive; // Enable/disable
+nextRunAt; // When it runs next
+lastRunAt; // Last execution
+successCount; // Successful runs
+failureCount; // Failed runs
 ```
 
 ### JobDependency
+
 Job execution ordering
 
 ```typescript
-parentJobId          // Must complete first
-childJobId           // Waits for parent
-blockOnFailure       // Fail child if parent fails
+parentJobId; // Must complete first
+childJobId; // Waits for parent
+blockOnFailure; // Fail child if parent fails
 ```
 
 ## REST API Endpoints

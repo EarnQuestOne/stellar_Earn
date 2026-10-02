@@ -11,8 +11,9 @@ This document outlines the implementation of soft deletes for the EarnQuestOne/s
 **File**: `src/database/migrations/1777056872715-add_soft_deletes.ts`
 
 The migration adds `deletedAt` columns to the following core tables:
+
 - `users`
-- `quests` 
+- `quests`
 - `submissions`
 - `notifications`
 - `payouts`
@@ -30,8 +31,9 @@ deletedAt: Date;
 ```
 
 **Updated Entities**:
+
 - `User` (src/modules/users/entities/user.entity.ts)
-- `Quest` (src/modules/quests/entities/quest.entity.ts) 
+- `Quest` (src/modules/quests/entities/quest.entity.ts)
 - `Submission` (src/modules/submissions/entities/submission.entity.ts)
 - `Notification` (src/modules/notifications/entities/notification.entity.ts)
 - `Payout` (src/modules/payouts/entities/payout.entity.ts)
@@ -42,8 +44,9 @@ deletedAt: Date;
 **File**: `src/common/utils/soft-delete.util.ts`
 
 A utility class `SoftDeleteUtil` provides methods for:
+
 - `excludeDeleted()` - Filter out soft-deleted records
-- `onlyDeleted()` - Show only soft-deleted records  
+- `onlyDeleted()` - Show only soft-deleted records
 - `includeDeleted()` - Show all records
 - `softDelete()` - Soft delete by ID
 - `restore()` - Restore soft-deleted record
@@ -53,15 +56,18 @@ A utility class `SoftDeleteUtil` provides methods for:
 ### 4. Service Updates
 
 #### Users Service
+
 - `deleteUser()` now uses `softDelete()` instead of `remove()`
 - All find methods (`findByAddress`, `findByUsername`, `findById`) exclude soft-deleted records
 
-#### Quests Service  
+#### Quests Service
+
 - `remove()` now uses `softDelete()` instead of `remove()`
 - `findAll()` excludes soft-deleted quests with `WHERE deletedAt IS NULL`
 - `findOne()` and `update()` exclude soft-deleted records
 
 #### Submissions Service
+
 - `approveSubmission()` and `rejectSubmission()` exclude soft-deleted submissions
 
 ## Usage Examples
@@ -81,18 +87,18 @@ await this.usersRepository.restore(userId);
 ```typescript
 // Find only non-deleted records (default)
 const users = await this.usersRepository.find({
-  withDeleted: false
+  withDeleted: false,
 });
 
 // Find all records including deleted
 const allUsers = await this.usersRepository.find({
-  withDeleted: true
+  withDeleted: true,
 });
 
 // Find only deleted records
 const deletedUsers = await this.usersRepository.find({
   where: { deletedAt: Not(IsNull()) },
-  withDeleted: true
+  withDeleted: true,
 });
 ```
 
@@ -107,15 +113,14 @@ const activeUsers = await withSoftDelete(queryBuilder)
   .excludeDeleted()
   .getMany();
 
-// Only deleted records  
-const deletedUsers = await withSoftDelete(queryBuilder)
-  .onlyDeleted()
-  .getMany();
+// Only deleted records
+const deletedUsers = await withSoftDelete(queryBuilder).onlyDeleted().getMany();
 ```
 
 ## Migration Steps
 
 1. **Run the migration**:
+
    ```bash
    npm run migration:run
    ```
@@ -143,6 +148,7 @@ const deletedUsers = await withSoftDelete(queryBuilder)
 **File**: `src/common/utils/soft-delete.test.ts`
 
 Comprehensive tests covering:
+
 - Soft delete utility methods
 - Integration with TypeORM repositories
 - Query filtering behavior

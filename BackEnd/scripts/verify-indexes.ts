@@ -2,7 +2,7 @@ import AppDataSource from '../src/database/data-source';
 
 /**
  * Script to verify database indexes after migration
- * 
+ *
  * This script:
  * 1. Connects to the database
  * 2. Checks if all expected indexes exist
@@ -94,9 +94,7 @@ const EXPECTED_INDEXES = {
     'IDX_REFRESH_TOKEN_USER_REVOKED_EXPIRES',
     'IDX_REFRESH_TOKEN_FAMILY_REVOKED',
   ],
-  two_factor_auth: [
-    'IDX_TWO_FACTOR_ENABLED',
-  ],
+  two_factor_auth: ['IDX_TWO_FACTOR_ENABLED'],
   event_store: [
     'IDX_EVENT_STORE_EVENT_NAME',
     'IDX_EVENT_STORE_TIMESTAMP',
@@ -140,16 +138,22 @@ async function verifyIndexes() {
     let missingCount = 0;
     let foundCount = 0;
 
-    for (const [tableName, expectedIndexes] of Object.entries(EXPECTED_INDEXES)) {
+    for (const [tableName, expectedIndexes] of Object.entries(
+      EXPECTED_INDEXES,
+    )) {
       console.log(`\n📋 Table: ${tableName}`);
       console.log('─'.repeat(60));
 
-      const tableIndexes = indexes.filter(idx => idx.tablename === tableName);
-      const tableIndexNames = tableIndexes.map(idx => idx.indexname.toUpperCase());
+      const tableIndexes = indexes.filter((idx) => idx.tablename === tableName);
+      const tableIndexNames = tableIndexes.map((idx) =>
+        idx.indexname.toUpperCase(),
+      );
 
       for (const expectedIndex of expectedIndexes) {
-        const exists = tableIndexNames.some(name => name === expectedIndex.toUpperCase());
-        
+        const exists = tableIndexNames.some(
+          (name) => name === expectedIndex.toUpperCase(),
+        );
+
         if (exists) {
           console.log(`  ✅ ${expectedIndex}`);
           foundCount++;
@@ -160,15 +164,18 @@ async function verifyIndexes() {
       }
 
       // Check for unexpected indexes
-      const expectedSet = new Set(expectedIndexes.map(idx => idx.toUpperCase()));
+      const expectedSet = new Set(
+        expectedIndexes.map((idx) => idx.toUpperCase()),
+      );
       const unexpectedIndexes = tableIndexes.filter(
-        idx => !expectedSet.has(idx.indexname.toUpperCase()) && 
-               !idx.indexname.includes('_pkey') // Exclude primary keys
+        (idx) =>
+          !expectedSet.has(idx.indexname.toUpperCase()) &&
+          !idx.indexname.includes('_pkey'), // Exclude primary keys
       );
 
       if (unexpectedIndexes.length > 0) {
         console.log('\n  ℹ️  Additional indexes:');
-        unexpectedIndexes.forEach(idx => {
+        unexpectedIndexes.forEach((idx) => {
           console.log(`     - ${idx.indexname}`);
         });
       }
@@ -212,18 +219,18 @@ async function verifyIndexes() {
     console.log('─'.repeat(100));
     console.log(
       'Table'.padEnd(25) +
-      'Index'.padEnd(40) +
-      'Size'.padEnd(12) +
-      'Scans'.padEnd(10)
+        'Index'.padEnd(40) +
+        'Size'.padEnd(12) +
+        'Scans'.padEnd(10),
     );
     console.log('─'.repeat(100));
 
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       console.log(
         stat.tablename.padEnd(25) +
-        stat.indexname.padEnd(40) +
-        stat.size.padEnd(12) +
-        stat.idx_scan.toString().padEnd(10)
+          stat.indexname.padEnd(40) +
+          stat.size.padEnd(12) +
+          stat.idx_scan.toString().padEnd(10),
       );
     });
 
@@ -246,7 +253,7 @@ async function verifyIndexes() {
     if (unusedIndexes.length > 0) {
       console.log('\n\n⚠️  UNUSED INDEXES (0 scans):');
       console.log('─'.repeat(80));
-      unusedIndexes.forEach(idx => {
+      unusedIndexes.forEach((idx) => {
         console.log(`  ${idx.tablename}.${idx.indexname} (${idx.size})`);
       });
       console.log('\nNote: Newly created indexes may show 0 scans initially.');
@@ -269,7 +276,7 @@ async function verifyIndexes() {
       console.log('\n\n📈 INDEX HIT RATE');
       console.log('─'.repeat(60));
       console.log(`  ${hitRate[0].index_hit_rate}%`);
-      
+
       if (hitRate[0].index_hit_rate >= 99) {
         console.log('  ✅ Excellent! Indexes are being used effectively.');
       } else if (hitRate[0].index_hit_rate >= 95) {
@@ -282,7 +289,6 @@ async function verifyIndexes() {
     console.log('\n' + '='.repeat(60));
     console.log('✅ Verification complete!');
     console.log('='.repeat(60) + '\n');
-
   } catch (error) {
     console.error('❌ Error during verification:', error);
     process.exit(1);

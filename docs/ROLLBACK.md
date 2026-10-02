@@ -19,6 +19,7 @@ scripts/deploy/.snapshots/snapshot_YYYYMMDD_HHMMSS_pre-upgrade.json
 ```
 
 Each snapshot contains:
+
 - Contract ID
 - WASM hash (local file + on-chain)
 - Git commit and branch at time of deploy
@@ -41,6 +42,7 @@ Run the rollback script to revert to the previous WASM:
 ```
 
 The rollback script:
+
 1. Reads the pre-upgrade snapshot
 2. Re-uploads the previous WASM to the Stellar network
 3. Calls `upgrade` on the contract with the previous WASM hash
@@ -91,11 +93,11 @@ EXISTING_CONTRACT_ID=C... ./scripts/deploy/rollback-contract.sh --verify
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SOROBAN_SECRET_KEY` | Yes (for on-chain ops) | Stellar secret key with upgrade authority |
-| `EXISTING_CONTRACT_ID` | Yes | The contract ID to upgrade or rollback |
-| `SOROBAN_RPC_URL` | No | RPC endpoint (default: testnet) |
+| Variable               | Required               | Description                               |
+| ---------------------- | ---------------------- | ----------------------------------------- |
+| `SOROBAN_SECRET_KEY`   | Yes (for on-chain ops) | Stellar secret key with upgrade authority |
+| `EXISTING_CONTRACT_ID` | Yes                    | The contract ID to upgrade or rollback    |
+| `SOROBAN_RPC_URL`      | No                     | RPC endpoint (default: testnet)           |
 
 ---
 
@@ -161,9 +163,9 @@ bash scripts/deploy/rollback-contract.test.sh
 
 ## Related Files
 
-| File | Purpose |
-|------|---------|
-| `scripts/deploy/rollback-contract.sh` | Main rollback script |
-| `scripts/deploy/rollback-contract.test.sh` | Tests for rollback script |
-| `scripts/deploy/deploy-contract.sh` | Main deploy script (calls snapshot before upgrade) |
-| `scripts/deploy/.snapshots/` | Auto-generated snapshot directory (gitignored) |
+| File                                       | Purpose                                            |
+| ------------------------------------------ | -------------------------------------------------- |
+| `scripts/deploy/rollback-contract.sh`      | Main rollback script                               |
+| `scripts/deploy/rollback-contract.test.sh` | Tests for rollback script                          |
+| `scripts/deploy/deploy-contract.sh`        | Main deploy script (calls snapshot before upgrade) |
+| `scripts/deploy/.snapshots/`               | Auto-generated snapshot directory (gitignored)     |

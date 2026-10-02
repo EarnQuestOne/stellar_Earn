@@ -99,7 +99,7 @@ jobs:
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Build and Test | ${{ needs.build-and-test.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.build-and-test.result }}" != "success" ]; then
             echo "### ❌ Failed Contract Checks" >> $GITHUB_STEP_SUMMARY
             echo "Contract CI failed. Please check the job logs for details on failed test suites or linting issues." >> $GITHUB_STEP_SUMMARY

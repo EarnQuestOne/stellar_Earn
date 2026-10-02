@@ -10,8 +10,8 @@ pipeline — report it privately using one of:
 
 - **GitHub Private Vulnerability Reporting**: use the repository's
   **Security → Report a vulnerability** tab (preferred).
-- **Email**: security@earnquest.one *(maintainers: replace with a monitored
-  address before publishing).*
+- **Email**: security@earnquest.one _(maintainers: replace with a monitored
+  address before publishing)._
 
 Please include:
 
