@@ -247,3 +247,5 @@ Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md). Do n
 ## License
 
 Released under the [MIT License](LICENSE).
+
+<!-- Updated documentation reference -->
