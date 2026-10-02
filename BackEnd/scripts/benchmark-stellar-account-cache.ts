@@ -44,18 +44,28 @@ export async function runAccountCacheBenchmark() {
   console.log(`Uncached Run (${iterations} iterations):`);
   console.log(`  Total Horizon API Calls: ${uncachedCalls}`);
   console.log(`  Total Duration: ${uncachedDuration}ms`);
-  console.log(`  Avg Latency per Lookup: ${(uncachedDuration / iterations).toFixed(2)}ms`);
+  console.log(
+    `  Avg Latency per Lookup: ${(uncachedDuration / iterations).toFixed(2)}ms`,
+  );
 
   console.log(`\nCached Run (${iterations} iterations):`);
   console.log(`  Total Horizon API Calls: ${cachedCalls}`);
   console.log(`  Total Duration: ${cachedDuration}ms`);
-  console.log(`  Avg Latency per Lookup: ${(cachedDuration / iterations).toFixed(2)}ms`);
+  console.log(
+    `  Avg Latency per Lookup: ${(cachedDuration / iterations).toFixed(2)}ms`,
+  );
 
   const metrics = cache.getMetrics();
   console.log('\nCache Efficiency:');
-  console.log(`  Cache Hit Ratio: ${(metrics.hitRatio * 100).toFixed(1)}% (${metrics.hits} hits, ${metrics.misses} misses)`);
-  console.log(`  API Call Savings: -${(((uncachedCalls - cachedCalls) / uncachedCalls) * 100).toFixed(1)}%`);
-  console.log(`  Latency Reduction: -${(((uncachedDuration - cachedDuration) / uncachedDuration) * 100).toFixed(1)}%`);
+  console.log(
+    `  Cache Hit Ratio: ${(metrics.hitRatio * 100).toFixed(1)}% (${metrics.hits} hits, ${metrics.misses} misses)`,
+  );
+  console.log(
+    `  API Call Savings: -${(((uncachedCalls - cachedCalls) / uncachedCalls) * 100).toFixed(1)}%`,
+  );
+  console.log(
+    `  Latency Reduction: -${(((uncachedDuration - cachedDuration) / uncachedDuration) * 100).toFixed(1)}%`,
+  );
   console.log('=== Benchmark Completed Successfully ===');
 }
 

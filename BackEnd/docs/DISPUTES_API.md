@@ -2,13 +2,13 @@
 
 All endpoints require the normal JWT cookie authentication.
 
-| Method | Path | Access | Purpose |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/disputes` | Submission participant | Open a dispute with `submissionId` and `arbitratorAddress`. |
-| `POST` | `/api/v1/disputes/:id/appeal` | Participant | Appeal a resolved dispute with `newArbitratorAddress`. |
-| `POST` | `/api/v1/disputes/:id/resolve` | Assigned arbitrator or admin | Resolve with `upheld` and optional `slashBps` (0-10000). |
-| `GET` | `/api/v1/disputes/:id` | Authenticated user | Read one mirrored dispute. |
-| `GET` | `/api/v1/disputes` | User or admin | List the caller's disputes, or all disputes for admins. |
+| Method | Path                           | Access                       | Purpose                                                     |
+| ------ | ------------------------------ | ---------------------------- | ----------------------------------------------------------- |
+| `POST` | `/api/v1/disputes`             | Submission participant       | Open a dispute with `submissionId` and `arbitratorAddress`. |
+| `POST` | `/api/v1/disputes/:id/appeal`  | Participant                  | Appeal a resolved dispute with `newArbitratorAddress`.      |
+| `POST` | `/api/v1/disputes/:id/resolve` | Assigned arbitrator or admin | Resolve with `upheld` and optional `slashBps` (0-10000).    |
+| `GET`  | `/api/v1/disputes/:id`         | Authenticated user           | Read one mirrored dispute.                                  |
+| `GET`  | `/api/v1/disputes`             | User or admin                | List the caller's disputes, or all disputes for admins.     |
 
 The mirror stores the quest contract id, submission reference, participants,
 status, lifecycle transaction hashes, and resolution outcome. The contract

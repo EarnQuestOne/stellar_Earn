@@ -45,17 +45,25 @@ export async function runClientPoolBenchmark() {
 
   console.log(`Unpooled Client Instantiation (${iterations} iterations):`);
   console.log(`  Total Setup Time: ${unpooledDuration}ms`);
-  console.log(`  Avg Setup Overhead per Req: ${(unpooledDuration / iterations).toFixed(3)}ms`);
+  console.log(
+    `  Avg Setup Overhead per Req: ${(unpooledDuration / iterations).toFixed(3)}ms`,
+  );
 
   console.log(`\nPooled Singleton Access (${iterations} iterations):`);
   console.log(`  Total Access Time: ${pooledDuration}ms`);
-  console.log(`  Avg Access Overhead per Req: ${(pooledDuration / iterations).toFixed(3)}ms`);
+  console.log(
+    `  Avg Access Overhead per Req: ${(pooledDuration / iterations).toFixed(3)}ms`,
+  );
 
   const metrics = poolService.getPoolMetrics();
   console.log('\nPooling Efficiency:');
   console.log(`  Socket Pool Max Sockets: ${metrics.httpMaxSockets}`);
-  console.log(`  Setup Time Savings: -${(((unpooledDuration - pooledDuration) / unpooledDuration) * 100).toFixed(1)}%`);
-  console.log(`  Speedup Factor: ${(unpooledDuration / Math.max(1, pooledDuration)).toFixed(2)}x faster`);
+  console.log(
+    `  Setup Time Savings: -${(((unpooledDuration - pooledDuration) / unpooledDuration) * 100).toFixed(1)}%`,
+  );
+  console.log(
+    `  Speedup Factor: ${(unpooledDuration / Math.max(1, pooledDuration)).toFixed(2)}x faster`,
+  );
   console.log('=== Benchmark Completed Successfully ===');
 }
 

@@ -15,7 +15,10 @@ export interface BenchmarkConfig {
   authEnabled: boolean;
 }
 
-export function buildRoute(route: string, params: Record<string, string>): string {
+export function buildRoute(
+  route: string,
+  params: Record<string, string>,
+): string {
   return route.replace(/:([A-Za-z0-9_]+)/g, (_match, key) => params[key] ?? '');
 }
 
@@ -52,7 +55,8 @@ export function createBenchmarkConfig(
         weight: 10,
         headers: authHeader,
         body: {
-          stellarAddress: 'GBBM6BKZKNDBK5YJ6BL5QY55VDBSPJLDAFER4YB5EKY2APDEW2HE3BYS',
+          stellarAddress:
+            'GBBM6BKZKNDBK5YJ6BL5QY55VDBSPJLDAFER4YB5EKY2APDEW2HE3BYS',
         },
         tags: { endpoint: 'auth' },
       },

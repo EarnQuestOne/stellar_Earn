@@ -81,7 +81,12 @@ async function main(): Promise<void> {
     getRpcServer: () => simulatedRpc,
   } as any;
 
-  const reader = new SorobanQuestReaderService(config, tracing, metrics, clientPool);
+  const reader = new SorobanQuestReaderService(
+    config,
+    tracing,
+    metrics,
+    clientPool,
+  );
   const contractId = StellarSdk.StrKey.encodeContract(Buffer.alloc(32));
   const questId = 'quest_1';
 

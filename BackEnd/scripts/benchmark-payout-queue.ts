@@ -21,7 +21,8 @@ export function runPayoutQueueBenchmark() {
   );
 
   // Simulated throughput calculation
-  const defaultThroughput = (defaultLimiter?.max ?? 10) * (1000 / (defaultLimiter?.duration ?? 1000));
+  const defaultThroughput =
+    (defaultLimiter?.max ?? 10) * (1000 / (defaultLimiter?.duration ?? 1000));
   console.log(`  Theoretical Max Throughput: ${defaultThroughput} jobs/sec`);
 
   // Simulated high throughput env configuration
@@ -33,7 +34,8 @@ export function runPayoutQueueBenchmark() {
 
   const tunedConcurrency = resolveWorkerConcurrency('payouts', highPerfEnv);
   const tunedLimiter = resolveWorkerLimiter('payouts', highPerfEnv);
-  const tunedThroughput = (tunedLimiter?.max ?? 10) * (1000 / (tunedLimiter?.duration ?? 1000));
+  const tunedThroughput =
+    (tunedLimiter?.max ?? 10) * (1000 / (tunedLimiter?.duration ?? 1000));
 
   console.log('\nTuned High-Performance Configuration:');
   console.log(`  Concurrency: ${tunedConcurrency} workers`);

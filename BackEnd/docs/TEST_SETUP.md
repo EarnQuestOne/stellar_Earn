@@ -69,25 +69,27 @@ npm run test:cov
 ### Test Files Added
 
 #### Core Service Tests
+
 - ✅ `src/modules/auth/auth.service.spec.ts` - Authentication service (14 test suites)
 - ✅ `src/modules/users/user.service.spec.ts` - User management service (12 test suites)
 - ✅ `src/modules/stellar/stellar.service.spec.ts` - Stellar blockchain integration (8 test suites)
 - ✅ `src/modules/cache/cache.service.spec.ts` - Cache management service (12 test suites)
 
 #### Utilities & Helpers
+
 - ✅ `test/utils/test-helpers.ts` - Reusable test factories and mocks
 - ✅ `test/common/repository-base.spec.ts` - TypeORM repository testing patterns
 - ✅ `UNIT_TESTING_GUIDE.md` - Comprehensive testing best practices documentation
 
 ### Test Coverage by Module
 
-| Module | Test File | Test Cases | Coverage |
-|--------|-----------|-----------|----------|
-| Auth | auth.service.spec.ts | 14+ | Core functionality |
-| Users | user.service.spec.ts | 12+ | Core functionality |
-| Stellar | stellar.service.spec.ts | 8+ | Core functionality |
-| Cache | cache.service.spec.ts | 12+ | Core functionality |
-| Repository | repository-base.spec.ts | 20+ | Patterns & examples |
+| Module     | Test File               | Test Cases | Coverage            |
+| ---------- | ----------------------- | ---------- | ------------------- |
+| Auth       | auth.service.spec.ts    | 14+        | Core functionality  |
+| Users      | user.service.spec.ts    | 12+        | Core functionality  |
+| Stellar    | stellar.service.spec.ts | 8+         | Core functionality  |
+| Cache      | cache.service.spec.ts   | 12+        | Core functionality  |
+| Repository | repository-base.spec.ts | 20+        | Patterns & examples |
 
 ## Test Helpers Available
 
@@ -280,9 +282,7 @@ it('should handle async operations', async () => {
 
 ```typescript
 it('should throw on invalid input', async () => {
-  await expect(service.method(invalid))
-    .rejects
-    .toThrow(BadRequestException);
+  await expect(service.method(invalid)).rejects.toThrow(BadRequestException);
 });
 ```
 
@@ -294,10 +294,7 @@ it('should emit event on creation', async () => {
 
   await service.create(data);
 
-  expect(emitSpy).toHaveBeenCalledWith(
-    'event.name',
-    expect.any(Object)
-  );
+  expect(emitSpy).toHaveBeenCalledWith('event.name', expect.any(Object));
 });
 ```
 
@@ -317,12 +314,12 @@ it('should cache results', async () => {
 
 ### Minimum Thresholds
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Line | 80% | Increasing |
-| Branch | 75% | Increasing |
-| Function | 80% | Increasing |
-| Statement | 80% | Increasing |
+| Metric    | Target | Current    |
+| --------- | ------ | ---------- |
+| Line      | 80%    | Increasing |
+| Branch    | 75%    | Increasing |
+| Function  | 80%    | Increasing |
+| Statement | 80%    | Increasing |
 
 ### View Coverage Report
 
@@ -352,9 +349,9 @@ npm run test:debug
 it('test with debug', async () => {
   console.log('Test value:', testValue);
   console.log('Mock calls:', mockFn.mock.calls);
-  
+
   const result = await service.method();
-  
+
   console.log('Result:', result);
   expect(result).toBeDefined();
 });
@@ -370,10 +367,10 @@ it('should verify mock was called correctly', async () => {
 
   // View all calls
   console.log('All calls:', mockFn.mock.calls);
-  
+
   // Verify specific call
   expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
-  
+
   // Count calls
   expect(mockFn).toHaveBeenCalledTimes(1);
 });
@@ -422,6 +419,7 @@ jobs:
 ### Issue: "Cannot find module"
 
 **Solution:** Check the import path and ensure the file exists:
+
 ```bash
 npm test -- --clearCache
 npm test
@@ -430,6 +428,7 @@ npm test
 ### Issue: "Timeout - async callback not invoked"
 
 **Solution:** Add timeout or ensure promises are handled:
+
 ```typescript
 it('test name', async () => {
   // Make sure to await
@@ -441,6 +440,7 @@ it('test name', async () => {
 ### Issue: "Mock not being called"
 
 **Solution:** Verify mock is set up before calling:
+
 ```typescript
 // ✅ Correct - Mock set up first
 jest.spyOn(service, 'method').mockResolvedValue('result');
@@ -462,6 +462,7 @@ jest.spyOn(service, 'method').mockResolvedValue('result');
 ## Support
 
 For questions about tests:
+
 1. Check [UNIT_TESTING_GUIDE.md](/BackEnd/UNIT_TESTING_GUIDE.md)
 2. Review existing test examples in test files
 3. Use test helpers from `test/utils/test-helpers.ts`

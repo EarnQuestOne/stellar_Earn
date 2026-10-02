@@ -70,12 +70,12 @@ pnpm benchmark:submission-pagination --drop-index  # measure without the index
 ### With the composite index present (offset vs keyset)
 
 | page depth | offset (ms) | keyset (ms) | speedup |
-|-----------:|------------:|------------:|--------:|
-| 0          | 0.034       | 0.032       | 1.1×    |
-| 10,000     | 3.509       | 0.024       | 146×    |
-| 25,000     | 5.324       | 0.035       | 152×    |
-| 50,000     | 10.044      | 0.039       | 258×    |
-| 90,000     | 12.760      | 0.042       | 304×    |
+| ---------: | ----------: | ----------: | ------: |
+|          0 |       0.034 |       0.032 |    1.1× |
+|     10,000 |       3.509 |       0.024 |    146× |
+|     25,000 |       5.324 |       0.035 |    152× |
+|     50,000 |      10.044 |       0.039 |    258× |
+|     90,000 |      12.760 |       0.042 |    304× |
 
 Buffer blocks touched at depth 90,000: offset 646 → keyset 5.
 
@@ -85,10 +85,10 @@ Offset pagination without `idx_submissions_user_created_at_id` degrades much
 more sharply (sequential scan + sort):
 
 | page depth | offset, no index (ms) | keyset (ms) | speedup |
-|-----------:|----------------------:|------------:|--------:|
-| 10,000     | 4.395                 | 0.046       | 96×     |
-| 50,000     | 21.422                | 0.042       | 510×    |
-| 90,000     | 57.845                | 0.048       | 1205×   |
+| ---------: | --------------------: | ----------: | ------: |
+|     10,000 |                 4.395 |       0.046 |     96× |
+|     50,000 |                21.422 |       0.042 |    510× |
+|     90,000 |                57.845 |       0.048 |   1205× |
 
 Key observation: offset latency scales with page depth; keyset latency is flat
 (O(limit)) at every depth. The composite index converts the deep-page path

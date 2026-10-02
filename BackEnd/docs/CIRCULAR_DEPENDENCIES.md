@@ -29,6 +29,7 @@ UsersModule
 ```
 
 This created a circular dependency that could cause:
+
 - Module initialization failures
 - Dependency injection errors
 - Unpredictable behavior
@@ -65,6 +66,7 @@ EventEmitter.emit() ──────→ @OnEvent()
 Created three new event DTOs for data export flow:
 
 #### 1. DataExportRequestedEvent
+
 ```typescript
 // src/events/dto/data-export-requested.event.ts
 export class DataExportRequestedEvent extends BaseEvent {
@@ -82,6 +84,7 @@ export class DataExportRequestedEvent extends BaseEvent {
 **Purpose:** Emitted when user requests a data export
 
 #### 2. DataExportCompletedEvent
+
 ```typescript
 // src/events/dto/data-export-completed.event.ts
 export class DataExportCompletedEvent extends BaseEvent {
@@ -100,6 +103,7 @@ export class DataExportCompletedEvent extends BaseEvent {
 **Purpose:** Emitted when data export completes successfully
 
 #### 3. DataExportFailedEvent
+
 ```typescript
 // src/events/dto/data-export-failed.event.ts
 export class DataExportFailedEvent extends BaseEvent {
@@ -262,23 +266,23 @@ export class EventsModule {}
 
 ### New Files (5)
 
-| File | Purpose |
-|------|---------|
-| `src/events/dto/data-export-requested.event.ts` | Event DTO for export requests |
-| `src/events/dto/data-export-completed.event.ts` | Event DTO for export completion |
-| `src/events/dto/data-export-failed.event.ts` | Event DTO for export failures |
-| `src/modules/jobs/listeners/data-export.listener.ts` | Listener for export requests |
-| `scripts/check-circular-deps.ts` | Script to verify no circular deps |
+| File                                                 | Purpose                           |
+| ---------------------------------------------------- | --------------------------------- |
+| `src/events/dto/data-export-requested.event.ts`      | Event DTO for export requests     |
+| `src/events/dto/data-export-completed.event.ts`      | Event DTO for export completion   |
+| `src/events/dto/data-export-failed.event.ts`         | Event DTO for export failures     |
+| `src/modules/jobs/listeners/data-export.listener.ts` | Listener for export requests      |
+| `scripts/check-circular-deps.ts`                     | Script to verify no circular deps |
 
 ### Modified Files (5)
 
-| File | Changes |
-|------|---------|
-| `src/modules/users/data-export.service.ts` | Use EventEmitter2 instead of JobsService |
-| `src/modules/users/users.module.ts` | Removed JobsModule import |
-| `src/modules/jobs/jobs.module.ts` | Added DataExportListener |
-| `src/modules/jobs/processors/export.processor.ts` | Emit completion/failure events |
-| `src/events/events.module.ts` | Registered all event handlers |
+| File                                              | Changes                                  |
+| ------------------------------------------------- | ---------------------------------------- |
+| `src/modules/users/data-export.service.ts`        | Use EventEmitter2 instead of JobsService |
+| `src/modules/users/users.module.ts`               | Removed JobsModule import                |
+| `src/modules/jobs/jobs.module.ts`                 | Added DataExportListener                 |
+| `src/modules/jobs/processors/export.processor.ts` | Emit completion/failure events           |
+| `src/events/events.module.ts`                     | Registered all event handlers            |
 
 This document is the canonical reference for the circular-dependency resolution. The loose root-level docs that previously covered this topic (`CIRCULAR_DEPENDENCY_RESOLUTION.md`, `CIRCULAR_DEPS_SUMMARY.md`, `CIRCULAR_DEPS_INDEX.md`, `README_CIRCULAR_DEPS.md`, `ARCHITECTURE_DIAGRAM.md`, `IMPLEMENTATION_COMPLETE.md`, `FINAL_VERIFICATION.md`, `BUGS_FIXED.md`, `ANSWER_TO_YOUR_QUESTIONS.md`, `VERIFICATION_STEPS.md`) were consolidated here.
 
@@ -300,17 +304,20 @@ npm run start:dev
 ### Detailed Verification
 
 1. **Check for Circular Dependencies**
+
    ```bash
    npm run build
    # Should complete without circular dependency errors
    ```
 
 2. **Run the Circular Dependency Check Script**
+
    ```bash
    npx ts-node scripts/check-circular-deps.ts
    ```
 
 3. **Start the Application**
+
    ```bash
    npm run start:dev
    # Watch for any circular dependency errors in console
@@ -335,7 +342,7 @@ npm run start:dev
 ✅ No "Circular dependency" warnings  
 ✅ All modules load successfully  
 ✅ Application starts without errors  
-✅ Data export flow works via events  
+✅ Data export flow works via events
 
 ## 🏗️ Architecture Improvements
 
@@ -421,7 +428,7 @@ export class ExportNotificationListener {
   async handleExportCompleted(event: DataExportCompletedEvent) {
     await this.emailService.sendExportReadyEmail(
       event.userId,
-      event.downloadUrl
+      event.downloadUrl,
     );
   }
 }
@@ -436,10 +443,7 @@ Add webhook support for export events:
 export class ExportWebhookListener {
   @OnEvent('user.data-export.completed')
   async handleExportCompleted(event: DataExportCompletedEvent) {
-    await this.webhookService.sendWebhook(
-      'data-export.completed',
-      event
-    );
+    await this.webhookService.sendWebhook('data-export.completed', event);
   }
 }
 ```
@@ -467,7 +471,7 @@ export class EventMetricsListener {
   @OnEvent('**')
   async trackEvent(event: any) {
     await this.metricsService.incrementCounter('events.processed', {
-      eventName: event.constructor.name
+      eventName: event.constructor.name,
     });
   }
 }
@@ -525,51 +529,54 @@ This implementation successfully resolves circular dependencies by:
 
 ## 📋 Module Dependency Audit
 
-| Module A | Module B | Status | Notes |
-|----------|----------|--------|-------|
-| AuthModule | UsersModule | ✅ OK | One-way dependency |
-| UsersModule | JobsModule | ✅ FIXED | Now uses events |
-| EmailModule | JobsModule | ✅ OK | One-way dependency |
-| QuestsModule | ModerationModule | ✅ OK | One-way dependency |
-| SubmissionsModule | NotificationsModule | ✅ OK | One-way dependency |
+| Module A          | Module B            | Status   | Notes              |
+| ----------------- | ------------------- | -------- | ------------------ |
+| AuthModule        | UsersModule         | ✅ OK    | One-way dependency |
+| UsersModule       | JobsModule          | ✅ FIXED | Now uses events    |
+| EmailModule       | JobsModule          | ✅ OK    | One-way dependency |
+| QuestsModule      | ModerationModule    | ✅ OK    | One-way dependency |
+| SubmissionsModule | NotificationsModule | ✅ OK    | One-way dependency |
 
 ## 🔀 Event Definitions
 
 ### user.data-export.requested
+
 Emitted when a user requests a data export.
 
-| Field | Type |
-|-------|------|
-| `userId` | string |
-| `exportId` | string |
+| Field        | Type   |
+| ------------ | ------ |
+| `userId`     | string |
+| `exportId`   | string |
 | `exportType` | string |
-| `format` | string |
+| `format`     | string |
 
 **Emitter:** `DataExportService` (UsersModule)
 **Listener:** `DataExportListener` (JobsModule)
 
 ### user.data-export.completed
+
 Emitted when a data export completes successfully.
 
-| Field | Type |
-|-------|------|
-| `userId` | string |
-| `exportId` | string |
+| Field         | Type   |
+| ------------- | ------ |
+| `userId`      | string |
+| `exportId`    | string |
 | `downloadUrl` | string |
-| `fileName` | string |
+| `fileName`    | string |
 | `recordCount` | number |
 
 **Emitter:** `DataExportProcessor` (JobsModule)
 **Listener:** Can be used by NotificationsModule, EmailModule, etc.
 
 ### user.data-export.failed
+
 Emitted when a data export fails.
 
-| Field | Type |
-|-------|------|
-| `userId` | string |
+| Field      | Type   |
+| ---------- | ------ |
+| `userId`   | string |
 | `exportId` | string |
-| `error` | string |
+| `error`    | string |
 
 **Emitter:** `DataExportProcessor` (JobsModule)
 **Listener:** Can be used by NotificationsModule, EmailModule, etc.

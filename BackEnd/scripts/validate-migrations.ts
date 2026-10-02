@@ -18,7 +18,7 @@ function validateMigrationFile(filePath: string): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     errors: [],
-    warnings: []
+    warnings: [],
   };
 
   try {
@@ -29,11 +29,13 @@ function validateMigrationFile(filePath: string): ValidationResult {
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Check for required imports
     if (!content.includes('import { MigrationInterface, QueryRunner }')) {
       result.valid = false;
-      result.errors.push('Missing required imports: MigrationInterface, QueryRunner');
+      result.errors.push(
+        'Missing required imports: MigrationInterface, QueryRunner',
+      );
     }
 
     // Check for class implementing MigrationInterface
@@ -61,14 +63,17 @@ function validateMigrationFile(filePath: string): ValidationResult {
 
     // Check for proper error handling
     if (!content.includes('try') && content.includes('await')) {
-      result.warnings.push('Consider adding try-catch blocks for error handling');
+      result.warnings.push(
+        'Consider adding try-catch blocks for error handling',
+      );
     }
 
     // Check for logging
     if (!content.includes('console.log')) {
-      result.warnings.push('Consider adding logging statements for better debugging');
+      result.warnings.push(
+        'Consider adding logging statements for better debugging',
+      );
     }
-
   } catch (error) {
     result.valid = false;
     result.errors.push(`Error reading file: ${error}`);
@@ -81,7 +86,7 @@ function validateRollbackScript(filePath: string): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     errors: [],
-    warnings: []
+    warnings: [],
   };
 
   try {
@@ -92,7 +97,7 @@ function validateRollbackScript(filePath: string): ValidationResult {
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Check for required imports
     if (!content.includes('import { DataSource }')) {
       result.valid = false;
@@ -114,7 +119,6 @@ function validateRollbackScript(filePath: string): ValidationResult {
       result.valid = false;
       result.errors.push('Missing error handling');
     }
-
   } catch (error) {
     result.valid = false;
     result.errors.push(`Error reading file: ${error}`);
@@ -127,7 +131,7 @@ function validateTestScript(filePath: string): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     errors: [],
-    warnings: []
+    warnings: [],
   };
 
   try {
@@ -138,7 +142,7 @@ function validateTestScript(filePath: string): ValidationResult {
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Check for required imports
     if (!content.includes('import { DataSource }')) {
       result.valid = false;
@@ -152,9 +156,10 @@ function validateTestScript(filePath: string): ValidationResult {
 
     // Check for assertions
     if (!content.includes('console.log') && !content.includes('expect')) {
-      result.warnings.push('Consider adding assertions or logging for test results');
+      result.warnings.push(
+        'Consider adding assertions or logging for test results',
+      );
     }
-
   } catch (error) {
     result.valid = false;
     result.errors.push(`Error reading file: ${error}`);
@@ -167,7 +172,7 @@ function validatePackageJson(filePath: string): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     errors: [],
-    warnings: []
+    warnings: [],
   };
 
   try {
@@ -179,14 +184,14 @@ function validatePackageJson(filePath: string): ValidationResult {
 
     const content = fs.readFileSync(filePath, 'utf8');
     const packageJson = JSON.parse(content);
-    
+
     // Check for migration scripts
     const requiredScripts = [
       'migration:run',
       'migration:revert',
       'migration:two-step',
       'migration:rollback:two-step',
-      'migration:test'
+      'migration:test',
     ];
 
     for (const script of requiredScripts) {
@@ -197,14 +202,16 @@ function validatePackageJson(filePath: string): ValidationResult {
 
     // Check for required dependencies
     const requiredDeps = ['typeorm', 'ts-node'];
-    
+
     for (const dep of requiredDeps) {
-      if (!packageJson.dependencies?.[dep] && !packageJson.devDependencies?.[dep]) {
+      if (
+        !packageJson.dependencies?.[dep] &&
+        !packageJson.devDependencies?.[dep]
+      ) {
         result.valid = false;
         result.errors.push(`Missing dependency: ${dep}`);
       }
     }
-
   } catch (error) {
     result.valid = false;
     result.errors.push(`Error parsing package.json: ${error}`);
@@ -221,94 +228,122 @@ async function validateAll() {
 
   // Validate migration files
   console.log('📋 Validating migration files...');
-  
+
   const step1Result = validateMigrationFile(
-    path.join(migrationsDir, '1800000000000-data-migration-step1-schema-sync.ts')
+    path.join(
+      migrationsDir,
+      '1800000000000-data-migration-step1-schema-sync.ts',
+    ),
   );
-  
+
   const step2Result = validateMigrationFile(
-    path.join(migrationsDir, '1800000000001-data-migration-step2-data-migration.ts')
+    path.join(
+      migrationsDir,
+      '1800000000001-data-migration-step2-data-migration.ts',
+    ),
   );
 
   console.log('\nStep 1 Migration (Schema Sync):');
-  console.log(`  ${step1Result.valid ? '✅' : '❌'} Valid: ${step1Result.valid}`);
+  console.log(
+    `  ${step1Result.valid ? '✅' : '❌'} Valid: ${step1Result.valid}`,
+  );
   if (step1Result.errors.length > 0) {
     console.log('  Errors:');
-    step1Result.errors.forEach(error => console.log(`    - ${error}`));
+    step1Result.errors.forEach((error) => console.log(`    - ${error}`));
   }
   if (step1Result.warnings.length > 0) {
     console.log('  Warnings:');
-    step1Result.warnings.forEach(warning => console.log(`    - ${warning}`));
+    step1Result.warnings.forEach((warning) => console.log(`    - ${warning}`));
   }
 
   console.log('\nStep 2 Migration (Data Migration):');
-  console.log(`  ${step2Result.valid ? '✅' : '❌'} Valid: ${step2Result.valid}`);
+  console.log(
+    `  ${step2Result.valid ? '✅' : '❌'} Valid: ${step2Result.valid}`,
+  );
   if (step2Result.errors.length > 0) {
     console.log('  Errors:');
-    step2Result.errors.forEach(error => console.log(`    - ${error}`));
+    step2Result.errors.forEach((error) => console.log(`    - ${error}`));
   }
   if (step2Result.warnings.length > 0) {
     console.log('  Warnings:');
-    step2Result.warnings.forEach(warning => console.log(`    - ${warning}`));
+    step2Result.warnings.forEach((warning) => console.log(`    - ${warning}`));
   }
 
   // Validate rollback script
   console.log('\n📋 Validating rollback script...');
   const rollbackResult = validateRollbackScript(
-    path.join(scriptsDir, 'rollback-migrations.ts')
+    path.join(scriptsDir, 'rollback-migrations.ts'),
   );
-  
-  console.log(`Rollback Script: ${rollbackResult.valid ? '✅' : '❌'} Valid: ${rollbackResult.valid}`);
+
+  console.log(
+    `Rollback Script: ${rollbackResult.valid ? '✅' : '❌'} Valid: ${rollbackResult.valid}`,
+  );
   if (rollbackResult.errors.length > 0) {
     console.log('  Errors:');
-    rollbackResult.errors.forEach(error => console.log(`    - ${error}`));
+    rollbackResult.errors.forEach((error) => console.log(`    - ${error}`));
   }
   if (rollbackResult.warnings.length > 0) {
     console.log('  Warnings:');
-    rollbackResult.warnings.forEach(warning => console.log(`    - ${warning}`));
+    rollbackResult.warnings.forEach((warning) =>
+      console.log(`    - ${warning}`),
+    );
   }
 
   // Validate test script
   console.log('\n📋 Validating test script...');
   const testResult = validateTestScript(
-    path.join(scriptsDir, 'test-migrations.ts')
+    path.join(scriptsDir, 'test-migrations.ts'),
   );
-  
-  console.log(`Test Script: ${testResult.valid ? '✅' : '❌'} Valid: ${testResult.valid}`);
+
+  console.log(
+    `Test Script: ${testResult.valid ? '✅' : '❌'} Valid: ${testResult.valid}`,
+  );
   if (testResult.errors.length > 0) {
     console.log('  Errors:');
-    testResult.errors.forEach(error => console.log(`    - ${error}`));
+    testResult.errors.forEach((error) => console.log(`    - ${error}`));
   }
   if (testResult.warnings.length > 0) {
     console.log('  Warnings:');
-    testResult.warnings.forEach(warning => console.log(`    - ${warning}`));
+    testResult.warnings.forEach((warning) => console.log(`    - ${warning}`));
   }
 
   // Validate package.json
   console.log('\n📋 Validating package.json...');
   const packageResult = validatePackageJson(
-    path.join(__dirname, '../package.json')
+    path.join(__dirname, '../package.json'),
   );
-  
-  console.log(`package.json: ${packageResult.valid ? '✅' : '❌'} Valid: ${packageResult.valid}`);
+
+  console.log(
+    `package.json: ${packageResult.valid ? '✅' : '❌'} Valid: ${packageResult.valid}`,
+  );
   if (packageResult.errors.length > 0) {
     console.log('  Errors:');
-    packageResult.errors.forEach(error => console.log(`    - ${error}`));
+    packageResult.errors.forEach((error) => console.log(`    - ${error}`));
   }
   if (packageResult.warnings.length > 0) {
     console.log('  Warnings:');
-    packageResult.warnings.forEach(warning => console.log(`    - ${warning}`));
+    packageResult.warnings.forEach((warning) =>
+      console.log(`    - ${warning}`),
+    );
   }
 
   // Overall validation result
-  const allValid = step1Result.valid && step2Result.valid && rollbackResult.valid && 
-                   testResult.valid && packageResult.valid;
+  const allValid =
+    step1Result.valid &&
+    step2Result.valid &&
+    rollbackResult.valid &&
+    testResult.valid &&
+    packageResult.valid;
 
   console.log('\n' + '='.repeat(50));
   if (allValid) {
-    console.log('🎉 All validations passed! Two-step migration implementation is ready.');
+    console.log(
+      '🎉 All validations passed! Two-step migration implementation is ready.',
+    );
   } else {
-    console.log('❌ Some validations failed. Please fix the errors before proceeding.');
+    console.log(
+      '❌ Some validations failed. Please fix the errors before proceeding.',
+    );
   }
 
   return allValid;
@@ -316,12 +351,14 @@ async function validateAll() {
 
 // Check if this file is being run directly
 if (require.main === module) {
-  validateAll().then(success => {
-    process.exit(success ? 0 : 1);
-  }).catch(error => {
-    console.error('Validation failed:', error);
-    process.exit(1);
-  });
+  validateAll()
+    .then((success) => {
+      process.exit(success ? 0 : 1);
+    })
+    .catch((error) => {
+      console.error('Validation failed:', error);
+      process.exit(1);
+    });
 }
 
 export { validateAll };

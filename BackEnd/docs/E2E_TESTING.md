@@ -17,11 +17,13 @@ E2E tests are prone to flakiness due to timing issues, race conditions, and exte
 ## Root Causes of Flakiness
 
 ### 1. **Race Conditions**
+
 - Tests don't wait for async operations to complete
 - Database writes not flushed before reading
 - Cache invalidation timing issues
 
 **Example:**
+
 ```typescript
 // ❌ FLAKY - No wait for database
 it('should create and retrieve user', async () => {
@@ -31,9 +33,7 @@ it('should create and retrieve user', async () => {
     .expect(201);
 
   // Database might not be ready yet
-  const users = await request(app.getHttpServer())
-    .get('/users')
-    .expect(200);
+  const users = await request(app.getHttpServer()).get('/users').expect(200);
 });
 
 // ✅ FIXED - Wait for resource availability
@@ -42,23 +42,24 @@ it('should create and retrieve user', async () => {
     request(app.getHttpServer())
       .post('/users')
       .send({ email: 'user@example.com' })
-      .expect(201)
+      .expect(201),
   );
 
   // Wait for read consistency
-  const users = await pollDatabase(
-    () => getUsersFromDb(['user@example.com']),
-    { timeoutMs: 5000 }
-  );
+  const users = await pollDatabase(() => getUsersFromDb(['user@example.com']), {
+    timeoutMs: 5000,
+  });
 });
 ```
 
 ### 2. **Timeout Issues**
+
 - Tests exceed default 5-second timeout
 - Slow database operations
 - Network latency
 
 **Solution:** Increase timeout and implement explicit waits
+
 ```typescript
 // In jest-e2e.json
 {
@@ -67,11 +68,13 @@ it('should create and retrieve user', async () => {
 ```
 
 ### 3. **Shared State**
+
 - Tests depend on execution order
 - Previous test data affects current test
 - Database not cleaned between tests
 
 **Example:**
+
 ```typescript
 // ❌ FLAKY - Depends on test order
 let userId = '';
@@ -97,11 +100,13 @@ it('should update user', () => {
 ```
 
 ### 4. **Environmental Instability**
+
 - Database not ready
 - Cache/Redis not available
 - Port conflicts
 
 **Solution:**
+
 ```typescript
 beforeAll(async () => {
   // Wait for all services to be ready
@@ -112,18 +117,20 @@ beforeAll(async () => {
 ```
 
 ### 5. **Flaky Assertions**
+
 - Timing-dependent assertions
 - Assuming data ordering
 - Not accounting for processing delays
 
 **Example:**
+
 ```typescript
 // ❌ FLAKY - Assumes immediate data availability
 it('should list recent items', () => {
   createItem();
   return request(app.getHttpServer())
     .get('/items')
-    .expect(res => {
+    .expect((res) => {
       expect(res.body[0].id).toBeDefined();
     });
 });
@@ -131,11 +138,11 @@ it('should list recent items', () => {
 // ✅ FIXED - Wait for data to be queryable
 it('should list recent items', async () => {
   const item = createItem();
-  
+
   await waitFor(() =>
     request(app.getHttpServer())
       .get(`/items/${item.id}`)
-      .then(res => res.status === 200)
+      .then((res) => res.status === 200),
   );
 });
 ```
@@ -145,6 +152,7 @@ it('should list recent items', async () => {
 ### 1. Increase Test Timeout
 
 Update `jest-e2e.json`:
+
 ```json
 {
   "testTimeout": 30000,
@@ -155,16 +163,18 @@ Update `jest-e2e.json`:
 ### 2. Add Retry Logic
 
 Wrap flaky operations:
+
 ```typescript
 await retryWithBackoff(
   () => request(app.getHttpServer()).post('/endpoint').send(data),
-  { maxAttempts: 3, initialDelayMs: 100 }
+  { maxAttempts: 3, initialDelayMs: 100 },
 );
 ```
 
 ### 3. Wait for App Readiness
 
 Before running tests:
+
 ```typescript
 beforeAll(async () => {
   await waitForAppReady(app);
@@ -184,15 +194,13 @@ afterEach(async () => {
 ### 5. Use Explicit Waits
 
 Instead of arbitrary `sleep()`:
+
 ```typescript
 // ❌ Arbitrary wait
 await sleep(2000);
 
 // ✅ Explicit wait for condition
-await waitFor(
-  () => checkIfDataIsAvailable(),
-  { timeoutMs: 5000 }
-);
+await waitFor(() => checkIfDataIsAvailable(), { timeoutMs: 5000 });
 ```
 
 ## Retry Strategy
@@ -203,24 +211,23 @@ await waitFor(
 import { retryWithBackoff, DEFAULT_RETRY_CONFIG } from '../e2e-helpers';
 
 // Basic usage
-await retryWithBackoff(
-  () => request(app.getHttpServer()).get('/endpoint')
-);
+await retryWithBackoff(() => request(app.getHttpServer()).get('/endpoint'));
 
 // Custom configuration
 await retryWithBackoff(
   () => request(app.getHttpServer()).post('/endpoint').send(data),
   {
-    maxAttempts: 5,           // Retry up to 5 times
-    initialDelayMs: 200,      // Start with 200ms delay
-    maxDelayMs: 3000,         // Cap at 3 seconds
-    backoffMultiplier: 2,     // Double delay each retry
-    timeout: 10000            // 10 second timeout per attempt
-  }
+    maxAttempts: 5, // Retry up to 5 times
+    initialDelayMs: 200, // Start with 200ms delay
+    maxDelayMs: 3000, // Cap at 3 seconds
+    backoffMultiplier: 2, // Double delay each retry
+    timeout: 10000, // 10 second timeout per attempt
+  },
 );
 ```
 
 ### How it works:
+
 1. **Attempt 1:** Immediate
 2. **Attempt 2:** Wait 200ms, then retry
 3. **Attempt 3:** Wait 400ms, then retry
@@ -230,12 +237,14 @@ await retryWithBackoff(
 ### When to Use Retries
 
 ✅ **Good candidates for retry:**
+
 - HTTP requests (network can be flaky)
 - Database queries (might be temporarily locked)
 - Cache operations (Redis might restart)
 - File I/O (filesystem might be busy)
 
 ❌ **Don't retry:**
+
 - Tests for specific error conditions
 - Operations with side effects that shouldn't repeat
 - Authentication attempts (retry login, not individual request)
@@ -248,10 +257,10 @@ await retryWithBackoff(
 import { waitFor, sleep } from '../e2e-helpers';
 
 // Wait for data to exist
-await waitFor(
-  () => getUserFromDb(userId),
-  { timeoutMs: 5000, intervalMs: 200 }
-);
+await waitFor(() => getUserFromDb(userId), {
+  timeoutMs: 5000,
+  intervalMs: 200,
+});
 
 // Wait for event emission
 await waitForEvent(eventEmitter, 'user.created', { timeoutMs: 3000 });
@@ -262,7 +271,7 @@ await waitFor(
     const response = await checkStatus();
     return response.status === 'completed';
   },
-  { timeoutMs: 10000 }
+  { timeoutMs: 10000 },
 );
 ```
 
@@ -272,10 +281,10 @@ await waitFor(
 import { pollDatabase } from '../e2e-helpers';
 
 // Wait for database to return result
-const user = await pollDatabase(
-  () => getUserFromDb(userId),
-  { timeoutMs: 5000, intervalMs: 100 }
-);
+const user = await pollDatabase(() => getUserFromDb(userId), {
+  timeoutMs: 5000,
+  intervalMs: 100,
+});
 ```
 
 ### Wait for App Readiness
@@ -286,16 +295,10 @@ beforeAll(async () => {
   await waitForAppReady(app, 10); // 10 attempts
 
   // Wait for database
-  await waitForDatabase(
-    () => checkDatabaseConnection(),
-    { timeoutMs: 30000 }
-  );
+  await waitForDatabase(() => checkDatabaseConnection(), { timeoutMs: 30000 });
 
   // Wait for Redis
-  await waitForRedis(
-    () => checkRedisConnection(),
-    { timeoutMs: 15000 }
-  );
+  await waitForRedis(() => checkRedisConnection(), { timeoutMs: 15000 });
 });
 ```
 
@@ -313,11 +316,9 @@ beforeAll(async () => {
 });
 
 it('should make request', async () => {
-  const response = await ctx.requestWithRetry(
-    'post',
-    '/endpoint',
-    { maxAttempts: 3 }
-  );
+  const response = await ctx.requestWithRetry('post', '/endpoint', {
+    maxAttempts: 3,
+  });
   expect(response.status).toBe(201);
 });
 ```
@@ -377,10 +378,7 @@ it('should process request', async () => {
     .send(data)
     .expect(200);
 
-  const result = await waitFor(
-    () => getResult(id),
-    { timeoutMs: 10000 }
-  );
+  const result = await waitFor(() => getResult(id), { timeoutMs: 10000 });
   expect(result).toBeDefined();
 });
 ```
@@ -389,15 +387,12 @@ it('should process request', async () => {
 
 ```typescript
 const response = await retryWithBackoff(
-  () =>
-    request(app.getHttpServer())
-      .get('/flaky-endpoint')
-      .expect(200),
+  () => request(app.getHttpServer()).get('/flaky-endpoint').expect(200),
   {
     maxAttempts: 3,
     initialDelayMs: 100,
     backoffMultiplier: 2,
-  }
+  },
 );
 ```
 
@@ -431,7 +426,7 @@ const response = await authenticatedRequestWithRetry(
   'post',
   '/protected-endpoint',
   accessToken,
-  { maxAttempts: 3 }
+  { maxAttempts: 3 },
 );
 ```
 
@@ -439,20 +434,20 @@ const response = await authenticatedRequestWithRetry(
 
 ### Available Helpers
 
-| Function | Purpose |
-|----------|---------|
-| `retryWithBackoff()` | Retry operation with exponential backoff |
-| `waitFor()` | Wait for condition to be true |
-| `sleep()` | Sleep for specified milliseconds |
-| `waitForAppReady()` | Wait for app initialization |
-| `waitForDatabase()` | Wait for database to be available |
-| `waitForRedis()` | Wait for Redis to be available |
-| `waitForEvent()` | Wait for event emission |
-| `pollDatabase()` | Poll database until result found |
-| `createE2ETestContext()` | Create test context with utilities |
-| `authenticatedRequest()` | Make authenticated HTTP request |
-| `requestWithRetry()` | Make HTTP request with retry |
-| `CircuitBreaker` | Circuit breaker pattern for requests |
+| Function                 | Purpose                                  |
+| ------------------------ | ---------------------------------------- |
+| `retryWithBackoff()`     | Retry operation with exponential backoff |
+| `waitFor()`              | Wait for condition to be true            |
+| `sleep()`                | Sleep for specified milliseconds         |
+| `waitForAppReady()`      | Wait for app initialization              |
+| `waitForDatabase()`      | Wait for database to be available        |
+| `waitForRedis()`         | Wait for Redis to be available           |
+| `waitForEvent()`         | Wait for event emission                  |
+| `pollDatabase()`         | Poll database until result found         |
+| `createE2ETestContext()` | Create test context with utilities       |
+| `authenticatedRequest()` | Make authenticated HTTP request          |
+| `requestWithRetry()`     | Make HTTP request with retry             |
+| `CircuitBreaker`         | Circuit breaker pattern for requests     |
 
 ### Import and Use
 
@@ -497,7 +492,7 @@ it('should process data', async () => {
       console.log('Attempt at', Date.now());
       return request(app.getHttpServer()).post('/process');
     },
-    { maxAttempts: 3 }
+    { maxAttempts: 3 },
   );
 
   console.log('Request completed at', Date.now());
@@ -566,7 +561,7 @@ const challengeRes = await retryWithBackoff(() =>
   request(app.getHttpServer())
     .post('/auth/challenge')
     .send({ stellarAddress })
-    .expect(200)
+    .expect(200),
 );
 
 // Login
@@ -574,7 +569,7 @@ const loginRes = await retryWithBackoff(() =>
   request(app.getHttpServer())
     .post('/auth/login')
     .send({ ...loginData, challenge: challengeRes.body.challenge })
-    .expect(200)
+    .expect(200),
 );
 
 const accessToken = loginRes.body.accessToken;
@@ -588,7 +583,7 @@ const response = await authenticatedRequestWithRetry(
   'get',
   '/protected-resource',
   accessToken,
-  { maxAttempts: 3 }
+  { maxAttempts: 3 },
 );
 ```
 
@@ -602,10 +597,9 @@ const createRes = await request(app.getHttpServer())
   .expect(201);
 
 // Verify in database
-const dbItem = await pollDatabase(
-  () => getItemFromDb(createRes.body.id),
-  { timeoutMs: 5000 }
-);
+const dbItem = await pollDatabase(() => getItemFromDb(createRes.body.id), {
+  timeoutMs: 5000,
+});
 
 expect(dbItem).toBeDefined();
 expect(dbItem.name).toBe(itemData.name);
@@ -619,10 +613,7 @@ const eventPromise = waitForEvent(eventEmitter, 'item.created', {
 });
 
 // Trigger event
-await request(app.getHttpServer())
-  .post('/items')
-  .send(itemData)
-  .expect(201);
+await request(app.getHttpServer()).post('/items').send(itemData).expect(201);
 
 const event = await eventPromise;
 expect(event.itemId).toBeDefined();
@@ -647,11 +638,12 @@ grep -c "FAIL\|PASS" test-results.log
 ### Set Up CI/CD Monitoring
 
 In your CI/CD pipeline:
+
 ```yaml
 - name: Run E2E Tests
   run: npm run test:e2e
-  continue-on-error: true  # Don't fail build on flaky test
-  
+  continue-on-error: true # Don't fail build on flaky test
+
 - name: Analyze Results
   run: |
     if grep -q "FLAKY" test-results.log; then
@@ -665,12 +657,14 @@ In your CI/CD pipeline:
 Use the `flaky-test-quarantine` label for tests that fail intermittently and need temporary removal from the release gate.
 
 **Remediation SLA**
+
 - Triage within 1 business day after the label is applied.
 - Assign an owner and remediation plan within 1 business day.
 - Land a fix, test stabilization change, or explicit follow-up update within 3 business days.
 - Remove the quarantine label after the test passes cleanly for 5 consecutive CI runs.
 
 **Quarantine rules**
+
 - Only quarantine tests with a documented failure pattern and reproduction notes.
 - Keep `continue-on-error: true` limited to the quarantined test job or matrix entry.
 - Re-run quarantined tests on every CI pass until the label is removed.
@@ -698,6 +692,7 @@ Use the `flaky-test-quarantine` label for tests that fail intermittently and nee
 ## Support
 
 For issues with specific E2E tests:
+
 1. Check this guide for similar patterns
 2. Review [auth.e2e-spec-fixed.ts](./auth/auth.e2e-spec-fixed.ts) for examples
 3. Use e2e-helpers utilities

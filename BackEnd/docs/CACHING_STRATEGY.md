@@ -36,11 +36,11 @@ REDIS_DB=0
 
 ```typescript
 CACHE_TTL = {
-  DEFAULT: 300,      // 5 minutes
-  SHORT: 60,         // 1 minute
-  MEDIUM: 600,       // 10 minutes
-  LONG: 3600,        // 1 hour
-  VERY_LONG: 86400,  // 24 hours
+  DEFAULT: 300, // 5 minutes
+  SHORT: 60, // 1 minute
+  MEDIUM: 600, // 10 minutes
+  LONG: 3600, // 1 hour
+  VERY_LONG: 86400, // 24 hours
 };
 ```
 
@@ -158,6 +158,7 @@ GET /cache/stats?key=quest_detail:123
 ```
 
 Response:
+
 ```json
 {
   "hits": 150,
@@ -196,6 +197,7 @@ DELETE /cache/reset-stats
 - **Invalidation**: On create, update, delete
 
 **Implementation Details**:
+
 ```typescript
 // findAll - cache with query parameters
 const cacheKey = `${CACHE_KEYS.QUESTS}:${JSON.stringify(queryDto)}`;
@@ -243,6 +245,7 @@ await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
 ### When to Cache
 
 ✅ **Good candidates**:
+
 - Read-heavy endpoints
 - Database aggregations
 - Frequently accessed data
@@ -250,6 +253,7 @@ await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
 - Stable data (not rapidly changing)
 
 ❌ **Bad candidates**:
+
 - Real-time data
 - User-specific sensitive data
 - Frequently mutated data
@@ -324,6 +328,7 @@ npm run test:e2e test/quests/quests.e2e-spec.ts
 ### Adding Cache to Existing Service
 
 1. **Install CacheModule in your module**:
+
 ```typescript
 @Module({
   imports: [CacheModule],
@@ -333,11 +338,13 @@ export class MyModule {}
 ```
 
 2. **Inject CacheService**:
+
 ```typescript
 constructor(private cacheService: CacheService) {}
 ```
 
 3. **Wrap expensive queries**:
+
 ```typescript
 async getData() {
   return this.cacheService.getOrSet(
@@ -349,6 +356,7 @@ async getData() {
 ```
 
 4. **Add cache invalidation**:
+
 ```typescript
 async updateData(id: string, dto: UpdateDto) {
   const result = await this.repository.save({ id, ...dto });
@@ -358,6 +366,7 @@ async updateData(id: string, dto: UpdateDto) {
 ```
 
 5. **Add tests**:
+
 ```typescript
 describe('Service with Cache', () => {
   it('should cache results', async () => {
@@ -373,6 +382,7 @@ describe('Service with Cache', () => {
 ### Cache Not Working
 
 **Check**:
+
 1. CacheModule imported in module
 2. CacheService injected correctly
 3. Cache key format consistency
@@ -381,6 +391,7 @@ describe('Service with Cache', () => {
 ### Memory Issues with In-Memory Cache
 
 **Solutions**:
+
 1. Reduce TTL values
 2. Switch to Redis cache
 3. Implement cache eviction policy
@@ -389,6 +400,7 @@ describe('Service with Cache', () => {
 ### Redis Connection Issues
 
 **Check**:
+
 1. Redis server running: `redis-cli ping`
 2. Connection credentials in `.env`
 3. Network connectivity
@@ -397,6 +409,7 @@ describe('Service with Cache', () => {
 ### Stale Cache Issues
 
 **Solutions**:
+
 1. Review invalidation logic
 2. Reduce TTL for volatile data
 3. Add cache versioning for deployments
@@ -405,33 +418,37 @@ describe('Service with Cache', () => {
 ## Best Practices
 
 1. **Use Meaningful Cache Keys**: Include entity type and ID
+
    ```typescript
    // ✅ Good
    const key = `${CACHE_KEYS.QUEST_DETAIL}:${id}`;
-   
+
    // ❌ Poor
    const key = `data_${id}`;
    ```
 
 2. **Set Appropriate TTLs**: Match data volatility
+
    ```typescript
    // Stable data: longer TTL
-   CACHE_TTL.VERY_LONG // 24 hours
-   
+   CACHE_TTL.VERY_LONG; // 24 hours
+
    // Volatile data: shorter TTL
-   CACHE_TTL.SHORT // 1 minute
+   CACHE_TTL.SHORT; // 1 minute
    ```
 
 3. **Invalidate Strategically**: Invalidate only affected keys
+
    ```typescript
    // ✅ Specific
    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
-   
+
    // ❌ Overkill
    await this.cacheService.clear(); // Clears everything
    ```
 
 4. **Handle Cache Failures Gracefully**: Fall back to database
+
    ```typescript
    try {
      return await this.cacheService.get(key);

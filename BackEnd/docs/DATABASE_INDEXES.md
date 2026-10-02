@@ -1,9 +1,11 @@
 # Database Indexes Documentation
 
 ## Overview
+
 This document provides comprehensive documentation for all database indexes in the Stellar Earn application. It includes the purpose, usage patterns, and maintenance guidelines for each index.
 
 ## Table of Contents
+
 1. [User Table Indexes](#user-table-indexes)
 2. [Quest Table Indexes](#quest-table-indexes)
 3. [Payout Table Indexes](#payout-table-indexes)
@@ -22,6 +24,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## User Table Indexes
 
 ### IDX_USER_STELLAR_ADDRESS (Unique)
+
 - **Column**: `stellarAddress`
 - **Type**: UNIQUE B-tree
 - **Purpose**: Primary user lookup by Stellar blockchain address
@@ -30,6 +33,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (one per user)
 
 ### IDX_USER_EMAIL
+
 - **Column**: `email`
 - **Type**: B-tree (partial - WHERE email IS NOT NULL)
 - **Purpose**: User authentication via email
@@ -38,6 +42,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (unique per user)
 
 ### IDX_USER_USERNAME
+
 - **Column**: `username`
 - **Type**: B-tree (partial - WHERE username IS NOT NULL)
 - **Purpose**: Profile lookups, leaderboards, mentions
@@ -46,6 +51,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (unique per user)
 
 ### IDX_USER_GOOGLE_ID
+
 - **Column**: `googleId`
 - **Type**: B-tree (partial - WHERE googleId IS NOT NULL)
 - **Purpose**: OAuth authentication with Google
@@ -54,6 +60,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium (only OAuth users)
 
 ### IDX_USER_GITHUB_ID
+
 - **Column**: `githubId`
 - **Type**: B-tree (partial - WHERE githubId IS NOT NULL)
 - **Purpose**: OAuth authentication with GitHub
@@ -62,6 +69,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium (only OAuth users)
 
 ### IDX_USER_LAST_ACTIVE_AT
+
 - **Column**: `lastActiveAt`
 - **Type**: B-tree (partial - WHERE lastActiveAt IS NOT NULL)
 - **Purpose**: Activity tracking and engagement metrics
@@ -70,6 +78,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium (updated on activity)
 
 ### IDX_USER_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: User registration analytics and date range queries
@@ -78,6 +87,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (timestamp per user)
 
 ### IDX_USER_ROLE_DELETED
+
 - **Column**: `role`, `deletedAt`
 - **Type**: Composite B-tree
 - **Purpose**: Admin queries for active users by role
@@ -86,6 +96,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few roles)
 
 ### IDX_USER_CREATED_DELETED
+
 - **Column**: `createdAt`, `deletedAt`
 - **Type**: Composite B-tree
 - **Purpose**: Analytics on active users over time
@@ -98,6 +109,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## Quest Table Indexes
 
 ### IDX_QUEST_STATUS
+
 - **Column**: `status`
 - **Type**: B-tree
 - **Purpose**: Filter quests by status (ACTIVE, COMPLETED, etc.)
@@ -106,6 +118,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few statuses)
 
 ### IDX_QUEST_CREATED_BY
+
 - **Column**: `createdBy`
 - **Type**: B-tree
 - **Purpose**: Creator's quest dashboard
@@ -114,6 +127,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium (distributed across creators)
 
 ### IDX_QUEST_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: Quest sorting and analytics
@@ -122,6 +136,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (timestamp per quest)
 
 ### IDX_QUEST_DEADLINE
+
 - **Column**: `deadline`
 - **Type**: B-tree (partial - WHERE deadline IS NOT NULL)
 - **Purpose**: Expiring quest notifications and reminders
@@ -130,6 +145,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (varies per quest)
 
 ### IDX_QUEST_CONTRACT_TASK_ID (Unique)
+
 - **Column**: `contractTaskId`
 - **Type**: UNIQUE B-tree
 - **Purpose**: Blockchain integration - map on-chain tasks to quests
@@ -138,6 +154,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (one per quest)
 
 ### IDX_QUEST_STATUS_DEADLINE
+
 - **Column**: `status`, `deadline`
 - **Type**: Composite B-tree (partial - WHERE deadline IS NOT NULL)
 - **Purpose**: Active quests with upcoming deadlines
@@ -146,6 +163,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_QUEST_CREATOR_STATUS
+
 - **Column**: `createdBy`, `status`
 - **Type**: Composite B-tree
 - **Purpose**: Creator's quests filtered by status
@@ -154,6 +172,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_QUEST_DELETED_AT
+
 - **Column**: `deletedAt`
 - **Type**: B-tree
 - **Purpose**: Soft delete filtering
@@ -162,6 +181,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (mostly NULL)
 
 ### IDX_QUEST_CREATED_STATUS
+
 - **Column**: `createdAt`, `status`
 - **Type**: Composite B-tree
 - **Purpose**: Quest analytics by date and status
@@ -174,6 +194,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## Payout Table Indexes
 
 ### IDX_PAYOUT_STELLAR_ADDRESS
+
 - **Column**: `stellarAddress`
 - **Type**: B-tree
 - **Purpose**: User payout history - CRITICAL for UX
@@ -183,6 +204,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Priority**: HIGH
 
 ### IDX_PAYOUT_STATUS
+
 - **Column**: `status`
 - **Type**: B-tree
 - **Purpose**: Payout processing and admin dashboard
@@ -191,6 +213,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few statuses)
 
 ### IDX_PAYOUT_TYPE
+
 - **Column**: `type`
 - **Type**: B-tree
 - **Purpose**: Payout analytics by type
@@ -199,6 +222,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few types)
 
 ### IDX_PAYOUT_QUEST_ID
+
 - **Column**: `questId`
 - **Type**: B-tree (partial - WHERE questId IS NOT NULL)
 - **Purpose**: Quest payout tracking
@@ -207,6 +231,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_PAYOUT_SUBMISSION_ID
+
 - **Column**: `submissionId`
 - **Type**: B-tree (partial - WHERE submissionId IS NOT NULL)
 - **Purpose**: Submission payout verification
@@ -215,6 +240,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (one per submission)
 
 ### IDX_PAYOUT_TRANSACTION_HASH
+
 - **Column**: `transactionHash`
 - **Type**: B-tree (partial - WHERE transactionHash IS NOT NULL)
 - **Purpose**: Blockchain verification
@@ -223,6 +249,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (one per completed payout)
 
 ### IDX_PAYOUT_NEXT_RETRY_AT
+
 - **Column**: `nextRetryAt`
 - **Type**: B-tree (partial - WHERE nextRetryAt IS NOT NULL)
 - **Purpose**: Retry job scheduling
@@ -231,6 +258,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (only failed payouts)
 
 ### IDX_PAYOUT_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: Payout history and analytics
@@ -239,6 +267,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High (timestamp per payout)
 
 ### IDX_PAYOUT_PROCESSED_AT
+
 - **Column**: `processedAt`
 - **Type**: B-tree (partial - WHERE processedAt IS NOT NULL)
 - **Purpose**: Processing time analytics
@@ -247,6 +276,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_PAYOUT_ADDRESS_STATUS
+
 - **Column**: `stellarAddress`, `status`
 - **Type**: Composite B-tree
 - **Purpose**: User's pending payouts
@@ -256,6 +286,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Priority**: HIGH
 
 ### IDX_PAYOUT_STATUS_RETRY
+
 - **Column**: `status`, `nextRetryAt`
 - **Type**: Composite B-tree (partial - WHERE nextRetryAt IS NOT NULL)
 - **Purpose**: Retry job processing
@@ -264,6 +295,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low
 
 ### IDX_PAYOUT_QUEST_STATUS
+
 - **Column**: `questId`, `status`
 - **Type**: Composite B-tree (partial - WHERE questId IS NOT NULL)
 - **Purpose**: Quest payout tracking by status
@@ -276,6 +308,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## Notification Table Indexes
 
 ### IDX_NOTIFICATION_USER_ID
+
 - **Column**: `userId`
 - **Type**: B-tree
 - **Purpose**: User's notifications
@@ -284,6 +317,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_NOTIFICATION_READ
+
 - **Column**: `read`
 - **Type**: B-tree
 - **Purpose**: Unread notification filtering
@@ -292,6 +326,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (boolean)
 
 ### IDX_NOTIFICATION_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: Notification sorting
@@ -300,6 +335,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_NOTIFICATION_TYPE
+
 - **Column**: `type`
 - **Type**: B-tree
 - **Purpose**: Filter by notification type
@@ -308,6 +344,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few types)
 
 ### IDX_NOTIFICATION_PRIORITY
+
 - **Column**: `priority`
 - **Type**: B-tree
 - **Purpose**: Urgent notification filtering
@@ -316,6 +353,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few priorities)
 
 ### IDX_NOTIFICATION_USER_READ_CREATED
+
 - **Column**: `userId`, `read`, `createdAt`
 - **Type**: Composite B-tree
 - **Purpose**: Unread notifications sorted by date
@@ -325,6 +363,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Priority**: HIGH
 
 ### IDX_NOTIFICATION_USER_TYPE
+
 - **Column**: `userId`, `type`
 - **Type**: Composite B-tree
 - **Purpose**: User's notifications by type
@@ -337,6 +376,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## Submission Table Indexes
 
 ### IDX_SUBMISSION_QUEST_ID
+
 - **Column**: `questId`
 - **Type**: B-tree
 - **Purpose**: Quest submissions
@@ -345,6 +385,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_SUBMISSION_USER_ID
+
 - **Column**: `userId`
 - **Type**: B-tree
 - **Purpose**: User submissions
@@ -353,6 +394,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_SUBMISSION_STATUS
+
 - **Column**: `status`
 - **Type**: B-tree
 - **Purpose**: Submission status filtering
@@ -361,6 +403,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few statuses)
 
 ### IDX_SUBMISSION_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: Submission sorting and analytics
@@ -369,6 +412,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_SUBMISSION_APPROVED_AT
+
 - **Column**: `approvedAt`
 - **Type**: B-tree (partial - WHERE approvedAt IS NOT NULL)
 - **Purpose**: Approval time analytics
@@ -377,6 +421,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_SUBMISSION_REJECTED_AT
+
 - **Column**: `rejectedAt`
 - **Type**: B-tree (partial - WHERE rejectedAt IS NOT NULL)
 - **Purpose**: Rejection time analytics
@@ -385,6 +430,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_SUBMISSION_USER_STATUS_CREATED
+
 - **Column**: `userId`, `status`, `createdAt`
 - **Type**: Composite B-tree
 - **Purpose**: User's submissions by status
@@ -394,6 +440,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Priority**: HIGH
 
 ### IDX_SUBMISSION_QUEST_STATUS_CREATED
+
 - **Column**: `questId`, `status`, `createdAt`
 - **Type**: Composite B-tree
 - **Purpose**: Quest submissions by status
@@ -402,6 +449,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_SUBMISSION_STATUS_CREATED
+
 - **Column**: `status`, `createdAt`
 - **Type**: Composite B-tree
 - **Purpose**: Pending submissions queue
@@ -414,6 +462,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## RefreshToken Table Indexes
 
 ### IDX_REFRESH_TOKEN_TOKEN
+
 - **Column**: `token` (now `tokenHash`)
 - **Type**: B-tree
 - **Purpose**: Token lookup for authentication
@@ -422,6 +471,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_REFRESH_TOKEN_STELLAR_ADDRESS
+
 - **Column**: `stellarAddress`
 - **Type**: B-tree
 - **Purpose**: User token lookup
@@ -430,6 +480,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_REFRESH_TOKEN_FAMILY_ID
+
 - **Column**: `familyId`
 - **Type**: B-tree
 - **Purpose**: Token family tracking for rotation security
@@ -439,6 +490,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Priority**: HIGH (security)
 
 ### IDX_REFRESH_TOKEN_IS_REVOKED
+
 - **Column**: `isRevoked`
 - **Type**: B-tree
 - **Purpose**: Active token queries
@@ -447,6 +499,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (boolean)
 
 ### IDX_REFRESH_TOKEN_EXPIRES_AT
+
 - **Column**: `expiresAt`
 - **Type**: B-tree
 - **Purpose**: Token cleanup jobs
@@ -455,6 +508,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_REFRESH_TOKEN_USER_REVOKED_EXPIRES
+
 - **Column**: `userId`, `isRevoked`, `expiresAt`
 - **Type**: Composite B-tree (partial - WHERE userId IS NOT NULL)
 - **Purpose**: User's active tokens
@@ -463,6 +517,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_REFRESH_TOKEN_FAMILY_REVOKED
+
 - **Column**: `familyId`, `isRevoked`
 - **Type**: Composite B-tree
 - **Purpose**: Token family validation
@@ -476,6 +531,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## TwoFactorAuth Table Indexes
 
 ### IDX_TWO_FACTOR_STELLAR_ADDRESS (Unique)
+
 - **Column**: `stellarAddress`
 - **Type**: UNIQUE B-tree
 - **Purpose**: 2FA configuration lookup
@@ -484,6 +540,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium (only 2FA users)
 
 ### IDX_TWO_FACTOR_ENABLED
+
 - **Column**: `enabled`
 - **Type**: B-tree
 - **Purpose**: 2FA enabled users
@@ -496,6 +553,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## EventStore Table Indexes
 
 ### IDX_EVENT_STORE_EVENT_NAME
+
 - **Column**: `eventName`
 - **Type**: B-tree
 - **Purpose**: Event type filtering
@@ -504,6 +562,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few event types)
 
 ### IDX_EVENT_STORE_TIMESTAMP
+
 - **Column**: `timestamp`
 - **Type**: B-tree
 - **Purpose**: Event chronological ordering
@@ -512,6 +571,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: High
 
 ### IDX_EVENT_STORE_NAME_TIMESTAMP
+
 - **Column**: `eventName`, `timestamp`
 - **Type**: Composite B-tree
 - **Purpose**: Event history queries
@@ -524,6 +584,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## NotificationPreference Table Indexes
 
 ### IDX_NOTIFICATION_PREF_USER_TYPE (Unique)
+
 - **Column**: `userId`, `type`
 - **Type**: UNIQUE constraint
 - **Purpose**: User preference lookups
@@ -532,6 +593,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_NOTIFICATION_PREF_ENABLED
+
 - **Column**: `enabled`
 - **Type**: B-tree
 - **Purpose**: Enabled preferences
@@ -540,6 +602,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (boolean)
 
 ### IDX_NOTIFICATION_PREF_USER_ENABLED
+
 - **Column**: `userId`, `enabled`
 - **Type**: Composite B-tree
 - **Purpose**: User's enabled preferences
@@ -552,6 +615,7 @@ This document provides comprehensive documentation for all database indexes in t
 ## JobLog Table Indexes
 
 ### IDX_JOB_LOGS_STATUS
+
 - **Column**: `status`
 - **Type**: B-tree
 - **Purpose**: Job status filtering
@@ -560,6 +624,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few statuses)
 
 ### IDX_JOB_LOGS_JOB_TYPE
+
 - **Column**: `jobType`
 - **Type**: B-tree
 - **Purpose**: Job type filtering
@@ -568,6 +633,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Low (few job types)
 
 ### IDX_JOB_LOG_USER_ID
+
 - **Column**: `userId`
 - **Type**: B-tree (partial - WHERE userId IS NOT NULL)
 - **Purpose**: User job tracking
@@ -576,6 +642,7 @@ This document provides comprehensive documentation for all database indexes in t
 - **Cardinality**: Medium
 
 ### IDX_JOB_LOG_CREATED_AT
+
 - **Column**: `createdAt`
 - **Type**: B-tree
 - **Purpose**: Job history queries
@@ -590,6 +657,7 @@ This document provides comprehensive documentation for all database indexes in t
 ### Regular Maintenance Tasks
 
 #### 1. Index Statistics Update
+
 ```sql
 -- Update statistics for query planner
 ANALYZE users;
@@ -600,6 +668,7 @@ ANALYZE notifications;
 ```
 
 #### 2. Index Bloat Check
+
 ```sql
 -- Check for bloated indexes
 SELECT
@@ -613,6 +682,7 @@ ORDER BY pg_relation_size(indexrelid) DESC;
 ```
 
 #### 3. Unused Index Detection
+
 ```sql
 -- Find unused indexes (idx_scan = 0)
 SELECT
@@ -630,6 +700,7 @@ ORDER BY pg_relation_size(indexrelid) DESC;
 ```
 
 #### 4. Index Rebuild (if needed)
+
 ```sql
 -- Rebuild bloated indexes
 REINDEX INDEX CONCURRENTLY idx_name;
@@ -641,6 +712,7 @@ REINDEX TABLE CONCURRENTLY table_name;
 ### Monitoring Queries
 
 #### Index Usage Statistics
+
 ```sql
 SELECT
   schemaname,
@@ -656,6 +728,7 @@ ORDER BY idx_scan DESC;
 ```
 
 #### Index Hit Rate
+
 ```sql
 SELECT
   sum(idx_blks_hit) / nullif(sum(idx_blks_hit + idx_blks_read), 0) AS index_hit_rate
@@ -663,6 +736,7 @@ FROM pg_statio_user_indexes;
 ```
 
 #### Table and Index Sizes
+
 ```sql
 SELECT
   tablename,
@@ -680,18 +754,19 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 ### Query Performance Targets
 
-| Query Type | Target Response Time | Index Used |
-|------------|---------------------|------------|
-| User authentication | < 50ms | IDX_USER_EMAIL, IDX_USER_STELLAR_ADDRESS |
-| Quest listing | < 100ms | IDX_QUEST_STATUS, IDX_QUEST_CREATED_AT |
-| Submission queries | < 100ms | IDX_SUBMISSION_USER_STATUS_CREATED |
-| Payout history | < 150ms | IDX_PAYOUT_ADDRESS_STATUS |
-| Notification feed | < 100ms | IDX_NOTIFICATION_USER_READ_CREATED |
-| Analytics queries | < 500ms | Various date-based indexes |
+| Query Type          | Target Response Time | Index Used                               |
+| ------------------- | -------------------- | ---------------------------------------- |
+| User authentication | < 50ms               | IDX_USER_EMAIL, IDX_USER_STELLAR_ADDRESS |
+| Quest listing       | < 100ms              | IDX_QUEST_STATUS, IDX_QUEST_CREATED_AT   |
+| Submission queries  | < 100ms              | IDX_SUBMISSION_USER_STATUS_CREATED       |
+| Payout history      | < 150ms              | IDX_PAYOUT_ADDRESS_STATUS                |
+| Notification feed   | < 100ms              | IDX_NOTIFICATION_USER_READ_CREATED       |
+| Analytics queries   | < 500ms              | Various date-based indexes               |
 
 ### Slow Query Monitoring
 
 Enable slow query logging in PostgreSQL:
+
 ```sql
 -- Set slow query threshold to 100ms
 ALTER DATABASE stellar_earn SET log_min_duration_statement = 100;
@@ -704,6 +779,7 @@ ALTER DATABASE stellar_earn SET track_counts = on;
 ### Index Effectiveness Metrics
 
 Monitor these metrics weekly:
+
 1. **Index scan ratio**: Should be > 95% for critical indexes
 2. **Index hit rate**: Should be > 99%
 3. **Unused indexes**: Review and consider dropping
@@ -747,9 +823,9 @@ Monitor these metrics weekly:
 
 ## Migration History
 
-| Migration | Date | Description |
-|-----------|------|-------------|
-| 1769471764117 | Initial | Base indexes for core tables |
+| Migration     | Date       | Description                        |
+| ------------- | ---------- | ---------------------------------- |
+| 1769471764117 | Initial    | Base indexes for core tables       |
 | 1777213481000 | 2026-04-26 | Performance indexes for all tables |
 
 ---
@@ -772,14 +848,17 @@ Expected result: **60-90% improvement** in query performance. This document is t
 ## Implementation Steps
 
 ### 1. Review the Analysis
+
 Understand the current index status, missing indexes, query patterns, and expected performance impact (summarized in [Expected Performance](#expected-performance)).
 
 ### 2. Backup Database (Production Only)
+
 ```bash
 pg_dump -h localhost -U postgres -d stellar_earn > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ### 3. Run the Migration
+
 ```bash
 cd BackEnd
 npm run migration:run
@@ -788,6 +867,7 @@ npm run migration:run
 ```
 
 ### 4. Verify Indexes
+
 ```bash
 npm run verify:indexes
 # or: npx ts-node scripts/verify-indexes.ts
@@ -797,15 +877,16 @@ Expected output confirms every expected index is present (`🎉 All expected ind
 
 ## Expected Performance
 
-| Query Type | Before | After | Improvement |
-|------------|--------|-------|-------------|
-| User by email | 200-500ms | 20-50ms | 75-90% |
-| Quest listing | 300-800ms | 50-100ms | 80-90% |
-| Payout history | 400-1000ms | 50-150ms | 85-90% |
-| Submission queries | 250-600ms | 40-100ms | 80-85% |
-| Notification feed | 200-500ms | 30-100ms | 80-85% |
+| Query Type         | Before     | After    | Improvement |
+| ------------------ | ---------- | -------- | ----------- |
+| User by email      | 200-500ms  | 20-50ms  | 75-90%      |
+| Quest listing      | 300-800ms  | 50-100ms | 80-90%      |
+| Payout history     | 400-1000ms | 50-150ms | 85-90%      |
+| Submission queries | 250-600ms  | 40-100ms | 80-85%      |
+| Notification feed  | 200-500ms  | 30-100ms | 80-85%      |
 
 ### Key Performance Indicators
+
 - **P50/P95/P99 response times**: Should decrease by 60-90%.
 - **Database CPU**: May increase slightly (5-10%) due to index maintenance.
 - **Storage**: Will increase by ~10-15% for index storage.

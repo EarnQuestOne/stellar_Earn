@@ -82,8 +82,8 @@ async function main(): Promise<void> {
   const outputPath =
     outputFlagIndex !== -1 && process.argv[outputFlagIndex + 1]
       ? process.argv[outputFlagIndex + 1]
-      : process.env['OPENAPI_OUTPUT_PATH'] ??
-        path.resolve(__dirname, '..', 'dist', 'openapi', 'openapi.json');
+      : (process.env['OPENAPI_OUTPUT_PATH'] ??
+        path.resolve(__dirname, '..', 'dist', 'openapi', 'openapi.json'));
 
   console.log(`[openapi-gen] Generating OpenAPI spec → ${outputPath}`);
 
@@ -115,7 +115,9 @@ async function main(): Promise<void> {
 
   // Validate the generated document has the expected structure
   if (!document.openapi) {
-    throw new Error('[openapi-gen] Generated document is missing "openapi" field');
+    throw new Error(
+      '[openapi-gen] Generated document is missing "openapi" field',
+    );
   }
   if (!document.info) {
     throw new Error('[openapi-gen] Generated document is missing "info" field');
@@ -123,14 +125,14 @@ async function main(): Promise<void> {
   if (!document.paths || Object.keys(document.paths).length === 0) {
     console.warn(
       '[openapi-gen] WARNING: Generated document contains no paths. ' +
-      'This may indicate that no controllers were discovered.',
+        'This may indicate that no controllers were discovered.',
     );
   }
 
   const pathCount = Object.keys(document.paths ?? {}).length;
   console.log(
     `[openapi-gen] Spec generated successfully – ` +
-    `openapi: ${document.openapi}, paths: ${pathCount}`,
+      `openapi: ${document.openapi}, paths: ${pathCount}`,
   );
 
   // Ensure output directory exists

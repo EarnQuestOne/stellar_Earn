@@ -120,7 +120,7 @@ jobs:
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.integration-tests.result }}" != "success" ]; then
             echo "### ❌ Failed Integration Tests" >> $GITHUB_STEP_SUMMARY
             echo "Integration tests failed. Please check the job logs for details on failed test suites." >> $GITHUB_STEP_SUMMARY

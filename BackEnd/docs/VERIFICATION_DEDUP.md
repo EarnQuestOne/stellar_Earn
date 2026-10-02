@@ -16,10 +16,10 @@ Failures are **never** cached so legitimate retries (e.g., after a chain rollbac
 
 ## Metrics
 
-| Metric | Type | Description |
-|--------|------|-------------|
+| Metric                                 | Type    | Description              |
+| -------------------------------------- | ------- | ------------------------ |
 | `submission_approval_dedup_hits_total` | counter | In-flight promise reused |
-| `submission_approval_cache_hits_total` | counter | Cached result returned |
+| `submission_approval_cache_hits_total` | counter | Cached result returned   |
 
 ## Files
 

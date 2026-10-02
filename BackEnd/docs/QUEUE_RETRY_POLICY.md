@@ -10,14 +10,14 @@ Every BullMQ job type in the StellarEarn backend now has an **explicit, configur
 
 ## Files Changed
 
-| File | Change |
-|---|---|
-| `src/modules/jobs/job-retry-policy.ts` | **New** – policy map, types, and utility functions |
-| `src/modules/jobs/jobs.constants.ts` | `DEFAULT_JOB_OPTIONS` is now derived from `DEFAULT_RETRY_POLICY` |
-| `src/modules/jobs/jobs.service.ts` | `addJob()` accepts optional `jobType`; worker routes non-retryable errors to DLQ immediately |
+| File                                                 | Change                                                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/modules/jobs/job-retry-policy.ts`               | **New** – policy map, types, and utility functions                                                           |
+| `src/modules/jobs/jobs.constants.ts`                 | `DEFAULT_JOB_OPTIONS` is now derived from `DEFAULT_RETRY_POLICY`                                             |
+| `src/modules/jobs/jobs.service.ts`                   | `addJob()` accepts optional `jobType`; worker routes non-retryable errors to DLQ immediately                 |
 | `src/modules/jobs/services/job-scheduler.service.ts` | `startSchedule()` and `triggerScheduleNow()` embed `__jobType` in job data and apply per-type policy options |
-| `test/jobs/job-retry-policy.spec.ts` | **New** – unit tests for the policy module |
-| `test/jobs/jobs-retry-backoff.spec.ts` | **New** – integration-style tests for option merging and DLQ routing |
+| `test/jobs/job-retry-policy.spec.ts`                 | **New** – unit tests for the policy module                                                                   |
+| `test/jobs/jobs-retry-backoff.spec.ts`               | **New** – integration-style tests for option merging and DLQ routing                                         |
 
 ---
 
@@ -59,72 +59,72 @@ interface JobRetryPolicy {
 
 High-value financial operations; most aggressive retry settings.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `payout:process` | 8 | exponential | 10 s | Missing fields, zero amount, invalid Stellar address |
-| `payout:settle` | 6 | exponential | 15 s | Missing fields |
+| Job Type         | Attempts | Backoff     | Base Delay | Non-Retryable Errors                                 |
+| ---------------- | -------- | ----------- | ---------- | ---------------------------------------------------- |
+| `payout:process` | 8        | exponential | 10 s       | Missing fields, zero amount, invalid Stellar address |
+| `payout:settle`  | 6        | exponential | 15 s       | Missing fields                                       |
 
 ### Email
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `email:send` | 6 | exponential | 3 s | Missing fields, invalid address |
-| `email:digest` | 4 | exponential | 5 s | Missing fields, invalid addresses |
+| Job Type       | Attempts | Backoff     | Base Delay | Non-Retryable Errors              |
+| -------------- | -------- | ----------- | ---------- | --------------------------------- |
+| `email:send`   | 6        | exponential | 3 s        | Missing fields, invalid address   |
+| `email:digest` | 4        | exponential | 5 s        | Missing fields, invalid addresses |
 
 ### Data Export & Reports
 
 Long-running jobs; slower backoff to avoid hammering the DB.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `data:export` | 3 | exponential | 30 s | Missing fields, invalid format |
-| `report:generate` | 3 | exponential | 30 s | Missing fields |
+| Job Type          | Attempts | Backoff     | Base Delay | Non-Retryable Errors           |
+| ----------------- | -------- | ----------- | ---------- | ------------------------------ |
+| `data:export`     | 3        | exponential | 30 s       | Missing fields, invalid format |
+| `report:generate` | 3        | exponential | 30 s       | Missing fields                 |
 
 ### Cleanup & Maintenance
 
 Low-priority maintenance; fixed delay to space out retries evenly.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `cleanup:expired-sessions` | 3 | fixed | 30 s | _(none)_ |
-| `cleanup:old-logs` | 3 | fixed | 30 s | _(none)_ |
-| `maintenance:database` | 2 | fixed | 60 s | _(none)_ |
+| Job Type                   | Attempts | Backoff | Base Delay | Non-Retryable Errors |
+| -------------------------- | -------- | ------- | ---------- | -------------------- |
+| `cleanup:expired-sessions` | 3        | fixed   | 30 s       | _(none)_             |
+| `cleanup:old-logs`         | 3        | fixed   | 30 s       | _(none)_             |
+| `maintenance:database`     | 2        | fixed   | 60 s       | _(none)_             |
 
 ### Webhooks
 
 External HTTP calls; resilient to transient failures.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `webhook:deliver` | 7 | exponential | 3 s | Missing fields, invalid URL |
-| `webhook:retry` | 5 | exponential | 5 s | Missing fields |
+| Job Type          | Attempts | Backoff     | Base Delay | Non-Retryable Errors        |
+| ----------------- | -------- | ----------- | ---------- | --------------------------- |
+| `webhook:deliver` | 7        | exponential | 3 s        | Missing fields, invalid URL |
+| `webhook:retry`   | 5        | exponential | 5 s        | Missing fields              |
 
 ### Analytics
 
 Non-critical; short fixed delay is fine.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `analytics:aggregate` | 3 | fixed | 10 s | _(none)_ |
-| `metrics:collect` | 3 | fixed | 5 s | _(none)_ |
+| Job Type              | Attempts | Backoff | Base Delay | Non-Retryable Errors |
+| --------------------- | -------- | ------- | ---------- | -------------------- |
+| `analytics:aggregate` | 3        | fixed   | 10 s       | _(none)_             |
+| `metrics:collect`     | 3        | fixed   | 5 s        | _(none)_             |
 
 ### Quests
 
 Business-critical; moderate settings.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `quest:deadline-check` | 5 | exponential | 5 s | Quest not found |
-| `quest:completion-verify` | 5 | exponential | 5 s | Missing required verification fields |
-| `quest:state-reconcile` | 5 | exponential | 10 s | _(none)_ |
+| Job Type                  | Attempts | Backoff     | Base Delay | Non-Retryable Errors                 |
+| ------------------------- | -------- | ----------- | ---------- | ------------------------------------ |
+| `quest:deadline-check`    | 5        | exponential | 5 s        | Quest not found                      |
+| `quest:completion-verify` | 5        | exponential | 5 s        | Missing required verification fields |
+| `quest:state-reconcile`   | 5        | exponential | 10 s       | _(none)_                             |
 
 ### Dependency Checks
 
 Advisory only; minimal retry.
 
-| Job Type | Attempts | Backoff | Base Delay | Non-Retryable Errors |
-|---|---|---|---|---|
-| `dependency:freshness-check` | 2 | fixed | 60 s | _(none)_ |
+| Job Type                     | Attempts | Backoff | Base Delay | Non-Retryable Errors |
+| ---------------------------- | -------- | ------- | ---------- | -------------------- |
+| `dependency:freshness-check` | 2        | fixed   | 60 s       | _(none)_             |
 
 ---
 
@@ -156,12 +156,12 @@ exponential: delay_ms × 2^(attempt - 1)
 Examples for a policy with `delay: 5000, type: 'exponential'`:
 
 | Attempt | Delay |
-|---|---|
-| 1 | 5 s |
-| 2 | 10 s |
-| 3 | 20 s |
-| 4 | 40 s |
-| 5 | 80 s |
+| ------- | ----- |
+| 1       | 5 s   |
+| 2       | 10 s  |
+| 3       | 20 s  |
+| 4       | 40 s  |
+| 5       | 80 s  |
 
 Use `calculateBackoffDelay(policy, attempt)` from `job-retry-policy.ts` for programmatic access.
 

@@ -16,10 +16,10 @@ served from memory/Redis instead.
 
 ## TTL
 
-| State | Default TTL | Env override |
-| --- | --- | --- |
-| In progress (`processing`, `pending`, `retry_scheduled`, …) | 5 s | `PAYOUT_STATUS_CACHE_TTL_IN_PROGRESS_SEC` |
-| Terminal (`completed`, `failed`, `dead_letter`, …) | 30 s | `PAYOUT_STATUS_CACHE_TTL_TERMINAL_SEC` |
+| State                                                       | Default TTL | Env override                              |
+| ----------------------------------------------------------- | ----------- | ----------------------------------------- |
+| In progress (`processing`, `pending`, `retry_scheduled`, …) | 5 s         | `PAYOUT_STATUS_CACHE_TTL_IN_PROGRESS_SEC` |
+| Terminal (`completed`, `failed`, `dead_letter`, …)          | 30 s        | `PAYOUT_STATUS_CACHE_TTL_TERMINAL_SEC`    |
 
 Invalidation on payout writes keeps polls fresh when status changes; TTL bounds
 staleness if invalidation is skipped.

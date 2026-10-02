@@ -7,6 +7,7 @@ This implementation addresses issue #342 by implementing a comprehensive two-ste
 ## Problem Statement
 
 The existing migrations only handled schema changes without proper data migration. This led to:
+
 - Table name mismatches between schema and entities
 - Missing columns in database tables
 - Incorrect data types
@@ -20,20 +21,23 @@ The existing migrations only handled schema changes without proper data migratio
 **Purpose**: Align database schema with current entity definitions
 
 **Key Features**:
+
 - Renames tables from PascalCase to lowercase to match entity names
 - Adds missing columns to all major entities
 - Updates column types where needed
 - Prepares database for data migration
 
 **Tables Modified**:
+
 - `User` → `users`
-- `Quest` → `quests` 
+- `Quest` → `quests`
 - `Submission` → `submissions`
 - `Notification` → `notifications`
 - `Payout` → `payouts`
 - `RefreshToken` → `refresh_tokens`
 
 **New Columns Added**:
+
 - **Users**: questsCompleted, badges, avatarUrl, bio, socialLinks, privacyLevel, failedQuests, successRate, totalEarned, lastActiveAt, pushToken, webhookUrl, lastSyncedAt
 - **Quests**: creatorAddress, currentCompletions, maxCompletions, startDate, endDate
 - **Payouts**: type, questId, submissionId, transactionHash, stellarLedger, failureReason, retryCount, maxRetries, nextRetryAt, processedAt, claimedAt
@@ -43,6 +47,7 @@ The existing migrations only handled schema changes without proper data migratio
 **Purpose**: Migrate and transform existing data to match new schema
 
 **Key Features**:
+
 - Calculates user statistics based on existing submissions and payouts
 - Updates quest completion counts
 - Links payouts to submissions where possible
@@ -51,6 +56,7 @@ The existing migrations only handled schema changes without proper data migratio
 - Ensures data integrity
 
 **Data Transformations**:
+
 - User statistics (questsCompleted, failedQuests, successRate, totalEarned)
 - Quest statistics (currentCompletions, creatorAddress)
 - Payout relationships (submissionId, questId)
@@ -61,17 +67,20 @@ The existing migrations only handled schema changes without proper data migratio
 ### Automatic Rollback (`scripts/rollback-migrations.ts`)
 
 **Features**:
+
 - Reverses Step 2 first (data migration)
 - Reverses Step 1 second (schema sync)
 - Handles constraint and index cleanup
 - Preserves data integrity during rollback
 
 **Usage**:
+
 ```bash
 npm run migration:rollback:two-step
 ```
 
 ### Manual Rollback
+
 ```bash
 ts-node scripts/rollback-migrations.ts manual
 ```
@@ -81,6 +90,7 @@ ts-node scripts/rollback-migrations.ts manual
 ### Migration Tests (`scripts/test-migrations.ts`)
 
 **Test Coverage**:
+
 - Table existence validation
 - Column existence validation
 - Data integrity checks
@@ -89,6 +99,7 @@ ts-node scripts/rollback-migrations.ts manual
 - Performance testing
 
 **Usage**:
+
 ```bash
 npm run migration:test                    # Basic tests
 npm run migration:test:performance        # Performance tests
@@ -97,6 +108,7 @@ npm run migration:test:performance        # Performance tests
 ### Validation Script (`scripts/validate-migrations.ts`)
 
 **Validations**:
+
 - Migration file structure
 - Required imports and methods
 - Error handling patterns
@@ -104,6 +116,7 @@ npm run migration:test:performance        # Performance tests
 - Dependencies
 
 **Usage**:
+
 ```bash
 ts-node scripts/validate-migrations.ts
 ```
@@ -113,17 +126,20 @@ ts-node scripts/validate-migrations.ts
 ### Running Migrations
 
 1. **Run both steps with testing**:
+
 ```bash
 npm run migration:two-step
 ```
 
 2. **Run individual steps**:
+
 ```bash
 npm run migration:run                    # Runs all pending migrations
 npm run migration:test                    # Tests after migration
 ```
 
 3. **Check migration status**:
+
 ```bash
 npm run migration:show                    # Shows pending migrations
 ```
@@ -131,11 +147,13 @@ npm run migration:show                    # Shows pending migrations
 ### Rolling Back Migrations
 
 1. **Automatic rollback**:
+
 ```bash
 npm run migration:rollback:two-step
 ```
 
 2. **Manual rollback**:
+
 ```bash
 ts-node scripts/rollback-migrations.ts manual
 ```
@@ -163,6 +181,7 @@ ts-node scripts/rollback-migrations.ts manual
 ## Migration Order
 
 The migrations are designed to run in this specific order:
+
 1. All existing migrations (initial schema, OAuth, soft deletes, etc.)
 2. **Step 1**: Schema synchronization
 3. **Step 2**: Data migration and relationships
@@ -207,15 +226,18 @@ The migrations are designed to run in this specific order:
 ## Files Created/Modified
 
 ### New Migration Files
+
 - `src/database/migrations/1800000000000-data-migration-step1-schema-sync.ts`
 - `src/database/migrations/1800000000001-data-migration-step2-data-migration.ts`
 
 ### New Scripts
+
 - `scripts/rollback-migrations.ts`
 - `scripts/test-migrations.ts`
 - `scripts/validate-migrations.ts`
 
 ### Modified Files
+
 - `package.json` - Added migration scripts
 - `TWO_STEP_MIGRATION_GUIDE.md` - This documentation
 

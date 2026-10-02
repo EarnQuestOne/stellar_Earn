@@ -34,7 +34,7 @@ export class Seed {
             i === 1 ? 'ADMIN' : 'USER',
             i * 100,
             1 + Math.floor(i / 2),
-          ]
+          ],
         );
         users.push(result.rows[0]);
       }
@@ -55,7 +55,7 @@ export class Seed {
             'ADMIN',
             { approvalRequired: true },
             users[i % users.length].id,
-          ]
+          ],
         );
         quests.push(result.rows[0]);
       }
@@ -66,12 +66,7 @@ export class Seed {
         await client.query(
           `INSERT INTO "Submission" (questId, userId, proof, status)
            VALUES ($1, $2, $3, $4)`,
-          [
-            quest.id,
-            users[i].id,
-            { file: `proof_${i + 1}.pdf` },
-            'PENDING',
-          ]
+          [quest.id, users[i].id, { file: `proof_${i + 1}.pdf` }, 'PENDING'],
         );
       }
 
@@ -85,7 +80,7 @@ export class Seed {
             'INFO',
             'Welcome!',
             `Hello ${users[i].username}, welcome to the platform.`,
-          ]
+          ],
         );
       }
 
@@ -99,7 +94,7 @@ export class Seed {
             500 * (i + 1),
             'TOKEN',
             i % 2 === 0 ? 'PENDING' : 'COMPLETED',
-          ]
+          ],
         );
       }
 
