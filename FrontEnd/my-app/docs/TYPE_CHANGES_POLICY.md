@@ -109,13 +109,10 @@ Create one markdown file in `.changeset/`, named
 
 ````markdown
 ---
-
 pr: 068
 type: breaking-types # one of: breaking-types | breaking-runtime | added | changed | deprecated | removed | fixed | security
 symbols:
-
-- lib/types/quest.ts → QuestStatus
-
+  - lib/types/quest.ts → QuestStatus
 ---
 
 Renamed `QuestStatus.PAUSED` to `QuestStatus.ON_HOLD` to align with the
