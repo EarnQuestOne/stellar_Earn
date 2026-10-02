@@ -9,12 +9,12 @@ job anonymizes the user's PII across modules **inside a single transaction**.
 
 All endpoints require a valid JWT (`Authorization: Bearer <token>`).
 
-| Method | Path                              | Access              | Description                                          |
-| ------ | --------------------------------- | ------------------- | ---------------------------------------------------- |
-| POST   | `/privacy/erasure/requests`       | authenticated user  | Request erasure of the caller's account              |
-| POST   | `/privacy/erasure/requests/:id/cancel` | subject or admin | Cancel within the grace window                       |
-| GET    | `/privacy/erasure/requests/:id`   | subject or admin    | Check request status                                 |
-| POST   | `/privacy/erasure/admin/requests` | admin               | Initiate erasure on behalf of a user                 |
+| Method | Path                                   | Access             | Description                             |
+| ------ | -------------------------------------- | ------------------ | --------------------------------------- |
+| POST   | `/privacy/erasure/requests`            | authenticated user | Request erasure of the caller's account |
+| POST   | `/privacy/erasure/requests/:id/cancel` | subject or admin   | Cancel within the grace window          |
+| GET    | `/privacy/erasure/requests/:id`        | subject or admin   | Check request status                    |
+| POST   | `/privacy/erasure/admin/requests`      | admin              | Initiate erasure on behalf of a user    |
 
 ### Request body
 
@@ -40,14 +40,14 @@ REQUESTED ──(grace period elapses)──▶ PROCESSING ──▶ COMPLETED
 
 ## Per-module erasure policy (single transaction)
 
-| Module        | Action                                                                 |
-| ------------- | ---------------------------------------------------------------------- |
+| Module        | Action                                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | users         | `email` / `stellarAddress` / profile PII replaced with per-user tombstone values; the row is retained so FKs and aggregate stats stay valid. |
-| submissions   | Submitter PII and proof references detached (`proof` → `{ erased: true }`, notes nulled); quest integrity and reviewer decisions preserved. |
-| notifications | Rows for the subject are deleted.                                      |
-| payouts       | Retained for compliance but de-identified — the actor identifier is replaced with the tombstone (`erased:<subjectId>`). |
-| moderation    | Submitter PII (snapshots, image URLs, notes) detached; review records retained. |
-| audit         | An `privacy.erasure.executed` record is written to the event store inside the same transaction. |
+| submissions   | Submitter PII and proof references detached (`proof` → `{ erased: true }`, notes nulled); quest integrity and reviewer decisions preserved.  |
+| notifications | Rows for the subject are deleted.                                                                                                            |
+| payouts       | Retained for compliance but de-identified — the actor identifier is replaced with the tombstone (`erased:<subjectId>`).                      |
+| moderation    | Submitter PII (snapshots, image URLs, notes) detached; review records retained.                                                              |
+| audit         | An `privacy.erasure.executed` record is written to the event store inside the same transaction.                                              |
 
 Retention rationale: financial payout history and audit records are legally
 required to be retained, but are de-identified so they can no longer be linked

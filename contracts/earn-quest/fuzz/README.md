@@ -13,6 +13,7 @@ Fuzz testing automatically generates random inputs to find edge cases, bugs, and
 ## Prerequisites
 
 1. Install Rust nightly toolchain:
+
    ```bash
    rustup toolchain install nightly
    rustup default nightly
@@ -56,6 +57,7 @@ cargo fuzz run quest_creation_fuzzer -- -max_total_time=86400
 ## Understanding Fuzz Results
 
 When a fuzzer finds a crash:
+
 1. The crash input is saved to `fuzz/artifacts/<fuzzer_name>/`
 2. You can reproduce the crash with:
    ```bash
@@ -65,6 +67,7 @@ When a fuzzer finds a crash:
 ## Adding New Fuzz Targets
 
 1. Add a new binary to `fuzz/Cargo.toml`:
+
    ```toml
    [[bin]]
    name = "new_fuzzer"

@@ -29,68 +29,68 @@ The steps are in order. Each one is complete only when it is checked on the
 onboarding record.
 
 1. [ ] **Confirm the ladder rung.** The candidate has a sustained record of
-   contributions and reviews in the areas they will own, and has worked their
-   way up the ladder in [roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md) —
-   contributor, then reviewer, per [roles/REVIEWER.md](roles/REVIEWER.md),
-   with the support and `good-first-issue` path in
-   [MENTORSHIP.md](MENTORSHIP.md) behind it. The record states the areas being
-   proposed and the evidence for them.
+       contributions and reviews in the areas they will own, and has worked their
+       way up the ladder in [roles/CONTRIBUTOR.md](roles/CONTRIBUTOR.md) —
+       contributor, then reviewer, per [roles/REVIEWER.md](roles/REVIEWER.md),
+       with the support and `good-first-issue` path in
+       [MENTORSHIP.md](MENTORSHIP.md) behind it. The record states the areas being
+       proposed and the evidence for them.
 
 2. [ ] **Open the nomination.** A nomination follows
-   [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md): the candidate's
-   confirmation that they are willing to serve, a sponsoring maintainer, the
-   evidence from step 1, and the requested areas of responsibility. The
-   nomination stays open for at least **7 calendar days** for questions, and
-   the candidate does not vote on their own election.
+       [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md): the candidate's
+       confirmation that they are willing to serve, a sponsoring maintainer, the
+       evidence from step 1, and the requested areas of responsibility. The
+       nomination stays open for at least **7 calendar days** for questions, and
+       the candidate does not vote on their own election.
 
 3. [ ] **Obtain maintainer agreement.** The maintainers agree by consensus, or
-   by a vote, as [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md) and
-   [ROLES.md](ROLES.md) require. The vote records the candidate, the proposed
-   responsibilities, the eligible voters, the opening and closing dates, and
-   the threshold; quorum is determined under [QUORUM.md](QUORUM.md) and a
-   maintainer election is a **material governance** change requiring
-   **two-thirds of non-abstaining ballots** under
-   [THRESHOLDS.md](THRESHOLDS.md). Recorded dissent is captured per
-   [DISSENT.md](DISSENT.md).
+       by a vote, as [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md) and
+       [ROLES.md](ROLES.md) require. The vote records the candidate, the proposed
+       responsibilities, the eligible voters, the opening and closing dates, and
+       the threshold; quorum is determined under [QUORUM.md](QUORUM.md) and a
+       maintainer election is a **material governance** change requiring
+       **two-thirds of non-abstaining ballots** under
+       [THRESHOLDS.md](THRESHOLDS.md). Recorded dissent is captured per
+       [DISSENT.md](DISSENT.md).
 
 4. [ ] **Accept the Code of Conduct and the safety policy.** The new maintainer
-   reads and accepts the [Code of Conduct](CODE_OF_CONDUCT.md) and the
-   [Anti-Harassment and Safety Policy](SAFETY_POLICY.md) in writing on the
-   onboarding record. Those obligations apply to maintainers as much as to
-   anyone else, and a maintainer is not exempt from them; a report about a
-   maintainer follows the same route as any other, per
-   [COC_REPORTING.md](COC_REPORTING.md).
+       reads and accepts the [Code of Conduct](CODE_OF_CONDUCT.md) and the
+       [Anti-Harassment and Safety Policy](SAFETY_POLICY.md) in writing on the
+       onboarding record. Those obligations apply to maintainers as much as to
+       anyone else, and a maintainer is not exempt from them; a report about a
+       maintainer follows the same route as any other, per
+       [COC_REPORTING.md](COC_REPORTING.md).
 
 5. [ ] **Acknowledge the security disclosure route.** Where the areas being
-   taken on touch security-relevant or value-bearing code, the new maintainer
-   acknowledges the private reporting route in [`SECURITY.md`](../SECURITY.md)
-   and the [disclosure template](templates/DISCLOSURE_TEMPLATE.md): no public
-   issue, proof-of-concept, or chat discussion for a vulnerability. They also
-   acknowledge that access to private security channels is limited to the
-   security response team ([roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md)) and
-   is not granted by this checklist on its own.
+       taken on touch security-relevant or value-bearing code, the new maintainer
+       acknowledges the private reporting route in [`SECURITY.md`](../SECURITY.md)
+       and the [disclosure template](templates/DISCLOSURE_TEMPLATE.md): no public
+       issue, proof-of-concept, or chat discussion for a vulnerability. They also
+       acknowledge that access to private security channels is limited to the
+       security response team ([roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md)) and
+       is not granted by this checklist on its own.
 
 6. [ ] **Make the access grants.** The sponsoring maintainer works through the
-   table below and confirms each grant in the platform, not only in the record.
-   Per [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md), a newly elected
-   maintainer receives **only** the review, merge, and access rights approved
-   for their listed responsibilities — a frontend owner is not granted release
-   or security rights by appointment.
+       table below and confirms each grant in the platform, not only in the record.
+       Per [MAINTAINER_ELECTIONS.md](MAINTAINER_ELECTIONS.md), a newly elected
+       maintainer receives **only** the review, merge, and access rights approved
+       for their listed responsibilities — a frontend owner is not granted release
+       or security rights by appointment.
 
 7. [ ] **Record the appointment in the roster.** A pull request against
-   [MAINTAINERS.md](MAINTAINERS.md) adds the maintainer with their areas, the
-   sponsoring maintainer, and the effective date. Per the scope rule in
-   [MAINTAINERS.md](MAINTAINERS.md), that change is limited to files inside
-   `Governance/`; where it also changes who reviews a path, the
-   `.github/CODEOWNERS` counterpart is a separate, code-scoped change, and the
-   two must not disagree for more than one release cycle.
+       [MAINTAINERS.md](MAINTAINERS.md) adds the maintainer with their areas, the
+       sponsoring maintainer, and the effective date. Per the scope rule in
+       [MAINTAINERS.md](MAINTAINERS.md), that change is limited to files inside
+       `Governance/`; where it also changes who reviews a path, the
+       `.github/CODEOWNERS` counterpart is a separate, code-scoped change, and the
+       two must not disagree for more than one release cycle.
 
 8. [ ] **Announce the appointment and hand over in-flight work.** The
-   appointment is stated publicly in the project's channel, and any open
-   reviews, in-progress proposals, or pending security items the person is
-   taking over are named on the record. Private matters are not announced;
-   they stay in the applicable private channel per
-   [COMMUNICATION.md](COMMUNICATION.md).
+       appointment is stated publicly in the project's channel, and any open
+       reviews, in-progress proposals, or pending security items the person is
+       taking over are named on the record. Private matters are not announced;
+       they stay in the applicable private channel per
+       [COMMUNICATION.md](COMMUNICATION.md).
 
 ## Access grants required
 
@@ -98,24 +98,24 @@ A maintainer's access follows the area they own. The sponsoring maintainer
 grants each item below; the grant is refused, or reduced to the minimum
 necessary, where the areas on the roster do not justify it.
 
-| Grant | System it lives in | Who approves it | Policy |
-| ----- | ------------------- | -------------- | ------ |
-| Merge rights on the default branch | GitHub branch protection / rulesets on `main` | Existing maintainers, by the agreement in step 3 | [BRANCHING_STRATEGY.md](BRANCHING_STRATEGY.md) |
-| `write` permission on the repository | GitHub repository permissions | Existing maintainers | [MAINTAINERS.md](MAINTAINERS.md) |
-| `admin` permission on the repository | GitHub repository settings | TSC, and only where a task requires it (for example changing branch-protection rules or merge settings) | [BRANCHING_STRATEGY.md](BRANCHING_STRATEGY.md) |
-| Membership in a GitHub team that grants review or merge rights | GitHub organization teams | Existing maintainers | [MAINTAINERS.md](MAINTAINERS.md) |
-| Code-owner entries for the areas they own | `.github/CODEOWNERS` | The current owner of that path, or a maintainer if the path is unowned | [CODEOWNERS_POLICY.md](CODEOWNERS_POLICY.md) |
-| Triage: label, milestone, and assignment permissions | GitHub issue and pull-request metadata | Existing maintainers | [TRIAGE_POLICY.md](TRIAGE_POLICY.md), [roles/TRIAGER.md](roles/TRIAGER.md) |
-| Access to private vulnerability reports | GitHub private vulnerability reporting and the team's private space | Security response team, on membership rather than on appointment | [roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md) |
-| Release permissions: signing and pushing tags, publishing artefacts | GitHub releases/tags, the configured package registries, and the signing key used for releases | Existing maintainers, recorded as the release rotation | [RELEASE_POLICY.md](RELEASE_POLICY.md), [roles/RELEASE_MANAGER.md](roles/RELEASE_MANAGER.md) |
-| Publish tokens and organization seats for the registries used | Package registry (for example npm) | Existing maintainers, with the token scoped to the minimum needed | [OFFBOARDING.md](OFFBOARDING.md) |
-| Deployment, hosting, and monitoring accounts | Cloud and infrastructure accounts used by CI/CD | Existing maintainers | [OFFBOARDING.md](OFFBOARDING.md) |
-| Shared secrets and credentials | CI/CD secret store, environment configuration | Existing maintainers, on a per-secret basis; the value is never shared in a repository file | [`SECURITY.md`](../SECURITY.md) |
-| Signing keys, deployer keys, and contract-admin identities | Key storage used for deployment and contract administration | TSC, and only where the areas listed on the roster require them | [EMERGENCY_POWERS.md](EMERGENCY_POWERS.md) |
-| Private maintainer channels and shared drives | Project communication and storage | Existing maintainers | [COMMUNICATION.md](COMMUNICATION.md) |
-| Working-group membership or a group lead role | The group's charter, recorded with the TSC | TSC approves the group; a maintainer sponsors the proposal | [WORKING_GROUPS.md](WORKING_GROUPS.md) |
-| A seat on the TSC | Follows maintainership; there is no separate seat | Automatic on being added to [MAINTAINERS.md](MAINTAINERS.md) | [TSC.md](TSC.md) |
-| Two-factor authentication on project accounts | The account itself, wherever it is held | The maintainer confirms their own state; a maintainer account with no second factor is raised with the other maintainers | [OFFBOARDING.md](OFFBOARDING.md) |
+| Grant                                                               | System it lives in                                                                             | Who approves it                                                                                                          | Policy                                                                                       |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Merge rights on the default branch                                  | GitHub branch protection / rulesets on `main`                                                  | Existing maintainers, by the agreement in step 3                                                                         | [BRANCHING_STRATEGY.md](BRANCHING_STRATEGY.md)                                               |
+| `write` permission on the repository                                | GitHub repository permissions                                                                  | Existing maintainers                                                                                                     | [MAINTAINERS.md](MAINTAINERS.md)                                                             |
+| `admin` permission on the repository                                | GitHub repository settings                                                                     | TSC, and only where a task requires it (for example changing branch-protection rules or merge settings)                  | [BRANCHING_STRATEGY.md](BRANCHING_STRATEGY.md)                                               |
+| Membership in a GitHub team that grants review or merge rights      | GitHub organization teams                                                                      | Existing maintainers                                                                                                     | [MAINTAINERS.md](MAINTAINERS.md)                                                             |
+| Code-owner entries for the areas they own                           | `.github/CODEOWNERS`                                                                           | The current owner of that path, or a maintainer if the path is unowned                                                   | [CODEOWNERS_POLICY.md](CODEOWNERS_POLICY.md)                                                 |
+| Triage: label, milestone, and assignment permissions                | GitHub issue and pull-request metadata                                                         | Existing maintainers                                                                                                     | [TRIAGE_POLICY.md](TRIAGE_POLICY.md), [roles/TRIAGER.md](roles/TRIAGER.md)                   |
+| Access to private vulnerability reports                             | GitHub private vulnerability reporting and the team's private space                            | Security response team, on membership rather than on appointment                                                         | [roles/SECURITY_TEAM.md](roles/SECURITY_TEAM.md)                                             |
+| Release permissions: signing and pushing tags, publishing artefacts | GitHub releases/tags, the configured package registries, and the signing key used for releases | Existing maintainers, recorded as the release rotation                                                                   | [RELEASE_POLICY.md](RELEASE_POLICY.md), [roles/RELEASE_MANAGER.md](roles/RELEASE_MANAGER.md) |
+| Publish tokens and organization seats for the registries used       | Package registry (for example npm)                                                             | Existing maintainers, with the token scoped to the minimum needed                                                        | [OFFBOARDING.md](OFFBOARDING.md)                                                             |
+| Deployment, hosting, and monitoring accounts                        | Cloud and infrastructure accounts used by CI/CD                                                | Existing maintainers                                                                                                     | [OFFBOARDING.md](OFFBOARDING.md)                                                             |
+| Shared secrets and credentials                                      | CI/CD secret store, environment configuration                                                  | Existing maintainers, on a per-secret basis; the value is never shared in a repository file                              | [`SECURITY.md`](../SECURITY.md)                                                              |
+| Signing keys, deployer keys, and contract-admin identities          | Key storage used for deployment and contract administration                                    | TSC, and only where the areas listed on the roster require them                                                          | [EMERGENCY_POWERS.md](EMERGENCY_POWERS.md)                                                   |
+| Private maintainer channels and shared drives                       | Project communication and storage                                                              | Existing maintainers                                                                                                     | [COMMUNICATION.md](COMMUNICATION.md)                                                         |
+| Working-group membership or a group lead role                       | The group's charter, recorded with the TSC                                                     | TSC approves the group; a maintainer sponsors the proposal                                                               | [WORKING_GROUPS.md](WORKING_GROUPS.md)                                                       |
+| A seat on the TSC                                                   | Follows maintainership; there is no separate seat                                              | Automatic on being added to [MAINTAINERS.md](MAINTAINERS.md)                                                             | [TSC.md](TSC.md)                                                                             |
+| Two-factor authentication on project accounts                       | The account itself, wherever it is held                                                        | The maintainer confirms their own state; a maintainer account with no second factor is raised with the other maintainers | [OFFBOARDING.md](OFFBOARDING.md)                                                             |
 
 Notes on the grants:
 

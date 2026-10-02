@@ -5,16 +5,16 @@
 // from the EarnQuest contract, starting from the last indexed ledger.
 // =============================================================================
 
-import { Server, SorobanRpc } from '@stellar/stellar-sdk';
-import { config } from '../config';
-import { TOPIC_TO_NAME, EVENT_TOPICS, EventTopicName } from '../config/topics';
-import { getCursor, setCursor, saveEvent } from '../storage/database';
-import { handleEvent } from '../mappings';
+import { Server, SorobanRpc } from "@stellar/stellar-sdk";
+import { config } from "../config";
+import { TOPIC_TO_NAME, EVENT_TOPICS, EventTopicName } from "../config/topics";
+import { getCursor, setCursor, saveEvent } from "../storage/database";
+import { handleEvent } from "../mappings";
 
 const logger = {
-  info: (...args: any[]) => console.log('[Ingest]', ...args),
-  error: (...args: any[]) => console.error('[Ingest]', ...args),
-  warn: (...args: any[]) => console.warn('[Ingest]', ...args),
+  info: (...args: any[]) => console.log("[Ingest]", ...args),
+  error: (...args: any[]) => console.error("[Ingest]", ...args),
+  warn: (...args: any[]) => console.warn("[Ingest]", ...args),
 };
 
 export class EventListener {
@@ -29,7 +29,7 @@ export class EventListener {
   /** Start the polling loop */
   async start(): Promise<void> {
     this.running = true;
-    logger.info('Event listener started');
+    logger.info("Event listener started");
     logger.info(`Contract: ${config.contractId}`);
     logger.info(`RPC: ${config.rpcUrl}`);
 
@@ -50,7 +50,7 @@ export class EventListener {
     if (this.timer) {
       clearTimeout(this.timer);
     }
-    logger.info('Event listener stopped');
+    logger.info("Event listener stopped");
   }
 
   /** Get the latest ledger from the network */
@@ -59,7 +59,7 @@ export class EventListener {
       const info = await this.server.getLatestLedger();
       return info.sequence;
     } catch (err) {
-      logger.error('Failed to get latest ledger:', err);
+      logger.error("Failed to get latest ledger:", err);
       throw err;
     }
   }
@@ -80,11 +80,16 @@ export class EventListener {
       // Fetch events in batches
       let cursor = fromLedger;
       while (cursor < latestLedger && this.running) {
-        const endLedger = Math.min(cursor + config.ledgersPerPage, latestLedger);
+        const endLedger = Math.min(
+          cursor + config.ledgersPerPage,
+          latestLedger,
+        );
         const events = await this.fetchEvents(cursor + 1, endLedger);
 
         if (events.length > 0) {
-          logger.info(`Fetched ${events.length} events from ledgers ${cursor + 1}–${endLedger}`);
+          logger.info(
+            `Fetched ${events.length} events from ledgers ${cursor + 1}–${endLedger}`,
+          );
           for (const event of events) {
             try {
               await handleEvent(event);
@@ -100,7 +105,7 @@ export class EventListener {
 
       this.scheduleNextPoll(cursor);
     } catch (err) {
-      logger.error('Poll error:', err);
+      logger.error("Poll error:", err);
       this.scheduleNextPoll(fromLedger);
     }
   }
@@ -109,7 +114,7 @@ export class EventListener {
   private async fetchEvents(
     startLedger: number,
     endLedger: number,
-  ): Promise<SorobanRpc.GetEventsResponse['events']> {
+  ): Promise<SorobanRpc.GetEventsResponse["events"]> {
     try {
       // Build topic filters for all known event types
       const topicFilters = Object.values(EVENT_TOPICS).map((topic) => [topic]);
@@ -118,7 +123,7 @@ export class EventListener {
         startLedger,
         filters: [
           {
-            type: 'contract',
+            type: "contract",
             contractIds: [config.contractId],
             topics: topicFilters,
           },
@@ -128,7 +133,10 @@ export class EventListener {
 
       return response.events || [];
     } catch (err) {
-      logger.error(`Failed to fetch events for ledgers ${startLedger}–${endLedger}:`, err);
+      logger.error(
+        `Failed to fetch events for ledgers ${startLedger}–${endLedger}:`,
+        err,
+      );
       return [];
     }
   }

@@ -48,27 +48,31 @@ enum Role {
 
 # ── Entities ───────────────────────────────────────────────────────────────────
 
-"""A quest registered on the platform."""
+"""
+A quest registered on the platform.
+"""
 type Quest @entity {
-  id: ID!                           # quest_id (Symbol as string)
-  creator: String!                  # creator address
-  rewardAsset: String!              # reward token address
-  rewardAmount: BigInt!             # reward amount (i128)
-  verifier: String!                 # verifier address
-  deadline: BigInt!                 # deadline timestamp (u64)
-  status: QuestStatus!              # current quest status
-  totalClaims: Int!                 # number of claims
+  id: ID! # quest_id (Symbol as string)
+  creator: String! # creator address
+  rewardAsset: String! # reward token address
+  rewardAmount: BigInt! # reward amount (i128)
+  verifier: String! # verifier address
+  deadline: BigInt! # deadline timestamp (u64)
+  status: QuestStatus! # current quest status
+  totalClaims: Int! # number of claims
   metadata: QuestMetadata @derivedFrom(field: "questId")
   submissions: [Submission!] @derivedFrom(field: "questId")
   escrow: Escrow @derivedFrom(field: "questId")
   disputes: [Dispute!] @derivedFrom(field: "questId")
-  createdAt: BigInt!                # ledger timestamp
-  createdInLedger: Int!             # ledger sequence
+  createdAt: BigInt! # ledger timestamp
+  createdInLedger: Int! # ledger sequence
 }
 
-"""Quest metadata (title, description, category, tags)."""
+"""
+Quest metadata (title, description, category, tags).
+"""
 type QuestMetadata @entity {
-  id: ID!                           # quest_id
+  id: ID! # quest_id
   questId: Quest!
   title: String
   description: String
@@ -77,21 +81,25 @@ type QuestMetadata @entity {
   requirements: [String!]!
 }
 
-"""A submission for a quest."""
+"""
+A submission for a quest.
+"""
 type Submission @entity {
-  id: ID!                           # composite: "questId:submitter"
+  id: ID! # composite: "questId:submitter"
   questId: Quest!
   submitter: String!
-  proofHash: String!                # hex-encoded BytesN<32>
+  proofHash: String! # hex-encoded BytesN<32>
   status: SubmissionStatus!
   timestamp: BigInt!
-  commitmentHash: String            # commitment hash if commit-reveal
-  revealed: Boolean!                # whether the reveal step happened
+  commitmentHash: String # commitment hash if commit-reveal
+  revealed: Boolean! # whether the reveal step happened
 }
 
-"""Escrow record for a quest."""
+"""
+Escrow record for a quest.
+"""
 type Escrow @entity {
-  id: ID!                           # quest_id
+  id: ID! # quest_id
   questId: Quest!
   depositor: String!
   token: String!
@@ -103,9 +111,11 @@ type Escrow @entity {
   createdAt: BigInt!
 }
 
-"""A dispute for a quest submission."""
+"""
+A dispute for a quest submission.
+"""
 type Dispute @entity {
-  id: ID!                           # composite: "questId:initiator"
+  id: ID! # composite: "questId:initiator"
   questId: Quest!
   initiator: String!
   arbitrator: String!
@@ -113,9 +123,11 @@ type Dispute @entity {
   filedAt: BigInt!
 }
 
-"""User statistics tracked off-chain."""
+"""
+User statistics tracked off-chain.
+"""
 type UserStats @entity {
-  id: ID!                           # user address
+  id: ID! # user address
   xp: BigInt!
   level: Int!
   questsCompleted: Int!
@@ -128,7 +140,7 @@ type UserStats @entity {
 # ── Event Entities (immutable records) ────────────────────────────────────────
 
 type QuestRegistered @entity(immutable: true) {
-  id: ID!                           # txHash:logIndex
+  id: ID! # txHash:logIndex
   questId: String!
   creator: String!
   rewardAsset: String!
@@ -409,11 +421,7 @@ type Query {
   disputesByQuest(questId: String!, first: Int, offset: Int): [Dispute!]!
 
   # Event queries
-  events(
-    filter: EventFilter
-    first: Int = 10
-    offset: Int = 0
-  ): [EventResult!]!
+  events(filter: EventFilter, first: Int = 10, offset: Int = 0): [EventResult!]!
 
   # Platform stats
   platformStats: PlatformAggregates!
@@ -423,7 +431,7 @@ type Query {
 }
 
 union EventResult =
-    QuestRegistered
+  | QuestRegistered
   | ProofSubmitted
   | SubmissionApproved
   | RewardClaimed

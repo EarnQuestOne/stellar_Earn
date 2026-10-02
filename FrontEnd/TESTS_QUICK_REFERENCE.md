@@ -3,6 +3,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Ensure dependencies are installed
 pnpm install
@@ -13,11 +14,11 @@ pnpm dev
 
 ## 📋 Test Files
 
-| File | Type | Location | Purpose |
-|------|------|----------|---------|
-| `config-error-panel.spec.ts` | E2E | `tests/e2e/` | Visual & interaction tests |
-| `EnvValidator.test.tsx` | Unit | `components/providers/` | Component logic tests |
-| `page.tsx` | Demo | `app/error-panel-demo/` | Test rendering target |
+| File                         | Type | Location                | Purpose                    |
+| ---------------------------- | ---- | ----------------------- | -------------------------- |
+| `config-error-panel.spec.ts` | E2E  | `tests/e2e/`            | Visual & interaction tests |
+| `EnvValidator.test.tsx`      | Unit | `components/providers/` | Component logic tests      |
+| `page.tsx`                   | Demo | `app/error-panel-demo/` | Test rendering target      |
 
 ## ▶️ Running Tests
 
@@ -72,6 +73,7 @@ pnpm playwright test config-error-panel --update-snapshots
 ## 🔍 Test Coverage
 
 ### E2E Tests (13 tests)
+
 - ✅ Visual hierarchy and layout
 - ✅ Icon styling and visibility
 - ✅ Heading styling and text
@@ -87,6 +89,7 @@ pnpm playwright test config-error-panel --update-snapshots
 - ✅ ARIA attributes
 
 ### Unit Tests (25+ tests)
+
 - ✅ Valid environment rendering
 - ✅ Loading state display
 - ✅ Error panel structure
@@ -145,18 +148,21 @@ pnpm run test:all
 ## 📊 Reports
 
 ### HTML Report (E2E)
+
 ```bash
 pnpm playwright test
 open playwright-report/index.html
 ```
 
 ### Coverage Report (Unit)
+
 ```bash
 pnpm test --coverage
 open coverage/index.html
 ```
 
 ### Test Results
+
 ```bash
 # Verbose output
 pnpm test --reporter=verbose
@@ -165,34 +171,38 @@ pnpm playwright test --reporter=list
 
 ## 🚨 Common Issues & Solutions
 
-| Issue | Command | Solution |
-|-------|---------|----------|
-| Route not found | `pnpm playwright test` | Ensure dev server is running |
-| Snapshot mismatch | `pnpm playwright test --update-snapshots` | Update baseline images |
-| Slow tests | `pnpm test --timeout=10000` | Increase timeout |
-| Missing dependencies | `pnpm install` | Reinstall dependencies |
-| Stale node_modules | `rm -rf node_modules && pnpm install` | Clean install |
+| Issue                | Command                                   | Solution                     |
+| -------------------- | ----------------------------------------- | ---------------------------- |
+| Route not found      | `pnpm playwright test`                    | Ensure dev server is running |
+| Snapshot mismatch    | `pnpm playwright test --update-snapshots` | Update baseline images       |
+| Slow tests           | `pnpm test --timeout=10000`               | Increase timeout             |
+| Missing dependencies | `pnpm install`                            | Reinstall dependencies       |
+| Stale node_modules   | `rm -rf node_modules && pnpm install`     | Clean install                |
 
 ## 📝 Test Naming Convention
 
 All tests follow naming pattern:
+
 ```
 [Component/Feature] - [Type] - [Scenario]
 ```
 
 Examples:
+
 - `Config Error Panel - Visual Tests - renders error panel with correct visual hierarchy`
 - `EnvValidator Component - Unit Tests - should render children when environment variables are valid`
 
 ## 🎯 Key Test Scenarios
 
 ### Visual Tests
+
 - Error panel displays with all required sections
 - Responsive across viewport sizes
 - Color scheme and styling correct
 - Interactive elements accessible
 
 ### Unit Tests
+
 - Component renders correctly in both success and error states
 - Error messages contain expected content
 - Help section displays with proper formatting
@@ -208,6 +218,7 @@ Examples:
 ## 💡 Tips & Tricks
 
 ### Debug E2E Tests
+
 ```bash
 # Show browser during test
 pnpm playwright test --headed
@@ -220,6 +231,7 @@ pnpm playwright test --headed --slowMo=1000
 ```
 
 ### Debug Unit Tests
+
 ```bash
 # Inspect component rendering
 screen.debug()
@@ -232,6 +244,7 @@ pnpm test --inspect-brk
 ```
 
 ### View Test Output
+
 ```bash
 # E2E tests
 pnpm playwright test --reporter=html
@@ -259,6 +272,7 @@ Before committing changes:
 ## 📞 Support
 
 For help:
+
 1. Check common issues above
 2. Review full documentation in `CONFIG_ERROR_PANEL_TESTS.md`
 3. Check test source files for examples

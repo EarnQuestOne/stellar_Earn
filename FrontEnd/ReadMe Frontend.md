@@ -95,7 +95,9 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 # Optional: Analytics, monitoring
 NEXT_PUBLIC_ANALYTICS_ID=
 ```
+
 FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
+
 ### Development
 
 ```bash
@@ -125,6 +127,7 @@ pnpm analyze
 # or
 npm run analyze
 ```
+
 This will open the bundle analyzer reports in your browser to help you inspect chunk sizes.
 
 ## Key Components
@@ -133,16 +136,16 @@ This will open the bundle analyzer reports in your browser to help you inspect c
 
 ```typescript
 // lib/stellar/wallet.ts
-import { FreighterModule } from '@stellar/freighter-api';
+import { FreighterModule } from "@stellar/freighter-api";
 
 export async function connectWallet() {
   const { isConnected, getPublicKey } = FreighterModule;
-  
+
   if (await isConnected()) {
     const publicKey = await getPublicKey();
     return publicKey;
   }
-  throw new Error('Wallet not available');
+  throw new Error("Wallet not available");
 }
 ```
 
@@ -154,16 +157,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function fetchQuests(filters?: QuestFilters) {
   const response = await fetch(`${API_BASE_URL}/quests`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
   });
   return response.json();
 }
 
 export async function submitQuestProof(questId: string, proof: ProofData) {
   const response = await fetch(`${API_BASE_URL}/quests/${questId}/submit`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(proof),
   });
   return response.json();
@@ -174,7 +177,7 @@ export async function submitQuestProof(questId: string, proof: ProofData) {
 
 ```typescript
 // lib/stellar/contract.ts
-import { Contract, SorobanRpc } from '@stellar/stellar-sdk';
+import { Contract, SorobanRpc } from "@stellar/stellar-sdk";
 
 const server = new SorobanRpc.Server(process.env.NEXT_PUBLIC_SOROBAN_RPC_URL);
 const contractId = process.env.NEXT_PUBLIC_CONTRACT_ID;
@@ -319,7 +322,7 @@ pnpm build
 - Verify `NEXT_PUBLIC_CONTRACT_ID` is correct
 - Ensure contract is deployed to the specified network
 - Check Soroban RPC URL connectivity
-FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
+  FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
 
 ## Resources
 

@@ -47,8 +47,12 @@ test("migrateStateSnapshot plans schema splits and version bump", () => {
   assert.equal(plan.summary.escrowSplits, 1);
   assert.equal(plan.summary.platformStatsNormalized, 1);
   assert.equal(plan.summary.versionBumps, 1);
-  assert.ok(plan.actions.some((action) => action.includes("split legacy metadata")));
-  assert.ok(plan.actions.some((action) => action.includes("split legacy escrow")));
+  assert.ok(
+    plan.actions.some((action) => action.includes("split legacy metadata")),
+  );
+  assert.ok(
+    plan.actions.some((action) => action.includes("split legacy escrow")),
+  );
   assert.deepEqual(plan.migrated.quests[0].metadata_core, {
     title: "Ship quest",
     description: "Ship schema migration",
@@ -94,7 +98,11 @@ test("write mode emits migrated snapshot to the output path", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "earnquest-migration-"));
   const inputPath = path.join(tempDir, "state.json");
   const outputPath = path.join(tempDir, "state.v2.json");
-  await writeFile(inputPath, `${JSON.stringify(legacySnapshot(), null, 2)}\n`, "utf8");
+  await writeFile(
+    inputPath,
+    `${JSON.stringify(legacySnapshot(), null, 2)}\n`,
+    "utf8",
+  );
 
   const exitCode = await runCli([
     "--input",

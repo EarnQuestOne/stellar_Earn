@@ -26,16 +26,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each release block uses the following ordered sections (omit empty ones):
 
-| Section                         | Use for                                                                                          |
-| ------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **馃挜 Breaking 鈥� Types/Models**  | Any incompatible change to a TypeScript type, interface, enum, Zod schema, or API response shape |
-| **馃挜 Breaking 鈥� Runtime/API**   | Any incompatible runtime behaviour, route, prop, or env-var change                               |
-| **鉁� Added**                    | New features, types, hooks, or models (additive only)                                            |
-| **馃洜 Changed**                  | Backwards-compatible changes to existing behaviour                                               |
-| **鉀� Deprecated**               | Soon-to-be-removed types or APIs                                                                 |
-| **馃棏 Removed**                  | Previously-deprecated types or APIs that are now gone                                            |
-| **馃悰 Fixed**                    | Bug fixes                                                                                        |
-| **馃敀 Security**                 | Vulnerability fixes                                                                              |
+| Section                            | Use for                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **馃挜 Breaking 鈥� Types/Models** | Any incompatible change to a TypeScript type, interface, enum, Zod schema, or API response shape |
+| **馃挜 Breaking 鈥� Runtime/API**  | Any incompatible runtime behaviour, route, prop, or env-var change                               |
+| **鉁� Added**                      | New features, types, hooks, or models (additive only)                                            |
+| **馃洜 Changed**                   | Backwards-compatible changes to existing behaviour                                               |
+| **鉀� Deprecated**                 | Soon-to-be-removed types or APIs                                                                 |
+| **馃棏 Removed**                   | Previously-deprecated types or APIs that are now gone                                            |
+| **馃悰 Fixed**                     | Bug fixes                                                                                        |
+| **馃敀 Security**                  | Vulnerability fixes                                                                              |
 
 Every **馃挜 Breaking 鈥� Types/Models** entry must include:
 
@@ -59,16 +59,14 @@ _None yet._
   - Enhanced API client and validation modules for better async handling.
 - **Frontend changelog policy** for breaking type / model changes
   ([FE-068](https://github.com/Kappa16/stellar_Earn/issues/068)).
-    - New canonical `FrontEnd/my-app/CHANGELOG.md` (this file).
-      - New policy document at
-          [`docs/TYPE_CHANGES_POLICY.md`](./docs/TYPE_CHANGES_POLICY.md).
-            - New lightweight changeset workflow under
-                [`.changeset/`](./.changeset/README.md).
-                  - New CI guard
-                      [`scripts/check-changelog.mjs`](./scripts/check-changelog.mjs) wired into
-                          `npm run changelog:check` and the
-                              [`frontend-changelog.yml`](../../.github/workflows/frontend-changelog.yml)
-                                  workflow.
+  - New canonical `FrontEnd/my-app/CHANGELOG.md` (this file).
+    - New policy document at
+      [`docs/TYPE_CHANGES_POLICY.md`](./docs/TYPE_CHANGES_POLICY.md). - New lightweight changeset workflow under
+      [`.changeset/`](./.changeset/README.md). - New CI guard
+      [`scripts/check-changelog.mjs`](./scripts/check-changelog.mjs) wired into
+      `npm run changelog:check` and the
+      [`frontend-changelog.yml`](../../.github/workflows/frontend-changelog.yml)
+      workflow.
 - **React Query (`@tanstack/react-query`) integration for server-state caching** ([#2034](https://github.com/EarnQuestOne/stellar_Earn/issues/2034)).
   - Installed `@tanstack/react-query` v5 and wired a shared `QueryClient` into `RootProviders` so all hooks share one in-memory cache.
   - `lib/query/client.ts` - pre-configured `QueryClient` (60 s stale, 5 min gc, 2 retries, no window-focus refetch by default).
@@ -81,11 +79,11 @@ _None yet._
 
   **Before/after network request count (quests page, measured via Chrome DevTools Network panel):**
 
-  | Scenario | Before | After |
-  | -------- | ------ | ----- |
-  | Two components mount and both call `useQuests({status:'Active'})` | 2 GET `/quests` | 1 GET `/quests` (deduplicated by React Query) |
-  | Navigate away and back within stale window | 1 GET `/quests` on each visit | 0 (served from cache; background revalidation only after 2 min) |
-  | Filter change (new query key) | 1 GET `/quests` | 1 GET `/quests` (no change; each distinct key still fetches once) |
+  | Scenario                                                          | Before                        | After                                                             |
+  | ----------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------- |
+  | Two components mount and both call `useQuests({status:'Active'})` | 2 GET `/quests`               | 1 GET `/quests` (deduplicated by React Query)                     |
+  | Navigate away and back within stale window                        | 1 GET `/quests` on each visit | 0 (served from cache; background revalidation only after 2 min)   |
+  | Filter change (new query key)                                     | 1 GET `/quests`               | 1 GET `/quests` (no change; each distinct key still fetches once) |
 
 - **`lib/api/submissions.ts` — `submitProof` helper** ([#1688](https://github.com/EarnQuestOne/stellar_Earn/issues/1688)).
   - New exported function that wraps the upload-then-create flow for quest proof submission.
@@ -99,13 +97,13 @@ _None yet._
 
   **Before/after (jsdom render benchmark, 3 iterations, min timings):**
 
-  | Dataset | Metric | Before | After | Speed-up |
-  | ------- | ------ | ------ | ----- | -------- |
-  | 200 quests | Mount | 237.84 ms | 22.79 ms | ~10x |
-  | 200 quests | Selection update | 181.18 ms | 7.97 ms | ~23x |
-  | 1000 quests | Mount | 856.12 ms | 15.13 ms | ~57x |
-  | 1000 quests | Selection update | 535.67 ms | 7.31 ms | ~73x |
-  | 1000 quests | Rows mounted | 1000 | 10 | flat (page-size bound) |
+  | Dataset     | Metric           | Before    | After    | Speed-up               |
+  | ----------- | ---------------- | --------- | -------- | ---------------------- |
+  | 200 quests  | Mount            | 237.84 ms | 22.79 ms | ~10x                   |
+  | 200 quests  | Selection update | 181.18 ms | 7.97 ms  | ~23x                   |
+  | 1000 quests | Mount            | 856.12 ms | 15.13 ms | ~57x                   |
+  | 1000 quests | Selection update | 535.67 ms | 7.31 ms  | ~73x                   |
+  | 1000 quests | Rows mounted     | 1000      | 10       | flat (page-size bound) |
 
                                   ### 馃洜 Changed
 

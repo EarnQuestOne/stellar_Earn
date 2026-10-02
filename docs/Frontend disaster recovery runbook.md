@@ -35,12 +35,12 @@ This runbook documents the steps to diagnose and recover from frontend failures 
 
 ## Severity Levels
 
-| Level | Description | Response Time |
-|-------|-------------|---------------|
-| **P0** | Production completely down — no page loads | Immediate |
-| **P1** | Core flows broken (wallet connect, quest submission, payouts) | < 1 hour |
-| **P2** | Feature degraded but workaround exists | < 4 hours |
-| **P3** | Non-blocking issue, docs/UI minor | Next sprint |
+| Level  | Description                                                   | Response Time |
+| ------ | ------------------------------------------------------------- | ------------- |
+| **P0** | Production completely down — no page loads                    | Immediate     |
+| **P1** | Core flows broken (wallet connect, quest submission, payouts) | < 1 hour      |
+| **P2** | Feature degraded but workaround exists                        | < 4 hours     |
+| **P3** | Non-blocking issue, docs/UI minor                             | Next sprint   |
 
 ---
 
@@ -62,6 +62,7 @@ Before taking any recovery action, capture the following:
 ## Scenario A — Broken Environment Variables
 
 ### Symptoms
+
 - `ReferenceError: NEXT_PUBLIC_* is not defined` in browser console
 - Blank/empty API base URL causing all API calls to fail
 - Wallet connection silently failing (wrong network or missing contract ID)
@@ -84,6 +85,7 @@ diff .env.local ../../.env.example
 ```
 
 **3. For Vercel deployments — check the dashboard:**
+
 - Go to **Project → Settings → Environment Variables**
 - Confirm all required variables are set for the correct environment (Preview vs Production)
 - Check for trailing spaces, missing quotes, or accidentally URL-encoded values
@@ -141,6 +143,7 @@ pnpm build
 ## Scenario B — Failed / Broken Build
 
 ### Symptoms
+
 - CI/CD pipeline fails at the `pnpm build` step
 - TypeScript compilation errors blocking deployment
 - Missing module errors (`Module not found: Can't resolve '...'`)
@@ -227,6 +230,7 @@ env:
 ## Scenario C — Runtime Crash After Deployment
 
 ### Symptoms
+
 - `500 Internal Server Error` on page load
 - Hydration mismatch errors in the browser console
 - App loads but immediately shows an error boundary
@@ -245,6 +249,7 @@ Error: Hydration failed because the initial UI does not match what was rendered 
 This typically means a component is using browser-only APIs (e.g. `window`, `localStorage`) without guarding against SSR.
 
 **3. Check if the crash is route-specific or global:**
+
 - If only `/quests` crashes → issue in that page or its data fetching
 - If all pages crash → likely a layout component or global provider issue
 
@@ -254,9 +259,9 @@ This typically means a component is using browser-only APIs (e.g. `window`, `loc
 
 ```tsx
 // Wrap browser-only code in useEffect or dynamic import
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
-const WalletConnect = dynamic(() => import('@/components/WalletConnect'), {
+const WalletConnect = dynamic(() => import("@/components/WalletConnect"), {
   ssr: false,
 });
 ```
@@ -268,6 +273,7 @@ const WalletConnect = dynamic(() => import('@/components/WalletConnect'), {
 ## Scenario D — Wallet / Contract Integration Broken
 
 ### Symptoms
+
 - Freighter wallet extension not detected
 - `Contract ID not found` or `RPC connection failed`
 - Transaction submission returns unexpected errors
@@ -364,13 +370,13 @@ After rolling back, verify:
 
 ## Environment Variable Reference
 
-| Variable | Scope | Required | Description |
-|----------|-------|----------|-------------|
-| `NEXT_PUBLIC_STELLAR_NETWORK` | Client | ✅ | `testnet` or `mainnet` |
-| `NEXT_PUBLIC_SOROBAN_RPC_URL` | Client | ✅ | Soroban RPC endpoint URL |
-| `NEXT_PUBLIC_CONTRACT_ID` | Client | ✅ | Deployed earn-quest contract address |
-| `API_BASE_URL` | Server-side | ✅ | NestJS backend base URL |
-| `NEXT_PUBLIC_ISSUER_PUBLIC_KEY` | Client | Optional | Reward asset issuer key (for display) |
+| Variable                        | Scope       | Required | Description                           |
+| ------------------------------- | ----------- | -------- | ------------------------------------- |
+| `NEXT_PUBLIC_STELLAR_NETWORK`   | Client      | ✅       | `testnet` or `mainnet`                |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL`   | Client      | ✅       | Soroban RPC endpoint URL              |
+| `NEXT_PUBLIC_CONTRACT_ID`       | Client      | ✅       | Deployed earn-quest contract address  |
+| `API_BASE_URL`                  | Server-side | ✅       | NestJS backend base URL               |
+| `NEXT_PUBLIC_ISSUER_PUBLIC_KEY` | Client      | Optional | Reward asset issuer key (for display) |
 
 > **Important:** Variables prefixed `NEXT_PUBLIC_` are embedded in the client bundle at build time. Changing them requires a full rebuild — a runtime update to Vercel env vars alone is not sufficient.
 
@@ -378,14 +384,15 @@ After rolling back, verify:
 
 ## Escalation Path
 
-| Step | Action |
-|------|--------|
-| 1 | On-call frontend engineer attempts fix using this runbook |
-| 2 | If unresolved in 30 min (P0) or 2 hours (P1), escalate to tech lead |
-| 3 | If related to smart contract state, loop in the Soroban/contracts team |
-| 4 | If infrastructure issue (RPC down, Vercel outage), check status pages and open a support ticket |
+| Step | Action                                                                                          |
+| ---- | ----------------------------------------------------------------------------------------------- |
+| 1    | On-call frontend engineer attempts fix using this runbook                                       |
+| 2    | If unresolved in 30 min (P0) or 2 hours (P1), escalate to tech lead                             |
+| 3    | If related to smart contract state, loop in the Soroban/contracts team                          |
+| 4    | If infrastructure issue (RPC down, Vercel outage), check status pages and open a support ticket |
 
 **Relevant status pages:**
+
 - Vercel: https://www.vercel-status.com/
 - Stellar/Soroban testnet: https://dashboard.stellar.org/
 
@@ -406,4 +413,4 @@ After the incident is resolved:
 
 ---
 
-*This runbook is a living document. If you encounter a failure pattern not covered here, add a new scenario and open a PR.*
+_This runbook is a living document. If you encounter a failure pattern not covered here, add a new scenario and open a PR._

@@ -15,12 +15,7 @@ import {
 } from '../validation/submission';
 
 export type SubmissionStep =
-  | 'type'
-  | 'proof'
-  | 'preview'
-  | 'submitting'
-  | 'success'
-  | 'error';
+  'type' | 'proof' | 'preview' | 'submitting' | 'success' | 'error';
 
 interface UseSubmissionOptions {
   questId: string;

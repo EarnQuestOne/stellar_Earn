@@ -4,8 +4,8 @@
 // Stores indexed events and entity state for efficient querying via GraphQL.
 // =============================================================================
 
-import Database from 'better-sqlite3';
-import { config } from '../config';
+import Database from "better-sqlite3";
+import { config } from "../config";
 import {
   QuestEntity,
   QuestMetadataEntity,
@@ -16,7 +16,7 @@ import {
   QuestStatus,
   SubmissionStatus,
   DisputeStatus,
-} from '../config/types';
+} from "../config/types";
 
 let db: Database.Database | undefined;
 
@@ -24,15 +24,16 @@ let db: Database.Database | undefined;
 
 export function initDatabase(dbPath?: string): Database.Database {
   db = new Database(dbPath || config.dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
-  db.pragma('foreign_keys = ON');
+  db.pragma("journal_mode = WAL");
+  db.pragma("synchronous = NORMAL");
+  db.pragma("foreign_keys = ON");
   createTables();
   return db;
 }
 
 export function getDatabase(): Database.Database {
-  if (!db) throw new Error('Database not initialized. Call initDatabase() first.');
+  if (!db)
+    throw new Error("Database not initialized. Call initDatabase() first.");
   return db;
 }
 
@@ -143,25 +144,30 @@ function createTables(): void {
   `);
 
   // Initialize cursor if not present
-  const row = db.prepare('SELECT ledger FROM indexing_cursor WHERE id = 1').get() as { ledger: number } | undefined;
+  const row = db
+    .prepare("SELECT ledger FROM indexing_cursor WHERE id = 1")
+    .get() as { ledger: number } | undefined;
   if (!row) {
-    db.prepare('INSERT INTO indexing_cursor (id, ledger) VALUES (1, 0)').run();
+    db.prepare("INSERT INTO indexing_cursor (id, ledger) VALUES (1, 0)").run();
   }
 }
 
 // ── Cursor operations ─────────────────────────────────────────────────────────
 
 export function getCursor(): number {
-  const row = db.prepare('SELECT ledger FROM indexing_cursor WHERE id = 1').get() as { ledger: number };
+  const row = db
+    .prepare("SELECT ledger FROM indexing_cursor WHERE id = 1")
+    .get() as { ledger: number };
   return row.ledger;
 }
 
 export function setCursor(ledger: number): void {
-  db.prepare('UPDATE indexing_cursor SET ledger = ?, updated_at = datetime("now") WHERE id = 1').run(ledger);
+  db.prepare(
+    'UPDATE indexing_cursor SET ledger = ?, updated_at = datetime("now") WHERE id = 1',
+  ).run(ledger);
 }
 
 // ── Quest operations ──────────────────────────────────────────────────────────
-
 
 export function saveQuest(q: QuestEntity): void {
   const stmt = getDatabase().prepare(`
@@ -171,37 +177,79 @@ export function saveQuest(q: QuestEntity): void {
       status = excluded.status,
       total_claims = excluded.total_claims
   `);
-  stmt.run(q.id, q.creator, q.reward_asset, q.reward_amount, q.verifier, q.deadline, q.status, q.total_claims, q.created_at, q.created_in_ledger);
+  stmt.run(
+    q.id,
+    q.creator,
+    q.reward_asset,
+    q.reward_amount,
+    q.verifier,
+    q.deadline,
+    q.status,
+    q.total_claims,
+    q.created_at,
+    q.created_in_ledger,
+  );
 }
 
 export function getQuest(id: string): QuestEntity | undefined {
-  return getDatabase().prepare('SELECT * FROM quests WHERE id = ?').get(id) as QuestEntity | undefined;
+  return getDatabase().prepare("SELECT * FROM quests WHERE id = ?").get(id) as
+    QuestEntity | undefined;
 }
 
-export function getQuestsByCreator(creator: string, limit: number, offset: number): QuestEntity[] {
-  return getDatabase().prepare('SELECT * FROM quests WHERE creator = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(creator, limit, offset) as QuestEntity[];
+export function getQuestsByCreator(
+  creator: string,
+  limit: number,
+  offset: number,
+): QuestEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM quests WHERE creator = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+    )
+    .all(creator, limit, offset) as QuestEntity[];
 }
 
-export function getQuestsByStatus(status: string, limit: number, offset: number): QuestEntity[] {
-  return getDatabase().prepare('SELECT * FROM quests WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(status, limit, offset) as QuestEntity[];
+export function getQuestsByStatus(
+  status: string,
+  limit: number,
+  offset: number,
+): QuestEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM quests WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+    )
+    .all(status, limit, offset) as QuestEntity[];
 }
 
-export function getQuestsByRewardAsset(asset: string, limit: number, offset: number): QuestEntity[] {
-  return getDatabase().prepare('SELECT * FROM quests WHERE reward_asset = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(asset, limit, offset) as QuestEntity[];
+export function getQuestsByRewardAsset(
+  asset: string,
+  limit: number,
+  offset: number,
+): QuestEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM quests WHERE reward_asset = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+    )
+    .all(asset, limit, offset) as QuestEntity[];
 }
 
 export function updateQuestStatus(id: string, status: QuestStatus): void {
-  getDatabase().prepare('UPDATE quests SET status = ? WHERE id = ?').run(status, id);
+  getDatabase()
+    .prepare("UPDATE quests SET status = ? WHERE id = ?")
+    .run(status, id);
 }
 
 export function incrementQuestClaims(id: string): void {
-  getDatabase().prepare('UPDATE quests SET total_claims = total_claims + 1 WHERE id = ?').run(id);
+  getDatabase()
+    .prepare("UPDATE quests SET total_claims = total_claims + 1 WHERE id = ?")
+    .run(id);
 }
 
 // ── Submission operations ─────────────────────────────────────────────────────
 
 export function saveSubmission(s: SubmissionEntity): void {
-  getDatabase().prepare(`
+  getDatabase()
+    .prepare(
+      `
     INSERT INTO submissions (id, quest_id, submitter, proof_hash, status, timestamp, commitment_hash, revealed)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
@@ -209,31 +257,67 @@ export function saveSubmission(s: SubmissionEntity): void {
       proof_hash = excluded.proof_hash,
       commitment_hash = COALESCE(excluded.commitment_hash, submissions.commitment_hash),
       revealed = CASE WHEN excluded.revealed = 1 THEN 1 ELSE submissions.revealed END
-  `).run(s.id, s.quest_id, s.submitter, s.proof_hash, s.status, s.timestamp, s.commitment_hash, s.revealed ? 1 : 0);
+  `,
+    )
+    .run(
+      s.id,
+      s.quest_id,
+      s.submitter,
+      s.proof_hash,
+      s.status,
+      s.timestamp,
+      s.commitment_hash,
+      s.revealed ? 1 : 0,
+    );
 }
 
 export function getSubmission(id: string): SubmissionEntity | undefined {
-  const row = getDatabase().prepare('SELECT * FROM submissions WHERE id = ?').get(id) as any;
+  const row = getDatabase()
+    .prepare("SELECT * FROM submissions WHERE id = ?")
+    .get(id) as any;
   if (!row) return undefined;
   return { ...row, revealed: row.revealed === 1 };
 }
 
-export function getSubmissionsByQuest(questId: string, limit: number, offset: number): SubmissionEntity[] {
-  return getDatabase().prepare('SELECT * FROM submissions WHERE quest_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?').all(questId, limit, offset) as SubmissionEntity[];
+export function getSubmissionsByQuest(
+  questId: string,
+  limit: number,
+  offset: number,
+): SubmissionEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM submissions WHERE quest_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+    )
+    .all(questId, limit, offset) as SubmissionEntity[];
 }
 
-export function getSubmissionsByUser(submitter: string, limit: number, offset: number): SubmissionEntity[] {
-  return getDatabase().prepare('SELECT * FROM submissions WHERE submitter = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?').all(submitter, limit, offset) as SubmissionEntity[];
+export function getSubmissionsByUser(
+  submitter: string,
+  limit: number,
+  offset: number,
+): SubmissionEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM submissions WHERE submitter = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+    )
+    .all(submitter, limit, offset) as SubmissionEntity[];
 }
 
-export function updateSubmissionStatus(id: string, status: SubmissionStatus): void {
-  getDatabase().prepare('UPDATE submissions SET status = ? WHERE id = ?').run(status, id);
+export function updateSubmissionStatus(
+  id: string,
+  status: SubmissionStatus,
+): void {
+  getDatabase()
+    .prepare("UPDATE submissions SET status = ? WHERE id = ?")
+    .run(status, id);
 }
 
 // ── Escrow operations ─────────────────────────────────────────────────────────
 
 export function saveEscrow(e: EscrowEntity): void {
-  getDatabase().prepare(`
+  getDatabase()
+    .prepare(
+      `
     INSERT INTO escrows (id, quest_id, depositor, token, total_deposited, total_paid_out, total_refunded, is_active, deposit_count, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
@@ -242,17 +326,34 @@ export function saveEscrow(e: EscrowEntity): void {
       total_refunded = excluded.total_refunded,
       is_active = excluded.is_active,
       deposit_count = excluded.deposit_count
-  `).run(e.id, e.quest_id, e.depositor, e.token, e.total_deposited, e.total_paid_out, e.total_refunded, e.is_active ? 1 : 0, e.deposit_count, e.created_at);
+  `,
+    )
+    .run(
+      e.id,
+      e.quest_id,
+      e.depositor,
+      e.token,
+      e.total_deposited,
+      e.total_paid_out,
+      e.total_refunded,
+      e.is_active ? 1 : 0,
+      e.deposit_count,
+      e.created_at,
+    );
 }
 
 export function getEscrow(id: string): EscrowEntity | undefined {
-  const row = getDatabase().prepare('SELECT * FROM escrows WHERE id = ?').get(id) as any;
+  const row = getDatabase()
+    .prepare("SELECT * FROM escrows WHERE id = ?")
+    .get(id) as any;
   if (!row) return undefined;
   return { ...row, is_active: row.is_active === 1 };
 }
 
 export function getEscrowByQuest(questId: string): EscrowEntity | undefined {
-  const row = getDatabase().prepare('SELECT * FROM escrows WHERE quest_id = ?').get(questId) as any;
+  const row = getDatabase()
+    .prepare("SELECT * FROM escrows WHERE quest_id = ?")
+    .get(questId) as any;
   if (!row) return undefined;
   return { ...row, is_active: row.is_active === 1 };
 }
@@ -260,22 +361,36 @@ export function getEscrowByQuest(questId: string): EscrowEntity | undefined {
 // ── Dispute operations ────────────────────────────────────────────────────────
 
 export function saveDispute(d: DisputeEntity): void {
-  getDatabase().prepare(`
+  getDatabase()
+    .prepare(
+      `
     INSERT INTO disputes (id, quest_id, initiator, arbitrator, status, filed_at)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       status = excluded.status
-  `).run(d.id, d.quest_id, d.initiator, d.arbitrator, d.status, d.filed_at);
+  `,
+    )
+    .run(d.id, d.quest_id, d.initiator, d.arbitrator, d.status, d.filed_at);
 }
 
-export function getDisputesByQuest(questId: string, limit: number, offset: number): DisputeEntity[] {
-  return getDatabase().prepare('SELECT * FROM disputes WHERE quest_id = ? ORDER BY filed_at DESC LIMIT ? OFFSET ?').all(questId, limit, offset) as DisputeEntity[];
+export function getDisputesByQuest(
+  questId: string,
+  limit: number,
+  offset: number,
+): DisputeEntity[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM disputes WHERE quest_id = ? ORDER BY filed_at DESC LIMIT ? OFFSET ?",
+    )
+    .all(questId, limit, offset) as DisputeEntity[];
 }
 
 // ── User stats operations ─────────────────────────────────────────────────────
 
 export function saveUserStats(u: UserStatsEntity): void {
-  getDatabase().prepare(`
+  getDatabase()
+    .prepare(
+      `
     INSERT INTO user_stats (id, xp, level, quests_completed, badges, total_submissions, total_payouts, total_payout_amount)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
@@ -286,11 +401,24 @@ export function saveUserStats(u: UserStatsEntity): void {
       total_submissions = excluded.total_submissions,
       total_payouts = excluded.total_payouts,
       total_payout_amount = excluded.total_payout_amount
-  `).run(u.id, u.xp, u.level, u.quests_completed, u.badges, u.total_submissions, u.total_payouts, u.total_payout_amount);
+  `,
+    )
+    .run(
+      u.id,
+      u.xp,
+      u.level,
+      u.quests_completed,
+      u.badges,
+      u.total_submissions,
+      u.total_payouts,
+      u.total_payout_amount,
+    );
 }
 
 export function getUserStats(id: string): UserStatsEntity | undefined {
-  return getDatabase().prepare('SELECT * FROM user_stats WHERE id = ?').get(id) as UserStatsEntity | undefined;
+  return getDatabase()
+    .prepare("SELECT * FROM user_stats WHERE id = ?")
+    .get(id) as UserStatsEntity | undefined;
 }
 
 export function ensureUserStats(userId: string): UserStatsEntity {
@@ -298,13 +426,13 @@ export function ensureUserStats(userId: string): UserStatsEntity {
   if (!stats) {
     const empty: UserStatsEntity = {
       id: userId,
-      xp: '0',
+      xp: "0",
       level: 1,
       quests_completed: 0,
-      badges: '[]',
+      badges: "[]",
       total_submissions: 0,
       total_payouts: 0,
-      total_payout_amount: '0',
+      total_payout_amount: "0",
     };
     saveUserStats(empty);
     stats = empty;
@@ -324,21 +452,53 @@ export function saveEvent(event: {
   ledgerTimestamp: string;
   txHash: string;
 }): void {
-  getDatabase().prepare(`
+  getDatabase()
+    .prepare(
+      `
     INSERT OR IGNORE INTO events (id, event_type, contract_id, topics, data, ledger, ledger_timestamp, tx_hash)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(event.id, event.eventType, event.contractId, event.topics, event.data, event.ledger, event.ledgerTimestamp, event.txHash);
+  `,
+    )
+    .run(
+      event.id,
+      event.eventType,
+      event.contractId,
+      event.topics,
+      event.data,
+      event.ledger,
+      event.ledgerTimestamp,
+      event.txHash,
+    );
 }
 
-export function getEvents(eventType?: string, limit: number = 50, offset: number = 0): any[] {
+export function getEvents(
+  eventType?: string,
+  limit: number = 50,
+  offset: number = 0,
+): any[] {
   if (eventType) {
-    return getDatabase().prepare('SELECT * FROM events WHERE event_type = ? ORDER BY ledger DESC LIMIT ? OFFSET ?').all(eventType, limit, offset);
+    return getDatabase()
+      .prepare(
+        "SELECT * FROM events WHERE event_type = ? ORDER BY ledger DESC LIMIT ? OFFSET ?",
+      )
+      .all(eventType, limit, offset);
   }
-  return getDatabase().prepare('SELECT * FROM events ORDER BY ledger DESC LIMIT ? OFFSET ?').all(limit, offset);
+  return getDatabase()
+    .prepare("SELECT * FROM events ORDER BY ledger DESC LIMIT ? OFFSET ?")
+    .all(limit, offset);
 }
 
-export function getEventsByTimestampRange(from: string, to: string, limit: number, offset: number): any[] {
-  return getDatabase().prepare('SELECT * FROM events WHERE ledger_timestamp >= ? AND ledger_timestamp <= ? ORDER BY ledger DESC LIMIT ? OFFSET ?').all(from, to, limit, offset);
+export function getEventsByTimestampRange(
+  from: string,
+  to: string,
+  limit: number,
+  offset: number,
+): any[] {
+  return getDatabase()
+    .prepare(
+      "SELECT * FROM events WHERE ledger_timestamp >= ? AND ledger_timestamp <= ? ORDER BY ledger DESC LIMIT ? OFFSET ?",
+    )
+    .all(from, to, limit, offset);
 }
 
 // ── Platform aggregates ───────────────────────────────────────────────────────
@@ -351,13 +511,27 @@ export function getPlatformAggregates(): {
   totalActiveUsers: number;
 } {
   const d = getDatabase();
-  const totalQuests = (d.prepare('SELECT COUNT(*) as c FROM quests').get() as any).c;
-  const totalSubmissions = (d.prepare('SELECT COUNT(*) as c FROM submissions').get() as any).c;
-  const totalRewardsClaimed = (d.prepare("SELECT COUNT(*) as c FROM submissions WHERE status = 'Paid'").get() as any).c;
-  const totalActiveUsers = (d.prepare('SELECT COUNT(*) as c FROM user_stats').get() as any).c;
+  const totalQuests = (
+    d.prepare("SELECT COUNT(*) as c FROM quests").get() as any
+  ).c;
+  const totalSubmissions = (
+    d.prepare("SELECT COUNT(*) as c FROM submissions").get() as any
+  ).c;
+  const totalRewardsClaimed = (
+    d
+      .prepare("SELECT COUNT(*) as c FROM submissions WHERE status = 'Paid'")
+      .get() as any
+  ).c;
+  const totalActiveUsers = (
+    d.prepare("SELECT COUNT(*) as c FROM user_stats").get() as any
+  ).c;
 
   let totalRewardsDistributed = BigInt(0);
-  const rows = d.prepare("SELECT reward_amount FROM quests WHERE status = 'Completed' OR status = 'Active'").all() as { reward_amount: string }[];
+  const rows = d
+    .prepare(
+      "SELECT reward_amount FROM quests WHERE status = 'Completed' OR status = 'Active'",
+    )
+    .all() as { reward_amount: string }[];
   for (const r of rows) {
     totalRewardsDistributed += BigInt(r.reward_amount);
   }

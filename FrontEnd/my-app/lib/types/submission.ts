@@ -10,11 +10,7 @@ export const SubmissionStatus = {
 } as const;
 
 export type SubmissionStatus =
-  | 'Pending'
-  | 'Approved'
-  | 'Rejected'
-  | 'Paid'
-  | 'Under Review';
+  'Pending' | 'Approved' | 'Rejected' | 'Paid' | 'Under Review';
 
 export type ApiSubmissionStatus = SubmissionStatus;
 

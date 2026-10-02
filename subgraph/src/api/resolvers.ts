@@ -19,9 +19,9 @@ import {
   getEventsByTimestampRange,
   getPlatformAggregates,
   getDatabase,
-} from '../storage/database';
+} from "../storage/database";
 
-import { QuestStatus, SubmissionStatus } from '../config/types';
+import { QuestStatus, SubmissionStatus } from "../config/types";
 
 export const resolvers = {
   Query: {
@@ -36,8 +36,8 @@ export const resolvers = {
         filter,
         first = 10,
         offset = 0,
-        orderBy = 'created_at',
-        orderDirection = 'desc',
+        orderBy = "created_at",
+        orderDirection = "desc",
       }: {
         filter?: { creator?: string; status?: string; rewardAsset?: string };
         first?: number;
@@ -46,22 +46,54 @@ export const resolvers = {
         orderDirection?: string;
       },
     ) => {
-      if (filter?.creator) return getQuestsByCreator(filter.creator, first, offset).map(questToGraphQL);
-      if (filter?.status) return getQuestsByStatus(filter.status, first, offset).map(questToGraphQL);
-      if (filter?.rewardAsset) return getQuestsByRewardAsset(filter.rewardAsset, first, offset).map(questToGraphQL);
+      if (filter?.creator)
+        return getQuestsByCreator(filter.creator, first, offset).map(
+          questToGraphQL,
+        );
+      if (filter?.status)
+        return getQuestsByStatus(filter.status, first, offset).map(
+          questToGraphQL,
+        );
+      if (filter?.rewardAsset)
+        return getQuestsByRewardAsset(filter.rewardAsset, first, offset).map(
+          questToGraphQL,
+        );
       return [];
     },
 
-    questsByCreator: (_: any, { creator, first = 10, offset = 0 }: { creator: string; first?: number; offset?: number }) => {
+    questsByCreator: (
+      _: any,
+      {
+        creator,
+        first = 10,
+        offset = 0,
+      }: { creator: string; first?: number; offset?: number },
+    ) => {
       return getQuestsByCreator(creator, first, offset).map(questToGraphQL);
     },
 
-    questsByStatus: (_: any, { status, first = 10, offset = 0 }: { status: string; first?: number; offset?: number }) => {
+    questsByStatus: (
+      _: any,
+      {
+        status,
+        first = 10,
+        offset = 0,
+      }: { status: string; first?: number; offset?: number },
+    ) => {
       return getQuestsByStatus(status, first, offset).map(questToGraphQL);
     },
 
-    questsByRewardAsset: (_: any, { rewardAsset, first = 10, offset = 0 }: { rewardAsset: string; first?: number; offset?: number }) => {
-      return getQuestsByRewardAsset(rewardAsset, first, offset).map(questToGraphQL);
+    questsByRewardAsset: (
+      _: any,
+      {
+        rewardAsset,
+        first = 10,
+        offset = 0,
+      }: { rewardAsset: string; first?: number; offset?: number },
+    ) => {
+      return getQuestsByRewardAsset(rewardAsset, first, offset).map(
+        questToGraphQL,
+      );
     },
 
     // ── Submission queries ─────────────────────────────────────────────────
@@ -81,17 +113,41 @@ export const resolvers = {
         offset?: number;
       },
     ) => {
-      if (filter?.questId) return getSubmissionsByQuest(filter.questId, first, offset).map(submissionToGraphQL);
-      if (filter?.submitter) return getSubmissionsByUser(filter.submitter, first, offset).map(submissionToGraphQL);
+      if (filter?.questId)
+        return getSubmissionsByQuest(filter.questId, first, offset).map(
+          submissionToGraphQL,
+        );
+      if (filter?.submitter)
+        return getSubmissionsByUser(filter.submitter, first, offset).map(
+          submissionToGraphQL,
+        );
       return [];
     },
 
-    submissionsByQuest: (_: any, { questId, first = 10, offset = 0 }: { questId: string; first?: number; offset?: number }) => {
-      return getSubmissionsByQuest(questId, first, offset).map(submissionToGraphQL);
+    submissionsByQuest: (
+      _: any,
+      {
+        questId,
+        first = 10,
+        offset = 0,
+      }: { questId: string; first?: number; offset?: number },
+    ) => {
+      return getSubmissionsByQuest(questId, first, offset).map(
+        submissionToGraphQL,
+      );
     },
 
-    submissionsByUser: (_: any, { submitter, first = 10, offset = 0 }: { submitter: string; first?: number; offset?: number }) => {
-      return getSubmissionsByUser(submitter, first, offset).map(submissionToGraphQL);
+    submissionsByUser: (
+      _: any,
+      {
+        submitter,
+        first = 10,
+        offset = 0,
+      }: { submitter: string; first?: number; offset?: number },
+    ) => {
+      return getSubmissionsByUser(submitter, first, offset).map(
+        submissionToGraphQL,
+      );
     },
 
     // ── User queries ───────────────────────────────────────────────────────
@@ -121,7 +177,14 @@ export const resolvers = {
     },
 
     // ── Dispute queries ────────────────────────────────────────────────────
-    disputesByQuest: (_: any, { questId, first = 10, offset = 0 }: { questId: string; first?: number; offset?: number }) => {
+    disputesByQuest: (
+      _: any,
+      {
+        questId,
+        first = 10,
+        offset = 0,
+      }: { questId: string; first?: number; offset?: number },
+    ) => {
       return getDisputesByQuest(questId, first, offset).map(disputeToGraphQL);
     },
 
@@ -133,13 +196,22 @@ export const resolvers = {
         first = 10,
         offset = 0,
       }: {
-        filter?: { eventType?: string; fromTimestamp?: string; toTimestamp?: string };
+        filter?: {
+          eventType?: string;
+          fromTimestamp?: string;
+          toTimestamp?: string;
+        };
         first?: number;
         offset?: number;
       },
     ) => {
       if (filter?.fromTimestamp && filter?.toTimestamp) {
-        return getEventsByTimestampRange(filter.fromTimestamp, filter.toTimestamp, first, offset);
+        return getEventsByTimestampRange(
+          filter.fromTimestamp,
+          filter.toTimestamp,
+          first,
+          offset,
+        );
       }
       return getEvents(filter?.eventType, first, offset);
     },
@@ -150,12 +222,21 @@ export const resolvers = {
     },
 
     // ── Search ─────────────────────────────────────────────────────────────
-    searchQuests: (_: any, { query, first = 10, offset = 0 }: { query: string; first?: number; offset?: number }) => {
+    searchQuests: (
+      _: any,
+      {
+        query,
+        first = 10,
+        offset = 0,
+      }: { query: string; first?: number; offset?: number },
+    ) => {
       // Basic search — in production would use full-text search
       const db = getDatabase();
-      const results = db.prepare(
-        `SELECT * FROM quests WHERE id LIKE ? OR creator LIKE ? LIMIT ? OFFSET ?`
-      ).all(`%${query}%`, `%${query}%`, first, offset);
+      const results = db
+        .prepare(
+          `SELECT * FROM quests WHERE id LIKE ? OR creator LIKE ? LIMIT ? OFFSET ?`,
+        )
+        .all(`%${query}%`, `%${query}%`, first, offset);
       return results.map(questToGraphQL);
     },
   },
@@ -230,7 +311,7 @@ function userStatsToGraphQL(u: any): any {
     xp: u.xp,
     level: u.level,
     questsCompleted: u.quests_completed,
-    badges: JSON.parse(u.badges || '[]'),
+    badges: JSON.parse(u.badges || "[]"),
     totalSubmissions: u.total_submissions,
     totalPayouts: u.total_payouts,
     totalPayoutAmount: u.total_payout_amount,

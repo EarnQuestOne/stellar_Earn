@@ -25,10 +25,10 @@ This document defines the formal voting procedures, quorum thresholds, majority 
 
 Proposals are evaluated against two decision thresholds based on their scope:
 
-| Scope / Proposal Type | Required Threshold | Description |
-| :--- | :--- | :--- |
-| **Standard Technical & Operational** | **Simple Majority (>50%)** | Technical RFCs, standard PR approvals, working group formations, routine operational changes. Requires more than 50% of cast votes (excluding abstentions) to be `Approve`. |
-| **Governance & Roster Amendments** | **Supermajority (66% / 2/3)** | Amendments to governance policies, additions/removals of Maintainers, core repository license changes, or breaking governance shifts. Requires at least 66% of cast votes (excluding abstentions) to be `Approve`. |
+| Scope / Proposal Type                | Required Threshold            | Description                                                                                                                                                                                                        |
+| :----------------------------------- | :---------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Standard Technical & Operational** | **Simple Majority (>50%)**    | Technical RFCs, standard PR approvals, working group formations, routine operational changes. Requires more than 50% of cast votes (excluding abstentions) to be `Approve`.                                        |
+| **Governance & Roster Amendments**   | **Supermajority (66% / 2/3)** | Amendments to governance policies, additions/removals of Maintainers, core repository license changes, or breaking governance shifts. Requires at least 66% of cast votes (excluding abstentions) to be `Approve`. |
 
 ## Voting Procedure
 

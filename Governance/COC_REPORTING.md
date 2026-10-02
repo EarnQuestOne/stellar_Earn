@@ -46,13 +46,13 @@ additional detail when needed.
 
 ## Process after submission
 
-| Step | Owner | Target timeline |
-|------|-------|-----------------|
-| Acknowledge receipt | Committee | Within **48 hours** |
-| Initial triage and committee assignment | Committee | Within **5 business days** |
-| Investigation (interviews, evidence review) | Committee | Within **14 days** of acknowledgement |
-| Decision and response | Committee | Within **21 days** of acknowledgement |
-| Appeal window opens | Reporter / Respondent | 7 days after decision |
+| Step                                        | Owner                 | Target timeline                       |
+| ------------------------------------------- | --------------------- | ------------------------------------- |
+| Acknowledge receipt                         | Committee             | Within **48 hours**                   |
+| Initial triage and committee assignment     | Committee             | Within **5 business days**            |
+| Investigation (interviews, evidence review) | Committee             | Within **14 days** of acknowledgement |
+| Decision and response                       | Committee             | Within **21 days** of acknowledgement |
+| Appeal window opens                         | Reporter / Respondent | 7 days after decision                 |
 
 Timelines may be extended for complex cases; the committee will notify all
 parties of any delay.

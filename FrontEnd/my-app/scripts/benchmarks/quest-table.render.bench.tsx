@@ -31,10 +31,7 @@ function makeQuests(n: number): Quest[] {
     shortDescription: `Short ${i}`,
     category: CATEGORIES[i % CATEGORIES.length],
     difficulty: ['beginner', 'intermediate', 'advanced', 'expert'][i % 4] as
-      | 'beginner'
-      | 'intermediate'
-      | 'advanced'
-      | 'expert',
+      'beginner' | 'intermediate' | 'advanced' | 'expert',
     status: STATUSES[i % STATUSES.length],
     reward: (i % 50) * 10,
     xpReward: (i % 20) * 5,

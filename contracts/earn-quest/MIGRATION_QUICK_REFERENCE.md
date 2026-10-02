@@ -35,17 +35,17 @@ cargo test mainnet_migration_checklist -- --ignored
 
 ## Test Categories
 
-| Category | Tests | Purpose |
-|----------|-------|---------|
-| Initialization | 3 | Contract setup |
-| Authorization | 3 | Upgrade permissions |
-| State Persistence | 6 | Data preservation |
-| Compatibility | 2 | Backward compatibility |
-| Migration Scenarios | 3 | Real-world cases |
-| Rollback | 1 | Recovery |
-| Security | 2 | Upgrade security |
-| Edge Cases | 4 | Boundary conditions |
-| **Total** | **24** | **Comprehensive coverage** |
+| Category            | Tests  | Purpose                    |
+| ------------------- | ------ | -------------------------- |
+| Initialization      | 3      | Contract setup             |
+| Authorization       | 3      | Upgrade permissions        |
+| State Persistence   | 6      | Data preservation          |
+| Compatibility       | 2      | Backward compatibility     |
+| Migration Scenarios | 3      | Real-world cases           |
+| Rollback            | 1      | Recovery                   |
+| Security            | 2      | Upgrade security           |
+| Edge Cases          | 4      | Boundary conditions        |
+| **Total**           | **24** | **Comprehensive coverage** |
 
 ## Quick Test Commands
 
@@ -108,11 +108,12 @@ cargo test test_full_migration_workflow
 ✅ Admin roles  
 ✅ Submissions  
 ✅ Platform stats  
-✅ Escrow balances  
+✅ Escrow balances
 
 ## Deployment Checklist
 
 ### Testnet
+
 ```bash
 1. cargo build --target wasm32-unknown-unknown --release
 2. cargo test
@@ -122,6 +123,7 @@ cargo test test_full_migration_workflow
 ```
 
 ### Mainnet
+
 ```bash
 1. All testnet tests passing
 2. Security audit complete
@@ -135,6 +137,7 @@ cargo test test_full_migration_workflow
 ## Common Patterns
 
 ### Test Setup
+
 ```rust
 let env = Env::default();
 env.mock_all_auths();
@@ -142,6 +145,7 @@ let (contract_id, client, admin) = setup_initialized_contract(&env);
 ```
 
 ### Simulate Upgrade
+
 ```rust
 // Create state
 client.register_quest(...);
@@ -155,18 +159,19 @@ let quest = client_after.get_quest(&quest_id);
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Init fails | Check not already initialized |
-| Auth fails | Verify SuperAdmin role |
-| State lost | Check storage key consistency |
-| Test timeout | Reduce data volume |
+| Issue        | Solution                      |
+| ------------ | ----------------------------- |
+| Init fails   | Check not already initialized |
+| Auth fails   | Verify SuperAdmin role        |
+| State lost   | Check storage key consistency |
+| Test timeout | Reduce data volume            |
 
 ## Test Results
 
 Expected: **24/24 tests passing**
 
 Coverage:
+
 - ✅ Initialization
 - ✅ Authorization
 - ✅ State persistence

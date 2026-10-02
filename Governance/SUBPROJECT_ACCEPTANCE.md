@@ -60,14 +60,14 @@ criteria, not by calendar time.
 
 A subproject graduates when all of the following are met:
 
-| # | Acceptance criterion    | Evidence expected                                                                   |
-| - | ----------------------- | ----------------------------------------------------------------------------------- |
-| 1 | Clear purpose and scope | A one-paragraph charter stating mission, scope, and out-of-scope items              |
-| 2 | Explicit ownership      | At least two maintainers named in this roster; one is the sponsor                   |
-| 3 | Engineering health      | CI, builds, tests, and a security policy wired into the subproject                  |
-| 4 | Release discipline      | Semantic versioning and a documented release process                                |
-| 5 | Compliance              | License, Code of Conduct, and security reporting aligned with these governance docs |
-| 6 | Reporting               | Quarterly status report to the repository maintainers during incubation             |
+| #   | Acceptance criterion    | Evidence expected                                                                   |
+| --- | ----------------------- | ----------------------------------------------------------------------------------- |
+| 1   | Clear purpose and scope | A one-paragraph charter stating mission, scope, and out-of-scope items              |
+| 2   | Explicit ownership      | At least two maintainers named in this roster; one is the sponsor                   |
+| 3   | Engineering health      | CI, builds, tests, and a security policy wired into the subproject                  |
+| 4   | Release discipline      | Semantic versioning and a documented release process                                |
+| 5   | Compliance              | License, Code of Conduct, and security reporting aligned with these governance docs |
+| 6   | Reporting               | Quarterly status report to the repository maintainers during incubation             |
 
 ## Decision and record
 

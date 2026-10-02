@@ -11,15 +11,15 @@ that sit behind those rules.
 
 ## Severity Levels and Default Actions
 
-| Severity | `cargo-deny` action | Notes |
-|----------|--------------------|-------------------------------------------------|
-| Critical | **deny** (CI fail) | Must be resolved before merge |
-| High | **deny** (CI fail) | Must be resolved before merge |
-| Medium | **deny** (CI fail) | Must be resolved or formally excepted |
-| Low | warn (CI passes) | Should be resolved within 30 days |
-| Unmaintained | warn | Schedule replacement; track in backlog |
-| Yanked | warn | Upgrade at next dependency refresh |
-| Notice | warn | Informational; no action required |
+| Severity     | `cargo-deny` action | Notes                                  |
+| ------------ | ------------------- | -------------------------------------- |
+| Critical     | **deny** (CI fail)  | Must be resolved before merge          |
+| High         | **deny** (CI fail)  | Must be resolved before merge          |
+| Medium       | **deny** (CI fail)  | Must be resolved or formally excepted  |
+| Low          | warn (CI passes)    | Should be resolved within 30 days      |
+| Unmaintained | warn                | Schedule replacement; track in backlog |
+| Yanked       | warn                | Upgrade at next dependency refresh     |
+| Notice       | warn                | Informational; no action required      |
 
 `severity-threshold = "medium"` in `deny.toml` means only medium, high, and
 critical advisories are subject to the `vulnerability = "deny"` rule.

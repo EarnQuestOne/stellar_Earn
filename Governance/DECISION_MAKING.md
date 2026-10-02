@@ -53,14 +53,14 @@ continued discussion will not converge.
 A formal vote per [VOTING.md](VOTING.md) is **mandatory** — lazy consensus is
 not permitted — for:
 
-| Trigger | Threshold |
-| :--- | :--- |
-| Amendments to governance documents (this folder) | Supermajority (2/3) |
-| Adding or removing Maintainers | Supermajority (2/3) |
-| License or re-licensing changes (see [FORK_POLICY.md](FORK_POLICY.md)) | Supermajority (2/3) |
-| Breaking changes to policy or process | Supermajority (2/3) |
+| Trigger                                                                               | Threshold              |
+| :------------------------------------------------------------------------------------ | :--------------------- |
+| Amendments to governance documents (this folder)                                      | Supermajority (2/3)    |
+| Adding or removing Maintainers                                                        | Supermajority (2/3)    |
+| License or re-licensing changes (see [FORK_POLICY.md](FORK_POLICY.md))                | Supermajority (2/3)    |
+| Breaking changes to policy or process                                                 | Supermajority (2/3)    |
 | Technical RFCs and standard operational decisions that failed to reach lazy consensus | Simple majority (>50%) |
-| Any decision where a maintainer explicitly requests a vote and the TSC agrees | Per scope above |
+| Any decision where a maintainer explicitly requests a vote and the TSC agrees         | Per scope above        |
 
 Voting mechanics — duration, quorum, tallying, and tie resolution — are defined
 in [VOTING.md](VOTING.md) and [TIE_BREAKING.md](TIE_BREAKING.md) and are not

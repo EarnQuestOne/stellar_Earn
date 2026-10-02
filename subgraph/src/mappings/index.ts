@@ -19,12 +19,9 @@ import {
   getQuest,
   getSubmission,
   getEscrow,
-} from '../storage/database';
+} from "../storage/database";
 
-import {
-  TOPIC_TO_NAME,
-  EventTopicName,
-} from '../config/topics';
+import { TOPIC_TO_NAME, EventTopicName } from "../config/topics";
 
 import {
   QuestStatus,
@@ -56,11 +53,11 @@ import {
   CommitmentSubmittedData,
   SubmissionRevealedData,
   EventData,
-} from '../config/types';
+} from "../config/types";
 
 const logger = {
-  info: (...args: any[]) => console.log('[Mapper]', ...args),
-  error: (...args: any[]) => console.error('[Mapper]', ...args),
+  info: (...args: any[]) => console.log("[Mapper]", ...args),
+  error: (...args: any[]) => console.error("[Mapper]", ...args),
 };
 
 // =============================================================================
@@ -75,35 +72,43 @@ function scValToJs(val: any): any {
   if (val === undefined || val === null) return null;
 
   // Already a primitive
-  if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+  if (
+    typeof val === "string" ||
+    typeof val === "number" ||
+    typeof val === "boolean"
+  ) {
     return val;
   }
 
   // Soroban SDK ScVal object
   switch (val.switch?.name || val._switch?.name) {
-    case 'address':
-    case 'scvAddress':
-      return val.address?.address?.toString() || val.value?.toString() || String(val);
-    case 'scvSym':
-    case 'symbol':
+    case "address":
+    case "scvAddress":
+      return (
+        val.address?.address?.toString() || val.value?.toString() || String(val)
+      );
+    case "scvSym":
+    case "symbol":
       return val.sym?.toString() || val.value?.toString() || String(val);
-    case 'scvI128':
-    case 'i128':
+    case "scvI128":
+    case "i128":
       return val.i128?.toString() || val.value?.toString() || String(val);
-    case 'scvU64':
-    case 'u64':
+    case "scvU64":
+    case "u64":
       return val.u64?.toString() || val.value?.toString() || String(val);
-    case 'scvU32':
-    case 'u32':
+    case "scvU32":
+    case "u32":
       return val.u32 ?? val.value ?? Number(val);
-    case 'scvBytes':
-    case 'bytes':
-      return val.bytes?.toString('hex') || val.value?.toString('hex') || String(val);
-    case 'scvBool':
-    case 'bool':
+    case "scvBytes":
+    case "bytes":
+      return (
+        val.bytes?.toString("hex") || val.value?.toString("hex") || String(val)
+      );
+    case "scvBool":
+    case "bool":
       return val.bool ?? val.value ?? false;
-    case 'scvVoid':
-    case 'void':
+    case "scvVoid":
+    case "void":
       return null;
     default:
       // Fallback: try common property names
@@ -112,7 +117,7 @@ function scValToJs(val: any): any {
       if (val.i128) return val.i128.toString();
       if (val.u64) return val.u64.toString();
       if (val.u32 !== undefined) return val.u32;
-      if (val.bytes) return val.bytes.toString('hex');
+      if (val.bytes) return val.bytes.toString("hex");
       if (val.bool !== undefined) return val.bool;
       return val.toString ? val.toString() : String(val);
   }
@@ -155,7 +160,7 @@ const BADGE_MAP: Record<number, BadgeType> = {
 };
 
 function parseBadge(val: any): BadgeType {
-  const idx = typeof val === 'number' ? val : Number(scValToJs(val));
+  const idx = typeof val === "number" ? val : Number(scValToJs(val));
   return BADGE_MAP[idx] || BadgeType.Rookie;
 }
 
@@ -173,19 +178,22 @@ export async function handleEvent(rawEvent: any): Promise<void> {
     return;
   }
 
-  const dataValues = parseData(rawEvent.value?.data || rawEvent.data || rawEvent.value);
+  const dataValues = parseData(
+    rawEvent.value?.data || rawEvent.data || rawEvent.value,
+  );
   const ledger = rawEvent.ledger || rawEvent.ledgerSequence || 0;
-  const timestamp = rawEvent.ledgerTimestamp || rawEvent.ledger_close_time?.toString() || '0';
-  const txHash = rawEvent.txHash || rawEvent.transactionHash || '';
+  const timestamp =
+    rawEvent.ledgerTimestamp || rawEvent.ledger_close_time?.toString() || "0";
+  const txHash = rawEvent.txHash || rawEvent.transactionHash || "";
 
   // Generate unique event ID
-  const eventId = rawEvent.id || `${txHash}:${topicStrs.join(':')}:${ledger}`;
+  const eventId = rawEvent.id || `${txHash}:${topicStrs.join(":")}:${ledger}`;
 
   // Persist the raw event to the events table
   persistEvent({
     id: eventId,
     eventType: eventName,
-    contractId: rawEvent.contractId || '',
+    contractId: rawEvent.contractId || "",
     topics: JSON.stringify(topicStrs),
     data: JSON.stringify(dataValues),
     ledger,
@@ -196,76 +204,76 @@ export async function handleEvent(rawEvent: any): Promise<void> {
   // Dispatch to specific handler
   try {
     switch (eventName) {
-      case 'QUEST_REGISTERED':
+      case "QUEST_REGISTERED":
         handleQuestRegistered(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'PROOF_SUBMITTED':
+      case "PROOF_SUBMITTED":
         handleProofSubmitted(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'SUBMISSION_APPROVED':
+      case "SUBMISSION_APPROVED":
         handleSubmissionApproved(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'REWARD_CLAIMED':
+      case "REWARD_CLAIMED":
         handleRewardClaimed(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'XP_AWARDED':
+      case "XP_AWARDED":
         handleXpAwarded(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'LEVEL_UP':
+      case "LEVEL_UP":
         handleLevelUp(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'BADGE_GRANTED':
+      case "BADGE_GRANTED":
         handleBadgeGranted(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'EMERGENCY_PAUSED':
+      case "EMERGENCY_PAUSED":
         handleEmergencyPaused(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'EMERGENCY_UNPAUSED':
+      case "EMERGENCY_UNPAUSED":
         handleEmergencyUnpaused(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'EMERGENCY_WITHDRAW':
+      case "EMERGENCY_WITHDRAW":
         handleEmergencyWithdrawn(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'UNPAUSE_APPROVED':
+      case "UNPAUSE_APPROVED":
         handleUnpauseApproved(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'TIMELOCK_SCHEDULED':
+      case "TIMELOCK_SCHEDULED":
         handleTimelockScheduled(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'QUEST_PAUSED':
+      case "QUEST_PAUSED":
         handleQuestPaused(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'QUEST_RESUMED':
+      case "QUEST_RESUMED":
         handleQuestResumed(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'QUEST_CANCELLED':
+      case "QUEST_CANCELLED":
         handleQuestCancelled(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'DISPUTE_OPENED':
+      case "DISPUTE_OPENED":
         handleDisputeOpened(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'DISPUTE_RESOLVED':
+      case "DISPUTE_RESOLVED":
         handleDisputeResolved(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'DISPUTE_WITHDRAWN':
+      case "DISPUTE_WITHDRAWN":
         handleDisputeWithdrawn(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'DISPUTE_APPEALED':
+      case "DISPUTE_APPEALED":
         handleDisputeAppealed(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'ESCROW_DEPOSITED':
+      case "ESCROW_DEPOSITED":
         handleEscrowDeposited(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'ESCROW_PAYOUT':
+      case "ESCROW_PAYOUT":
         handleEscrowPayout(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'ESCROW_REFUNDED':
+      case "ESCROW_REFUNDED":
         handleEscrowRefunded(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'COMMITMENT_SUBMITTED':
+      case "COMMITMENT_SUBMITTED":
         handleCommitmentSubmitted(topicStrs, dataValues, ledger, timestamp);
         break;
-      case 'SUBMISSION_REVEALED':
+      case "SUBMISSION_REVEALED":
         handleSubmissionRevealed(topicStrs, dataValues, ledger, timestamp);
         break;
       default:
@@ -298,9 +306,9 @@ function handleQuestRegistered(
   const questId = topics[1];
   const creator = topics[2];
   const rewardAsset = topics[3];
-  const rewardAmount = String(data[0] || '0');
-  const verifier = String(data[1] || '');
-  const deadline = String(data[2] || '0');
+  const rewardAmount = String(data[0] || "0");
+  const verifier = String(data[1] || "");
+  const deadline = String(data[2] || "0");
 
   saveQuest({
     id: questId,
@@ -321,9 +329,9 @@ function handleQuestRegistered(
     quest_id: questId,
     depositor: creator,
     token: rewardAsset,
-    total_deposited: '0',
-    total_paid_out: '0',
-    total_refunded: '0',
+    total_deposited: "0",
+    total_paid_out: "0",
+    total_refunded: "0",
     is_active: true,
     deposit_count: 0,
     created_at: timestamp,
@@ -343,7 +351,7 @@ function handleProofSubmitted(
 ): void {
   const questId = topics[1];
   const submitter = topics[2];
-  const proofHash = String(data[0] || '');
+  const proofHash = String(data[0] || "");
 
   const submissionId = `${questId}:${submitter}`;
   saveSubmission({
@@ -397,7 +405,7 @@ function handleRewardClaimed(
   const questId = topics[1];
   const submitter = topics[2];
   const rewardAsset = topics[3];
-  const rewardAmount = String(data[0] || '0');
+  const rewardAmount = String(data[0] || "0");
 
   const submissionId = `${questId}:${submitter}`;
   updateSubmissionStatus(submissionId, SubmissionStatus.Paid);
@@ -406,7 +414,9 @@ function handleRewardClaimed(
   // Update escrow payout
   const escrow = getEscrow(questId);
   if (escrow) {
-    const newPaidOut = (BigInt(escrow.total_paid_out) + BigInt(rewardAmount)).toString();
+    const newPaidOut = (
+      BigInt(escrow.total_paid_out) + BigInt(rewardAmount)
+    ).toString();
     saveEscrow({
       ...escrow,
       total_paid_out: newPaidOut,
@@ -418,11 +428,15 @@ function handleRewardClaimed(
   saveUserStats({
     ...stats,
     total_payouts: stats.total_payouts + 1,
-    total_payout_amount: (BigInt(stats.total_payout_amount) + BigInt(rewardAmount)).toString(),
+    total_payout_amount: (
+      BigInt(stats.total_payout_amount) + BigInt(rewardAmount)
+    ).toString(),
     quests_completed: stats.quests_completed + 1,
   });
 
-  logger.info(`Reward claimed: ${questId} for ${submitter} amount=${rewardAmount}`);
+  logger.info(
+    `Reward claimed: ${questId} for ${submitter} amount=${rewardAmount}`,
+  );
 }
 
 /**
@@ -435,8 +449,8 @@ function handleXpAwarded(
   timestamp: string,
 ): void {
   const user = topics[1];
-  const xpAmount = String(data[0] || '0');
-  const totalXp = String(data[1] || '0');
+  const xpAmount = String(data[0] || "0");
+  const totalXp = String(data[1] || "0");
   const level = Number(data[2] || 1);
 
   const stats = ensureUserStats(user);
@@ -446,7 +460,9 @@ function handleXpAwarded(
     level,
   });
 
-  logger.info(`XP awarded: ${user} +${xpAmount} total=${totalXp} level=${level}`);
+  logger.info(
+    `XP awarded: ${user} +${xpAmount} total=${totalXp} level=${level}`,
+  );
 }
 
 /**
@@ -534,9 +550,11 @@ function handleEmergencyWithdrawn(
   const by = topics[1];
   const asset = topics[2];
   const to = topics[3];
-  const amount = String(data[0] || '0');
+  const amount = String(data[0] || "0");
 
-  logger.info(`Emergency withdraw: ${by} → ${to} amount=${amount} asset=${asset}`);
+  logger.info(
+    `Emergency withdraw: ${by} → ${to} amount=${amount} asset=${asset}`,
+  );
 }
 
 /**
@@ -603,7 +621,7 @@ function handleQuestCancelled(
   timestamp: string,
 ): void {
   const questId = topics[1];
-  const refunded = String(data[0] || '0');
+  const refunded = String(data[0] || "0");
 
   updateQuestStatus(questId, QuestStatus.Cancelled);
 
@@ -612,7 +630,9 @@ function handleQuestCancelled(
   if (escrow) {
     saveEscrow({
       ...escrow,
-      total_refunded: (BigInt(escrow.total_refunded) + BigInt(refunded)).toString(),
+      total_refunded: (
+        BigInt(escrow.total_refunded) + BigInt(refunded)
+      ).toString(),
       is_active: false,
     });
   }
@@ -685,7 +705,7 @@ function handleDisputeWithdrawn(
     id: `${questId}:${initiator}`,
     quest_id: questId,
     initiator,
-    arbitrator: '',
+    arbitrator: "",
     status: DisputeStatus.Withdrawn,
     filed_at: timestamp,
   });
@@ -728,8 +748,8 @@ function handleEscrowDeposited(
   timestamp: string,
 ): void {
   const questId = topics[1];
-  const amount = String(data[0] || '0');
-  const totalBalance = String(data[1] || '0');
+  const amount = String(data[0] || "0");
+  const totalBalance = String(data[1] || "0");
 
   const escrow = getEscrow(questId);
   if (escrow) {
@@ -745,15 +765,17 @@ function handleEscrowDeposited(
       depositor: topics[2],
       token: topics[3],
       total_deposited: totalBalance,
-      total_paid_out: '0',
-      total_refunded: '0',
+      total_paid_out: "0",
+      total_refunded: "0",
       is_active: true,
       deposit_count: 1,
       created_at: timestamp,
     });
   }
 
-  logger.info(`Escrow deposited: ${questId} amount=${amount} total=${totalBalance}`);
+  logger.info(
+    `Escrow deposited: ${questId} amount=${amount} total=${totalBalance}`,
+  );
 }
 
 /**
@@ -766,19 +788,23 @@ function handleEscrowPayout(
   timestamp: string,
 ): void {
   const questId = topics[1];
-  const amount = String(data[0] || '0');
-  const remaining = String(data[1] || '0');
+  const amount = String(data[0] || "0");
+  const remaining = String(data[1] || "0");
 
   const escrow = getEscrow(questId);
   if (escrow) {
-    const newPaidOut = (BigInt(escrow.total_paid_out) + BigInt(amount)).toString();
+    const newPaidOut = (
+      BigInt(escrow.total_paid_out) + BigInt(amount)
+    ).toString();
     saveEscrow({
       ...escrow,
       total_paid_out: newPaidOut,
     });
   }
 
-  logger.info(`Escrow payout: ${questId} amount=${amount} remaining=${remaining}`);
+  logger.info(
+    `Escrow payout: ${questId} amount=${amount} remaining=${remaining}`,
+  );
 }
 
 /**
@@ -791,13 +817,15 @@ function handleEscrowRefunded(
   timestamp: string,
 ): void {
   const questId = topics[1];
-  const amount = String(data[0] || '0');
+  const amount = String(data[0] || "0");
 
   const escrow = getEscrow(questId);
   if (escrow) {
     saveEscrow({
       ...escrow,
-      total_refunded: (BigInt(escrow.total_refunded) + BigInt(amount)).toString(),
+      total_refunded: (
+        BigInt(escrow.total_refunded) + BigInt(amount)
+      ).toString(),
       is_active: false,
     });
   }
@@ -816,7 +844,7 @@ function handleCommitmentSubmitted(
 ): void {
   const questId = topics[1];
   const submitter = topics[2];
-  const hash = String(data[0] || '');
+  const hash = String(data[0] || "");
 
   const submissionId = `${questId}:${submitter}`;
   // Create or update submission with commitment hash
@@ -831,7 +859,7 @@ function handleCommitmentSubmitted(
       id: submissionId,
       quest_id: questId,
       submitter,
-      proof_hash: '',
+      proof_hash: "",
       status: SubmissionStatus.Pending,
       timestamp,
       commitment_hash: hash,
@@ -853,7 +881,7 @@ function handleSubmissionRevealed(
 ): void {
   const questId = topics[1];
   const submitter = topics[2];
-  const proofHash = String(data[0] || '');
+  const proofHash = String(data[0] || "");
 
   const submissionId = `${questId}:${submitter}`;
   const existing = getSubmission(submissionId);

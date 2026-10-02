@@ -23,12 +23,14 @@ This matches the current implementation surface. The contract does **not** execu
 `open_dispute(quest_id, initiator, arbitrator)` creates a dispute record with status `Pending` and emits `disp_open`.
 
 Indexed topics:
+
 - event name
 - quest id
 - initiator
 - arbitrator
 
 Stored fields:
+
 - quest id
 - initiator
 - arbitrator
@@ -55,11 +57,11 @@ Recommended practice is to archive this evidence in the project support system a
 
 ## Event Mapping
 
-| Action | Event | Indexed Topics |
-|--------|-------|----------------|
-| Open dispute | `disp_open` | `quest_id`, `initiator`, `arbitrator` |
-| Resolve dispute | `disp_res` | `quest_id`, `initiator`, `arbitrator` |
-| Withdraw dispute | `disp_wd` | `quest_id`, `initiator` |
+| Action           | Event       | Indexed Topics                        |
+| ---------------- | ----------- | ------------------------------------- |
+| Open dispute     | `disp_open` | `quest_id`, `initiator`, `arbitrator` |
+| Resolve dispute  | `disp_res`  | `quest_id`, `initiator`, `arbitrator` |
+| Withdraw dispute | `disp_wd`   | `quest_id`, `initiator`               |
 
 These topics are structured for indexers to answer questions like:
 

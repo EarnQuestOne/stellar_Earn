@@ -7,6 +7,7 @@ The Postmortem module provides a comprehensive system for managing production in
 ## Features
 
 ✅ **Postmortem Management**
+
 - Create and update postmortems
 - Track incident timeline and duration
 - Store root cause analysis
@@ -14,18 +15,21 @@ The Postmortem module provides a comprehensive system for managing production in
 - Track completion status
 
 ✅ **Incident Tracking**
+
 - Classify incidents by severity (Critical, High, Medium, Low)
 - Track incident metrics (TTD, TTM, TTR)
 - Monitor user impact
 - Track SLA compliance
 
 ✅ **Analytics & Insights**
+
 - View postmortem statistics
 - Identify common root causes
 - Track action item completion rates
 - Find related incidents
 
 ✅ **Publishing & Sharing**
+
 - Draft postmortems with approval workflow
 - Publish postmortems to the organization
 - Track publication status
@@ -37,7 +41,7 @@ The Postmortem module provides a comprehensive system for managing production in
 In `src/app.module.ts`:
 
 ```typescript
-import { PostmortemModule } from './modules/postmortems/postmortem.module';
+import { PostmortemModule } from "./modules/postmortems/postmortem.module";
 
 @Module({
   imports: [
@@ -74,6 +78,7 @@ You should get a 200 response with an empty list.
 ## API Endpoints
 
 ### Create Postmortem
+
 ```
 POST /postmortems
 Content-Type: application/json
@@ -96,6 +101,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "uuid-here",
@@ -112,21 +118,25 @@ Content-Type: application/json
 ```
 
 ### Get Postmortem by ID
+
 ```
 GET /postmortems/{id}
 ```
 
 ### Get Postmortem by Incident ID
+
 ```
 GET /postmortems/incident/{incidentId}
 ```
 
 ### List Postmortems with Filtering
+
 ```
 GET /postmortems?severity=high&status=draft&limit=20&offset=0&sortBy=createdAt&sortOrder=DESC
 ```
 
 **Query Parameters:**
+
 - `severity`: Filter by severity (critical, high, medium, low)
 - `status`: Filter by status (draft, in_review, approved, closed)
 - `searchTerm`: Search in title, summary, incident ID
@@ -136,6 +146,7 @@ GET /postmortems?severity=high&status=draft&limit=20&offset=0&sortBy=createdAt&s
 - `sortOrder`: ASC or DESC
 
 ### Update Postmortem
+
 ```
 PUT /postmortems/{id}
 Content-Type: application/json
@@ -157,6 +168,7 @@ Content-Type: application/json
 ```
 
 ### Add Action Item
+
 ```
 POST /postmortems/{id}/action-items
 Content-Type: application/json
@@ -170,16 +182,19 @@ Content-Type: application/json
 ```
 
 ### Mark Action Item Complete
+
 ```
 PUT /postmortems/{id}/action-items/{actionItemId}/complete
 ```
 
 ### Get Statistics
+
 ```
 GET /postmortems/stats
 ```
 
 **Response:**
+
 ```json
 {
   "totalPostmortems": 42,
@@ -214,6 +229,7 @@ GET /postmortems/stats
 ```
 
 ### Find Related Incidents
+
 ```
 GET /postmortems/{id}/related
 ```
@@ -221,6 +237,7 @@ GET /postmortems/{id}/related
 Returns up to 5 incidents with similar root causes.
 
 ### Publish Postmortem
+
 ```
 POST /postmortems/{id}/publish
 ```
@@ -264,6 +281,7 @@ Only approved postmortems can be published.
 ### postmortems Table
 
 **Key Columns:**
+
 - `id` - UUID primary key
 - `incidentId` - Unique identifier (YYYY-MM-DD-HHMM format)
 - `title` - Human-readable incident title
@@ -279,6 +297,7 @@ Only approved postmortems can be published.
 - `updatedAt` - Timestamp of last update
 
 **Indexes:**
+
 - `status, createdAt` - For filtering and sorting
 - `severity, createdAt` - For severity filtering
 - `incidentDate` - For timeline queries
@@ -329,7 +348,7 @@ actionItems.forEach(async (item) => {
     assignee: item.owner,
     dueDate: item.dueDate,
     priority: item.priority,
-    labels: ['postmortem-action'],
+    labels: ["postmortem-action"],
   });
 
   // Link ticket in postmortem
@@ -344,17 +363,18 @@ await postmortemService.update(postmortemId, updateDto);
 ```typescript
 // Notify when postmortem published
 await notifySlack({
-  channel: '#incidents',
+  channel: "#incidents",
   text: `Postmortem published for incident ${postmortem.incidentId}`,
   blocks: [
     {
-      type: 'section',
+      type: "section",
       text: {
-        type: 'mrkdwn',
-        text: `*Postmortem: ${postmortem.title}*\n` +
-              `Severity: ${postmortem.severity}\n` +
-              `Root Cause: ${postmortem.rootCause}\n` +
-              `<link|View Postmortem>`,
+        type: "mrkdwn",
+        text:
+          `*Postmortem: ${postmortem.title}*\n` +
+          `Severity: ${postmortem.severity}\n` +
+          `Root Cause: ${postmortem.rootCause}\n` +
+          `<link|View Postmortem>`,
       },
     },
   ],
@@ -364,27 +384,33 @@ await notifySlack({
 ## Best Practices
 
 ### Incident ID Format
+
 Always use `YYYY-MM-DD-HHMM` format for incident IDs:
+
 ```
 2024-01-15-1430  // Jan 15, 2024 at 2:30 PM UTC
 ```
 
 ### Root Cause Analysis
+
 Use structured root cause analysis:
+
 ```typescript
 const updateDto = new UpdatePostmortemDto({
   rootCause: "Missing database index on user_sessions table",
   contributingFactors: [
     "High load from marketing campaign",
     "Insufficient load testing before deployment",
-    "Query optimizer chose inefficient plan"
+    "Query optimizer chose inefficient plan",
   ],
   technicalExplanation: "Detailed explanation...",
 });
 ```
 
 ### Action Items
+
 Be specific and actionable:
+
 ```typescript
 // Good ❌
 {
@@ -404,20 +430,20 @@ Be specific and actionable:
 ```
 
 ### Lessons Learned
+
 Document what went well AND what could improve:
+
 ```typescript
 const lessonsLearned = {
   start: [
     "Add load testing with production-like data patterns",
-    "Implement database query performance monitoring"
+    "Implement database query performance monitoring",
   ],
-  stop: [
-    "Deploying without running load tests"
-  ],
+  stop: ["Deploying without running load tests"],
   more: [
     "Post-deployment monitoring for the first 24 hours",
-    "Communication about capacity changes"
-  ]
+    "Communication about capacity changes",
+  ],
 };
 ```
 
@@ -442,12 +468,14 @@ Alert if:
 ## Testing
 
 Run unit tests:
+
 ```bash
 npm run test -- postmortem.service.spec.ts
 npm run test -- postmortem.controller.spec.ts
 ```
 
 Run integration tests:
+
 ```bash
 npm run test:integration
 ```
@@ -455,38 +483,41 @@ npm run test:integration
 ## Troubleshooting
 
 ### Postmortem creation fails with "Invalid incident ID format"
+
 **Solution:** Use YYYY-MM-DD-HHMM format for incident ID
 
 ```javascript
 // Good
-incidentId: "2024-01-15-1430"
+incidentId: "2024-01-15-1430";
 
 // Bad
-incidentId: "2024-01-15 14:30"
-incidentId: "2024/01/15-1430"
+incidentId: "2024-01-15 14:30";
+incidentId: "2024/01/15-1430";
 ```
 
 ### Cannot update status to "closed"
+
 **Solution:** Complete all action items first. Each action item must be marked complete before closing the postmortem.
 
 ```typescript
 // Mark action items as complete
-await postmortemService.completeActionItem(postmortemId, 'A1');
-await postmortemService.completeActionItem(postmortemId, 'A2');
+await postmortemService.completeActionItem(postmortemId, "A1");
+await postmortemService.completeActionItem(postmortemId, "A2");
 
 // Now can close
 await postmortemService.update(postmortemId, {
-  status: PostmortemStatus.CLOSED
+  status: PostmortemStatus.CLOSED,
 });
 ```
 
 ### Cannot publish postmortem
+
 **Solution:** Postmortem must be in APPROVED status first
 
 ```typescript
 // First approve
 await postmortemService.update(postmortemId, {
-  status: PostmortemStatus.APPROVED
+  status: PostmortemStatus.APPROVED,
 });
 
 // Then publish
@@ -515,6 +546,7 @@ await postmortemService.publish(postmortemId);
 ## Support
 
 For issues or questions:
+
 1. Check this implementation guide
 2. Review the [Postmortem Template](../docs/POSTMORTEM_TEMPLATE.md)
 3. Consult the [Process Guide](../docs/POSTMORTEM_PROCESS.md)

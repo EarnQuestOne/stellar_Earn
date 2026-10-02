@@ -27,23 +27,25 @@ Thank you for contributing to **stellar_Earn**! This guide covers the standards 
 
 ### Prerequisites
 
-| Tool | Min Version | Required? | Notes |
-|------|-------------|-----------|-------|
-| Node.js | ≥ 22 | ✅ Required | Use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) |
-| npm | ≥ 10 | ✅ Required | Bundled with Node 22+ |
-| Bun | ≥ 1 | ⚠️ Recommended | Used for migration commands (`bun run migration:*`) |
-| TypeScript (tsc) | ≥ 5 | ✅ Required | Installed via `npm ci` as devDependency |
-| Git | ≥ 2 | ✅ Required | |
-| Rust / Cargo | ≥ 1.80 (stable) | ✅ Required | Install via [rustup](https://rustup.rs/) |
-| PostgreSQL | ≥ 14 | ✅ Required | Local dev; Docker image works fine |
-| Redis | ≥ 7 | ✅ Required | Local dev; Docker image works fine |
-| Docker | ≥ 24 | ⚠️ Recommended | Easiest way to run Postgres + Redis locally |
-| Stellar CLI (`stellar`) | ≥ 22 | ⚠️ Recommended | Required to build/deploy Soroban contracts |
+| Tool                    | Min Version     | Required?      | Notes                                                                            |
+| ----------------------- | --------------- | -------------- | -------------------------------------------------------------------------------- |
+| Node.js                 | ≥ 22            | ✅ Required    | Use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) |
+| npm                     | ≥ 10            | ✅ Required    | Bundled with Node 22+                                                            |
+| Bun                     | ≥ 1             | ⚠️ Recommended | Used for migration commands (`bun run migration:*`)                              |
+| TypeScript (tsc)        | ≥ 5             | ✅ Required    | Installed via `npm ci` as devDependency                                          |
+| Git                     | ≥ 2             | ✅ Required    |                                                                                  |
+| Rust / Cargo            | ≥ 1.80 (stable) | ✅ Required    | Install via [rustup](https://rustup.rs/)                                         |
+| PostgreSQL              | ≥ 14            | ✅ Required    | Local dev; Docker image works fine                                               |
+| Redis                   | ≥ 7             | ✅ Required    | Local dev; Docker image works fine                                               |
+| Docker                  | ≥ 24            | ⚠️ Recommended | Easiest way to run Postgres + Redis locally                                      |
+| Stellar CLI (`stellar`) | ≥ 22            | ⚠️ Recommended | Required to build/deploy Soroban contracts                                       |
 
 > **Automated check:** Run the onboarding preflight script to validate all CLI tool versions in one go:
+>
 > ```bash
 > cd BackEnd && npm install && npm run check:toolchain
 > ```
+>
 > Required tools failing → exit code 1. Recommended tools failing → warning only.
 
 ### Local Setup
@@ -86,15 +88,15 @@ This project uses **npm** as the package manager for the frontend (`FrontEnd/my-
 <type>/<short-description>
 ```
 
-| Type | When to use |
-|------|-------------|
-| `feat/` | New feature |
-| `fix/` | Bug fix |
-| `chore/` | Tooling, CI, dependencies |
-| `docs/` | Documentation only |
+| Type        | When to use                                |
+| ----------- | ------------------------------------------ |
+| `feat/`     | New feature                                |
+| `fix/`      | Bug fix                                    |
+| `chore/`    | Tooling, CI, dependencies                  |
+| `docs/`     | Documentation only                         |
 | `refactor/` | Code restructuring without behavior change |
-| `test/` | Tests only |
-| `security/` | Security-related fix |
+| `test/`     | Tests only                                 |
+| `security/` | Security-related fix                       |
 
 **Example:** `feat/quest-reward-distribution`
 
@@ -111,6 +113,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Example:**
+
 ```
 feat(quests): add reward distribution via Soroban contract
 
@@ -170,25 +173,31 @@ Every public endpoint **must** validate its input through a DTO. Raw, unvalidate
 #### Example
 
 ```typescript
-import { IsString, IsNotEmpty, IsOptional, IsUUID, MaxLength } from 'class-validator';
-import { Transform } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  MaxLength,
+} from "class-validator";
+import { Transform } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateQuestDto {
-  @ApiProperty({ description: 'Quest title', maxLength: 120 })
+  @ApiProperty({ description: "Quest title", maxLength: 120 })
   @IsString()
   @IsNotEmpty()
   @MaxLength(120)
   @Transform(({ value }) => value?.trim())
   title: string;
 
-  @ApiPropertyOptional({ description: 'Optional description' })
+  @ApiPropertyOptional({ description: "Optional description" })
   @IsOptional()
   @IsString()
   @MaxLength(1000)
   description?: string;
 
-  @ApiProperty({ description: 'Reward in stroops' })
+  @ApiProperty({ description: "Reward in stroops" })
   @IsUUID()
   rewardAssetId: string;
 }
@@ -210,15 +219,15 @@ Use the appropriate NestJS HTTP exception class. Never throw a generic `Error` f
 
 #### Exception Reference
 
-| Situation | Exception Class |
-|-----------|----------------|
-| Resource not found | `NotFoundException` |
-| Malformed / invalid input | `BadRequestException` |
-| Unauthenticated request | `UnauthorizedException` |
-| Authenticated but not allowed | `ForbiddenException` |
-| Duplicate / conflict state | `ConflictException` |
-| Unprocessable business logic | `UnprocessableEntityException` |
-| Upstream / third-party failure | `ServiceUnavailableException` |
+| Situation                      | Exception Class                |
+| ------------------------------ | ------------------------------ |
+| Resource not found             | `NotFoundException`            |
+| Malformed / invalid input      | `BadRequestException`          |
+| Unauthenticated request        | `UnauthorizedException`        |
+| Authenticated but not allowed  | `ForbiddenException`           |
+| Duplicate / conflict state     | `ConflictException`            |
+| Unprocessable business logic   | `UnprocessableEntityException` |
+| Upstream / third-party failure | `ServiceUnavailableException`  |
 
 #### Example
 
@@ -248,17 +257,19 @@ Wrap all contract and Horizon calls in try/catch and translate failures into Nes
 try {
   await this.sorobanService.invokeContract(payload);
 } catch (err) {
-  this.logger.error('Soroban contract invocation failed', err.stack);
-  throw new ServiceUnavailableException('Blockchain transaction failed. Please retry.');
+  this.logger.error("Soroban contract invocation failed", err.stack);
+  throw new ServiceUnavailableException(
+    "Blockchain transaction failed. Please retry.",
+  );
 }
 ```
 
 #### Do NOT
 
 ```typescript
-throw new Error('Quest not found');              // generic Error
-throw new HttpException('Forbidden', 403);       // magic status code
-if (!quest) return null;                         // silent failure
+throw new Error("Quest not found"); // generic Error
+throw new HttpException("Forbidden", 403); // magic status code
+if (!quest) return null; // silent failure
 ```
 
 ---
@@ -269,18 +280,18 @@ The project uses **Winston** via `nest-winston`. Inject `LoggerService` from `@n
 
 #### Log Levels
 
-| Level | When to use |
-|-------|-------------|
-| `error` | Exceptions, failed external calls, unexpected states |
-| `warn` | Recoverable issues, deprecated usage, rate limit hits |
-| `log` (info) | Significant lifecycle events (service started, job completed) |
-| `debug` | Detailed flow tracing — only in development (`NODE_ENV=development`) |
-| `verbose` | High-frequency events — disabled in production |
+| Level        | When to use                                                          |
+| ------------ | -------------------------------------------------------------------- |
+| `error`      | Exceptions, failed external calls, unexpected states                 |
+| `warn`       | Recoverable issues, deprecated usage, rate limit hits                |
+| `log` (info) | Significant lifecycle events (service started, job completed)        |
+| `debug`      | Detailed flow tracing — only in development (`NODE_ENV=development`) |
+| `verbose`    | High-frequency events — disabled in production                       |
 
 #### Example
 
 ```typescript
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 @Injectable()
 export class QuestsService {
@@ -488,24 +499,24 @@ Use this checklist when reviewing any PR targeting the NestJS backend:
 
 ## 9. Labels
 
-| Label | Description |
-|-------|-------------|
-| `backend` | Changes to the NestJS backend |
-| `frontend` | Changes to the Next.js frontend |
-| `contract` | Changes to Rust/Soroban smart contracts |
-| `collaboration` | Process, templates, or contribution workflow |
-| `developer-experience` | Tooling, CI/CD, or dev environment improvements |
-| `priority-high` | Blocking issue or critical bug |
-| `priority-medium` | Important but not blocking |
-| `priority-low` | Nice to have |
-| `security` | Security-related change — requires security review |
-| `breaking-change` | Introduces a breaking API or contract change |
-| `needs-review` | Ready for reviewer attention |
-| `work-in-progress` | Not ready for review yet |
+| Label                  | Description                                        |
+| ---------------------- | -------------------------------------------------- |
+| `backend`              | Changes to the NestJS backend                      |
+| `frontend`             | Changes to the Next.js frontend                    |
+| `contract`             | Changes to Rust/Soroban smart contracts            |
+| `collaboration`        | Process, templates, or contribution workflow       |
+| `developer-experience` | Tooling, CI/CD, or dev environment improvements    |
+| `priority-high`        | Blocking issue or critical bug                     |
+| `priority-medium`      | Important but not blocking                         |
+| `priority-low`         | Nice to have                                       |
+| `security`             | Security-related change — requires security review |
+| `breaking-change`      | Introduces a breaking API or contract change       |
+| `needs-review`         | Ready for reviewer attention                       |
+| `work-in-progress`     | Not ready for review yet                           |
 
 ---
 
-*For questions, open a GitHub Discussion or ping a maintainer in the PR comments.*
+_For questions, open a GitHub Discussion or ping a maintainer in the PR comments._
 
 ---
 
@@ -533,7 +544,6 @@ In short:
 4. To bypass for a verified non-breaking change, add the
    `changelog-skip` label or `[changelog-skip]` token to the PR title.
 
-
    ## Backend Development: Test/Lint/Typecheck Order
 
 ### Required Order for Running Checks
@@ -541,7 +551,8 @@ In short:
 When developing backend features, always run these commands in this exact order:
 
 #### 1. Generate GraphQL Types (FIRST - REQUIRED)
-```bash
+
+````bash
 npm run gql:build
 
 
@@ -561,3 +572,4 @@ npm run gql:build
 **Note:** This project uses TypeScript (`.ts` files). If a `typecheck` script is not yet configured, run type checking manually with:
 ```bash
 npx tsc --noEmit
+````

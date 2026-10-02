@@ -146,6 +146,7 @@ Since Soroban doesn't support true contract upgrades in tests, we simulate upgra
 4. Verifying all state persists and is accessible
 
 This approach validates:
+
 - Storage persistence
 - Data structure compatibility
 - Function signature stability
@@ -182,12 +183,12 @@ fn test_state_persists() {
 pub fn authorize_upgrade(env: Env, caller: Address) -> Result<(), Error> {
     // 1. Check SuperAdmin role
     admin::require_role(&env, &caller, Role::SuperAdmin)?;
-    
+
     // 2. Verify caller is contract admin
     if !init::upgrade_authorize(&env, &caller) {
         return Err(Error::Unauthorized);
     }
-    
+
     Ok(())
 }
 ```
@@ -236,11 +237,13 @@ All major data structures are tested for persistence:
 ### Scenario 1: Active Quests
 
 **Setup:**
+
 - Multiple active quests
 - Various creators and verifiers
 - Different reward amounts
 
 **Verification:**
+
 - All quests remain active
 - All quest data accessible
 - No data corruption
@@ -248,11 +251,13 @@ All major data structures are tested for persistence:
 ### Scenario 2: Pending Submissions
 
 **Setup:**
+
 - Quest with multiple pending submissions
 - Different submitters
 - Various proof hashes
 
 **Verification:**
+
 - All submissions persist
 - Status remains pending
 - Proof hashes intact
@@ -260,11 +265,13 @@ All major data structures are tested for persistence:
 ### Scenario 3: Escrow Balances
 
 **Setup:**
+
 - Quests with escrow deposits
 - Various token types
 - Different deposit amounts
 
 **Verification:**
+
 - Balances preserved
 - Token addresses correct
 - Escrow metadata intact
@@ -391,12 +398,14 @@ soroban contract invoke \
 ### Test Failures
 
 **Problem**: State persistence test fails
+
 ```
 Solution: Check storage key consistency
 Verify data structure hasn't changed
 ```
 
 **Problem**: Authorization test fails
+
 ```
 Solution: Verify role assignments
 Check admin status
@@ -404,6 +413,7 @@ Ensure SuperAdmin role granted
 ```
 
 **Problem**: Backward compatibility test fails
+
 ```
 Solution: Review function signature changes
 Check for breaking changes

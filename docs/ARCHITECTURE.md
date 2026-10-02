@@ -37,17 +37,17 @@ Both halves are intended to be readable independently; the cross-component half 
 
 ## 1. What StellarEarn is
 
-**StellarEarn** is a *quest-based earning platform* on Stellar / Soroban. Teams create quests (a task + reward + verifier), contributors submit proofs of completion, verifiers approve them, and rewards are paid out — partly on-chain via a Soroban smart contract, partly through a backend "payouts" ledger that mirrors chain settlement.
+**StellarEarn** is a _quest-based earning platform_ on Stellar / Soroban. Teams create quests (a task + reward + verifier), contributors submit proofs of completion, verifiers approve them, and rewards are paid out — partly on-chain via a Soroban smart contract, partly through a backend "payouts" ledger that mirrors chain settlement.
 
 Five components collaborate to make this work. Each one has a non-trivial responsibility that would be expensive to host in any of the others:
 
-| # | Component | What it owns | Why it exists |
-|---|---|---|---|
-| 1 | **Frontend** *(Next.js 14 App Router, Vercel)* | UX, wallet integration, optimistic UI, client-side caching | Give a human a usable surface for quests, submissions, rewards |
-| 2 | **Backend** *(NestJS, Docker)* | Business logic, off-chain persistence, authorization, event bus, scheduled jobs | Orchestrate the system; enforce rate limits, moderation, quotas, and RBAC |
-| 3 | **Smart Contract** *(Soroban / Rust, on-chain)* | Authoritative quest state, escrow, payment, reputation, pause, upgrade | Be the trust-minimized source of truth for value movement |
-| 4 | **Subgraph** *(TypeScript indexer, The Graph–style)* | Mirrors on-chain events into a queryable GraphQL API | Light up frontends with fast historical queries without paying RPC costs |
-| 5 | **Database** *(PostgreSQL + Redis, Docker)* | Off-chain entities, event store, audit, caches, jobs, feature flags | Hold the things the contract can't economically store (free-form titles, audit, indexes) |
+| #   | Component                                            | What it owns                                                                    | Why it exists                                                                            |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | **Frontend** _(Next.js 14 App Router, Vercel)_       | UX, wallet integration, optimistic UI, client-side caching                      | Give a human a usable surface for quests, submissions, rewards                           |
+| 2   | **Backend** _(NestJS, Docker)_                       | Business logic, off-chain persistence, authorization, event bus, scheduled jobs | Orchestrate the system; enforce rate limits, moderation, quotas, and RBAC                |
+| 3   | **Smart Contract** _(Soroban / Rust, on-chain)_      | Authoritative quest state, escrow, payment, reputation, pause, upgrade          | Be the trust-minimized source of truth for value movement                                |
+| 4   | **Subgraph** _(TypeScript indexer, The Graph–style)_ | Mirrors on-chain events into a queryable GraphQL API                            | Light up frontends with fast historical queries without paying RPC costs                 |
+| 5   | **Database** _(PostgreSQL + Redis, Docker)_          | Off-chain entities, event store, audit, caches, jobs, feature flags             | Hold the things the contract can't economically store (free-form titles, audit, indexes) |
 
 The next sections show exactly **how these pieces talk to each other**, **what data each owns**, and **what gaps the current code has**.
 
@@ -96,7 +96,7 @@ A NestJS application with ⇆O 20+ feature modules. Persistence via TypeORM + Po
 - Sentry — error tracking
 - OTel — distributed tracing
 
-### 2.3 Smart Contract — `contracts/earn-quest/` *(canonical Rust)*
+### 2.3 Smart Contract — `contracts/earn-quest/` _(canonical Rust)_
 
 A `#![no_std]` Soroban contract compiled to Wasm. It implements the quest lifecycle: register → submit proof → approve/reject (with escrow payout + reputation grant on approval) → expire/cancel/pause/upgrade. Lifecycle emissions drive the subgraph.
 
@@ -135,7 +135,7 @@ A TypeScript listener + GraphQL server that mirrors on-chain events into a datab
 
 ### 2.5 Database — Postgres + Redis
 
-Two persistent services in `BackEnd/docker-compose.yml`. Postgres is the *primary* source of truth for off-chain state; Redis is the *secondary* cache and BullMQ job store.
+Two persistent services in `BackEnd/docker-compose.yml`. Postgres is the _primary_ source of truth for off-chain state; Redis is the _secondary_ cache and BullMQ job store.
 
 **Postgres holds:**
 
@@ -301,7 +301,7 @@ The same flow, contracted into a one-liner:
 
 ## 5. Data ownership — who is the source of truth
 
-There are **two sources of truth** and a *mirror*. Getting this wrong is the most common bug class in this system — never assume the chain and the Postgres row are in sync without checking.
+There are **two sources of truth** and a _mirror_. Getting this wrong is the most common bug class in this system — never assume the chain and the Postgres row are in sync without checking.
 
 ```mermaid
 flowchart LR
@@ -354,10 +354,10 @@ flowchart LR
 
 **Practical rule of thumb for contributors:**
 
-- **Quest metadata** *(title, description, reward amounts in human display)* → Postgres. Chain holds only the canonical IDs and amount (`i128`).
+- **Quest metadata** _(title, description, reward amounts in human display)_ → Postgres. Chain holds only the canonical IDs and amount (`i128`).
 - **Submission/proof status, lifecycle decisions** → chain is authoritative. Backend mirrors via backend event handlers.
 - **Reputation / XP / badges** → dual-source: chain holds `UserStats` (canonical), backend mirrors via `UserExperienceListener`. Frontend primarily reads backend; on-chain reads are admin / audit only.
-- **Payout completion / settlement** → *officially* chain-tx-bound, *in practice* tracked in `payout` Postgres row (the `PayoutsService.executeStellarPayment` is currently mocked in dev and throws in prod — see §9).
+- **Payout completion / settlement** → _officially_ chain-tx-bound, _in practice_ tracked in `payout` Postgres row (the `PayoutsService.executeStellarPayment` is currently mocked in dev and throws in prod — see §9).
 
 ---
 
@@ -517,13 +517,13 @@ flowchart TB
   Soroban --> SorobanContract
 ```
 
-| Component | Runtime | Where it's hosted | Critical env vars |
-|---|---|---|---|
-| Frontend | Next.js 14 (Vercel default) | Vercel (or any Node SSR Node 22+) | `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_SOROBAN_RPC_URL`, `NEXT_PUBLIC_CONTRACT_ID`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SENTRY_DSN` |
-| Backend | NestJS (Node ≥ 22) | Docker container (`BackEnd/Dockerfile`-equivalent) | `DATABASE_URL`, `JWT_SECRET`, `STELLAR_NETWORK`, `SOROBAN_RPC_URL`, `CONTRACT_ID`, `STELLAR_FINALITY_CONFIRMATIONS`, `CORS_ORIGINS`, per-endpoint `RATE_LIMIT_*_LIMIT/_TTL` |
-| Contract | Soroban Wasm | Stellar (testnet/mainnet chosen at deploy) | `SOROBAN_SECRET_KEY`, `SOROBAN_RPC_URL`, `ADMIN_ADDRESS` |
-| Subgraph | Node 20-slim | Docker (port 4000) | `CONTRACT_ID`, `RPC_URL`, `API_PORT` |
-| Database | Postgres 15 + Redis 7 | `BackEnd/docker-compose.yml` | `DATABASE_URL`, `DB_POOL_MAX`, `DB_POOL_MIN` |
+| Component | Runtime                     | Where it's hosted                                  | Critical env vars                                                                                                                                                           |
+| --------- | --------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend  | Next.js 14 (Vercel default) | Vercel (or any Node SSR Node 22+)                  | `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_SOROBAN_RPC_URL`, `NEXT_PUBLIC_CONTRACT_ID`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SENTRY_DSN`                               |
+| Backend   | NestJS (Node ≥ 22)          | Docker container (`BackEnd/Dockerfile`-equivalent) | `DATABASE_URL`, `JWT_SECRET`, `STELLAR_NETWORK`, `SOROBAN_RPC_URL`, `CONTRACT_ID`, `STELLAR_FINALITY_CONFIRMATIONS`, `CORS_ORIGINS`, per-endpoint `RATE_LIMIT_*_LIMIT/_TTL` |
+| Contract  | Soroban Wasm                | Stellar (testnet/mainnet chosen at deploy)         | `SOROBAN_SECRET_KEY`, `SOROBAN_RPC_URL`, `ADMIN_ADDRESS`                                                                                                                    |
+| Subgraph  | Node 20-slim                | Docker (port 4000)                                 | `CONTRACT_ID`, `RPC_URL`, `API_PORT`                                                                                                                                        |
+| Database  | Postgres 15 + Redis 7       | `BackEnd/docker-compose.yml`                       | `DATABASE_URL`, `DB_POOL_MAX`, `DB_POOL_MIN`                                                                                                                                |
 
 For full env-var parity validation run:
 
@@ -542,7 +542,7 @@ bash scripts/validate-env-parity.sh FrontEnd/my-app/.env.example FrontEnd/my-app
    `BackEnd/src/modules/submissions/submissions.controller.ts` only exposes `GET /quests/:questId/submissions`. The `SubmissionsService` has `approveSubmission` / `rejectSubmission` logic and a commented-out `submitProof` pattern, but **there is no `POST /quests/:id/submissions` endpoint**, so submissions created via the chain today don't have a matching backend creation route.
 
 2. **The on-chain approval call is commented out.**
-   `SubmissionsService.approveSubmission` has the line `await this.stellarService.approveSubmission(...)` *commented out*. The intent is to call `StellarService.signAndSubmit` with the contract's `approve_submission` arguments. Until uncommented, the backend's approval flow stops at the Postgres CAS update + event emit.
+   `SubmissionsService.approveSubmission` has the line `await this.stellarService.approveSubmission(...)` _commented out_. The intent is to call `StellarService.signAndSubmit` with the contract's `approve_submission` arguments. Until uncommented, the backend's approval flow stops at the Postgres CAS update + event emit.
 
 3. **`executeStellarPayment` is mocked in dev / unimplemented in prod.**
    `PayoutsService.executeStellarPayment` returns `mock_tx_${now}_${id}` plus a random ledger in dev/test, and throws `Stellar payment not implemented for production` outside of those. The settlement-finality state machine, cron jobs, retry logic, and admin retry endpoint are all correctly modeled — only the actual Stellar SDK call needs wiring.
@@ -1048,4 +1048,4 @@ graph TB
 
 ---
 
-*Maintained by the StellarEarn architecture group. Updates should keep §1–§10 (cross-component) and §11–§19 (NestJS-internal) in sync when modules or contracts change. Diagrams render natively in GitHub, GitLab, Notion, VS Code Markdown preview, and mermaid.live.*
+_Maintained by the StellarEarn architecture group. Updates should keep §1–§10 (cross-component) and §11–§19 (NestJS-internal) in sync when modules or contracts change. Diagrams render natively in GitHub, GitLab, Notion, VS Code Markdown preview, and mermaid.live._

@@ -1,11 +1,7 @@
 import { get, post } from './client';
 
 export type DisputeStatus =
-  | 'PENDING'
-  | 'UNDER_REVIEW'
-  | 'RESOLVED'
-  | 'APPEALED'
-  | 'WITHDRAWN';
+  'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'APPEALED' | 'WITHDRAWN';
 
 export interface Dispute {
   id: string;

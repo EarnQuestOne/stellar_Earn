@@ -1,7 +1,7 @@
 # Audit Test Execution Guide
 
 **Version:** 1.0  
-**Date:** May 30, 2026  
+**Date:** May 30, 2026
 
 ## Overview
 
@@ -62,7 +62,7 @@ cargo test audit_tests -- --nocapture --test-threads=1
 # Invariant tests only
 cargo test audit_tests::audit_tests::test_invariant --lib -- --nocapture
 
-# Security tests only  
+# Security tests only
 cargo test audit_tests::audit_tests::test_security --lib -- --nocapture
 
 # Edge case tests only
@@ -135,12 +135,12 @@ test result: ok. 45 passed; 0 failed; 0 ignored; 15 measured
 
 ### Interpreting Results
 
-| Status | Meaning | Action |
-|--------|---------|--------|
-| `ok` | Test passed | No action needed |
-| `FAILED` | Test failed | Review failure details |
-| `ignored` | Test skipped | May need debugging |
-| `measured` | Performance measured | Review performance |
+| Status     | Meaning              | Action                 |
+| ---------- | -------------------- | ---------------------- |
+| `ok`       | Test passed          | No action needed       |
+| `FAILED`   | Test failed          | Review failure details |
+| `ignored`  | Test skipped         | May need debugging     |
+| `measured` | Performance measured | Review performance     |
 
 ## Debugging Failed Tests
 
@@ -161,6 +161,7 @@ RUST_BACKTRACE=1 cargo test audit_tests::test_name -- --nocapture --test-threads
 **Symptom:** Thread panic in test
 
 **Debugging:**
+
 ```bash
 # Run with full backtrace
 RUST_BACKTRACE=full cargo test audit_tests::test_name
@@ -170,6 +171,7 @@ RUST_BACKTRACE=full cargo test audit_tests::test_name
 ```
 
 **Solution:**
+
 - Review test assertions
 - Verify mock setup in test
 - Check test data validity
@@ -181,6 +183,7 @@ RUST_BACKTRACE=full cargo test audit_tests::test_name
 **Symptom:** Test takes too long and times out
 
 **Debugging:**
+
 ```bash
 # Increase test timeout
 cargo test audit_tests::test_name -- --nocapture --test-threads=1 --timeout=60
@@ -190,6 +193,7 @@ cargo test audit_tests::test_name -- --nocapture --test-threads=1 --timeout=60
 ```
 
 **Solution:**
+
 - Optimize test performance
 - Add bounds checking
 - Use smaller test data
@@ -201,6 +205,7 @@ cargo test audit_tests::test_name -- --nocapture --test-threads=1 --timeout=60
 **Symptom:** Test result varies based on execution order
 
 **Debugging:**
+
 ```bash
 # Run tests in isolation
 cargo test audit_tests::test_name -- --nocapture --test-threads=1
@@ -210,6 +215,7 @@ cargo test audit_tests -- --nocapture --test-threads=1
 ```
 
 **Solution:**
+
 - Ensure each test sets up its own state
 - Don't rely on global state
 - Reset environment between tests
@@ -227,14 +233,14 @@ fn test_category_component_scenario() {
     let env = Env::default();
     let actor = Address::random(&env);
     setup_contract(&env, &actor);
-    
+
     // 2. Execute
     // Perform the operation being tested
-    
+
     // 3. Verify
     // Assert expected behavior
     assert!(condition, "descriptive error message");
-    
+
     // 4. Invariant Check
     // Verify invariants still hold
     assert_invariants_hold(&env);
@@ -253,10 +259,10 @@ fn test_example() {
     // Preconditions: What must be true
     // Expected Result: What should happen
     // Postconditions: What should be true after
-    
+
     // Setup
     let env = Env::default();
-    
+
     // ... test code ...
 }
 ```
@@ -283,6 +289,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 1 measured;
 ```
 
 **Metrics:**
+
 - `ns/iter` - Nanoseconds per iteration
 - `+/-` - Standard deviation
 - `1,234,567` - Baseline measurement
@@ -351,21 +358,21 @@ fi
 
 ### Test Inventory
 
-| Test | Category | Status | Coverage | Notes |
-|------|----------|--------|----------|-------|
-| `test_invariant_authorization_invariant_unauthorized_access` | Invariant | Draft | - | Needs implementation |
-| (Add more as documented) | | | | |
+| Test                                                         | Category  | Status | Coverage | Notes                |
+| ------------------------------------------------------------ | --------- | ------ | -------- | -------------------- |
+| `test_invariant_authorization_invariant_unauthorized_access` | Invariant | Draft  | -        | Needs implementation |
+| (Add more as documented)                                     |           |        |          |                      |
 
 ## Performance Requirements
 
 ### Acceptable Performance
 
-| Operation | Max Time | Acceptable |
-|-----------|----------|-----------|
-| Unit test | 1s | Most < 100ms |
-| Integration test | 5s | Generally < 1s |
-| Full test suite | 30s | Should complete in <30s |
-| Single assert | 1ms | Should be instant |
+| Operation        | Max Time | Acceptable              |
+| ---------------- | -------- | ----------------------- |
+| Unit test        | 1s       | Most < 100ms            |
+| Integration test | 5s       | Generally < 1s          |
+| Full test suite  | 30s      | Should complete in <30s |
+| Single assert    | 1ms      | Should be instant       |
 
 ### Optimizing Slow Tests
 
@@ -379,6 +386,7 @@ fi
 ### Test Compilation Issues
 
 **Error: Cannot find audit_tests module**
+
 ```bash
 # Ensure audit/tests/audit_tests.rs exists
 ls audit/tests/audit_tests.rs
@@ -390,6 +398,7 @@ path = "audit/tests/audit_tests.rs"
 ```
 
 **Error: Undefined types/functions**
+
 ```bash
 # Ensure all imports are correct
 // At top of audit/tests/audit_tests.rs:
@@ -400,6 +409,7 @@ use soroban_sdk::*;
 ### Test Execution Issues
 
 **Error: MockAuth not available**
+
 ```bash
 # Ensure testutils feature is enabled
 [dev-dependencies]
@@ -407,6 +417,7 @@ soroban-sdk = { version = "21.7.4", features = ["testutils"] }
 ```
 
 **Error: Timestamp functions not working**
+
 ```bash
 # Use env.ledger() for time-related tests
 env.ledger().set_timestamp(1234567890);

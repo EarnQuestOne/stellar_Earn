@@ -68,11 +68,11 @@ Once approved:
 
 ## Approval threshold summary
 
-| Change                       | Class               | Required approval                          |
-| ---------------------------- | ------------------- | ------------------------------------------ |
-| Typos, links, formatting     | Routine             | Simple majority of non-abstaining ballots  |
-| Governance rule or process   | Material governance | Two-thirds of non-abstaining ballots       |
-| License or treasury rule     | Sensitive           | Three-fourths of all eligible voters       |
+| Change                     | Class               | Required approval                         |
+| -------------------------- | ------------------- | ----------------------------------------- |
+| Typos, links, formatting   | Routine             | Simple majority of non-abstaining ballots |
+| Governance rule or process | Material governance | Two-thirds of non-abstaining ballots      |
+| License or treasury rule   | Sensitive           | Three-fourths of all eligible voters      |
 
 If an amendment is silent about its class, it is treated as material governance.
 If an amendment would lower a threshold required by

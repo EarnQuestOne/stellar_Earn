@@ -39,13 +39,13 @@ issue: 2057
 
 Request counts for a single `get('/quests')` call:
 
-| Scenario | Before | After |
-| -------- | ------ | ----- |
-| Transient 503, recovers on 2nd try | 1 request, surfaced as an error | 2 requests, resolves successfully |
-| 429 with `Retry-After: 2` | 1 request, surfaced as an error | 2 requests, second sent after 2 s |
-| Persistent 500 | 1 request, error | 4 requests (1 + 3 retries), then the original error |
-| 404 Not Found | 1 request, error | 1 request, error (unchanged — not transient) |
-| POST / PATCH | no retry | no retry (unchanged — not idempotent) |
+| Scenario                           | Before                          | After                                               |
+| ---------------------------------- | ------------------------------- | --------------------------------------------------- |
+| Transient 503, recovers on 2nd try | 1 request, surfaced as an error | 2 requests, resolves successfully                   |
+| 429 with `Retry-After: 2`          | 1 request, surfaced as an error | 2 requests, second sent after 2 s                   |
+| Persistent 500                     | 1 request, error                | 4 requests (1 + 3 retries), then the original error |
+| 404 Not Found                      | 1 request, error                | 1 request, error (unchanged — not transient)        |
+| POST / PATCH                       | no retry                        | no retry (unchanged — not idempotent)               |
 
 ## Compatibility
 

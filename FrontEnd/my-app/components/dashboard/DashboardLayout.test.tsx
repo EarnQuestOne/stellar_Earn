@@ -11,8 +11,15 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) =>
-    React.createElement('a', { href, ...props }, children),
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+    [key: string]: unknown;
+  }) => React.createElement('a', { href, ...props }, children),
 }));
 
 describe('DashboardLayout with ErrorBoundary', () => {

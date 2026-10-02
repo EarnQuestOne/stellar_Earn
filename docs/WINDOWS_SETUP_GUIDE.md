@@ -16,6 +16,7 @@ We provide an automated setup script that will check your environment and downlo
    ```
 
 The script will automatically:
+
 - Download and install the **Visual Studio Build Tools 2022** with the "Desktop development with C++" workload (installed in quiet mode).
 - Install **Rust** via `rustup` (if not already installed).
 - Add the required **`wasm32-unknown-unknown`** target.
@@ -31,8 +32,8 @@ If you prefer to configure your environment manually, follow these steps:
 2. Run the installer.
 3. In the installer, select the **Desktop development with C++** workload.
 4. Ensure the following optional components are selected (they are usually included by default):
-    - MSVC v143 - VS 2022 C++ x64/x86 build tools
-    - Windows 10/11 SDK
+   - MSVC v143 - VS 2022 C++ x64/x86 build tools
+   - Windows 10/11 SDK
 5. Click **Install**.
 
 ### 2. Install Rust and Cargo
@@ -65,32 +66,43 @@ If the compilation succeeds, your Windows native setup is complete!
 If you strictly prefer a Unix-like experience on Windows, you can utilize WSL2.
 
 ### 1. Install WSL2
+
 Open PowerShell as Administrator and execute:
+
 ```powershell
 wsl --install
 ```
-*You may need to restart your computer.*
+
+_You may need to restart your computer._
 
 ### 2. Configure Ubuntu (or your preferred distro)
+
 Open the newly installed Ubuntu environment and update it along with setting up C++ build essentials:
+
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install curl build-essential git -y
 ```
 
 ### 3. Install Rust inside WSL2
+
 Install `rustup`:
+
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 ```
+
 Then add the WASM target:
+
 ```bash
 rustup target add wasm32-unknown-unknown
 ```
 
 ### 4. Build Contracts
+
 Navigate to your Windows project directory seamlessly via the `/mnt/c/` path (or open your repo directly if cloned within WSL):
+
 ```bash
 cd /mnt/c/Users/YourUsername/Desktop/stellar_Earn/Contract
 cargo build --workspace --target wasm32-unknown-unknown --release

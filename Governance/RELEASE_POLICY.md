@@ -19,12 +19,12 @@ criteria below are satisfied.
 
 ## Release types
 
-| Type | Cadence | Branch source | Notes |
-|------|---------|---------------|-------|
-| Regular | Every four weeks | `main` | Feature and patch work. |
-| Patch / hotfix | As needed | Release branch or `main` | See [HOTFIX_POLICY.md](HOTFIX_POLICY.md). |
-| Release candidate | One week before regular release | Release branch | Freeze period; only blocking fixes land. |
-| Security release | As needed | Affected release branch | Coordinated with security team. |
+| Type              | Cadence                         | Branch source            | Notes                                     |
+| ----------------- | ------------------------------- | ------------------------ | ----------------------------------------- |
+| Regular           | Every four weeks                | `main`                   | Feature and patch work.                   |
+| Patch / hotfix    | As needed                       | Release branch or `main` | See [HOTFIX_POLICY.md](HOTFIX_POLICY.md). |
+| Release candidate | One week before regular release | Release branch           | Freeze period; only blocking fixes land.  |
+| Security release  | As needed                       | Affected release branch  | Coordinated with security team.           |
 
 ## Approval requirements
 

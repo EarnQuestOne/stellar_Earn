@@ -1,60 +1,60 @@
 import {
   AssembledTransaction,
   Client as ContractClient,
-} from '@stellar/stellar-sdk/contract';
-import { Address } from '@stellar/stellar-sdk';
+} from "@stellar/stellar-sdk/contract";
+import { Address } from "@stellar/stellar-sdk";
 
-export { AssembledTransaction } from '@stellar/stellar-sdk/contract';
+export { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Enums
 // ─────────────────────────────────────────────────────────────────────────────
 
 export enum QuestStatus {
-  Active = 'Active',
-  Paused = 'Paused',
-  Completed = 'Completed',
-  Expired = 'Expired',
-  Cancelled = 'Cancelled',
+  Active = "Active",
+  Paused = "Paused",
+  Completed = "Completed",
+  Expired = "Expired",
+  Cancelled = "Cancelled",
 }
 
 export enum SubmissionStatus {
-  Pending = 'Pending',
-  Approved = 'Approved',
-  PartiallyPaid = 'PartiallyPaid',
-  Rejected = 'Rejected',
-  Paid = 'Paid',
+  Pending = "Pending",
+  Approved = "Approved",
+  PartiallyPaid = "PartiallyPaid",
+  Rejected = "Rejected",
+  Paid = "Paid",
 }
 
 export enum DisputeStatus {
-  Pending = 'Pending',
-  UnderReview = 'UnderReview',
-  Resolved = 'Resolved',
-  Withdrawn = 'Withdrawn',
-  Appealed = 'Appealed',
+  Pending = "Pending",
+  UnderReview = "UnderReview",
+  Resolved = "Resolved",
+  Withdrawn = "Withdrawn",
+  Appealed = "Appealed",
 }
 
 export enum Role {
-  SuperAdmin = 'SuperAdmin',
-  Admin = 'Admin',
-  Pauser = 'Pauser',
-  OracleAdmin = 'OracleAdmin',
-  StatsAdmin = 'StatsAdmin',
-  BadgeAdmin = 'BadgeAdmin',
+  SuperAdmin = "SuperAdmin",
+  Admin = "Admin",
+  Pauser = "Pauser",
+  OracleAdmin = "OracleAdmin",
+  StatsAdmin = "StatsAdmin",
+  BadgeAdmin = "BadgeAdmin",
 }
 
 export enum Badge {
-  Rookie = 'Rookie',
-  Explorer = 'Explorer',
-  Veteran = 'Veteran',
-  Master = 'Master',
-  Legend = 'Legend',
+  Rookie = "Rookie",
+  Explorer = "Explorer",
+  Veteran = "Veteran",
+  Master = "Master",
+  Legend = "Legend",
 }
 
 export enum OracleType {
-  StellarAsset = 'StellarAsset',
-  StellarOracle = 'StellarOracle',
-  Custom = 'Custom',
+  StellarAsset = "StellarAsset",
+  StellarOracle = "StellarOracle",
+  Custom = "Custom",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -214,11 +214,11 @@ export class StellarEarn {
     this.contractId = options.contractId;
     this.rpcUrl = options.rpcUrl;
     this.networkPassphrase =
-      options.networkPassphrase ?? 'Test SDF Network ; September 2015';
+      options.networkPassphrase ?? "Test SDF Network ; September 2015";
   }
 
   async connect(): Promise<void> {
-    const { Client } = await import('@stellar/stellar-sdk/contract');
+    const { Client } = await import("@stellar/stellar-sdk/contract");
     this.client = await Client.from({
       rpcUrl: this.rpcUrl,
       contractId: this.contractId,
@@ -228,15 +228,14 @@ export class StellarEarn {
 
   private get c(): any {
     if (!this.client) {
-      throw new Error('StellarEarn not connected. Call await client.connect() first.');
+      throw new Error(
+        "StellarEarn not connected. Call await client.connect() first.",
+      );
     }
     return this.client;
   }
 
-  initialize(
-    args: { admin: string },
-    opts?: any,
-  ): AssembledTransaction<void> {
+  initialize(args: { admin: string }, opts?: any): AssembledTransaction<void> {
     return this.c.initialize([new Address(args.admin)], opts);
   }
 
@@ -384,10 +383,7 @@ export class StellarEarn {
     args: { caller: string; quest_id: string },
     opts?: any,
   ): AssembledTransaction<void> {
-    return this.c.resume_quest(
-      [new Address(args.caller), args.quest_id],
-      opts,
-    );
+    return this.c.resume_quest([new Address(args.caller), args.quest_id], opts);
   }
 
   commit_submission(
@@ -410,12 +406,7 @@ export class StellarEarn {
     opts?: any,
   ): AssembledTransaction<void> {
     return this.c.reveal_submission(
-      [
-        args.quest_id,
-        new Address(args.submitter),
-        args.proof_hash,
-        args.salt,
-      ],
+      [args.quest_id, new Address(args.submitter), args.proof_hash, args.salt],
       opts,
     );
   }
@@ -435,11 +426,7 @@ export class StellarEarn {
     opts?: any,
   ): AssembledTransaction<void> {
     return this.c.approve_submission(
-      [
-        args.quest_id,
-        new Address(args.submitter),
-        new Address(args.verifier),
-      ],
+      [args.quest_id, new Address(args.submitter), new Address(args.verifier)],
       opts,
     );
   }
@@ -531,7 +518,11 @@ export class StellarEarn {
     opts?: any,
   ): AssembledTransaction<Dispute> {
     return this.c.open_dispute(
-      [args.quest_id, new Address(args.initiator), new Address(args.arbitrator)],
+      [
+        args.quest_id,
+        new Address(args.initiator),
+        new Address(args.arbitrator),
+      ],
       opts,
     );
   }
@@ -603,10 +594,7 @@ export class StellarEarn {
     args: { caller: string },
     opts?: any,
   ): AssembledTransaction<void> {
-    return this.c.emergency_approve_unpause(
-      [new Address(args.caller)],
-      opts,
-    );
+    return this.c.emergency_approve_unpause([new Address(args.caller)], opts);
   }
 
   emergency_unpause(
@@ -927,11 +915,7 @@ export class StellarEarn {
     opts?: any,
   ): AssembledTransaction<bigint> {
     return this.c.convert_reward_amount(
-      [
-        new Address(args.from_asset),
-        new Address(args.to_asset),
-        args.amount,
-      ],
+      [new Address(args.from_asset), new Address(args.to_asset), args.amount],
       opts,
     );
   }
@@ -988,10 +972,7 @@ export class StellarEarn {
     );
   }
 
-  balance(
-    args: { id: string },
-    opts?: any,
-  ): AssembledTransaction<bigint> {
+  balance(args: { id: string }, opts?: any): AssembledTransaction<bigint> {
     return this.c.balance([new Address(args.id)], opts);
   }
 

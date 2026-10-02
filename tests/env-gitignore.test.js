@@ -47,9 +47,7 @@ function testEnvPathsAreIgnored() {
 }
 
 function testNoTrackedDotEnvFiles() {
-  const files = git(["ls-files"])
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const files = git(["ls-files"]).split(/\r?\n/).filter(Boolean);
   const leaked = files.filter((file) => {
     const base = file.split(/[/\\]/).pop();
     return (
@@ -64,11 +62,7 @@ function testNoTrackedDotEnvFiles() {
 }
 
 function testEnvExampleStaysTracked() {
-  const files = new Set(
-    git(["ls-files"])
-      .split(/\r?\n/)
-      .filter(Boolean),
-  );
+  const files = new Set(git(["ls-files"]).split(/\r?\n/).filter(Boolean));
   assert.ok(files.has("BackEnd/.env.example"));
   assert.ok(files.has("FrontEnd/my-app/.env.example"));
   assert.ok(files.has("subgraph/.env.example"));

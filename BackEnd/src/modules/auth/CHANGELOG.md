@@ -7,9 +7,11 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+
 - `AuthController.login` now returns a typed `LoginResponseDto` instead of writing the response body manually via `@Res().json()`, so Nest's serialization/interceptor pipeline applies to the login response. `@Res({ passthrough: true })` is kept for setting the session cookies. Closes #1894.
 - Applied code-style formatting to `auth.module.ts` import block (no logic change).
 - `AuthService.validateUser` now tolerates missing users by falling back to a default caller identity instead of bubbling `NotFoundException`.
+
 ### Added
 
 - `LoginDto` accepts an optional `referralCode`; on first-time signup `AuthService.verifyAndLogin` records a pending referral attribution (invalid/self/circular/duplicate codes are ignored so signup never fails). Part of the referral program (#2357).
@@ -22,7 +24,6 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Restored `GET /auth/profile` endpoint and configured `PassportStrategy` for `JwtStrategy`.
-
 
 - `AuthService.validate()` no longer returns a hardcoded stub identity for every request; it now resolves the real user (and their current role) from the verified JWT payload via `validateUser`, and `JwtStrategy` passes the full decoded payload instead of just the Stellar address. Closes #1888.
 

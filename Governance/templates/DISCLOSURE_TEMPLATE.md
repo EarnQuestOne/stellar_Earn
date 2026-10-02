@@ -10,7 +10,7 @@
 Send this report through one of the private channels in `SECURITY.md`:
 
 - GitHub **Private Vulnerability Reporting** (`Security -> Report a
-  vulnerability` tab) - preferred; or
+vulnerability` tab) - preferred; or
 - email to the security address listed in `SECURITY.md`.
 
 Do not include this report in any public issue, PR, or comment.

@@ -13,9 +13,7 @@ modifies any of the watched paths listed in
 
 1. Copy [`TEMPLATE.md`](./TEMPLATE.md) to a new file in this directory.
 2. Name it `YYYY-MM-DD-<short-kebab-slug>.md`
-   (e.g. `2026-05-27-rename-questsstatus-paused.md`).
-   3. Fill in the frontmatter and body.
-   4. Commit it as part of your PR.
+   (e.g. `2026-05-27-rename-questsstatus-paused.md`). 3. Fill in the frontmatter and body. 4. Commit it as part of your PR.
 
    ## How they get released
 

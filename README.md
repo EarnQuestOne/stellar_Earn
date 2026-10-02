@@ -190,7 +190,7 @@ stellar contract deploy \
 
 ## API
 
-The backend exposes a REST API documented via OpenAPI/Swagger (generated in CI by the *OpenAPI Generation Check* workflow). Run the backend and browse the Swagger UI, or consult the generated OpenAPI spec, for the authoritative, always-current endpoint list — routes are intentionally not hardcoded here to avoid drift.
+The backend exposes a REST API documented via OpenAPI/Swagger (generated in CI by the _OpenAPI Generation Check_ workflow). Run the backend and browse the Swagger UI, or consult the generated OpenAPI spec, for the authoritative, always-current endpoint list — routes are intentionally not hardcoded here to avoid drift.
 
 ## Testing
 

@@ -1,11 +1,11 @@
-const assert = require('assert');
+const assert = require("assert");
 const {
   CHANGELOG_PATH,
   evaluateContractChangelogDiscipline,
   validateBreakingEntries,
-} = require('../scripts/check-contract-changelog-discipline');
+} = require("../scripts/check-contract-changelog-discipline");
 
-function sampleChangelog(extra = '') {
+function sampleChangelog(extra = "") {
   return `# Changelog
 
 ## [Unreleased]
@@ -24,7 +24,7 @@ ${extra}
 
 function testSkipsNonContractChanges() {
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['README.md'],
+    changedFiles: ["README.md"],
     changelogContent: sampleChangelog(),
   });
 
@@ -34,23 +34,23 @@ function testSkipsNonContractChanges() {
 
 function testRequiresChangelogWhenContractCodeChanges() {
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['contracts/earn-quest/src/lib.rs'],
+    changedFiles: ["contracts/earn-quest/src/lib.rs"],
     changelogContent: sampleChangelog(),
   });
 
   assert.strictEqual(result.ok, false);
   assert.ok(
     result.errors.includes(
-      'Contract implementation changes require an update to contracts/earn-quest/CHANGELOG.md in the same PR.'
-    )
+      "Contract implementation changes require an update to contracts/earn-quest/CHANGELOG.md in the same PR.",
+    ),
   );
 }
 
 function testAllowsNonBreakingContractChangesWithChangelogUpdate() {
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['contracts/earn-quest/src/lib.rs', CHANGELOG_PATH],
+    changedFiles: ["contracts/earn-quest/src/lib.rs", CHANGELOG_PATH],
     changelogContent: sampleChangelog(),
-    commitMessages: 'feat(contract): add a backward compatible endpoint',
+    commitMessages: "feat(contract): add a backward compatible endpoint",
   });
 
   assert.strictEqual(result.ok, true);
@@ -60,17 +60,17 @@ function testAllowsNonBreakingContractChangesWithChangelogUpdate() {
 
 function testBreakingChangesRequireStructuredChangelogEntry() {
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['contracts/earn-quest/src/storage.rs', CHANGELOG_PATH],
+    changedFiles: ["contracts/earn-quest/src/storage.rs", CHANGELOG_PATH],
     changelogContent: sampleChangelog(),
     commitMessages:
-      'feat(storage)!: split quest metadata\n\nBREAKING CHANGE: Storage layout changed and requires a migration.',
+      "feat(storage)!: split quest metadata\n\nBREAKING CHANGE: Storage layout changed and requires a migration.",
   });
 
   assert.strictEqual(result.ok, false);
   assert.ok(
     result.errors.includes(
-      'Breaking changes must be documented under `## [Unreleased]` -> `### Breaking Changes`.'
-    )
+      "Breaking changes must be documented under `## [Unreleased]` -> `### Breaking Changes`.",
+    ),
   );
 }
 
@@ -83,17 +83,17 @@ function testBreakingChangesRequireMetadataWhenCheckboxTriggersValidation() {
 - **Migration Required**: Run the storage migration script before deploying the new WASM.
 `);
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['contracts/earn-quest/src/storage.rs', CHANGELOG_PATH],
+    changedFiles: ["contracts/earn-quest/src/storage.rs", CHANGELOG_PATH],
     changelogContent: changelog,
     prBody:
-      '## Type of Change\n- [x] Breaking change\n\nBREAKING CHANGE: Storage layout changed and requires migration.',
+      "## Type of Change\n- [x] Breaking change\n\nBREAKING CHANGE: Storage layout changed and requires migration.",
   });
 
   assert.strictEqual(result.ok, false);
   assert.ok(
     result.errors.includes(
-      'Breaking contract changes must use Conventional Commit breaking metadata (`type(scope)!:` or equivalent PR title).'
-    )
+      "Breaking contract changes must use Conventional Commit breaking metadata (`type(scope)!:` or equivalent PR title).",
+    ),
   );
 }
 
@@ -106,11 +106,11 @@ function testBreakingChangesPassWithStructuredEntryAndMetadata() {
 - **Migration Required**: Run the storage migration script before deploying the new WASM.
 `);
   const result = evaluateContractChangelogDiscipline({
-    changedFiles: ['contracts/earn-quest/src/storage.rs', CHANGELOG_PATH],
+    changedFiles: ["contracts/earn-quest/src/storage.rs", CHANGELOG_PATH],
     changelogContent: changelog,
-    prTitle: 'feat(storage)!: split metadata layout',
+    prTitle: "feat(storage)!: split metadata layout",
     prBody:
-      '## Type of Change\n- [x] Breaking change\n\nBREAKING CHANGE: Storage layout changed and requires migration.',
+      "## Type of Change\n- [x] Breaking change\n\nBREAKING CHANGE: Storage layout changed and requires migration.",
   });
 
   assert.strictEqual(result.ok, true);
@@ -127,7 +127,9 @@ function testBreakingEntryValidatorRequiresAllBullets() {
   const result = validateBreakingEntries(invalid);
 
   assert.strictEqual(result.ok, false);
-  assert.ok(result.errors.some(error => error.includes('Migration Required')));
+  assert.ok(
+    result.errors.some((error) => error.includes("Migration Required")),
+  );
 }
 
 function runAll() {

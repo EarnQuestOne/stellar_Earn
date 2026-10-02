@@ -15,6 +15,7 @@ Backend mappers convert between database entities and API DTOs.
 **Pattern:** Static methods in mapper classes
 
 #### Quest Mapper
+
 - **File:** `BackEnd/src/modules/quests/mappers/quest.mapper.ts`
 - **Methods:**
   - `toDto(quest: Quest): QuestResponseDto` - Convert entity to DTO
@@ -22,6 +23,7 @@ Backend mappers convert between database entities and API DTOs.
   - `fromEntity(quest: Quest): QuestResponseDto` - Legacy alias for backward compatibility
 
 #### User Mapper
+
 - **File:** `BackEnd/src/modules/users/mappers/user.mapper.ts`
 - **Methods:**
   - `toDto(user: User): UserResponseDto` - Convert entity to DTO
@@ -31,6 +33,7 @@ Backend mappers convert between database entities and API DTOs.
   - `toUserQuestDto(questData): UserQuestDto` - Convert quest data to DTO
 
 #### Submission Mapper
+
 - **File:** `BackEnd/src/modules/submissions/mappers/submission.mapper.ts`
 - **Methods:**
   - `toDto(submission: Submission): SubmissionDataDto` - Convert entity to DTO
@@ -47,6 +50,7 @@ Frontend mappers convert between API response types and UI domain models.
 **Pattern:** Static methods in mapper classes
 
 #### Quest Mapper
+
 - **File:** `FrontEnd/my-app/lib/mappers/quest.mapper.ts`
 - **Methods:**
   - `toDomain(apiQuest: QuestResponse): Quest` - Convert API response to domain model
@@ -55,6 +59,7 @@ Frontend mappers convert between API response types and UI domain models.
   - `toApiArray(domainQuests: Quest[]): QuestResponse[]` - Convert array
 
 #### Profile Mapper
+
 - **File:** `FrontEnd/my-app/lib/mappers/profile.mapper.ts`
 - **Methods:**
   - `toDomain(apiUser: UserResponse, isOwnProfile?: boolean): UserProfile` - Convert API response to domain model
@@ -62,6 +67,7 @@ Frontend mappers convert between API response types and UI domain models.
   - `toApi(domainProfile: UserProfile): UserResponse` - Convert domain model to API format
 
 #### Submission Mapper
+
 - **File:** `FrontEnd/my-app/lib/mappers/submission.mapper.ts`
 - **Methods:**
   - `toDomain(apiSubmission: SubmissionResponse): Submission` - Convert API response to domain model
@@ -74,7 +80,7 @@ Frontend mappers convert between API response types and UI domain models.
 ### Backend Usage
 
 ```typescript
-import { QuestMapper } from './mappers/quest.mapper';
+import { QuestMapper } from "./mappers/quest.mapper";
 
 // Convert entity to DTO
 const quest = await this.questRepository.findOne({ where: { id } });
@@ -88,7 +94,7 @@ const questDtos = QuestMapper.toDtoArray(quests);
 ### Frontend Usage
 
 ```typescript
-import { QuestMapper } from '@/lib/mappers';
+import { QuestMapper } from "@/lib/mappers";
 
 // Convert API response to domain model
 const apiQuest = await fetchQuest(id);
@@ -119,6 +125,7 @@ All mappers include comprehensive unit tests:
 - **Frontend Tests:** Located in `FrontEnd/my-app/lib/mappers/__tests__/*.test.ts`
 
 Run tests with:
+
 - Backend: `npm test` (in BackEnd directory)
 - Frontend: `npm test` (in FrontEnd/my-app directory)
 
@@ -127,11 +134,13 @@ Run tests with:
 ### For Backend Services
 
 **Before:**
+
 ```typescript
 return QuestResponseDto.fromEntity(quest);
 ```
 
 **After:**
+
 ```typescript
 return QuestMapper.toDto(quest);
 ```
@@ -139,11 +148,13 @@ return QuestMapper.toDto(quest);
 ### For Frontend Components
 
 **Before:**
+
 ```typescript
 const quest = apiResponse as Quest;
 ```
 
 **After:**
+
 ```typescript
 const quest = QuestMapper.toDomain(apiResponse);
 ```

@@ -44,6 +44,7 @@
 - [ ] Admin functions listed in documentation
 
 **Critical Functions to Verify:**
+
 - [ ] `grant_role()` - only SuperAdmin
 - [ ] `revoke_role()` - only SuperAdmin
 - [ ] `pause()` - only Pauser/SuperAdmin
@@ -52,6 +53,7 @@
 - [ ] `update_oracle_config()` - OracleAdmin only
 
 **Test Questions:**
+
 - Attempt operation with wrong role → fails? ✓
 - Attempt operation as unauthorized user → fails? ✓
 - Grant role, retry operation → succeeds? ✓
@@ -69,6 +71,7 @@
 - [ ] No authentication bypass paths
 
 **Verification:**
+
 ```rust
 // Every function should have one of these patterns:
 caller.require_auth();
@@ -87,6 +90,7 @@ admin::require_role(&env, &caller, required_role)?;
 - [ ] Paused contract prevents privilege escalation attempts
 
 **Test Scenarios:**
+
 - [ ] User attempts to grant self SuperAdmin → fails
 - [ ] User with BadgeAdmin attempts StatsAdmin operations → fails
 - [ ] Revoked admin attempts operations → fails
@@ -105,6 +109,7 @@ admin::require_role(&env, &caller, required_role)?;
 - [ ] No fund loss scenarios identified
 
 **Verification Approach:**
+
 ```
 Before operation: total_funds = sum(balances) + sum(escrows) + reserves
 After operation: total_funds_after matches total_funds
@@ -122,6 +127,7 @@ Repeat for all operations
 - [ ] Expired escrows can be reclaimed safely
 
 **Critical Scenarios to Verify:**
+
 - [ ] Create escrow, release before time → fails
 - [ ] Create escrow, release at/after time → succeeds
 - [ ] Create escrow, unauthorized release → fails
@@ -151,6 +157,7 @@ Repeat for all operations
 - [ ] Indices are valid and contiguous
 
 **Test:**
+
 - [ ] Verify all data structures have required initialization
 - [ ] Check that failed operations don't leave partial state
 - [ ] Verify batch operations are all-or-nothing
@@ -166,6 +173,7 @@ Repeat for all operations
 - [ ] Referential integrity maintained
 
 **Verification Points:**
+
 - [ ] String length <= MAX_LENGTH
 - [ ] Array size <= MAX_ARRAY_SIZE
 - [ ] Numbers within safe ranges
@@ -203,6 +211,7 @@ Archived → * ✗
 - [ ] Complete audit trail maintained
 
 **State Transition Verification:**
+
 - [ ] Submitted → Evaluating → Approved → Rewarded
 - [ ] Cannot skip states
 - [ ] Cannot go backwards
@@ -221,6 +230,7 @@ Archived → * ✗
 - [ ] Large number operations tested
 
 **Test Cases:**
+
 - [ ] MAX_INT + 1 → safe handling
 - [ ] 0 - 1 → safe handling (or error)
 - [ ] Large multiplications → no overflow
@@ -237,6 +247,7 @@ Archived → * ✗
 - [ ] Reputation changes are auditable
 
 **Verification:**
+
 - [ ] Completed quest: +reward → correct
 - [ ] Decay over time: should decrease
 - [ ] Never goes below 0
@@ -274,6 +285,7 @@ Archived → * ✗
 - [ ] Extreme values are controlled
 
 **Verification:**
+
 - [ ] get_price() returns fresh data only
 - [ ] Data older than threshold rejected
 - [ ] Price > 0 and < MAX_SAFE_PRICE
@@ -290,6 +302,7 @@ Archived → * ✗
 - [ ] No single-source dependency
 
 **Scenarios:**
+
 - [ ] Single low outlier, others normal → filtered out
 - [ ] Multiple conflicting sources → handled safely
 - [ ] All sources temporarily unavailable → fallback used
@@ -316,6 +329,7 @@ Archived → * ✗
 - [ ] State updated before external calls
 
 **Code Pattern:**
+
 ```rust
 // Correct: Update state first, then external call
 update_state(&env, value);
@@ -358,6 +372,7 @@ update_state(&env, value);  // Could be re-entered
 - [ ] Number range checks performed
 
 **Examples to Check:**
+
 - [ ] `quest_id > 0` before lookup
 - [ ] `recipient != Address::zero()`
 - [ ] `title.len() > 0 && <= MAX_LENGTH`
@@ -394,6 +409,7 @@ update_state(&env, value);  // Could be re-entered
 - [ ] Complete error coverage
 
 **Check:**
+
 ```rust
 // Functions should propagate errors:
 result?;
@@ -427,6 +443,7 @@ let _ = operation();  // Unless intentional
 - [ ] No race conditions identified
 
 **Example:**
+
 ```rust
 // Incorrect: Check and update are separate
 if check_condition(&env) {
@@ -459,6 +476,7 @@ atomic_check_and_update(&env)?;
 - [ ] No sensitive data in events (if public)
 
 **Events to Verify:**
+
 - [ ] Role changes logged
 - [ ] Fund transfers logged
 - [ ] Quest status changes logged
@@ -523,7 +541,7 @@ atomic_check_and_update(&env)?;
 #### 12.3 Security Tests
 
 - [ ] Invariants verified
-- [ ] Attack scenarios tested  
+- [ ] Attack scenarios tested
 - [ ] Authorization bypasses attempted
 - [ ] Fund loss attempts made
 - [ ] State corruption attempts made
@@ -586,24 +604,28 @@ atomic_check_and_update(&env)?;
 ### Vulnerability Prioritization
 
 **Critical (Fix Before Deployment):**
+
 - [ ] Fund loss vulnerabilities
 - [ ] Privilege escalation
 - [ ] State consistency errors
 - [ ] Authorization bypasses
 
 **High (Fix Before Production):**
+
 - [ ] Math errors
 - [ ] Partial state updates
 - [ ] Oracle data issues
 - [ ] Reentrancy risks
 
 **Medium (Address Soon):**
+
 - [ ] Input validation gaps
 - [ ] Gas optimization
 - [ ] Error handling gaps
 - [ ] Documentation issues
 
 **Low (Nice to Have):**
+
 - [ ] Code style
 - [ ] Performance optimizations
 - [ ] Test additions
@@ -628,14 +650,14 @@ atomic_check_and_update(&env)?;
 
 ## Audit Timeline
 
-| Phase | Duration | Activities |
-|-------|----------|-----------|
-| Setup & Review | 2-3 days | Onboarding, repo review, tests |
-| Code Review | 5-7 days | Manual review of all modules |
-| Testing | 3-4 days | Fuzzing, property tests, attacks |
-| Analysis | 2-3 days | Report writing, verification |
-| Remediation | Variable | Fix issues, re-audit |
-| Sign-Off | 1 day | Final verification, report |
+| Phase          | Duration | Activities                       |
+| -------------- | -------- | -------------------------------- |
+| Setup & Review | 2-3 days | Onboarding, repo review, tests   |
+| Code Review    | 5-7 days | Manual review of all modules     |
+| Testing        | 3-4 days | Fuzzing, property tests, attacks |
+| Analysis       | 2-3 days | Report writing, verification     |
+| Remediation    | Variable | Fix issues, re-audit             |
+| Sign-Off       | 1 day    | Final verification, report       |
 
 **Total Typical Duration:** 2-3 weeks
 
@@ -658,9 +680,9 @@ atomic_check_and_update(&env)?;
 
 ## Revision History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-05-30 | 1.0 | Initial audit checklist |
+| Date       | Version | Changes                 |
+| ---------- | ------- | ----------------------- |
+| 2026-05-30 | 1.0     | Initial audit checklist |
 
 ---
 

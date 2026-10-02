@@ -1,14 +1,20 @@
 ---
+
 # One of: breaking-types | breaking-runtime | added | changed | deprecated | removed | fixed | security
+
 type: breaking-types
 
 # Link the PR or issue number(s) this changeset belongs to.
+
 pr: 0
 
 # List every exported symbol affected, using `path → Name` format.
+
 symbols:
-  - lib/types/quest.ts → QuestStatus
-  ---
+
+- lib/types/quest.ts → QuestStatus
+
+---
 
   <!--
     Write a one-paragraph human summary of the change here. Be specific:

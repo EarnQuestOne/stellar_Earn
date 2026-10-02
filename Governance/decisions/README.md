@@ -52,8 +52,8 @@ When creating a new ADR, use the following structure:
 
 ## ADR Index
 
-| Number | Title | Status | Date |
-|--------|-------|--------|------|
+| Number  | Title   | Status   | Date   |
+| ------- | ------- | -------- | ------ |
 | ADR-001 | [Title] | [Status] | [Date] |
 
 > Note: This index will be populated as ADRs are created. Currently, there are no ADRs in the Governance folder.

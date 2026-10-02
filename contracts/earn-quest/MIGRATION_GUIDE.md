@@ -11,6 +11,7 @@ For operational targets around contract success rates and latency windows, see [
 ## 🔄 Migration Paths
 
 ### Version Timeline
+
 - **v1.0.0** - Initial implementation (Issue #24) - Current stable release
 - **v1.1.0** - Planned enhancements
 - **v2.0.0** - Major upgrade (future)
@@ -36,6 +37,7 @@ Before starting any migration, ensure:
 ### 1. Development → Testnet Migration
 
 #### Prerequisites
+
 ```bash
 # Install Soroban CLI
 cargo install --locked soroban-cli
@@ -48,6 +50,7 @@ curl "https://friendbot.stellar.org?addr=$(soroban keys address dev-key)"
 ```
 
 #### Build Process
+
 ```bash
 # 1. Clean previous builds
 cargo clean
@@ -61,6 +64,7 @@ ls -lh target/wasm32-unknown-unknown/release/earn_quest.wasm
 ```
 
 #### Deploy to Testnet
+
 ```bash
 # Set testnet network
 soroban network add --rpc-url https://soroban-testnet.stellar.org:443 \
@@ -77,6 +81,7 @@ soroban contract deploy \
 ```
 
 #### Verification
+
 ```bash
 # Check contract exists
 soroban contract info \
@@ -98,6 +103,7 @@ soroban contract invoke \
 #### ⚠️ Critical Steps
 
 **Step 1: Final Testing on Testnet**
+
 ```bash
 # Run full test suite
 cargo test
@@ -111,6 +117,7 @@ soroban contract invoke \
 ```
 
 **Step 2: Prepare Mainnet Account**
+
 ```bash
 # Generate mainnet keypair (or import existing)
 soroban keys generate --name mainnet-key
@@ -124,6 +131,7 @@ soroban account balance \
 ```
 
 **Step 3: Deploy to Mainnet**
+
 ```bash
 # Add mainnet network configuration
 soroban network add --rpc-url https://soroban-mainnet.stellar.org:443 \
@@ -140,6 +148,7 @@ echo "MAINNET_CONTRACT_ID=..." >> .env
 ```
 
 **Step 4: Initialize Contract State (If Required)**
+
 ```bash
 # Set up initial state if needed
 soroban contract invoke \
@@ -150,6 +159,7 @@ soroban contract invoke \
 ```
 
 **Step 5: Post-Deployment Verification**
+
 ```bash
 # Verify contract is callable
 soroban contract info \
@@ -169,9 +179,11 @@ soroban contract invoke \
 ## 🔄 Version Upgrade Guide (v1.0 → v1.1)
 
 ### Breaking Changes
+
 **None expected** - v1.1.0 is backward compatible
 
 ### New Features in v1.1.0
+
 - Enhanced error messages
 - Additional event types
 - Improved gas efficiency
@@ -179,18 +191,21 @@ soroban contract invoke \
 ### Upgrade Process
 
 **1. Pull Latest Code**
+
 ```bash
 git pull origin main
 git checkout v1.1.0
 ```
 
 **2. Run Migration Tests**
+
 ```bash
 # Tests include state compatibility checks
 cargo test --test '*migration*'
 ```
 
 **3. Build and Deploy**
+
 ```bash
 cargo build --target wasm32-unknown-unknown --release
 
@@ -201,6 +216,7 @@ soroban contract deploy \
 ```
 
 **4. Verify Backward Compatibility**
+
 ```bash
 # Old contract calls should still work
 soroban contract invoke \
@@ -232,6 +248,7 @@ node scripts/deploy/migrate-contract-storage.mjs \
 ```
 
 The current migration utility supports the schema changes already reflected in the contract storage model:
+
 - splitting legacy `metadata` into `metadata_core` and `metadata_extended`
 - splitting legacy `escrow` data into `escrow_balances` and `escrow_meta`
 - normalizing legacy `platform_stats` into `platform_counters`
@@ -240,6 +257,7 @@ The current migration utility supports the schema changes already reflected in t
 `--dry-run` is the safe default for production preparation because it reports the exact action plan without mutating any files.
 
 #### Pre-Migration
+
 ```bash
 # 1. Export current state
 soroban contract invoke \
@@ -258,6 +276,7 @@ node scripts/deploy/migrate-contract-storage.mjs \
 ```
 
 #### Migration
+
 ```bash
 # 1. Produce migrated snapshot
 node scripts/deploy/migrate-contract-storage.mjs \
@@ -280,6 +299,7 @@ soroban contract invoke \
 ```
 
 #### Post-Migration Validation
+
 ```bash
 # 4. Verify state integrity
 soroban contract invoke \
@@ -305,6 +325,7 @@ soroban contract invoke \
 #### Issue: Build fails with WASM target
 
 **Solution:**
+
 ```bash
 # Install WASM target
 rustup target add wasm32-unknown-unknown
@@ -318,6 +339,7 @@ cargo build --target wasm32-unknown-unknown --release
 #### Issue: Insufficient balance for deployment
 
 **Solution:**
+
 ```bash
 # Check balance
 soroban account balance \
@@ -331,6 +353,7 @@ soroban account balance \
 #### Issue: Contract invocation times out
 
 **Solution:**
+
 ```bash
 # Check network connectivity
 soroban network list
@@ -343,6 +366,7 @@ soroban network add --rpc-url https://rpc-soroban.stellar.org:443 \
 #### Issue: "ContractNotFound" error
 
 **Solution:**
+
 ```bash
 # Verify CONTRACT_ID is correct
 soroban contract info --id <CONTRACT_ID> --network public
@@ -357,6 +381,7 @@ soroban network list
 ## ✅ Testing After Migration
 
 ### Test Suite
+
 ```bash
 # 1. Unit tests
 cargo test
@@ -369,6 +394,7 @@ cargo test test_state_migration --release
 ```
 
 ### Validation Checklist
+
 - [ ] All unit tests pass
 - [ ] Contract is callable on correct network
 - [ ] Payout functionality works
@@ -384,12 +410,14 @@ cargo test test_state_migration --release
 ### If Migration Fails
 
 **Step 1: Stop new operations**
+
 ```bash
 # Direct users to old contract temporarily
 # Update frontend environment variables
 ```
 
 **Step 2: Restore from backup**
+
 ```bash
 # Revert to previous contract version
 PREV_CONTRACT_ID=<BACKUP_CONTRACT_ID>
@@ -399,6 +427,7 @@ PREV_CONTRACT_ID=<BACKUP_CONTRACT_ID>
 ```
 
 **Step 3: Investigate and Fix**
+
 ```bash
 # Analyze failure logs
 git log --oneline
@@ -411,6 +440,7 @@ RUST_LOG=debug cargo test -- --nocapture
 ```
 
 **Step 4: Redeploy**
+
 ```bash
 # After fixing, rebuild and redeploy
 cargo build --target wasm32-unknown-unknown --release
@@ -425,6 +455,7 @@ soroban contract deploy \
 ## 🔐 Security Considerations
 
 ### Pre-Deployment Checks
+
 - ✅ Code review completed
 - ✅ Security audit passed
 - ✅ All dependencies updated to latest versions
@@ -432,12 +463,14 @@ soroban contract deploy \
 - ✅ Test coverage >80%
 
 ### During Deployment
+
 - ✅ Deploy from secure machine
 - ✅ Use dedicated deployment keypair
 - ✅ Verify contract hash matches source
 - ✅ Monitor for unusual activity
 
 ### Post-Deployment
+
 - ✅ Set up monitoring/alerts
 - ✅ Document all changes
 - ✅ Keep backup of all contract IDs
@@ -448,8 +481,9 @@ soroban contract deploy \
 ## 📚 Reference
 
 ### Relevant Files
+
 - `src/lib.rs` - Main contract logic
-- `src/payout.rs` - Payout transfer implementation  
+- `src/payout.rs` - Payout transfer implementation
 - `tests/test_payout.rs` - Test suite
 - `Cargo.toml` - Dependencies
 - `README.md` - Implementation summary
@@ -484,13 +518,16 @@ cargo build --target wasm32-unknown-unknown --release --verbose
 ## 🤝 Support & Escalation
 
 ### Escalation Path
+
 1. **Development Issues** → Review README.md and IMPLEMENTATION_SUMMARY.md
 2. **Build Issues** → Check Rust/Soroban CLI installation
 3. **Network Issues** → Verify RPC endpoint and network connectivity
 4. **Contract Issues** → Run full test suite and check logs
 
 ### Reporting Issues
+
 Please include:
+
 - Command executed
 - Error message (full output)
 - Environment (OS, Rust version, Soroban CLI version)
@@ -501,11 +538,11 @@ Please include:
 
 ## 📅 Version History
 
-| Version | Date | Changes | Status |
-|---------|------|---------|--------|
-| 1.0.0 | 2025-04-27 | Initial release, Issue #24 | ✅ Stable |
-| 1.1.0 | Planned | Enhanced messages, new events | 🔄 In Progress |
-| 2.0.0 | TBD | Major refactor | 📋 Planning |
+| Version | Date       | Changes                       | Status         |
+| ------- | ---------- | ----------------------------- | -------------- |
+| 1.0.0   | 2025-04-27 | Initial release, Issue #24    | ✅ Stable      |
+| 1.1.0   | Planned    | Enhanced messages, new events | 🔄 In Progress |
+| 2.0.0   | TBD        | Major refactor                | 📋 Planning    |
 
 ---
 
@@ -515,7 +552,7 @@ Please include:
 ✅ Tested on Testnet before mainnet deployment  
 ✅ Backward compatibility maintained  
 ✅ Security audited  
-✅ Documentation complete  
+✅ Documentation complete
 
 ---
 

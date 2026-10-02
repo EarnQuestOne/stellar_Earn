@@ -22,11 +22,11 @@ For that reason, every contract-facing change needs changelog coverage before me
 
 EarnQuest follows [Semantic Versioning 2.0.0](https://semver.org/) with contract-specific interpretation:
 
-| Version | Meaning | Examples |
-|---|---|---|
-| `MAJOR` (`vX.0.0`) | Contract-breaking change | Changing stored struct shapes, renaming public methods, altering event field order, or changing legacy key formats |
-| `MINOR` (`v1.Y.0`) | Backward-compatible feature | Adding new endpoints, new event types, or optional fields that preserve existing decoding paths |
-| `PATCH` (`v1.0.Z`) | Backward-compatible fix | Internal bug fixes, safe refactors, validation updates, performance work, or documentation-only changes |
+| Version            | Meaning                     | Examples                                                                                                           |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `MAJOR` (`vX.0.0`) | Contract-breaking change    | Changing stored struct shapes, renaming public methods, altering event field order, or changing legacy key formats |
+| `MINOR` (`v1.Y.0`) | Backward-compatible feature | Adding new endpoints, new event types, or optional fields that preserve existing decoding paths                    |
+| `PATCH` (`v1.0.Z`) | Backward-compatible fix     | Internal bug fixes, safe refactors, validation updates, performance work, or documentation-only changes            |
 
 If a change would force a state migration, indexer update, or integration code change, treat it as breaking.
 
@@ -70,6 +70,7 @@ Every entry inside `### Breaking Changes` must follow this structure:
 
 ```md
 #### Storage - Split quest metadata layout
+
 - **Impact**: Existing snapshots cannot be decoded by the new contract without migration.
 - **Affected Files**: [storage.rs](../src/storage.rs), [lib.rs](../src/lib.rs)
 - **Migration Required**: Run the storage migration script against the exported snapshot before deploying the new contract build.

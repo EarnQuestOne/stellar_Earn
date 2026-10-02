@@ -4,7 +4,7 @@
 **Date:** May 30, 2026  
 **Contract Name:** EarnQuest  
 **Language:** Rust (Soroban)  
-**Chain:** Stellar Network  
+**Chain:** Stellar Network
 
 ## Executive Summary
 
@@ -15,6 +15,7 @@ This document serves as the comprehensive specification for third-party security
 ### Purpose
 
 The EarnQuest contract provides a decentralized quest creation and completion framework with:
+
 - Quest management (creation, modification, completion)
 - User submission tracking and approval
 - Reputation and badge systems
@@ -97,6 +98,7 @@ src/
 ### Core Data Structures
 
 #### Quest
+
 ```rust
 pub struct Quest {
     pub id: u32,
@@ -113,6 +115,7 @@ pub struct Quest {
 ```
 
 #### UserCore
+
 ```rust
 pub struct UserCore {
     pub address: Address,
@@ -125,6 +128,7 @@ pub struct UserCore {
 ```
 
 #### Submission
+
 ```rust
 pub struct Submission {
     pub id: u32,
@@ -137,6 +141,7 @@ pub struct Submission {
 ```
 
 #### EscrowInfo
+
 ```rust
 pub struct EscrowInfo {
     pub id: u32,
@@ -203,12 +208,14 @@ The contract implements a hierarchical role-based access control system:
 ### 1. Authorization & Access Control
 
 **Critical Questions:**
+
 - Are all sensitive functions properly protected with role checks?
 - Can unauthorized users access or modify restricted data?
 - Are role checks performed before state modifications?
 - Are there any permission bypass vulnerabilities?
 
 **Review Points:**
+
 - All public functions must verify caller permissions
 - Role checks must occur before any state changes
 - SuperAdmin role must be properly initialized
@@ -217,12 +224,14 @@ The contract implements a hierarchical role-based access control system:
 ### 2. State Management & Storage
 
 **Critical Questions:**
+
 - Are storage operations atomic and consistent?
 - Can storage be left in an inconsistent state?
 - Are there race conditions in state updates?
 - Is data properly initialized before access?
 
 **Review Points:**
+
 - Storage data structures are properly defined
 - No uninitialized state access
 - Batch operations maintain consistency
@@ -231,12 +240,14 @@ The contract implements a hierarchical role-based access control system:
 ### 3. Fund Safety & Escrow
 
 **Critical Questions:**
+
 - Can funds be trapped or lost in escrow?
 - Are release conditions properly enforced?
 - Can funds be released prematurely?
 - Are refunds properly handled?
 
 **Review Points:**
+
 - Escrow amounts match fund transfers
 - Release time constraints are enforced
 - Refund logic is correct
@@ -245,12 +256,14 @@ The contract implements a hierarchical role-based access control system:
 ### 4. Math & Precision
 
 **Critical Questions:**
+
 - Are there integer overflow/underflow issues?
 - Are reputation calculations correct?
 - Are reward distributions accurate?
 - Are percentages calculated correctly?
 
 **Review Points:**
+
 - All arithmetic operations are safe
 - Boundary conditions are handled
 - Rounding is consistent
@@ -259,12 +272,14 @@ The contract implements a hierarchical role-based access control system:
 ### 5. Oracle Integration
 
 **Critical Questions:**
+
 - What happens if oracle data is stale?
 - Can oracle be exploited to manipulate data?
 - Are there fallback mechanisms?
 - Is price feed aggregation secure?
 
 **Review Points:**
+
 - Oracle data freshness is validated
 - Multiple price sources are aggregated
 - Fallback logic is implemented
@@ -273,12 +288,14 @@ The contract implements a hierarchical role-based access control system:
 ### 6. Cross-Contract Interactions
 
 **Critical Questions:**
+
 - Are external calls safe?
 - Can external contracts exploit this contract?
 - Are there reentrancy risks?
 - Are return values validated?
 
 **Review Points:**
+
 - External call return values are checked
 - State updates occur before external calls
 - No recursive call vulnerabilities
@@ -287,12 +304,14 @@ The contract implements a hierarchical role-based access control system:
 ### 7. Business Logic
 
 **Critical Questions:**
+
 - Do quests work as intended?
 - Can reputation be exploited?
 - Are disputes fairly resolved?
 - Are payouts calculated correctly?
 
 **Review Points:**
+
 - Quest lifecycle is consistent
 - Reputation accumulation is fair
 - Dispute process is fair
@@ -301,12 +320,14 @@ The contract implements a hierarchical role-based access control system:
 ### 8. Input Validation
 
 **Critical Questions:**
+
 - Are all inputs properly validated?
 - Can boundary values cause issues?
 - Are string lengths limited?
 - Are special characters handled?
 
 **Review Points:**
+
 - All external inputs are validated
 - Boundary checks are implemented
 - String lengths are limited
@@ -315,12 +336,14 @@ The contract implements a hierarchical role-based access control system:
 ### 9. Error Handling
 
 **Critical Questions:**
+
 - Are errors properly propagated?
 - Can errors be silently ignored?
 - Is error context sufficient?
 - Are error codes distinct?
 
 **Review Points:**
+
 - All error paths are handled
 - Error codes are distinct
 - Error messages are informative
@@ -329,12 +352,14 @@ The contract implements a hierarchical role-based access control system:
 ### 10. Concurrency & Race Conditions
 
 **Critical Questions:**
+
 - Can operations race and cause issues?
 - Are atomic operations properly used?
 - Can state become inconsistent?
 - Are batch operations safe?
 
 **Review Points:**
+
 - Atomic operations are used correctly
 - State updates are consistent
 - No TOCTOU vulnerabilities
@@ -384,10 +409,12 @@ The contract implements a hierarchical role-based access control system:
 ### Function Categories
 
 #### Initialization Functions
+
 - `initialize()` - Contract initialization (must be called once)
 - `get_version()` - Contract version retrieval
 
 #### Admin Functions
+
 - `grant_role()` - Grant roles to users
 - `revoke_role()` - Revoke roles from users
 - `pause()` - Pause contract operations
@@ -395,36 +422,42 @@ The contract implements a hierarchical role-based access control system:
 - `authorize_upgrade()` - Authorize contract upgrade
 
 #### Quest Management
+
 - `create_quest()` - Create new quest
 - `update_quest_status()` - Update quest status
 - `get_quest()` - Retrieve quest details
 - `list_quests()` - List active quests
 
 #### Submission Handling
+
 - `submit_quest()` - Submit quest completion
 - `approve_submission()` - Approve quest submission
 - `reject_submission()` - Reject quest submission
 - `get_submission()` - Retrieve submission details
 
 #### Reputation & Badges
+
 - `get_reputation()` - Get user reputation
 - `award_badge()` - Award badge to user
 - `get_user_badges()` - Get user badges
 - `list_badge_types()` - List available badge types
 
 #### Escrow & Payouts
+
 - `create_escrow()` - Create escrow
 - `release_escrow()` - Release escrowed funds
 - `get_escrow()` - Get escrow details
 - `batch_payout()` - Batch payout processing
 
 #### Dispute Resolution
+
 - `create_dispute()` - Create dispute
 - `resolve_dispute()` - Resolve dispute
 - `appeal_dispute()` - Appeal dispute decision
 - `get_dispute()` - Get dispute details
 
 #### Oracle Functions
+
 - `update_oracle_config()` - Update oracle configuration
 - `get_price()` - Get aggregated price
 - `get_oracle_config()` - Get oracle configuration
@@ -432,23 +465,27 @@ The contract implements a hierarchical role-based access control system:
 ## Testing Requirements
 
 ### Unit Tests
+
 - Individual function correctness
 - Error conditions
 - Boundary values
 - Role-based access control
 
 ### Integration Tests
+
 - Multi-function workflows
 - State consistency across operations
 - Cross-contract interactions
 - Batch operation atomicity
 
 ### Property Tests
+
 - Invariant preservation
 - State machine properties
 - Fuzzing with random inputs
 
 ### Security Tests
+
 - Authorization bypass attempts
 - Fund manipulation attempts
 - Data corruption attempts
@@ -474,15 +511,16 @@ The contract implements a hierarchical role-based access control system:
 ## Contact & Support
 
 For audit-related questions or clarifications, please refer to:
+
 1. Function documentation in source code
 2. Test files for usage examples
 3. Integration guides for cross-contract interactions
 
 ## Revision History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-05-30 | 1.0 | Initial audit specification |
+| Date       | Version | Changes                     |
+| ---------- | ------- | --------------------------- |
+| 2026-05-30 | 1.0     | Initial audit specification |
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Status:** Ready for Audit  
 **Version:** 1.0  
-**Last Updated:** May 30, 2026  
+**Last Updated:** May 30, 2026
 
 ## Overview
 
@@ -83,6 +83,7 @@ This directory contains comprehensive audit preparation materials for the EarnQu
 ### Phase 1: Onboarding (Day 1-2)
 
 1. **Read Key Documents**
+
    ```bash
    # Start with these in order:
    1. AUDIT_SPEC.md           # Understand contract
@@ -92,15 +93,16 @@ This directory contains comprehensive audit preparation materials for the EarnQu
    ```
 
 2. **Setup Environment**
+
    ```bash
    # Install dependencies
    rustup update
    cargo build --release
-   
+
    # Run tests
    cargo test
    cargo test -- --nocapture
-   
+
    # Check coverage
    cargo tarpaulin --out Html
    ```
@@ -136,6 +138,7 @@ This directory contains comprehensive audit preparation materials for the EarnQu
 ### Phase 3: Testing & Verification (Day 8-10)
 
 1. **Run Test Suite**
+
    ```bash
    cargo test --lib
    cargo test --test '*'
@@ -143,11 +146,13 @@ This directory contains comprehensive audit preparation materials for the EarnQu
    ```
 
 2. **Execute Audit Tests**
+
    ```bash
    cargo test --test audit_tests audit_tests::
    ```
 
 3. **Verify Coverage**
+
    ```bash
    cargo tarpaulin --out Html --output-dir coverage/
    ```
@@ -203,33 +208,33 @@ This directory contains comprehensive audit preparation materials for the EarnQu
 
 ### Key Security Controls
 
-| Control | Status | Verification |
-|---------|--------|--------------|
-| Role-Based Access Control | Implemented | AUDIT_CHECKLIST §1 |
-| Fund Conservation | Implemented | AUDIT_CHECKLIST §2 |
-| State Consistency | Implemented | AUDIT_CHECKLIST §3 |
-| Math Safety | Implemented | AUDIT_CHECKLIST §4 |
-| Oracle Validation | Implemented | AUDIT_CHECKLIST §5 |
-| Cross-Contract Safety | Implemented | AUDIT_CHECKLIST §6 |
-| Input Validation | Implemented | AUDIT_CHECKLIST §7 |
-| Error Handling | Implemented | AUDIT_CHECKLIST §8 |
-| Concurrency Safety | Implemented | AUDIT_CHECKLIST §9 |
-| Event Logging | Implemented | AUDIT_CHECKLIST §10 |
+| Control                   | Status      | Verification        |
+| ------------------------- | ----------- | ------------------- |
+| Role-Based Access Control | Implemented | AUDIT_CHECKLIST §1  |
+| Fund Conservation         | Implemented | AUDIT_CHECKLIST §2  |
+| State Consistency         | Implemented | AUDIT_CHECKLIST §3  |
+| Math Safety               | Implemented | AUDIT_CHECKLIST §4  |
+| Oracle Validation         | Implemented | AUDIT_CHECKLIST §5  |
+| Cross-Contract Safety     | Implemented | AUDIT_CHECKLIST §6  |
+| Input Validation          | Implemented | AUDIT_CHECKLIST §7  |
+| Error Handling            | Implemented | AUDIT_CHECKLIST §8  |
+| Concurrency Safety        | Implemented | AUDIT_CHECKLIST §9  |
+| Event Logging             | Implemented | AUDIT_CHECKLIST §10 |
 
 ### Invariants to Verify
 
-| # | Invariant | Critical | Status |
-|---|-----------|----------|--------|
-| I1 | Authorization | ✓ Critical | See INVARIANTS §I1 |
-| I2 | Fund Conservation | ✓ Critical | See INVARIANTS §I2 |
-| I3 | Quest Lifecycle | ✓ Critical | See INVARIANTS §I3 |
-| I4 | Reputation Correctness | ✓ Critical | See INVARIANTS §I4 |
-| I5 | Submission Workflow | ✓ Critical | See INVARIANTS §I5 |
-| I6 | Escrow Safety | ✓ Critical | See INVARIANTS §I6 |
-| I7 | Badge Assignment | High | See INVARIANTS §I7 |
-| I8 | Oracle Data | High | See INVARIANTS §I8 |
-| I9 | Storage Consistency | ✓ Critical | See INVARIANTS §I9 |
-| I10 | Access Control | ✓ Critical | See INVARIANTS §I10 |
+| #   | Invariant              | Critical   | Status              |
+| --- | ---------------------- | ---------- | ------------------- |
+| I1  | Authorization          | ✓ Critical | See INVARIANTS §I1  |
+| I2  | Fund Conservation      | ✓ Critical | See INVARIANTS §I2  |
+| I3  | Quest Lifecycle        | ✓ Critical | See INVARIANTS §I3  |
+| I4  | Reputation Correctness | ✓ Critical | See INVARIANTS §I4  |
+| I5  | Submission Workflow    | ✓ Critical | See INVARIANTS §I5  |
+| I6  | Escrow Safety          | ✓ Critical | See INVARIANTS §I6  |
+| I7  | Badge Assignment       | High       | See INVARIANTS §I7  |
+| I8  | Oracle Data            | High       | See INVARIANTS §I8  |
+| I9  | Storage Consistency    | ✓ Critical | See INVARIANTS §I9  |
+| I10 | Access Control         | ✓ Critical | See INVARIANTS §I10 |
 
 ## 🚨 Critical Issues to Focus On
 
@@ -267,21 +272,27 @@ This directory contains comprehensive audit preparation materials for the EarnQu
 ## 📝 Documentation Guide
 
 ### For Specification Questions
+
 → **AUDIT_SPEC.md** - What, who, and how
 
 ### For Technical Questions
+
 → **Source Code with inline comments** - Implementation details
 
 ### For Security Questions
+
 → **THREAT_MODEL.md** or **SECURITY.md** - Why and what-if's
 
 ### For Invariant Questions
+
 → **INVARIANTS.md** - Mathematical properties
 
 ### For Test Questions
+
 → **audit_tests.rs** - Code examples
 
 ### For Checklist Questions
+
 → **AUDIT_CHECKLIST.md** - Step-by-step verification
 
 ## 🛠 Tools & Scripts
@@ -325,6 +336,7 @@ cargo fmt
 ### During Audit
 
 For questions about:
+
 - **Specification:** Refer to AUDIT_SPEC.md (cross-references provided)
 - **Implementation:** Review source code and inline comments
 - **Security:** Refer to THREAT_MODEL.md and SECURITY.md
@@ -334,6 +346,7 @@ For questions about:
 ### After Audit
 
 For findings and remediation:
+
 - Issue severity classification on THREAT_MODEL.md risk matrix
 - Reference audit_tests.rs for test case examples
 - Use SECURITY.md patterns for fixes
@@ -372,16 +385,19 @@ For findings and remediation:
 ## 🎓 Reference Materials
 
 ### Soroban Documentation
+
 - [Soroban SDK Documentation](https://developers.stellar.org/docs/learn/soroban)
 - [Soroban By Example](https://developers.stellar.org/docs/learn/example-contracts)
 - [Rust Documentation](https://doc.rust-lang.org/)
 
 ### Security References
+
 - [Common Vulnerabilities in Smart Contracts](https://ethereum.org/en/developers/docs/smart-contracts/security/)
 - [OWASP Smart Contract Top 10](https://owasp.org/www-project-smart-contract-top-10/)
 - [Stellar Security Documentation](https://developers.stellar.org/docs/learn/security)
 
 ### Testing References
+
 - [Proptest Documentation](https://docs.rs/proptest/latest/proptest/)
 - [Property-Based Testing Guide](https://hypothesis.works/articles/what-is-property-based-testing/)
 
@@ -391,22 +407,22 @@ All audit preparation materials are provided under the same license as the main 
 
 ## 📋 Version History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-05-30 | 1.0 | Initial audit preparation package |
+| Date       | Version | Changes                           |
+| ---------- | ------- | --------------------------------- |
+| 2026-05-30 | 1.0     | Initial audit preparation package |
 
 ---
 
 ## Quick Reference Links
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [AUDIT_SPEC.md](AUDIT_SPEC.md) | Contract specification | Auditors, Developers |
-| [INVARIANTS.md](INVARIANTS.md) | Formal properties | Security specialists |
-| [THREAT_MODEL.md](THREAT_MODEL.md) | Risk analysis | Security team |
-| [SECURITY.md](SECURITY.md) | Implementation patterns | Code reviewers |
-| [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md) | Verification steps | Auditors |
-| [audit_tests.rs](tests/audit_tests.rs) | Test examples | QA engineers |
+| Document                                 | Purpose                 | Audience             |
+| ---------------------------------------- | ----------------------- | -------------------- |
+| [AUDIT_SPEC.md](AUDIT_SPEC.md)           | Contract specification  | Auditors, Developers |
+| [INVARIANTS.md](INVARIANTS.md)           | Formal properties       | Security specialists |
+| [THREAT_MODEL.md](THREAT_MODEL.md)       | Risk analysis           | Security team        |
+| [SECURITY.md](SECURITY.md)               | Implementation patterns | Code reviewers       |
+| [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md) | Verification steps      | Auditors             |
+| [audit_tests.rs](tests/audit_tests.rs)   | Test examples           | QA engineers         |
 
 ---
 

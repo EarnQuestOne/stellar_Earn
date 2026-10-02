@@ -7,4 +7,5 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+
 - Removed public `sendEmail` method; all email sending now routes through `queueEmail` to enforce off-request-path dispatch

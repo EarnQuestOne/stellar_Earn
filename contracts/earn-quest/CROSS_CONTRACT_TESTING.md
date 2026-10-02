@@ -339,6 +339,7 @@ let total_xp = aggregator.get_total_user_xp(&addresses, &user);
 The tests validate all public functions are callable from external contracts:
 
 **Admin Functions:**
+
 - `initialize(admin)`
 - `add_admin(caller, new_admin)`
 - `remove_admin(caller, admin)`
@@ -346,23 +347,27 @@ The tests validate all public functions are callable from external contracts:
 - `revoke_role(caller, address, role)`
 
 **Quest Functions:**
+
 - `register_quest(...)`
 - `register_quest_with_metadata(...)`
 - `pause_quest(caller, quest_id)`
 - `resume_quest(caller, quest_id)`
 
 **Submission Functions:**
+
 - `submit_proof(quest_id, submitter, proof_hash)`
 - `approve_submission(quest_id, submitter, verifier)`
 - `claim_reward(quest_id, submitter)`
 
 **Query Functions:**
+
 - `get_quest(quest_id)`
 - `get_submission(quest_id, submitter)`
 - `get_user_stats(user)`
 - `get_platform_stats()`
 
 **Oracle Functions:**
+
 - `add_oracle(caller, config)`
 - `remove_oracle(caller, address)`
 - `get_price(base, quote, max_age)`
@@ -427,12 +432,14 @@ match result {
 ### Test Failures
 
 **Problem**: Mock contract not found
+
 ```
 Solution: Ensure contract is registered before use
 let token_addr = setup_mock_token(&env);
 ```
 
 **Problem**: Authentication errors
+
 ```
 Solution: Use env.mock_all_auths() in tests
 let env = Env::default();
@@ -440,6 +447,7 @@ env.mock_all_auths();
 ```
 
 **Problem**: Client creation fails
+
 ```
 Solution: Verify contract address is correct
 let client = EarnQuestContractClient::new(&env, &contract_addr);

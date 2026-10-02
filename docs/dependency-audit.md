@@ -23,15 +23,17 @@ The dependency audit system provides automated security vulnerability scanning a
 #### Dependency Audit Workflow (`.github/workflows/dependency-audit.yml`)
 
 **Triggers:**
+
 - Push to main/master branches
-- Pull requests to main/master branches  
+- Pull requests to main/master branches
 - Weekly schedule (Mondays at 9:00 UTC)
 
 **Jobs:**
 
 ##### 1. Cargo Audit (Rust Dependencies)
+
 - **Matrix Testing**: Rust stable and beta versions
-- **Security Tools**: 
+- **Security Tools**:
   - `cargo audit` - Security vulnerability scanning
   - `cargo deny` - Advisory and contract dependency tree license checking
   - `cargo outdated` - Dependency version monitoring
@@ -39,6 +41,7 @@ The dependency audit system provides automated security vulnerability scanning a
 - **Artifacts**: Detailed audit reports uploaded
 
 ##### 2. Frontend Audit (Node.js Dependencies)
+
 - **Matrix Testing**: Node.js 18.x and 20.x versions
 - **Projects Scanned**:
   - FrontEnd/my-app (React/Next.js frontend)
@@ -51,12 +54,14 @@ The dependency audit system provides automated security vulnerability scanning a
 #### Cargo Deny Configuration (`contracts/earn-quest/deny.toml`)
 
 **License Policy:**
+
 - **Allowed**: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, CC0-1.0, MPL-2.0
 - **Denied**: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0
 - **Copyleft**: Warn level (review required)
 - **Scope**: Enforced against the `contracts/earn-quest` dependency tree in CI and local audit tooling
 
 **Security Thresholds:**
+
 - **Vulnerabilities**: Deny (fail build)
 - **Unmaintained**: Warn (report but don't fail)
 - **Yanked**: Warn (report but don't fail)
@@ -67,6 +72,7 @@ The dependency audit system provides automated security vulnerability scanning a
 ### Available Scripts
 
 #### Comprehensive Audit Script
+
 ```bash
 # Run full dependency audit
 ./scripts/audit-dependencies.sh
@@ -87,6 +93,7 @@ The dependency audit system provides automated security vulnerability scanning a
 #### Manual Commands
 
 **Rust Dependencies:**
+
 ```bash
 cd contracts/earn-quest
 
@@ -110,6 +117,7 @@ cargo update
 ```
 
 **Node.js Dependencies:**
+
 ```bash
 # Frontend
 cd FrontEnd/my-app
@@ -129,6 +137,7 @@ npm audit fix
 ### Tool Installation
 
 The audit script automatically installs required tools:
+
 - `cargo-audit` - Security vulnerability scanner
 - `cargo-deny` - License and policy checker
 - `cargo-outdated` - Dependency version checker
@@ -155,12 +164,14 @@ The audit script automatically installs required tools:
 ### GitHub Actions Artifacts
 
 Each audit run generates:
+
 - `audit-report-{rust-version}.md`: Rust audit summary
 - `frontend-audit-report-{node-version}.md`: Node.js audit summary
 
 ### Local Reports
 
 Running the audit script generates:
+
 - `dependency-audit-report.md`: Comprehensive audit summary with:
   - Rust cargo audit results
   - Cargo deny advisory checks
@@ -190,6 +201,7 @@ Running the audit script generates:
 #### Common Issues
 
 **Cargo audit fails on dependency conflicts:**
+
 ```bash
 cd contracts/earn-quest
 cargo update
@@ -197,6 +209,7 @@ cargo audit
 ```
 
 **npm audit fails on version conflicts:**
+
 ```bash
 cd FrontEnd/my-app  # or BackEnd
 rm -rf node_modules package-lock.json
@@ -205,11 +218,13 @@ npm audit fix
 ```
 
 **License compliance issues:**
+
 - Review `deny.toml` configuration
 - Consider alternative packages with compatible licenses
 - Update license exceptions if necessary
 
 **False positives:**
+
 - Review security advisory details
 - Check if vulnerability applies to your usage
 - Consider ignoring specific advisories in configuration
@@ -219,16 +234,19 @@ npm audit fix
 ### IDE Integration
 
 **VS Code:**
+
 - Rust Analyzer: Built-in cargo audit integration
 - ESLint/Security extensions for Node.js
 
 **Other IDEs:**
+
 - Configure external tool integration for cargo commands
 - Set up npm audit as pre-commit hook
 
 ### Pre-commit Hooks
 
 Consider adding pre-commit hooks for security:
+
 ```bash
 # Example pre-commit hook
 #!/bin/sh
@@ -241,6 +259,7 @@ Consider adding pre-commit hooks for security:
 ### GitHub Actions Notifications
 
 Configure repository notifications for:
+
 - Workflow failures (high/critical vulnerabilities)
 - Weekly audit summaries
 - Security advisories
@@ -248,6 +267,7 @@ Configure repository notifications for:
 ### External Monitoring
 
 Consider integrating with:
+
 - GitHub Dependabot (automated dependency updates)
 - Snyk security scanning (additional security coverage)
 - OWASP dependency checking (comprehensive security analysis)
@@ -264,11 +284,13 @@ Consider integrating with:
 ### Customization
 
 **Adjust Security Thresholds:**
+
 - Modify `severity-threshold` in `deny.toml`
 - Update `--audit-level` in workflow files
 - Configure failure conditions in CI/CD
 
 **License Policy:**
+
 - Update `allow`/`deny` lists in `deny.toml`
 - Add license exceptions as needed
 - Configure copyleft handling
@@ -295,5 +317,5 @@ For issues with the dependency audit system:
 
 ---
 
-*Last updated: $(date)*
-*Part of stellar_Earn security implementation*
+_Last updated: $(date)_
+_Part of stellar_Earn security implementation_

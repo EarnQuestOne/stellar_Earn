@@ -55,6 +55,7 @@ Applications are submitted as a GitHub issue using the grant application templat
 ## Termination
 
 The project may terminate a grant if:
+
 - The recipient fails to meet a milestone after the remediation window.
 - The recipient violates the Code of Conduct or grant agreement.
 - The project's financial situation materially changes (with 30 days' notice).

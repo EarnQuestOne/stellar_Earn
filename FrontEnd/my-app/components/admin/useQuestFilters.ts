@@ -4,11 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Quest, QuestStatus } from '@/lib/types/admin';
 
 export type SortField =
-  | 'title'
-  | 'status'
-  | 'reward'
-  | 'deadline'
-  | 'participants';
+  'title' | 'status' | 'reward' | 'deadline' | 'participants';
 export type SortOrder = 'asc' | 'desc';
 
 /** Default debounce delay for the search query, in milliseconds. */

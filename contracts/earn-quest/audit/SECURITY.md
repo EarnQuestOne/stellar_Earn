@@ -1,7 +1,7 @@
 # Security Architecture & Implementation Guide
 
 **Version:** 1.0  
-**Date:** May 30, 2026  
+**Date:** May 30, 2026
 
 ## Overview
 
@@ -29,6 +29,7 @@ pub fn admin_operation(env: Env, admin: Address) -> Result<(), Error> {
 ```
 
 **Verification Points:**
+
 - No function bypasses require_auth()
 - All sensitive operations have role checks
 - Role checks precede state modifications
@@ -50,18 +51,19 @@ pub fn create_quest(
 ) -> Result<Quest, Error> {
     // Validate caller
     creator.require_auth();
-    
+
     // Validate inputs
     assert!(title.len() > 0 && title.len() <= MAX_TITLE_LENGTH);
     assert!(reward > 0 && reward <= MAX_REWARD);
     assert!(creator != Address::zero());
-    
+
     // Create quest
     // ...
 }
 ```
 
 **Checklist:**
+
 - [ ] String length validated
 - [ ] Number ranges checked
 - [ ] Array sizes bounded
@@ -83,22 +85,22 @@ pub fn approve_submission(
 ) -> Result<(), Error> {
     reviewer.require_auth();
     admin::require_role(&env, &reviewer, Role::BadgeAdmin)?;
-    
+
     // Verify submission exists and is in correct state
     let mut submission = get_submission(&env, submission_id)?;
     assert!(submission.status == SubmissionStatus::Submitted);
     assert!(submission.evidence.len() > 0);
-    
+
     // Update state atomically
     submission.status = SubmissionStatus::Approved;
     submission.approved_at = timestamp;
-    
+
     // Perform externalities (rewards)
     transfer_reward(&env, submission.user, submission.reward)?;
-    
+
     // Store updated state
     store_submission(&env, submission);
-    
+
     Ok(())
 }
 ```
@@ -124,7 +126,7 @@ pub enum Error {
 // Propagate all errors explicitly
 pub fn operation() -> Result<Value, Error> {
     let result = dependent_operation()?;  // Propagate error
-    
+
     match another_operation() {
         Ok(val) => process(val),
         Err(e) => return Err(e),  // Explicit error handling
@@ -147,7 +149,7 @@ pub fn batch_approve_submissions(
 ) -> Result<(), Error> {
     admin.require_auth();
     admin::require_role(&env, &admin, Role::BadgeAdmin)?;
-    
+
     // Validate all before updating ANY
     let mut submissions = Vec::new();
     for id in &submission_ids {
@@ -155,7 +157,7 @@ pub fn batch_approve_submissions(
         assert!(sub.status == SubmissionStatus::Submitted);
         submissions.push(sub);
     }
-    
+
     // All validated, now update atomically
     // If any fails, the batch fails completely
     for mut submission in submissions {
@@ -163,7 +165,7 @@ pub fn batch_approve_submissions(
         store_submission(&env, submission);
         transfer_reward(&env, submission.user, submission.reward)?;
     }
-    
+
     Ok(())
 }
 ```
@@ -175,6 +177,7 @@ pub fn batch_approve_submissions(
 ### Pattern 1: State Update Ordering
 
 **Correct:**
+
 ```rust
 // Update internal state first
 user.balance -= amount;
@@ -185,6 +188,7 @@ transfer_to_external(&env, recipient, amount)?;
 ```
 
 **Incorrect:**
+
 ```rust
 // External operation first - could be re-entered
 transfer_to_external(&env, recipient, amount)?;
@@ -199,24 +203,26 @@ store_user(&env, user);
 ### Pattern 2: Authorization Checks
 
 **Correct:**
+
 ```rust
 pub fn admin_operation(env: Env, admin: Address) {
     // Check 1: Authentication
     admin.require_auth();
-    
+
     // Check 2: Authorization (role)
     admin::require_role(&env, &admin, Role::SuperAdmin)?;
-    
+
     // Only then perform operation
 }
 ```
 
 **Incorrect:**
+
 ```rust
 pub fn admin_operation(env: Env, admin: Address) {
     // No authentication check
     // No role verification
-    
+
     // Directly performs sensitive operation
     dangerous_operation();
 }
@@ -227,6 +233,7 @@ pub fn admin_operation(env: Env, admin: Address) {
 ### Pattern 3: Fund Transfers
 
 **Correct:**
+
 ```rust
 // Verify funds exist
 assert!(source.balance >= amount);
@@ -240,6 +247,7 @@ emit_transfer_event(source, dest, amount);
 ```
 
 **Incorrect:**
+
 ```rust
 // Transfer without checking
 transfer_funds(dest, amount);
@@ -496,9 +504,9 @@ fn test_fund_safety() {
 
 ## Revision History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-05-30 | 1.0 | Initial security architecture document |
+| Date       | Version | Changes                                |
+| ---------- | ------- | -------------------------------------- |
+| 2026-05-30 | 1.0     | Initial security architecture document |
 
 ---
 

@@ -50,23 +50,23 @@ Latency is measured from the time the platform accepts an operation request to t
 
 ## Service Levels
 
-| Operation Class | SLA Target | SLO Target | Latency Window |
-|---|---|---|---|
-| Contract write operations | 99.5% successful completion per rolling 30 days | 99.9% successful completion per rolling 30 days | 95% within 2 minutes, 99% within 5 minutes |
-| Contract read operations | 99.9% successful responses per rolling 30 days | 99.95% successful responses per rolling 30 days | 95% within 1.5 seconds, 99% within 3 seconds |
-| Critical payout path (`approve_submission`, `claim_reward`, escrow-affecting refunds) | 99.7% successful completion per rolling 30 days | 99.95% successful completion per rolling 30 days | 95% within 90 seconds, 99% within 4 minutes |
+| Operation Class                                                                       | SLA Target                                      | SLO Target                                       | Latency Window                               |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------ | -------------------------------------------- |
+| Contract write operations                                                             | 99.5% successful completion per rolling 30 days | 99.9% successful completion per rolling 30 days  | 95% within 2 minutes, 99% within 5 minutes   |
+| Contract read operations                                                              | 99.9% successful responses per rolling 30 days  | 99.95% successful responses per rolling 30 days  | 95% within 1.5 seconds, 99% within 3 seconds |
+| Critical payout path (`approve_submission`, `claim_reward`, escrow-affecting refunds) | 99.7% successful completion per rolling 30 days | 99.95% successful completion per rolling 30 days | 95% within 90 seconds, 99% within 4 minutes  |
 
 ## Operation-Specific Expectations
 
-| Contract Operation | Success SLO | Latency SLO |
-|---|---|---|
-| `register_quest` / `register_quest_with_metadata` / `register_quests_batch` | 99.9% over 30 days | 95% complete within 2 minutes |
-| `submit_proof` / `commit_submission` / `reveal_submission` | 99.9% over 30 days | 95% complete within 2 minutes |
-| `approve_submission` / `approve_submissions_batch` | 99.95% over 30 days | 95% complete within 90 seconds |
-| `claim_reward` | 99.95% over 30 days | 95% complete within 90 seconds |
-| `deposit_escrow` / top-up flows | 99.9% over 30 days | 95% complete within 2 minutes |
-| `cancel_quest` / `withdraw_unclaimed` / `expire_quest` | 99.9% over 30 days | 95% complete within 3 minutes |
-| Query methods such as `get_quest`, `get_submission`, `get_escrow_info`, `get_platform_stats` | 99.95% over 30 days | 95% return within 1.5 seconds |
+| Contract Operation                                                                           | Success SLO         | Latency SLO                    |
+| -------------------------------------------------------------------------------------------- | ------------------- | ------------------------------ |
+| `register_quest` / `register_quest_with_metadata` / `register_quests_batch`                  | 99.9% over 30 days  | 95% complete within 2 minutes  |
+| `submit_proof` / `commit_submission` / `reveal_submission`                                   | 99.9% over 30 days  | 95% complete within 2 minutes  |
+| `approve_submission` / `approve_submissions_batch`                                           | 99.95% over 30 days | 95% complete within 90 seconds |
+| `claim_reward`                                                                               | 99.95% over 30 days | 95% complete within 90 seconds |
+| `deposit_escrow` / top-up flows                                                              | 99.9% over 30 days  | 95% complete within 2 minutes  |
+| `cancel_quest` / `withdraw_unclaimed` / `expire_quest`                                       | 99.9% over 30 days  | 95% complete within 3 minutes  |
+| Query methods such as `get_quest`, `get_submission`, `get_escrow_info`, `get_platform_stats` | 99.95% over 30 days | 95% return within 1.5 seconds  |
 
 ## Measurement Rules
 
@@ -95,10 +95,10 @@ Latency is measured from the time the platform accepts an operation request to t
 The rolling 30-day SLO error budget is the difference between 100% and the target SLO.
 
 | SLO Class | Error Budget |
-|---|---|
-| 99.95% | 0.05% |
-| 99.9% | 0.1% |
-| 99.7% | 0.3% |
+| --------- | ------------ |
+| 99.95%    | 0.05%        |
+| 99.9%     | 0.1%         |
+| 99.7%     | 0.3%         |
 
 When more than 50% of the monthly error budget is consumed:
 
@@ -132,11 +132,11 @@ Recommended alert thresholds:
 
 ### Initial Response Targets
 
-| Severity | Acknowledge | Mitigation Plan | Status Update Cadence |
-|---|---|---|---|
-| SEV-1 | 15 minutes | 30 minutes | Every 30 minutes |
-| SEV-2 | 30 minutes | 60 minutes | Every 60 minutes |
-| SEV-3 | 1 business day | 2 business days | Daily until stable |
+| Severity | Acknowledge    | Mitigation Plan | Status Update Cadence |
+| -------- | -------------- | --------------- | --------------------- |
+| SEV-1    | 15 minutes     | 30 minutes      | Every 30 minutes      |
+| SEV-2    | 30 minutes     | 60 minutes      | Every 60 minutes      |
+| SEV-3    | 1 business day | 2 business days | Daily until stable    |
 
 ## Instrumentation Expectations
 
@@ -172,13 +172,13 @@ Each constant is set to the observed CPU instruction ceiling plus a 20% safety m
 
 ### Measurement Results (2026-06-26, soroban-sdk 21.7.4)
 
-| Entrypoint | Symbol | Raw Baseline (CU) | Budget (+20%) |
-| --- | --- | --- | --- |
-| `initialize` | `init` | 284,753 | 341,704 |
-| `register_quest` | `reg_qst` | 341,268 | 409,522 |
-| `submit_proof` | `sub_prf` | 386,946 | 464,336 |
-| `approve_submission` | `appr_sub` | 438,714 | 526,457 |
-| `claim_reward` | `clm_rwd` | 767,838 | 921,406 |
+| Entrypoint           | Symbol     | Raw Baseline (CU) | Budget (+20%) |
+| -------------------- | ---------- | ----------------- | ------------- |
+| `initialize`         | `init`     | 284,753           | 341,704       |
+| `register_quest`     | `reg_qst`  | 341,268           | 409,522       |
+| `submit_proof`       | `sub_prf`  | 386,946           | 464,336       |
+| `approve_submission` | `appr_sub` | 438,714           | 526,457       |
+| `claim_reward`       | `clm_rwd`  | 767,838           | 921,406       |
 
 ### Re-benchmarking Procedure
 

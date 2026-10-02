@@ -7,6 +7,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - Unique constraint `uq_submission_user_quest` on submissions table to prevent duplicate submissions per user per quest
 - `withdrawnAt` column and `WITHDRAWN` status for submissions
 - `withdrawSubmission()` method in SubmissionsService allowing users to withdraw their pending submissions
@@ -24,6 +25,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - `SubmissionMapper` class with explicit mapper methods for converting submission entities to API DTOs
 
 ### Fixed
+
 - Submission lookups now throw typed `SubmissionNotFoundException` / `QuestNotFoundException` instead of generic `NotFoundException`, producing clean 404 responses via `AppExceptionFilter` instead of falling through as 500s.
 - `getQuestWithVerifiers` now throws `QuestNotFoundException` when the quest does not exist instead of silently returning empty data.
 - Submission list query parameters now reject malformed UUID filters and invalid pagination, status, sort, and order values at the DTO boundary (#2252).
@@ -31,5 +33,6 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - Cast UUID to text in submissions service update queries to resolve database type comparison errors.
 
 ### Changed
+
 - Applied code-style formatting to `submission.mapper.ts` import block and arrow functions (no logic change).
 - `SubmissionsService` now depends on `StellarSubmissionService` (was `StellarService`) — aligns with the stellar module refactor that split the monolithic service into focused services (#1912).

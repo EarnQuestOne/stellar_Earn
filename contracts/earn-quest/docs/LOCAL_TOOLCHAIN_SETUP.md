@@ -30,8 +30,8 @@ cargo test           # run contract tests
 
 ## 4. Common Issues
 
-| Problem | Fix |
-|---|---|
-| `wasm32` target missing | `rustup target add wasm32-unknown-unknown` |
-| `soroban` not found | Ensure `~/.cargo/bin` is in `$PATH` |
-| Build fails on Windows | Use WSL2 or install `pkg-config` and `libssl-dev` |
+| Problem                 | Fix                                               |
+| ----------------------- | ------------------------------------------------- |
+| `wasm32` target missing | `rustup target add wasm32-unknown-unknown`        |
+| `soroban` not found     | Ensure `~/.cargo/bin` is in `$PATH`               |
+| Build fails on Windows  | Use WSL2 or install `pkg-config` and `libssl-dev` |

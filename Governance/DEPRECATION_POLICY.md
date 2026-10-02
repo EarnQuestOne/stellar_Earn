@@ -51,12 +51,12 @@ request that adds the deprecation:
 
 ## Notice periods
 
-| Item type | Minimum notice period |
-|-----------|-----------------------|
-| Public API or contract entrypoint | Two MAJOR releases or six months, whichever is longer. |
-| Configuration key or environment variable | One MAJOR release or three months, whichever is longer. |
-| Supported platform or runtime version | One MAJOR release or three months, whichever is longer. |
-| Internal or experimental API (clearly labelled as such) | One MINOR release or 30 days, whichever is longer. |
+| Item type                                               | Minimum notice period                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| Public API or contract entrypoint                       | Two MAJOR releases or six months, whichever is longer.  |
+| Configuration key or environment variable               | One MAJOR release or three months, whichever is longer. |
+| Supported platform or runtime version                   | One MAJOR release or three months, whichever is longer. |
+| Internal or experimental API (clearly labelled as such) | One MINOR release or 30 days, whichever is longer.      |
 
 Notice periods begin from the date of the first release that includes the
 deprecation annotation and changelog entry.

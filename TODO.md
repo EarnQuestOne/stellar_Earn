@@ -18,4 +18,3 @@
 - [x] Add analytics tracking for 404 hits (event name + payload)
 - [x] Wire search results to quest listing links
 - [x] Run frontend lint/tests/build (as available)
-
