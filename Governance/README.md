@@ -123,6 +123,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
 - [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
 - [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
+- [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
 
 ## How to contribute to governance
 
