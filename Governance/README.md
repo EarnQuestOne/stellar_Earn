@@ -99,6 +99,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Community moderator role](roles/MODERATOR.md): moderation duties, the actions a moderator may take alone, and escalation to maintainers and the CoC Committee. (Closes #2519)
 - [CI/CD governance and required checks](CICD_POLICY.md): the required status checks, their scope, and who may bypass them. (Closes #2563)
 - [Contribution ladder](CONTRIBUTION_LADDER.md): the rungs from contributor to maintainer, the criteria for reaching each one, the evidence a promotion must show, and how to step back down. (Closes #2540)
+- [Contract Mainnet Change-Freeze Policy](contract/CHANGE_FREEZE.md): Freeze windows during which no mainnet changes ship.
+- [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
+- [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
+- [Contract Post-Deployment Verification Policy](contract/POST_DEPLOY_VERIFY.md): Checks run immediately after a contract deployment.
 - [Backend Data-Export and Subject-Rights Request Policy](backend/DATA_EXPORT.md): How data-access and deletion requests are fulfilled.
 - [Backend Timezone and Datetime Handling Policy](backend/DATETIME_POLICY.md): UTC storage and formatting conventions across the API.
 - [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
