@@ -103,6 +103,26 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Webhook Delivery and Signing Policy](backend/WEBHOOK_POLICY.md): Signing, retry, and replay protection for outbound webhooks.
 - [Backend Pagination and Filtering Convention](backend/PAGINATION_CONVENTION.md): Pagination style and filter-parameter conventions.
 - [Backend Error-Response and Error-Code Standard](backend/ERROR_CODES.md): The error envelope and the stable error-code catalogue.
+- [Contract Mainnet Change-Freeze Policy](contract/CHANGE_FREEZE.md): Freeze windows during which no mainnet changes ship.
+- [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
+- [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
+- [Contract Post-Deployment Verification Policy](contract/POST_DEPLOY_VERIFY.md): Checks run immediately after a contract deployment.
+- [Backend Data-Export and Subject-Rights Request Policy](backend/DATA_EXPORT.md): How data-access and deletion requests are fulfilled.
+- [Backend Timezone and Datetime Handling Policy](backend/DATETIME_POLICY.md): UTC storage and formatting conventions across the API.
+- [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
+- [Backend Bulk-Operation and Batching Policy](backend/BULK_OPERATIONS.md): Batch limits and partial-failure semantics.
+- [Backend Outbound-Request Allowlist Policy](backend/OUTBOUND_ALLOWLIST.md): Which external hosts backend services may call, and the approval flow.
+- [Contract Emergency Pause and Circuit-Breaker Policy](contract/EMERGENCY_PAUSE.md): Who may pause contracts and under what conditions.
+- [Contract Event and Storage Schema Compatibility Policy](contract/SCHEMA_COMPAT.md): Backward-compatibility rules for contract events and storage.
+- [Contract Parameter-Change Governance](contract/PARAMETER_CHANGE.md): How on-chain parameters are proposed, approved, and changed.
+- [Backend API Documentation and OpenAPI Policy](backend/OPENAPI_POLICY.md): Endpoints must ship with OpenAPI documentation that is validated.
+- [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
+- [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
+- [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
+- [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
+- [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
+- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
+- [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
 
 ## How to contribute to governance
 
