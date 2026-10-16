@@ -99,6 +99,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Community moderator role](roles/MODERATOR.md): moderation duties, the actions a moderator may take alone, and escalation to maintainers and the CoC Committee. (Closes #2519)
 - [CI/CD governance and required checks](CICD_POLICY.md): the required status checks, their scope, and who may bypass them. (Closes #2563)
 - [Contribution ladder](CONTRIBUTION_LADDER.md): the rungs from contributor to maintainer, the criteria for reaching each one, the evidence a promotion must show, and how to step back down. (Closes #2540)
+- [Backend Outbound-Request Allowlist Policy](backend/OUTBOUND_ALLOWLIST.md): Which external hosts backend services may call, and the approval flow.
+- [Contract Emergency Pause and Circuit-Breaker Policy](contract/EMERGENCY_PAUSE.md): Who may pause contracts and under what conditions.
+- [Contract Event and Storage Schema Compatibility Policy](contract/SCHEMA_COMPAT.md): Backward-compatibility rules for contract events and storage.
+- [Contract Parameter-Change Governance](contract/PARAMETER_CHANGE.md): How on-chain parameters are proposed, approved, and changed.
 - [Backend API Documentation and OpenAPI Policy](backend/OPENAPI_POLICY.md): Endpoints must ship with OpenAPI documentation that is validated.
 - [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
 - [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
