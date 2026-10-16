@@ -103,6 +103,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
 - [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
+- [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
+- [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
+- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
+- [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
 
 ## How to contribute to governance
 
