@@ -99,6 +99,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Community moderator role](roles/MODERATOR.md): moderation duties, the actions a moderator may take alone, and escalation to maintainers and the CoC Committee. (Closes #2519)
 - [CI/CD governance and required checks](CICD_POLICY.md): the required status checks, their scope, and who may bypass them. (Closes #2563)
 - [Contribution ladder](CONTRIBUTION_LADDER.md): the rungs from contributor to maintainer, the criteria for reaching each one, the evidence a promotion must show, and how to step back down. (Closes #2540)
+- [Backend Data-Export and Subject-Rights Request Policy](backend/DATA_EXPORT.md): How data-access and deletion requests are fulfilled.
+- [Backend Timezone and Datetime Handling Policy](backend/DATETIME_POLICY.md): UTC storage and formatting conventions across the API.
+- [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
+- [Backend Bulk-Operation and Batching Policy](backend/BULK_OPERATIONS.md): Batch limits and partial-failure semantics.
 
 ## How to contribute to governance
 
