@@ -99,6 +99,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Community moderator role](roles/MODERATOR.md): moderation duties, the actions a moderator may take alone, and escalation to maintainers and the CoC Committee. (Closes #2519)
 - [CI/CD governance and required checks](CICD_POLICY.md): the required status checks, their scope, and who may bypass them. (Closes #2563)
 - [Contribution ladder](CONTRIBUTION_LADDER.md): the rungs from contributor to maintainer, the criteria for reaching each one, the evidence a promotion must show, and how to step back down. (Closes #2540)
+- [Backend Idempotency and Retry Convention](backend/IDEMPOTENCY.md): Which endpoints require idempotency keys, and the semantics.
+- [Backend Webhook Delivery and Signing Policy](backend/WEBHOOK_POLICY.md): Signing, retry, and replay protection for outbound webhooks.
+- [Backend Pagination and Filtering Convention](backend/PAGINATION_CONVENTION.md): Pagination style and filter-parameter conventions.
+- [Backend Error-Response and Error-Code Standard](backend/ERROR_CODES.md): The error envelope and the stable error-code catalogue.
 - [Contract Mainnet Change-Freeze Policy](contract/CHANGE_FREEZE.md): Freeze windows during which no mainnet changes ship.
 - [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
 - [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
