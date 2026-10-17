@@ -73,7 +73,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Triager role](roles/TRIAGER.md): triage duties and the label/milestone permissions the role holds. (Closes #2514)
 - [Technical steering committee](TSC.md): the TSC's membership, remit, and term. (Closes #2515)
 - [Leadership and council model](LEADERSHIP.md): how top-level leadership works and how it is held accountable. (Closes #2516)
-- [Issue lifecycle](ISRUE_LIFECYCLE.md): states, transitions, labels, and ownership.
+- [Issue lifecycle](ISSUE_LIFECYCLE.md): states, transitions, labels, and ownership.
 - [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
 - [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
 - [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
@@ -121,5 +121,5 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
-- [Backend Background-Worker Scaling Policy](backend/WORKER_SCALING.md): How background workers scale, how backpressure is handled, and who owns this document.
+- [Backend Background-Worker Scaling Policy](backend/WORKER_SCALING.md): How background workers scale, how backpressure is handled, and the ownership and review cadence for this policy.
 - [Contract

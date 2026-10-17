@@ -1,41 +1,105 @@
 # Backend Background-Worker Scaling Policy
 
-This document defines how backend background workers scale, how backpressure is handled, and who owns this policy and how it is reviewed.
+This document defines how the backend's background workers scale,
+how backpressure is handled, and who owns this policy and how it is reviewed.
+
+It applies to all backend services that consume work from a queue or scheduler
+(for example job runners, outbox dispatchers, webhook delivery workers, and
+scheduled reconciliation tasks). It does not cover request-serving API replicas,
+which are governed by the service's own deployment and autoscaling configuration.
 
 ## Scope
 
-Applies to all backend background workers in this repository, including but not limited to job processors, queue consumers, scheduled tasks, and outbound-webhook delivery workers.
+- All background-worker processes operated by the project.
+- Queue consumers, scheduled jobs, and outbound delivery workers.
+- Scaling signals, limits, and backpressure behaviour for those workers.
 
-## Scaling Model
+Out of scope: request-serving API replicas, database instance sizing, and
+third-party managed queue service sizing.
 
-Workers scale horizontally. Each worker instance is stateless and pulls work from a shared queue.
+## Scaling Policy
 
-- **Scaling signal:** queue depth (and oldest-message age) is the primary signal for scaling out. CPU utilization is a secondary signal for scaling in.
-- **Minimum replicas:** every worker pool must run at least two replicas in production to survive single-instance failures.
-- **Maximum replicas:** must be explicitly configured per pool and documented in the service configuration; unbounded scaling is not allowed.
-- **Scale-out step:** add replicas in increments of one up to the configured maximum, with a cooldown period to prevent flapshing.
-- **Scale-in step:** remove replicas one at a time only after sustained low utilization, and never below the minimum replica count.
-- **Idempotency:** workers must tolerate at-least-once delivery. Handlers must be idempotent or deduplicate on a stable job key.
+Background workers scale on **queue depth and age of the oldest unacknowledged
+message**, not on CPU or memory alone. This keeps worker capacity tied to actual
+backlog rather than to host-level resource usage.
+
+### Signals
+
+- Primary: queue depth (number of ready messages).
+- Primary: age of the oldest ready message.
+- Secondary: worker error rate and retry rate.
+- Secondary: processing latency per job type.
+
+### Scaling rules
+
+- Workers scale out when queue depth or oldest-message age exceeds the
+  service's configured threshold for a confirmed sustained period.
+- Workers scale in gradually when queue depth and message age return to baseleve
+  for a confirmed sustained period.
+- Every worker pool declares a minimum and maximum replica count. The minimum
+  must be at least one so that work is always progressing.
+- Scaling decisions must be idempotent and must not depend on the number of
+  workers already running to avoid oscillation.
+- Scale-in must drain in-flight jobs before a worker exits, up to the configured
+  grace period.
+
+### Limits
+
+- Each worker pool declares a maximum replica count that is reviewed as part of
+  this document's update cadence.
+- Maximum replica counts must respect the downstream dependency's concurrency
+  limits (database connections, external API rate limits, and queue provider
+  consumer limits).
+- Workers must not auto-scale beyond the declared maximum without an approved
+  change to this document.
 
 ## Backpressure
 
-Backpressure protects workers and downstream dependencies when demand exceeds capacity.
+Backpressure is applied at the queue boundary and inside the worker, never by
+silently dropping work.
 
-- **Bounded concurrency:** each worker limits the number of jobs it processes concurrently. The limit is configurable and must be set below the capacity of downstream dependencies.
-- **Prefetch limits:** workers must not buffer more messages than they can process; prefetch is capped and aligned with concurrency.
-- **Queue depth as a signal:** sustained growth in queue depth or message age triggers scaling out and an alert; it is not silently absorbed.
-- **Retry with backoff:** failed jobs are retried with exponential backoff and jitter, up to a configured attempt ceiling.
-- **Dead-letter queue:** jobs that exhaust retries are routed to a dead-letter queue for inspection and replay; they are not dropped silently.
-- **Fair sharing:** where multiple tenants or job classes share a queue, work shall be distributed so that a single tenant cannot starve others.
-- **Shedding:** when the system is saturated, low-priority work may be deferred in favour of high-priority work, but no work is silently discarded.
+### Queue-level backpressure
+
+- Producers must have a bounded outbound queue. When the bound is reached,
+  producers block or fail fast according to the service's documented behaviour,
+  and must not buffer unbounded work in memory.
+- Workers prefetch a bounded number of messages. Prefetch must be declared and
+  reviewed alongside the replica limits.
+- When the queue is saturated, the system must slow producers rather than
+  drop messages.
+
+### Worker-level backpressure
+
+- Workers must apply a concurrency limit per replica for jobs that call external
+  dependencies.
+- Retries use bounded exponential backoff with jitter and a declared maximum
+  attempt count. Exhausted jobs go to a dead-letter queue.
+- Dead-letter queues must be monitored and automatically alerted on.
+- Workers must not retry non-retryable errors; those go directly to the
+  dead-letter queue.
 
 ## Ownership
 
-This document is owned by the backend maintainers listed in [../MAINTAINERS.md](../MAINTAINERS.md) with a backend area of responsibility. The owner is responsible for keeping this policy accurate and for approving changes to it.
+- Owner: the backend maintainers (as listed in `Governance/MAINTAINERS.md`).
+- Reviewers: the Technical Steering Committee (TSC) for changes to scaling
+  limits or backpressure semantics.
+- Escalation: disputes follow `Governance/CONFLICT_RESOLUTION.md`.
 
 ## Review and Update Cadence
 
-- This document is reviewed at least once every six months.
-- It is also updated whenever the worker scaling or backpressure behaviour changes.
-- Changes are proposed through a pull request that is limited to the `Governance/` folder and requires approval from a backend maintainer.
-- Substantive changes follow the process in [../AMENDMENTS.md](../AMENDMENTS.md).
+- This document is reviewed at least once per quarter by the backend
+  maintainers.
+- Any change to scaling thresholds, replica limits, or backpressure
+  behaviour must be made through a pull request that updates this document and
+  the corresponding service configuration together.
+- Emergency changes follow `Governance/HOTFIX_POLICY.md` and must be
+  retroactively reconciled with this document within five working days.
+
+## Related Documents
+
+- [Backend Idempotency and Retry Convention](IDEMPOTENCY.md)
+- [Backend Webhook Delivery and Signing Policy](WEBHOOK_POLICY.md)
+- [Backend Audit Logging for Sensitive Actions](AUDIT_LOGGING.md)
+- [Backend Logging and Log-Retention Policy](LOG_RETENTION.md)
+- [Hotfix policy](../HOTFIX_POLICY.md)
+- [Conflict resolution and escalation path](../CONFLICT_RESOLUTION.md)
