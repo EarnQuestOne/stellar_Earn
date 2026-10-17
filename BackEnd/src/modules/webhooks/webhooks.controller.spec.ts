@@ -9,6 +9,9 @@ import { WebhooksService, WebhookResponse } from './webhooks.service';
 import { TraceService } from '../trace/trace.service';
 import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 
+import { WebhookEventType } from './dto/webhook-event.dto';
+
+
 /**
  * Unit tests for WebhooksController.
  *

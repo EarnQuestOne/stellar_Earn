@@ -13,6 +13,8 @@ import {
   Param,
   Query,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -489,7 +491,21 @@ export class WebhooksController {
   private generateEventId(): string {
     return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  @Post('events')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
+  async handleWebhook(@Body() payload: WebhookPayloadDto) {
+    return this.webhooksService.processEvent(payload);
+  }
 }
+
 
 @Post('events')
   @HttpCode(HttpStatus.OK)
