@@ -507,6 +507,36 @@ export class WebhooksController {
    * Generate unique event ID
    */
   private generateEventId(): string {
+
+    return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  @Post('events')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
+  async handleWebhook(@Body() payload: WebhookPayloadDto) {
+    return this.webhooksService.processEvent(payload);
+  }
+}
+
+
+@Post('events')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
+  async handleWebhook(@Body() payload: WebhookPayloadDto) {
+    return this.webhooksService.processEvent(payload);
     return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

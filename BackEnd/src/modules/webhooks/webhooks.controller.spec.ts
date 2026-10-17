@@ -10,6 +10,9 @@ import { TraceService } from '../trace/trace.service';
 import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 import { WebhookEventType, WebhookPayloadDto } from './dto/webhook-event.dto';
 
+import { WebhookEventType } from './dto/webhook-event.dto';
+
+
 /**
  * Unit tests for WebhooksController.
  *
