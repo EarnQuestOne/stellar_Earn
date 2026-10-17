@@ -121,6 +121,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
 - [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
+- [Contract Storage-Key Namespace Governance](contract/STORAGE_KEYS.md): Naming and collision rules for contract storage keys, plus ownership and review cadence.
 - [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
 - [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
 - [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
