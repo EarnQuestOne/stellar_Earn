@@ -1,99 +1,41 @@
 # Backend Background-Worker Scaling Policy
 
-This document defines how backend background workers scale and how they handle
-backpressure. It is binding for all backend services that process work outside of a
-request/response cycle (queue consumers, scheduled jobs, and event handlers).
+This document defines how backend background workers scale, how backpressure is handled, and who owns this policy and how it is reviewed.
 
 ## Scope
 
-This policy applies to every backend service that runs background workers,
-regardless of language or deployment target. Foreground request handling is out of
-scope and is governed by the application service's own runbooks.
+Applies to all backend background workers in this repository, including but not limited to job processors, queue consumers, scheduled tasks, and outbound-webhook delivery workers.
 
-## How workers scale
+## Scaling Model
 
-Workers scale horizontally by adding consumer instances. The following rules apply:
+Workers scale horizontally. Each worker instance is stateless and pulls work from a shared queue.
 
-1. **Queue-driven scaling.** The number of worker instances is derived from the
-   queue depth and age, not from the number of incoming HTTP requests. Each queue
-   declares a target depth per worker and a maximum instance count.
-
-2. **Scale-up is fast, scale-down is slow.** Scale-up reacts within one scaling
-    interval (default 60 seconds). Scale-down requires a sustained period of low
-    utilisation (default 10 minutes) to avoid flapshing.
-
-3. **Hard ceilings.** Every queue defines a maximum instance count. The ceiling is
-    set in configuration and reviewed as part of capacity planning. Workers must not
-    scale beyond the ceiling without an approved change.
-
-4. **Per-tenant fairness.** Where a queue serves multiple tenants, workers must
-   apply fair scheduling so a single tenant cannot monopolise the consumer pool.
-
-5. **Scheduled jobs.** Scheduled jobs run on a single leader per job definition.
-   Leader election is implemented with a lease key and must be released on
-   shutdown. A job must never run concurrently on more than one instance.
-
-6. **Concurrency per instance.** Each worker instance processes a bounded number of
-   jobs concurrently. The default is 10 and it must be configurable per queue.
+- **Scaling signal:** queue depth (and oldest-message age) is the primary signal for scaling out. CPU utilization is a secondary signal for scaling in.
+- **Minimum replicas:** every worker pool must run at least two replicas in production to survive single-instance failures.
+- **Maximum replicas:** must be explicitly configured per pool and documented in the service configuration; unbounded scaling is not allowed.
+- **Scale-out step:** add replicas in increments of one up to the configured maximum, with a cooldown period to prevent flapshing.
+- **Scale-in step:** remove replicas one at a time only after sustained low utilization, and never below the minimum replica count.
+- **Idempotency:** workers must tolerate at-least-once delivery. Handlers must be idempotent or deduplicate on a stable job key.
 
 ## Backpressure
 
-Backpressure protects the system when work arrives faster than it can be processed.
+Backpressure protects workers and downstream dependencies when demand exceeds capacity.
 
-Workers must implement the following mechanisms:
-
-1. **Queue depth limits.** Every queue has a maximum depth. When the limit is
-   reached, producers must receive a retryable error and the event must be
-   rejected rather than silently dropped.
-
-2. **Consumer prefetch.** Consumers must set a prefetch limit so a single
-   instance cannot buffer an unbounded number of messages in memory.
-
-3. **Backoff and retry.** Failed or rejected work is retried with exponential
-   backoff and jitter. The retry policy is defined per queue and must have a
-   maximum attempt count.
-
-4. **Dead-letter queues.** Work that exhausts its retries must be routed to a
-   dead-letter queue. DL queues are monitored and any non-empty DL queue is an
-   actionable alert.
-
-5. **Shed load at the edge.** When a queue is saturated, the system must shed
-   load at the edge (return 429 or 503 to callers) rather than accumulating a
-   backlog in worker memory.
-
-6. **Graceful degradation.** Workers must degrade gracefully: slow down or pause
-   consumption rather than crashing, and must report health metrics to the
-   observability stack.
-
-## Observability
-
-Every worker pool must expose at least the following metrics:
-
-- Queue depth and oldest message age.
-- Instance count and concurrency per instance.
-- Job success, failure, and retry counts.
-- Dead-letter queue depth.
-
-Alerts must fire when queue depth or oldest message age exceeds the configured
-threshold for the queue.
+- **Bounded concurrency:** each worker limits the number of jobs it processes concurrently. The limit is configurable and must be set below the capacity of downstream dependencies.
+- **Prefetch limits:** workers must not buffer more messages than they can process; prefetch is capped and aligned with concurrency.
+- **Queue depth as a signal:** sustained growth in queue depth or message age triggers scaling out and an alert; it is not silently absorbed.
+- **Retry with backoff:** failed jobs are retried with exponential backoff and jitter, up to a configured attempt ceiling.
+- **Dead-letter queue:** jobs that exhaust retries are routed to a dead-letter queue for inspection and replay; they are not dropped silently.
+- **Fair sharing:** where multiple tenants or job classes share a queue, work shall be distributed so that a single tenant cannot starve others.
+- **Shedding:** when the system is saturated, low-priority work may be deferred in favour of high-priority work, but no work is silently discarded.
 
 ## Ownership
 
-- Policy owner: the backend maintainer responsible for background processing.
-- Reviewers: at least one backend maintainer and one member of the TSC.
-- Approval for changes to this document follows the required-approvals policy
-  in `Governance/APPROVALL.md`.
+This document is owned by the backend maintainers listed in [../MAINTAINERS.md](../MAINTAINERS.md) with a backend area of responsibility. The owner is responsible for keeping this policy accurate and for approving changes to it.
 
-## Review and update cadence
+## Review and Update Cadence
 
 - This document is reviewed at least once every six months.
-- An out-of-cadence review is triggered by any of the following:
-  - a significant change to the queue infrastructure,
-  - an incident caused by worker saturation or backpressure failure,
-  - a change in the scaling ceilings or concurrency defaults.
-- Each review must record the review date and the reviewer in the pull request
-  that updates this document.
-
-## Change log
-
-- {{DATE}}: Initial version of the background-worker scaling policy.
+- It is also updated whenever the worker scaling or backpressure behaviour changes.
+- Changes are proposed through a pull request that is limited to the `Governance/` folder and requires approval from a backend maintainer.
+- Substantive changes follow the process in [../AMENDMENTS.md](../AMENDMENTS.md).
