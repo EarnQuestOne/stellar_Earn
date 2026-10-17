@@ -124,6 +124,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
 - [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
 - [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
+- [Contract deprecation and sunset policy](contract/CONTRACT_SUNSET.md): How contract versions are deprecated, wound down, and retired on chain. (Closes #2803)
 
 ## How to contribute to governance
 
