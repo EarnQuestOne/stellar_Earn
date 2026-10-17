@@ -13,6 +13,7 @@ export class EmailTemplateEngine {
   private readonly logger = new Logger(EmailTemplateEngine.name);
   private readonly appUrl: string;
   private readonly appName: string;
+  private readonly templateCache = new Map<string, TemplateResult>();
 
   constructor(private readonly configService: ConfigService) {
     this.appUrl = this.configService.get<string>(
@@ -26,12 +27,25 @@ export class EmailTemplateEngine {
   }
 
   render(template: EmailTemplate, data: Record<string, any>): TemplateResult {
+    const cacheKey = `${template}:${JSON.stringify(data)}`;
+    const cached = this.templateCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const renderer = this.templateMap[template];
     if (!renderer) {
       this.logger.warn(`No template found for "${template}", using fallback`);
       return this.renderFallback(data);
     }
-    return renderer(data);
+    const result = renderer(data);
+
+    if (this.templateCache.size > 1000) {
+      this.templateCache.clear();
+    }
+    this.templateCache.set(cacheKey, result);
+
+    return result;
   }
 
   private get templateMap(): Record<

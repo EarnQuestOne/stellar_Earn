@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Header } from './Header';
 import { MobileMenu } from './MobileMenu';
@@ -14,10 +14,14 @@ const AppLayoutContext = createContext(false);
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isNestedLayout = useContext(AppLayoutContext);
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isDashboardRoute =
     pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+
+  // Stable callback so the memoized <Header /> is not invalidated when this
+  // layout re-renders (for example when the mobile menu opens) — see #2498.
+  const openMobileMenu = useCallback(() => setIsMobileMenuOpen(true), []);
 
   if (isNestedLayout) {
     return <>{children}</>;
@@ -32,7 +36,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex h-screen overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <Sidebar />
         <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-          <Header onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
+          <Header onOpenMobileMenu={openMobileMenu} />
           <MobileMenu
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}

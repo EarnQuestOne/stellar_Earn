@@ -113,6 +113,7 @@ pub fn pause_cooldown_violation(env: &Env, caller: Address, last_unpause: u64, a
 /// # Indexing Benefits
 /// * Track emergency withdrawals
 /// * Monitor fund movements
+/// * Provide an auditable record for privileged asset transfers
 pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, amount: i128) {
     // Topics: [EventName, By, Asset, To] - all indexed for tracking
     let topics = (
@@ -121,7 +122,7 @@ pub fn emergency_withdrawn(env: &Env, by: Address, asset: Address, to: Address, 
         asset.clone(),
         to.clone(),
     );
-    // Data: amount
+    // Data: amount for auditability and reconciliation with downstream token events.
     let data = (amount,);
     env.events().publish(topics, data);
 }
@@ -407,14 +408,26 @@ pub fn dispute_opened(env: &Env, quest_id: Symbol, initiator: Address, arbitrato
 }
 
 /// Emitted when a dispute is resolved (indexed: quest_id, initiator, arbitrator).
-pub fn dispute_resolved(env: &Env, quest_id: Symbol, initiator: Address, arbitrator: Address) {
+///
+/// The data payload carries the resolution outcome so indexers can track
+/// rulings without decoding contract storage:
+/// * `upheld` - `true` when the dispute was upheld (verifier was wrong).
+/// * `slash_bps` - Basis points slashed from the verifier stake (0 if none).
+pub fn dispute_resolved(
+    env: &Env,
+    quest_id: Symbol,
+    initiator: Address,
+    arbitrator: Address,
+    upheld: bool,
+    slash_bps: u32,
+) {
     let topics = (
         TOPIC_DISPUTE_RESOLVED,
         quest_id,
         initiator.clone(),
         arbitrator.clone(),
     );
-    let data = ();
+    let data = (upheld, slash_bps);
     env.events().publish(topics, data);
 }
 
@@ -462,6 +475,21 @@ pub fn verifier_stake_deposited(env: &Env, quest_id: Symbol, verifier: Address, 
 pub fn verifier_stake_slashed(env: &Env, quest_id: Symbol, verifier: Address, slash_amount: u128) {
     let topics = (symbol_short!("vstk_slsh"), quest_id, verifier);
     let data = (slash_amount,);
+    env.events().publish(topics, data);
+}
+
+/// Emitted when a verifier's stake is returned to them after a quest completes
+/// without a dispute (or the dispute was resolved in their favour).
+///
+/// # Indexing Benefits
+/// * Track stake return by quest
+/// * Monitor verifier fund recoveries
+/// * Reconcile staked vs. returned capital off-chain
+pub fn verifier_stake_returned(env: &Env, quest_id: Symbol, verifier: Address, amount: u128) {
+    // Topics: [EventName, QuestID, Verifier] — all indexed for off-chain queries
+    let topics = (symbol_short!("vstk_ret"), quest_id, verifier);
+    // Data: returned amount for reconciliation
+    let data = (amount,);
     env.events().publish(topics, data);
 }
 

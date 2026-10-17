@@ -59,7 +59,7 @@ describe('EmailService', () => {
     await service.onModuleInit();
   });
 
-  describe('sendEmail', () => {
+  describe('queueEmail (basic routing)', () => {
     it('should create a delivery record and return QUEUED status', async () => {
       const dto: SendEmailDto = {
         to: [{ email: 'user@example.com', name: 'Test User' }],
@@ -67,7 +67,7 @@ describe('EmailService', () => {
         text: 'Hello',
       };
 
-      const result = await service.sendEmail(dto);
+      const result = await service.queueEmail(dto);
 
       expect(result.messageId).toBeTruthy();
       expect(result.messageId).toMatch(/^se_/);
@@ -83,7 +83,7 @@ describe('EmailService', () => {
         text: 'Hello',
       };
 
-      const result = await service.sendEmail(dto);
+      const result = await service.queueEmail(dto);
 
       expect(result.status).toBe(EmailStatus.DROPPED);
       expect(result.messageId).toBe('');
@@ -98,7 +98,7 @@ describe('EmailService', () => {
         text: 'Hello',
       };
 
-      const result = await service.sendEmail(dto);
+      const result = await service.queueEmail(dto);
 
       expect(result.status).toBe(EmailStatus.QUEUED);
     });
@@ -196,7 +196,7 @@ describe('EmailService', () => {
   describe('processEmailJob', () => {
     it('should use template engine when template is specified', async () => {
       const messageId = (
-        await service.sendEmail({
+        await service.queueEmail({
           to: [{ email: 'user@example.com' }],
           subject: 'Test',
           template: EmailTemplate.WELCOME,
@@ -219,7 +219,7 @@ describe('EmailService', () => {
 
     it('should log warning when SendGrid is not configured', async () => {
       const messageId = (
-        await service.sendEmail({
+        await service.queueEmail({
           to: [{ email: 'user@example.com' }],
           subject: 'Test',
           text: 'Hello',
@@ -490,7 +490,7 @@ describe('EmailService', () => {
 
   describe('delivery tracking', () => {
     it('should track delivery status after sending', async () => {
-      const result = await service.sendEmail({
+      const result = await service.queueEmail({
         to: [{ email: 'user@example.com' }],
         subject: 'Test',
         text: 'Hello',
@@ -510,12 +510,12 @@ describe('EmailService', () => {
     });
 
     it('should return delivery history sorted by timestamp', async () => {
-      await service.sendEmail({
+      await service.queueEmail({
         to: [{ email: 'a@example.com' }],
         subject: 'First',
         text: 'Hello',
       });
-      await service.sendEmail({
+      await service.queueEmail({
         to: [{ email: 'b@example.com' }],
         subject: 'Second',
         text: 'Hello',
@@ -528,7 +528,7 @@ describe('EmailService', () => {
 
     it('should respect limit parameter in delivery history', async () => {
       for (let i = 0; i < 5; i++) {
-        await service.sendEmail({
+        await service.queueEmail({
           to: [{ email: `user${i}@example.com` }],
           subject: `Email ${i}`,
           text: 'Hello',
@@ -540,12 +540,12 @@ describe('EmailService', () => {
     });
 
     it('should compute delivery stats', async () => {
-      await service.sendEmail({
+      await service.queueEmail({
         to: [{ email: 'a@example.com' }],
         subject: 'A',
         text: 'Hello',
       });
-      await service.sendEmail({
+      await service.queueEmail({
         to: [{ email: 'b@example.com' }],
         subject: 'B',
         text: 'Hello',

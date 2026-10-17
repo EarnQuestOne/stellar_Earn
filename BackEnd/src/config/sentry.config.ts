@@ -1,4 +1,6 @@
-import * as Sentry from '@sentry/node';
+type SentryModule = typeof import('@sentry/node');
+
+let sentry: SentryModule | null = null;
 
 export function initSentry(): void {
   const dsn = process.env.SENTRY_DSN;
@@ -6,6 +8,13 @@ export function initSentry(): void {
   if (!dsn) {
     return;
   }
+
+  // Lazy-load the heavy @sentry/node module graph only when Sentry is actually
+  // configured. When SENTRY_DSN is unset (dev, test and many deployments) this
+  // avoids requiring the SDK at boot, cutting cold-start time and memory.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Sentry = require('@sentry/node') as SentryModule;
+  sentry = Sentry;
 
   Sentry.init({
     dsn,
@@ -26,4 +35,10 @@ export function initSentry(): void {
   });
 }
 
-export { Sentry };
+/**
+ * Returns the initialized Sentry client, or null when Sentry is disabled
+ * (SENTRY_DSN unset) and therefore was never loaded.
+ */
+export function getSentry(): SentryModule | null {
+  return sentry;
+}

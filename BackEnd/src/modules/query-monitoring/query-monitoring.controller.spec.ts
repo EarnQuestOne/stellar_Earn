@@ -18,7 +18,9 @@ describe('QueryMonitoringController', () => {
       ],
     }).compile();
 
-    controller = module.get<QueryMonitoringController>(QueryMonitoringController);
+    controller = module.get<QueryMonitoringController>(
+      QueryMonitoringController,
+    );
   });
 
   it('should return query performance metrics', async () => {

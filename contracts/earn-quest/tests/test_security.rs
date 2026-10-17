@@ -1,8 +1,8 @@
 #![cfg(test)]
 
-use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
+use soroban_sdk::testutils::{Address as _, Events, Ledger, LedgerInfo};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{symbol_short, Address, Env};
+use soroban_sdk::{symbol_short, Address, Env, IntoVal};
 
 extern crate earn_quest;
 use earn_quest::errors::Error;
@@ -297,4 +297,37 @@ fn test_non_superadmin_cannot_set_pause_cooldown() {
 
     let result = client.try_set_pause_cooldown_seconds(&admin2, &60u64);
     assert!(matches!(result, Err(Ok(Error::Unauthorized))));
+}
+
+#[test]
+fn test_emergency_withdraw_emits_indexed_audit_event() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (contract_id, client) = setup_contract(&env);
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract_obj = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token_contract = token_contract_obj.address();
+    let token_admin_client = StellarAssetClient::new(&env, &token_contract);
+
+    client.initialize(&admin);
+    token_admin_client.mint(&contract_id, &1000);
+    client.emergency_pause(&admin);
+
+    client.emergency_withdraw(&admin, &token_contract, &admin, &500);
+
+    let (_, topics, data) = env.events().all().last().unwrap();
+    let event_name: soroban_sdk::Symbol = topics.get(0).unwrap().into_val(&env);
+    let event_by: Address = topics.get(1).unwrap().into_val(&env);
+    let event_asset: Address = topics.get(2).unwrap().into_val(&env);
+    let event_to: Address = topics.get(3).unwrap().into_val(&env);
+
+    assert_eq!(event_name, symbol_short!("ewdraw"));
+    assert_eq!(event_by, admin);
+    assert_eq!(event_asset, token_contract);
+    assert_eq!(event_to, admin);
+
+    let (amount,): (i128,) = data.into_val(&env);
+    assert_eq!(amount, 500);
 }

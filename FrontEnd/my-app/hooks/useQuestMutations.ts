@@ -7,7 +7,9 @@ interface MutationContext {
 
 // Mock API calls
 const completeQuestApi = async (questId: string): Promise<Quest> => {
-  const res = await fetch(`/api/quests/${questId}/complete`, { method: 'POST' });
+  const res = await fetch(`/api/quests/${questId}/complete`, {
+    method: 'POST',
+  });
   if (!res.ok) throw new Error('Failed to complete quest');
   return res.json();
 };
@@ -22,7 +24,12 @@ export const useQuestMutations = () => {
   const queryClient = useQueryClient();
 
   // Optimistic Complete Quest Mutation
-  const completeQuestMutation = useMutation<Quest, Error, string, MutationContext>({
+  const completeQuestMutation = useMutation<
+    Quest,
+    Error,
+    string,
+    MutationContext
+  >({
     mutationFn: completeQuestApi,
 
     // 1. Cancel ongoing refetches so they don't overwrite optimistic update
@@ -35,8 +42,8 @@ export const useQuestMutations = () => {
       // Optimistically update cache
       queryClient.setQueryData<Quest[]>(['quests'], (old = []) =>
         old.map((q) =>
-          q.id === questId ? { ...q, status: 'completed', progress: 100 } : q,
-        ),
+          q.id === questId ? { ...q, status: 'completed', progress: 100 } : q
+        )
       );
 
       return { previousQuests };
@@ -56,32 +63,34 @@ export const useQuestMutations = () => {
   });
 
   // Optimistic Claim Reward Mutation
-  const claimQuestMutation = useMutation<Quest, Error, string, MutationContext>({
-    mutationFn: claimQuestApi,
+  const claimQuestMutation = useMutation<Quest, Error, string, MutationContext>(
+    {
+      mutationFn: claimQuestApi,
 
-    onMutate: async (questId) => {
-      await queryClient.cancelQueries({ queryKey: ['quests'] });
+      onMutate: async (questId) => {
+        await queryClient.cancelQueries({ queryKey: ['quests'] });
 
-      const previousQuests = queryClient.getQueryData<Quest[]>(['quests']);
+        const previousQuests = queryClient.getQueryData<Quest[]>(['quests']);
 
-      // Optimistically mark as claimed
-      queryClient.setQueryData<Quest[]>(['quests'], (old = []) =>
-        old.map((q) => (q.id === questId ? { ...q, status: 'claimed' } : q)),
-      );
+        // Optimistically mark as claimed
+        queryClient.setQueryData<Quest[]>(['quests'], (old = []) =>
+          old.map((q) => (q.id === questId ? { ...q, status: 'claimed' } : q))
+        );
 
-      return { previousQuests };
-    },
+        return { previousQuests };
+      },
 
-    onError: (_err, _questId, context) => {
-      if (context?.previousQuests) {
-        queryClient.setQueryData(['quests'], context.previousQuests);
-      }
-    },
+      onError: (_err, _questId, context) => {
+        if (context?.previousQuests) {
+          queryClient.setQueryData(['quests'], context.previousQuests);
+        }
+      },
 
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['quests'] });
-    },
-  });
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: ['quests'] });
+      },
+    }
+  );
 
   return {
     completeQuest: completeQuestMutation.mutate,

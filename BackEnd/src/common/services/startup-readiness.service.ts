@@ -41,17 +41,15 @@ export class StartupReadinessService implements OnModuleInit {
 
     const checks: ReadinessCheckResult[] = [];
 
-    // Check 1: Environment Variables (Keys)
-    checks.push(await this.checkEnvironmentVariables());
+    // #2033: Run all startup checks in parallel instead of sequentially
+    const [envResult, dbResult, cacheResult, queueResult] = await Promise.all([
+      this.checkEnvironmentVariables(),
+      this.checkDatabase(),
+      this.checkCache(),
+      this.checkQueue(),
+    ]);
 
-    // Check 2: Database
-    checks.push(await this.checkDatabase());
-
-    // Check 3: Redis/Cache
-    checks.push(await this.checkCache());
-
-    // Check 4: Queue (Redis connection for BullMQ)
-    checks.push(await this.checkQueue());
+    checks.push(envResult, dbResult, cacheResult, queueResult);
 
     const totalDurationMs = Date.now() - startTime;
     const overallStatus = this.calculateOverallStatus(checks);

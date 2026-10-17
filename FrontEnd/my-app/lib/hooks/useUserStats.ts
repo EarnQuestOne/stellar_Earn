@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { userStatsKeys } from '@/lib/query/keys';
 import type {
   DashboardData,
   UserStats,
@@ -10,167 +11,122 @@ import type {
   Badge,
 } from '../types/dashboard';
 import {
+  fetchDashboardData,
   fetchUserStats,
   fetchActiveQuests,
   fetchRecentSubmissions,
   fetchEarningsHistory,
   fetchBadges,
-  fetchDashboardData,
 } from '../api/user';
 import { useAuth } from '@/context/AuthContext';
 
-interface UseUserStatsReturn {
-  stats: UserStats | null;
-  activeQuests: Quest[];
-  recentSubmissions: Submission[];
-  earningsHistory: EarningsData[];
-  badges: Badge[];
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
+// Dashboard aggregates several endpoints; 60 s stale time avoids hammering the API.
+const DASHBOARD_STALE_TIME = 60 * 1000;
 
-export function useUserStats(): UseUserStatsReturn {
+export function useUserStats() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [activeQuests, setActiveQuests] = useState<Quest[]>([]);
-  const [recentSubmissions, setRecentSubmissions] = useState<Submission[]>([]);
-  const [earningsHistory, setEarningsHistory] = useState<EarningsData[]>([]);
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const address = user?.stellarAddress;
 
-  const fetchData = useCallback(async () => {
-    if (!user?.stellarAddress) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = (await fetchDashboardData(
-        user.stellarAddress
-      )) as DashboardData;
-      setStats(data.stats);
-      setActiveQuests(data.activeQuests);
-      setRecentSubmissions(data.recentSubmissions);
-      setEarningsHistory(data.earningsHistory);
-      setBadges(data.badges);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to fetch dashboard data'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.stellarAddress]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return {
-    stats,
-    activeQuests,
-    recentSubmissions,
-    earningsHistory,
-    badges,
+  const {
+    data,
     isLoading,
     error,
-    refetch: fetchData,
+    refetch: rqRefetch,
+  } = useQuery({
+    queryKey: userStatsKeys.byAddress(address ?? ''),
+    queryFn: () => fetchDashboardData(address) as Promise<DashboardData>,
+    enabled: !!address,
+    staleTime: DASHBOARD_STALE_TIME,
+  });
+
+  return {
+    stats: (data?.stats ?? null) as UserStats | null,
+    activeQuests: (data?.activeQuests ?? []) as Quest[],
+    recentSubmissions: (data?.recentSubmissions ?? []) as Submission[],
+    earningsHistory: (data?.earningsHistory ?? []) as EarningsData[],
+    badges: (data?.badges ?? []) as Badge[],
+    isLoading,
+    error: error ? (error as Error).message : null,
+    refetch: async () => {
+      await rqRefetch();
+    },
   };
 }
 
-// Individual hooks for more granular data fetching
+// Individual hooks — each backed by its own React Query entry so components
+// can subscribe to only the slice of data they need.
+
 export function useStats() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const address = user?.stellarAddress;
 
-  useEffect(() => {
-    if (!user?.stellarAddress) {
-      setIsLoading(false);
-      return;
-    }
-    fetchUserStats(user.stellarAddress)
-      .then((data) => setStats(data as any))
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, [user?.stellarAddress]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: [...userStatsKeys.byAddress(address ?? ''), 'stats'],
+    queryFn: () => fetchUserStats(address!),
+    enabled: !!address,
+    staleTime: DASHBOARD_STALE_TIME,
+  });
 
-  return { stats, isLoading, error };
+  return {
+    stats: data as UserStats | undefined,
+    isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useActiveQuests() {
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['activeQuests'],
+    queryFn: fetchActiveQuests,
+    staleTime: DASHBOARD_STALE_TIME,
+  });
 
-  useEffect(() => {
-    fetchActiveQuests()
-      .then(setQuests)
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  return { quests, isLoading, error };
+  return {
+    quests: (data ?? []) as Quest[],
+    isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useRecentSubmissions() {
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['recentSubmissions'],
+    queryFn: fetchRecentSubmissions,
+    staleTime: 30 * 1000,
+  });
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchRecentSubmissions();
-      setSubmissions(data);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to fetch submissions'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { submissions, isLoading, error, refetch: fetchData };
+  return {
+    submissions: (data ?? []) as Submission[],
+    isLoading,
+    error: error ? (error as Error).message : null,
+    refetch,
+  };
 }
 
 export function useEarningsHistory() {
-  const [earnings, setEarnings] = useState<EarningsData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['earningsHistory'],
+    queryFn: fetchEarningsHistory,
+    staleTime: DASHBOARD_STALE_TIME,
+  });
 
-  useEffect(() => {
-    fetchEarningsHistory()
-      .then(setEarnings)
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  return { earnings, isLoading, error };
+  return {
+    earnings: (data ?? []) as EarningsData[],
+    isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useBadges() {
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['badges'],
+    queryFn: fetchBadges,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchBadges()
-      .then(setBadges)
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  return { badges, isLoading, error };
+  return {
+    badges: (data ?? []) as Badge[],
+    isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }

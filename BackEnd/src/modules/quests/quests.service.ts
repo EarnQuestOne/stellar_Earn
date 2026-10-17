@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { QuestAlreadyExistsException } from '../../common/exceptions/app.exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quest } from './entities/quest.entity';
@@ -86,7 +87,15 @@ export class QuestsService {
       });
     }
 
-    const savedQuest = await this.questRepository.save(quest);
+    let savedQuest: Quest;
+    try {
+      savedQuest = await this.questRepository.save(quest);
+    } catch (error: unknown) {
+      if (this.isUniqueViolation(error)) {
+        throw new QuestAlreadyExistsException(quest.id);
+      }
+      throw error;
+    }
 
     await this.moderationService.saveQuestModerationItem(
       savedQuest.id,
@@ -271,9 +280,11 @@ export class QuestsService {
       new QuestUpdatedEvent(id, updateQuestDto.title || 'Untitled', 'system'),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
 
     // Emit quest updated event
     this.eventEmitter.emit('quest.updated', {
@@ -308,9 +319,27 @@ export class QuestsService {
       new QuestDeletedEvent(id, quest.createdBy),
     );
 
-    // Invalidate caches
-    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
-    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+    // #2033: Invalidate caches in parallel
+    await Promise.all([
+      this.cacheService.deletePattern(CACHE_KEYS.QUESTS),
+      this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`),
+    ]);
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const databaseError = error as {
+      code?: unknown;
+      driverError?: { code?: unknown };
+    };
+
+    return (
+      databaseError.code === '23505' ||
+      databaseError.driverError?.code === '23505'
+    );
   }
 
   validateStatusTransition(currentStatus: string, newStatus: string): void {

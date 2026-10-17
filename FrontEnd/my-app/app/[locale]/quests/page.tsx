@@ -7,21 +7,18 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { QuestListFilters } from '@/components/quest/QuestListFilters';
 import { QuestList } from '@/components/quest/QuestList';
-import { OfflineIndicator } from '@/components/quest/OfflineIndicator';
 import { Pagination } from '@/components/ui/Pagination';
 import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
 import type { Quest } from '@/lib/types/quest';
 import LazyLoad from '@/components/ui/LazyLoad';
 import { ComponentErrorBoundary } from '@/components/error/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { useQuests } from '@/lib/hooks/useQuests';
 
 function QuestsContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const { isOnline } = useOnlineStatus();
 
   // Derive filter state from URL search params
   const statusParam = searchParams.get('status');
@@ -155,11 +152,6 @@ function QuestsContent() {
 
   return (
     <AppLayout>
-      <OfflineIndicator
-        isOffline={!isOnline}
-        message="You appear to be offline. Quest data may not load properly."
-      />
-
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div

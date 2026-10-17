@@ -37,3 +37,26 @@ export async function fetchUserActivities(
 ): Promise<Activity[]> {
   return get<Activity[]>(`/profiles/${address}/activities`);
 }
+
+export interface ProfileOverview {
+  profile: ProfileData;
+  achievements: Achievement[];
+  activities: Activity[];
+}
+
+/**
+ * Batch the related profile reads (profile, achievements, activities) into a
+ * single parallel round-trip instead of separate, scattered requests. Combined
+ * with the API client's in-flight GET coalescing, this avoids the profile page
+ * firing many small sequential requests.
+ */
+export async function fetchProfileOverview(
+  address: string
+): Promise<ProfileOverview> {
+  const [profile, achievements, activities] = await Promise.all([
+    fetchUserProfile(address),
+    fetchUserAchievements(address),
+    fetchUserActivities(address),
+  ]);
+  return { profile, achievements, activities };
+}

@@ -1,59 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { reputationKeys } from '@/lib/query/keys';
 import type { UserReputation } from '@/lib/types/reputation';
 
-interface UseReputationReturn {
-  reputation: UserReputation | null;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
+// Reputation scores change infrequently; 5-min stale window is appropriate.
+const REPUTATION_STALE_TIME = 5 * 60 * 1000;
+
+async function fetchReputation(userId: string): Promise<UserReputation | null> {
+  const res = await fetch(`/api/reputation/${userId}`);
+  if (!res.ok) throw new Error('Failed to fetch reputation');
+  return res.json();
 }
 
-/**
- * Custom hook for fetching and managing user reputation data
- */
-export function useReputation(userId?: string): UseReputationReturn {
-  const [reputation, setReputation] = useState<UserReputation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchReputation = async () => {
-    if (!userId) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/reputation/${userId}`);
-      // if (!response.ok) throw new Error('Failed to fetch reputation');
-      // const data = await response.json();
-      // setReputation(data);
-
-      // For now, return null - will be populated by mock data or API
-      setReputation(null);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to fetch reputation')
-      );
-      setReputation(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReputation();
-  }, [userId]);
+export function useReputation(userId?: string) {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: reputationKeys.byUser(userId ?? ''),
+    queryFn: () => fetchReputation(userId!),
+    enabled: !!userId,
+    staleTime: REPUTATION_STALE_TIME,
+  });
 
   return {
-    reputation,
+    reputation: data ?? null,
     isLoading,
-    error,
-    refetch: fetchReputation,
+    error: error as Error | null,
+    refetch,
   };
 }

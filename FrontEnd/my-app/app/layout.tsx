@@ -1,10 +1,11 @@
 import React from 'react';
 import type { Metadata } from 'next';
+
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { getSiteUrl } from '@/lib/seo';
 import { WebVitals } from '@/components/web-vitals';
-import { QueryProvider } from '@/providers/query-provider';
+import QueryProvider from '@/providers/QueryProvider';
 
 import './globals.css';
 

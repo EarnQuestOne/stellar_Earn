@@ -167,7 +167,7 @@ BREAKING CHANGE:
 - [ ] No `console.log` / debug statements left in production code
 - [ ] No hardcoded secrets, API keys, or environment-specific values in source code
 - [ ] `.env.example` updated if new environment variables were introduced
-- [ ] `ReadMe Backend.md` or `ReadMe Frontend.md` updated if setup steps changed
+- [ ] `BackEnd/README.md` or `ReadMe Frontend.md` updated if setup steps changed
 - [ ] Self-review completed - I have read through every line of the diff
 
 ---

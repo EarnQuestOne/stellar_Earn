@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard,
@@ -52,20 +53,29 @@ export const routeLabelMap: Record<string, string> = {
   profile: 'nav.profile',
 };
 
-// Hook to get translated navigation items
+// Hook to get translated navigation items.
+//
+// The translated arrays are memoized on the translator (`t`), which next-intl
+// keeps referentially stable for a given locale. Without this, every render of
+// a consumer (e.g. the global Header) produced brand-new arrays, which defeats
+// `useMemo`/`React.memo` downstream and forced the whole navigation to
+// re-render on unrelated state changes (see #2498).
 export function useTranslatedNavigation() {
   const t = useTranslations();
 
-  return {
-    navigationItems: navigationItems.map((item) => ({
-      ...item,
-      label: t(item.labelKey),
-    })) as TranslatedNavigationItem[],
-    userMenuItems: userMenuItems.map((item) => ({
-      ...item,
-      label: t(item.labelKey),
-    })) as TranslatedUserMenuItem[],
-  };
+  return useMemo(
+    () => ({
+      navigationItems: navigationItems.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+      })) as TranslatedNavigationItem[],
+      userMenuItems: userMenuItems.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+      })) as TranslatedUserMenuItem[],
+    }),
+    [t]
+  );
 }
 
 // TranslatedNavigationItem is the type after useTranslatedNavigation adds the label

@@ -12,8 +12,12 @@ const outputPath = join(__dirname, '../jwt-keys-output.txt');
 
 if (existsSync(outputPath)) {
   const content = readFileSync(outputPath, 'utf8');
-  const privateKeyMatch = content.match(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/);
-  const publicKeyMatch = content.match(/-----BEGIN PUBLIC KEY-----[\s\S]*?-----END PUBLIC KEY-----/);
+  const privateKeyMatch = content.match(
+    /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/,
+  );
+  const publicKeyMatch = content.match(
+    /-----BEGIN PUBLIC KEY-----[\s\S]*?-----END PUBLIC KEY-----/,
+  );
   if (privateKeyMatch) {
     process.env.JWT_PRIVATE_KEY ??= privateKeyMatch[0];
   }

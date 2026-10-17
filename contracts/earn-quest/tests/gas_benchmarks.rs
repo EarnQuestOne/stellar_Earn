@@ -21,7 +21,7 @@ use soroban_sdk::{
     symbol_short,
     testutils::{Address as _, Ledger},
     token::StellarAssetClient,
-    Address, BytesN, Env, Symbol,
+    Address, BytesN, Env, Symbol, Vec,
 };
 
 fn setup(
@@ -222,4 +222,63 @@ fn benchmark_summary() {
         println!("{:<20} {:>15} {:>15} {:>8}", name, baseline, budget, sym);
     }
     println!("=============================================================\n");
+}
+
+#[test]
+fn benchmark_award_xp_batch_impact() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (client, _, admin, _, _, _) = setup(&env);
+    client.initialize(&admin);
+
+    let user = Address::generate(&env);
+
+    // 1. Measure sequential per-entry reputation writes (5 grants)
+    let mut seq_cost = 0u64;
+    for _ in 0..5 {
+        let mut grants = Vec::new(&env);
+        grants.push_back((user.clone(), 100u64));
+        let mut budget = env.budget();
+        budget.reset_default();
+        let before = budget.cpu_instruction_cost();
+        client.award_xp_batch(&grants);
+        seq_cost += budget.cpu_instruction_cost() - before;
+    }
+
+    // 2. Measure batched in-memory aggregated write (5 grants)
+    let user_batch = Address::generate(&env);
+    let mut batch_grants = Vec::new(&env);
+    for _ in 0..5 {
+        batch_grants.push_back((user_batch.clone(), 100u64));
+    }
+
+    let mut budget = env.budget();
+    budget.reset_default();
+    let before = budget.cpu_instruction_cost();
+    client.award_xp_batch(&batch_grants);
+    let batch_cost = budget.cpu_instruction_cost() - before;
+
+    println!("\n=== REPUTATION BATCHING GAS IMPACT METRICS ===");
+    println!(
+        "Sequential per-entry reputation write cost (5 items): {} CPU instructions",
+        seq_cost
+    );
+    println!(
+        "Batched in-memory reputation write cost (5 items)   : {} CPU instructions",
+        batch_cost
+    );
+    println!(
+        "Gas reduction: {} instructions ({:.2}% efficiency improvement)",
+        seq_cost.saturating_sub(batch_cost),
+        ((seq_cost.saturating_sub(batch_cost)) as f64 / seq_cost as f64) * 100.0
+    );
+    println!("===============================================\n");
+
+    assert!(
+        batch_cost < seq_cost,
+        "Batched reputation write ({}) should consume fewer CPU instructions than sequential writes ({})",
+        batch_cost,
+        seq_cost
+    );
 }

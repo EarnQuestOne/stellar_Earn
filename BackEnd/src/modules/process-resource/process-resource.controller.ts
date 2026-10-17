@@ -101,10 +101,15 @@ export class ProcessResourceController {
   @Version('1')
   @ApiOperation({
     summary: 'List profiling sessions',
-    description: 'Returns the history of heap snapshot sessions taken this process lifetime.',
+    description:
+      'Returns the history of heap snapshot sessions taken this process lifetime.',
   })
   @ApiResponse({ status: 200, description: 'Session list' })
-  listSessions(): { enabled: boolean; profileDir: string; sessions: ProfileSession[] } {
+  listSessions(): {
+    enabled: boolean;
+    profileDir: string;
+    sessions: ProfileSession[];
+  } {
     return {
       enabled: this.profiling.isEnabled(),
       profileDir: this.profiling.getProfileDir(),

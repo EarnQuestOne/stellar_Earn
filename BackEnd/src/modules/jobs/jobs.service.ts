@@ -14,10 +14,17 @@ import {
 import { JobType } from './job.types';
 import { DataExportProcessor } from './processors/export.processor';
 import { PayoutProcessor } from './processors/payout.processor';
+import { AccountErasureProcessor } from './processors/account-erasure.processor';
 import {
   TracingService,
   TraceContext,
 } from '../../common/tracing/tracing.service';
+import {
+  resolveWorkerConcurrency,
+  resolveWorkerLimiter,
+} from './utils/worker-concurrency.util';
+import { PayloadStorageService } from './services/payload-storage.service';
+import type { HealthCheckResult } from '../health/types/health.types';
 
 export interface QueueMetrics {
   queue: string;
@@ -31,6 +38,8 @@ export interface QueueMetrics {
 interface TraceableJobData {
   __trace?: TraceContext;
 }
+
+const QUEUE_HEALTH_TIMEOUT_MS = 3000;
 
 const redisConnection = () => {
   const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -48,8 +57,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly tracing: TracingService,
+    private readonly payloadStorage: PayloadStorageService,
     private readonly dataExportProcessor?: DataExportProcessor,
     private readonly payoutProcessor?: PayoutProcessor,
+    private readonly accountErasureProcessor?: AccountErasureProcessor,
   ) {}
 
   registerEmailProcessor(
@@ -81,6 +92,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // ── Payouts queue — registered here so PAYOUT_PROCESS / PAYOUT_SETTLE
     //    jobs can be enqueued via JobsService.addJob(QUEUES.PAYOUTS, ...).
     this.queues[QUEUES.PAYOUTS] = new Queue(QUEUES.PAYOUTS, redisConnection());
+    this.queues[QUEUES.ERASURE] = new Queue(QUEUES.ERASURE, redisConnection());
 
     this.createWorker(QUEUES.NOTIFICATIONS, this.handleNotification.bind(this));
     this.createWorker(QUEUES.ANALYTICS, this.handleAnalytics.bind(this));
@@ -108,6 +120,17 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.createWorker(
         QUEUES.PAYOUTS,
         this.payoutProcessor.process.bind(this.payoutProcessor),
+      );
+    }
+
+    // ── Wire the AccountErasureProcessor to the ERASURE queue ────────────
+    if (
+      this.accountErasureProcessor &&
+      typeof this.accountErasureProcessor.process === 'function'
+    ) {
+      this.createWorker(
+        QUEUES.ERASURE,
+        this.accountErasureProcessor.process.bind(this.accountErasureProcessor),
       );
     }
   }
@@ -242,13 +265,126 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           span.attributes['trace.parent_span_id'] = traceContext.spanId;
         }
 
-        return queue.add(`${name}-job`, tracedData, jobOpts);
+        // ── Payload / metadata split ────────────────────────────────
+        // If the data exceeds the threshold, offload the full payload
+        // to cache and enqueue only a lightweight reference + metadata.
+        let enqueueData: any = tracedData;
+        if (
+          typeof tracedData === 'object' &&
+          tracedData !== null &&
+          this.payloadStorage.shouldOffload(tracedData)
+        ) {
+          // Use a temporary key; the real BullMQ job ID isn't known yet,
+          // so we generate a stable reference from trace + timestamp.
+          const refKey = `pending:${traceContext?.traceId ?? Date.now()}:${Date.now()}`;
+          await this.payloadStorage.storePayload(refKey, tracedData);
+          enqueueData = this.payloadStorage.buildLightweightData(
+            tracedData,
+            refKey,
+            refKey,
+          );
+          span.attributes['payload.offloaded'] = true;
+        }
+
+        const job = await queue.add(`${name}-job`, enqueueData, jobOpts);
+
+        // If we used a pending ref, update the key to use the real job ID.
+        if (
+          enqueueData.__payloadRef &&
+          enqueueData.__payloadRef.startsWith('pending:')
+        ) {
+          const oldKey = enqueueData.__payloadRef;
+          const newRef = `job_payload:${job.id}`;
+          const payload =
+            await this.payloadStorage.retrievePayloadByKey(oldKey);
+          if (payload !== undefined) {
+            await this.payloadStorage.storePayload(job.id!, payload);
+            await this.payloadStorage.evictPayload(oldKey);
+          }
+          // Update the reference in-place so workers can resolve it.
+          enqueueData.__payloadRef = newRef;
+          await job.updateData(enqueueData);
+        }
+
+        return job;
       },
       {
         'queue.name': name,
         'job.name': `${name}-job`,
       },
     );
+  }
+
+  /**
+   * Resolve the full payload for a BullMQ job.
+   *
+   * When payload/metadata splitting is active, the job data stored in
+   * BullMQ contains only lightweight metadata plus a `__payloadRef` key
+   * pointing to the full payload in cache.  This method resolves that
+   * reference and returns the original data.
+   *
+   * If no payload reference exists (i.e. the job was small enough to
+   * fit entirely in BullMQ), `job.data` is returned as-is.
+   */
+  async resolvePayload<T = any>(job: Job): Promise<T> {
+    if (this.payloadStorage.hasPayloadRef(job.data)) {
+      const refKey = this.payloadStorage.getPayloadRefKey(job.data)!;
+      const full = await this.payloadStorage.retrievePayloadByKey<T>(refKey);
+      if (full !== undefined) return full;
+      this.logger.warn(
+        `Payload reference ${refKey} for job ${job.id} not found in cache; falling back to inline data`,
+      );
+    }
+    return job.data as T;
+  }
+
+  /**
+   * Checks Redis connectivity and readiness of every initialized BullMQ queue.
+   *
+   * Health checks must not wait indefinitely for a reconnecting Redis client,
+   * so the complete check is bounded by QUEUE_HEALTH_TIMEOUT_MS.
+   */
+  async checkHealth(): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    const queueEntries = Object.entries(this.queues);
+
+    if (queueEntries.length === 0) {
+      return {
+        status: 'down',
+        latency: Date.now() - startTime,
+        error: 'No BullMQ queues are initialized',
+      };
+    }
+
+    try {
+      await this.withTimeout(
+        Promise.all(
+          queueEntries.map(async ([name, queue]) => {
+            const client = await queue.waitUntilReady();
+            if (typeof client.ping !== 'function') {
+              throw new Error(`Redis client for queue ${name} cannot ping`);
+            }
+            await client.ping();
+          }),
+        ),
+        QUEUE_HEALTH_TIMEOUT_MS,
+      );
+
+      return {
+        status: 'ok',
+        latency: Date.now() - startTime,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown queue health error';
+      this.logger.error(`BullMQ health check failed: ${errorMessage}`);
+
+      return {
+        status: 'down',
+        latency: Date.now() - startTime,
+        error: errorMessage,
+      };
+    }
   }
 
   /** Returns active, delayed, failed, and completed counts for every queue. */
@@ -283,6 +419,30 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return { queue: name, active, delayed, failed, completed, waiting };
   }
 
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+  ): Promise<T> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          timeout = setTimeout(
+            () =>
+              reject(
+                new Error(`Queue health check timed out after ${timeoutMs}ms`),
+              ),
+            timeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+
   /**
    * Creates a BullMQ Worker for the given queue.
    *
@@ -292,6 +452,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
    * forwarded to the dead-letter queue immediately.
    */
   private createWorker(name: string, processor: (job: Job) => Promise<any>) {
+    const concurrency = resolveWorkerConcurrency(name);
+    const limiter = resolveWorkerLimiter(name);
+
     const worker = new Worker(
       name,
       async (job: Job) => {
@@ -323,7 +486,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
         return processJob();
       },
-      redisConnection(),
+      {
+        ...redisConnection(),
+        concurrency,
+        ...(limiter ? { limiter } : {}),
+      },
     );
 
     worker.on('failed', (job, err) => {
@@ -354,11 +521,23 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             `Job ${job.id} (${name}) forwarded to DLQ: ${reason} – ${err?.message}`,
           );
 
+          // Store large payload in cache before forwarding to DLQ to keep
+          // the DLQ queue lightweight.
+          let dlqData = job.data;
+          if (this.payloadStorage.shouldOffload(job.data)) {
+            const dlqPayloadKey = `dlq_payload:${job.id}`;
+            await this.payloadStorage.storePayload(dlqPayloadKey, job.data);
+            dlqData = {
+              __dlqPayloadRef: dlqPayloadKey,
+              __jobType: job.data?.__jobType,
+            };
+          }
+
           await this.queues[QUEUES.DEAD_LETTER].add(`${name}-dlq`, {
             failedJob: {
               id: job.id,
               name: job.name,
-              data: job.data,
+              data: { ...dlqData, __sourceQueue: name },
               failedReason: err?.message ?? String(err),
               reason,
             },

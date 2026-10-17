@@ -1,10 +1,11 @@
 'use client';
 
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Quest } from '@/lib/types/quest';
 import { QuestDifficulty } from '@/lib/types/quest';
 
 import { useFormatter } from '@/lib/hooks/useFormatter';
+import { truncateAddress } from '@/lib/utils/format-address';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useQuestSocket } from '@/lib/hooks/useQuestSocket';
 
@@ -70,6 +71,7 @@ function avatarColor(name: string): string {
 export const QuestCard = memo(
   ({ quest, onClick, progress }: QuestCardProps) => {
     const [localQuest, setLocalQuest] = useState<Quest>(quest);
+    const [showContractTooltip, setShowContractTooltip] = useState(false);
 
     useEffect(() => {
       setLocalQuest(quest);
@@ -101,6 +103,20 @@ export const QuestCard = memo(
     const isUrgent = isDeadlineUrgent(localQuest.deadline);
 
     const handleClick = () => onClick?.(localQuest);
+
+    // Prefetch quest detail data on hover/focus so navigation to the detail
+    // page hits a warm cache instead of a cold fetch. Runs once per card; a
+    // failed prefetch is allowed to retry on a later interaction.
+    const prefetchedRef = useRef(false);
+    const handlePrefetch = useCallback(() => {
+      if (prefetchedRef.current) return;
+      prefetchedRef.current = true;
+      import('@/lib/api/quests')
+        .then(({ getQuestById }) => getQuestById(localQuest.id))
+        .catch(() => {
+          prefetchedRef.current = false;
+        });
+    }, [localQuest.id]);
 
     // ── Accessible card label ────────────────────────────────────────────────
     // Previously: raw `${quest.rewardAmount} ${quest.rewardAsset}` interpolation
@@ -134,6 +150,8 @@ export const QuestCard = memo(
       <button
         type="button"
         onClick={handleClick}
+        onMouseEnter={handlePrefetch}
+        onFocus={handlePrefetch}
         aria-label={cardLabel}
         className="quest-card"
       >
@@ -271,17 +289,32 @@ export const QuestCard = memo(
           )}
         </div>
 
-        <div className="quest-card__footer" aria-hidden="true">
+        <div className="quest-card__footer">
+          {localQuest.contractQuestId && (
+            <span
+              className="relative group"
+              onMouseEnter={() => setShowContractTooltip(true)}
+              onMouseLeave={() => setShowContractTooltip(false)}
+            >
+              <code className="quest-card__contract-id text-[11px] text-zinc-400 dark:text-zinc-500 max-w-[10rem] truncate block">
+                {truncateAddress(localQuest.contractQuestId)}
+              </code>
+              {showContractTooltip && (
+                <span className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-zinc-900 dark:bg-zinc-800 text-white text-xs whitespace-nowrap shadow-lg">
+                  {localQuest.contractQuestId}
+                </span>
+              )}
+            </span>
+          )}
           {localQuest.creator && (
             <div className="quest-card__creator">
               {localQuest.creator.avatarUrl ? (
                 <OptimizedImage
                   src={localQuest.creator.avatarUrl}
-                  alt=""
+                  alt={`${localQuest.creator.name || 'Quest creator'} avatar`}
                   width={22}
                   height={22}
                   containerClassName="quest-card__avatar quest-card__avatar--img"
-                  aria-hidden="true"
                 />
               ) : (
                 <span

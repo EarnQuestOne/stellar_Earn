@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsString } from 'class-validator';
+import { IsOptional, IsEnum, IsUUID } from 'class-validator';
 import { CursorPaginationDto } from '../../../common/dto/pagination.dto';
 
 export enum SubmissionStatus {
@@ -37,7 +37,7 @@ export class QuerySubmissionsDto extends CursorPaginationDto {
     example: 'user-uuid-here',
   })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional({

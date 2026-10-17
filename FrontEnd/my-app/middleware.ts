@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from '@/lib/i18n/config';
+import { locales, defaultLocale, localeCookie } from '@/lib/i18n';
 import type { NextRequest } from 'next/server';
 
 // ---------------------------------------------------------------------------
@@ -70,6 +70,7 @@ const i18nMiddleware = createMiddleware({
   defaultLocale,
   localeDetection: true,
   localePrefix: 'always',
+  localeCookie,
 });
 
 // ---------------------------------------------------------------------------

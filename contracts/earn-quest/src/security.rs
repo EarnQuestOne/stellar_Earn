@@ -218,6 +218,7 @@ pub fn emergency_withdraw(
 
     match transfer_result {
         Ok(Ok(_)) => {
+            // Emit a verified audit event only after the token transfer succeeds.
             events::emergency_withdrawn(env, caller.clone(), asset.clone(), to.clone(), amount);
             Ok(())
         }

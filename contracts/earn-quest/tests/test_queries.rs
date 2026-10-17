@@ -373,3 +373,18 @@ fn test_reward_range_pagination() {
     let page = client.get_quests_by_reward_range(&100, &300, &1, &1);
     assert_eq!(page.len(), 1);
 }
+
+#[test]
+fn test_get_remaining_claim_capacity() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let client = setup(&env);
+    let creator = Address::generate(&env);
+
+    let quest_id = symbol_short!("QCAP");
+    register(&client, &env, quest_id.clone(), &creator, 100);
+
+    // Initial capacity should equal MAX_QUEST_CLAIMS (10_000) when total_claims is 0
+    let remaining = client.get_remaining_claim_capacity(&quest_id);
+    assert_eq!(remaining, 10_000);
+}

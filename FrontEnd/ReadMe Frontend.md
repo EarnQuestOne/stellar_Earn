@@ -297,8 +297,8 @@ pnpm build
 - **Error Handling**: Implement proper error boundaries and user feedback
 - **Loading States**: Show loading indicators for async operations
 - **Responsive Design**: Ensure mobile-friendly layouts
-- **Accessibility**: Use semantic HTML and ARIA labels
 - **Performance**: Optimize images and lazy load components
+- **Caching**: Hashed static assets (`/_next/static/*`) are served with `Cache-Control: public, max-age=31536000, immutable` to ensure long-term caching and reduce repeat-visit load times.
 
 ## Troubleshooting
 

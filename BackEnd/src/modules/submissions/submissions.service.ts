@@ -1,14 +1,13 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   ForbiddenException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 
 /**
  * Sentinel error thrown inside the capacity-gate transaction when the
@@ -23,15 +22,33 @@ class CapacityGateFailedError extends Error {
     this.name = 'CapacityGateFailedError';
   }
 }
-import { Submission, SubmissionStatus } from './entities/submission.entity';
+import { Submission } from './entities/submission.entity';
+import { SubmissionStatus, SubmissionStateMachine } from './submission-status';
 import { ApproveSubmissionDto } from './dto/approve-submission.dto';
 import { RejectSubmissionDto } from './dto/reject-submission.dto';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
-import { StellarService } from '../stellar/stellar.service';
+import { StellarSubmissionService } from '../stellar/stellar-submission.service';
+import {
+  QuerySubmissionsDto,
+  SubmissionSortBy,
+  SortOrder,
+} from './dto/query-submissions.dto';
+import {
+  PaginatedResponseDto,
+  encodeCursor,
+  decodeCursor,
+} from '../../common/dto/pagination.dto';
+
 import { NotificationsService } from '../notifications/notifications.service';
 import { Quest } from '../quests/entities/quest.entity';
 import { User } from '../users/entities/user.entity';
 import { MetricsService } from '../../common/services/metrics.service';
+import { VerificationDedupService } from '../../common/services/verification-dedup.service';
+import { ReferralsService } from '../referrals/referrals.service';
+import {
+  SubmissionNotFoundException,
+  QuestNotFoundException,
+} from '../../common/exceptions/app.exceptions';
 
 interface QuestVerifier {
   id: string;
@@ -60,11 +77,46 @@ export class SubmissionsService {
     private usersRepository: Repository<User>,
     @InjectRepository(Quest)
     private questsRepository: Repository<Quest>,
-    private stellarService: StellarService,
+    private stellarSubmissionService: StellarSubmissionService,
     private notificationsService: NotificationsService,
     private eventEmitter: EventEmitter2,
     private metricsService: MetricsService,
+    private verificationDedup: VerificationDedupService,
+    private referralsService: ReferralsService,
   ) {}
+
+  /**
+   * Anonymize a user's submissions (right-to-erasure).
+   *
+   * Submitter PII and proof references are detached (`proof` is replaced with
+   * an erased marker, notes are nulled) while quest integrity and reviewer
+   * decisions (status, approvedBy/rejectedBy timestamps, transactionHash) are
+   * preserved so payout/audit trails stay consistent. Returns the number of
+   * submissions anonymized.
+   *
+   * Runs on the provided transaction manager when called from the erasure
+   * pipeline (so the whole erasure is atomic); otherwise uses its own
+   * repository manager.
+   */
+  async anonymizeForErasure(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const em = manager ?? this.submissionsRepository.manager;
+    const repo = em.getRepository(Submission);
+    const submissions = await repo.find({ where: { userId } });
+    if (submissions.length === 0) {
+      return 0;
+    }
+
+    for (const submission of submissions) {
+      submission.proof = { erased: true };
+      submission.verifierNotes = null;
+      submission.rejectionReason = null;
+    }
+    await repo.save(submissions);
+    return submissions.length;
+  }
 
   /**
    * Create a new submission for a quest.
@@ -130,7 +182,7 @@ export class SubmissionsService {
               // row reflects the most recent submission time.
               updatedAt: () => 'CURRENT_TIMESTAMP',
             })
-            .where('id = :questId', { questId })
+            .where('id::text = :questId', { questId })
             .andWhere('status = :active', { active: 'ACTIVE' })
             .andWhere(
               new Brackets((qb) => {
@@ -168,7 +220,7 @@ export class SubmissionsService {
           withDeleted: false,
         });
         if (!current) {
-          throw new NotFoundException(`Quest with ID ${questId} not found`);
+          throw new QuestNotFoundException(questId);
         }
         if (current.status !== 'ACTIVE') {
           throw new BadRequestException(
@@ -204,9 +256,29 @@ export class SubmissionsService {
   }
 
   /**
-   * Approve a submission and trigger on-chain reward distribution
+   * Approve a submission and trigger on-chain reward distribution.
+   *
+   * Duplicate approval requests for the same submission are deduplicated:
+   *   • In-flight — concurrent requests await the same in-flight operation.
+   *   • Result cache — recent successful results are returned briefly (5 s)
+   *     without re-executing the chain call or re-running validations.
    */
   async approveSubmission(
+    submissionId: string,
+    approveDto: ApproveSubmissionDto,
+    verifierId: string,
+  ): Promise<Submission> {
+    return this.verificationDedup.executeWithDedup(
+      `approve:${submissionId}`,
+      () => this.processApproval(submissionId, approveDto, verifierId),
+    );
+  }
+
+  /**
+   * Inner approval logic — never call directly; always go through
+   * {@link approveSubmission} so dedup/caching is applied.
+   */
+  private async processApproval(
     submissionId: string,
     approveDto: ApproveSubmissionDto,
     verifierId: string,
@@ -220,9 +292,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -282,7 +352,7 @@ export class SubmissionsService {
         approvedAt,
         verifierNotes: approveDto.notes,
       })
-      .where('id = :id', { id: submissionId })
+      .where('id::text = :id', { id: submissionId })
       .andWhere('status = :status', { status: submission.status })
       .execute();
 
@@ -301,11 +371,12 @@ export class SubmissionsService {
 
     let onChainTxHash: string | undefined;
     try {
-      const onChainResult = await this.stellarService.approveSubmission(
-        quest.contractTaskId,
-        user.stellarAddress,
-        verifier.stellarAddress,
-      );
+      const onChainResult =
+        await this.stellarSubmissionService.approveSubmission(
+          quest.contractTaskId,
+          user.stellarAddress,
+          verifier.stellarAddress,
+        );
       onChainTxHash = onChainResult.transactionHash;
     } catch (error) {
       // Roll the DB status back so the submission remains actionable.
@@ -378,6 +449,11 @@ export class SubmissionsService {
       approvedAt,
     });
 
+    // Referral qualifying milestone: a referred user's first approved
+    // submission qualifies their referrer's reward. Idempotent and a no-op
+    // when the submitter was not referred, so it never affects the flow.
+    await this.referralsService.onQualifyingApproval(submission.userId);
+
     // Emit SLA metrics for submission review time
     this.metricsService.incrementCounter('submission_review_total');
     this.metricsService.incrementCounter('submission_approval_total');
@@ -410,9 +486,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     const quest = submission.quest as Quest;
@@ -452,7 +526,7 @@ export class SubmissionsService {
         rejectionReason: rejectDto.reason,
         verifierNotes: rejectDto.notes,
       })
-      .where('id = :id', { id: submissionId })
+      .where('id::text = :id', { id: submissionId })
       .andWhere('status = :status', { status: submission.status })
       .execute();
 
@@ -525,15 +599,12 @@ export class SubmissionsService {
     currentStatus: string,
     newStatus: string,
   ): void {
-    const validTransitions: Record<string, string[]> = {
-      PENDING: ['APPROVED', 'REJECTED', 'UNDER_REVIEW'],
-      UNDER_REVIEW: ['APPROVED', 'REJECTED', 'PENDING'],
-      APPROVED: [],
-      REJECTED: ['PENDING'],
-      PAID: [],
-    };
-
-    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+    if (
+      !SubmissionStateMachine.canTransition(
+        currentStatus as SubmissionStatus,
+        newStatus as SubmissionStatus,
+      )
+    ) {
       throw new BadRequestException(
         `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
@@ -546,10 +617,13 @@ export class SubmissionsService {
     const quest = await this.questsRepository.findOne({
       where: { id: questId },
     });
+    if (!quest) {
+      throw new QuestNotFoundException(questId);
+    }
     return {
       id: questId,
-      verifiers: quest?.verifiers ?? [],
-      createdBy: quest?.createdBy ?? '',
+      verifiers: quest.verifiers ?? [],
+      createdBy: quest.createdBy ?? '',
     };
   }
 
@@ -564,21 +638,189 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException(
-        `Submission with ID ${submissionId} not found`,
-      );
+      throw new SubmissionNotFoundException(submissionId);
     }
 
     return submission;
   }
 
-  async findByQuest(questId: string): Promise<Submission[]> {
-    // Join quest and user up front so the controller (which serialises both
-    // relations) doesn't trigger lazy lookups per row.
-    return this.submissionsRepository.find({
-      where: { questId },
-      relations: ['quest', 'user'],
-      order: { createdAt: 'DESC' },
+  /**
+   * Withdraw a submission before it's been reviewed.
+   * Only allows withdrawal if submission is in PENDING status.
+   */
+  async withdrawSubmission(
+    submissionId: string,
+    userId: string,
+  ): Promise<Submission> {
+    const submission = await this.submissionsRepository.findOne({
+      where: { id: submissionId },
+      withDeleted: false,
+      relations: ['quest'],
     });
+
+    if (!submission) {
+      throw new SubmissionNotFoundException(submissionId);
+    }
+
+    // Verify the user owns the submission
+    if (submission.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only withdraw your own submissions',
+      );
+    }
+
+    // Validate status transition
+    this.validateStatusTransition(
+      submission.status,
+      SubmissionStatus.WITHDRAWN,
+    );
+
+    const withdrawnAt = new Date();
+
+    const updateResult = await this.submissionsRepository
+      .createQueryBuilder()
+      .update(Submission)
+      .set({
+        status: SubmissionStatus.WITHDRAWN,
+        withdrawnAt,
+      })
+      .where('id::text = :id', { id: submissionId })
+      .andWhere('status = :status', { status: submission.status })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      throw new ConflictException(
+        'Submission status has changed. Please refresh and try again.',
+      );
+    }
+
+    this.logger.log(
+      `Submission ${submissionId} withdrawn for quest=${submission.questId} by user=${userId}`,
+    );
+
+    // Decrement quest's currentCompletions since submission was withdrawn
+    const quest = submission.quest as Quest;
+    await this.questsRepository.update(quest.id, {
+      currentCompletions: () => 'currentCompletions - 1',
+    });
+
+    return this.findOne(submissionId);
+  }
+
+  /**
+   * List submissions for a quest using keyset (cursor) pagination.
+   *
+   * Unlike offset pagination (`OFFSET n`), the cursor predicates page
+   * through the composite `("userId", "createdAt", "id")` index so deep
+   * pages do not degrade into scan-and-skip work: every page costs O(limit)
+   * index entries regardless of how far into the dataset it is.
+   *
+   * The cursor is an opaque base64 payload encoding `{ [sortBy], id }` —
+   * the last row's sort value plus its id as a stable tiebreaker (ids are
+   * monotonic within a single timestamp, so the tuple is a total order).
+   *
+   * @param questId  Quest the submissions belong to (UUID from path).
+   * @param query    Pagination + filter options (cursor, limit, status, userId,
+   *                 sortBy, order). Optional so callers can omit it entirely.
+   */
+  async findByQuest(
+    questId: string,
+    query?: QuerySubmissionsDto,
+  ): Promise<PaginatedResponseDto<Submission>> {
+    const limit = query?.limit ?? 10;
+    const sortBy = query?.sortBy ?? SubmissionSortBy.CREATED_AT;
+    const order = query?.order ?? SortOrder.DESC;
+
+    const qb = this.submissionsRepository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.quest', 'quest')
+      .leftJoinAndSelect('submission.user', 'user')
+      .where('submission.questId = :questId', { questId });
+
+    if (query?.status) {
+      qb.andWhere('submission.status = :status', { status: query.status });
+    }
+
+    if (query?.userId) {
+      qb.andWhere('submission.userId = :userId', { userId: query.userId });
+    }
+
+    // Keyset (composite sort column + id) predicate. Applied as a range
+    // filter — never as an OFFSET — so the planner can use the composite
+    // index instead of scanning and discarding already-seen rows.
+    if (query?.cursor) {
+      const predicate = this.buildKeysetPredicate(
+        sortBy,
+        order,
+        decodeCursor(query.cursor),
+      );
+      if (predicate) {
+        qb.andWhere(predicate.clause, predicate.params);
+      }
+    }
+
+    // Fetch one extra row so we can cheaply detect whether another page
+    // exists without issuing a COUNT(*) on every request.
+    qb.orderBy(`submission.${sortBy}`, order)
+      .addOrderBy('submission.id', order)
+      .take(limit + 1);
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+
+    const last = data[data.length - 1];
+    const nextCursor =
+      hasMore && last
+        ? encodeCursor({ [sortBy]: last[sortBy], id: last.id })
+        : null;
+
+    return new PaginatedResponseDto<Submission>(data, nextCursor);
+  }
+
+  /**
+   * Build the SQL predicate that pages past a decoded cursor.
+   *
+   * Uses a composite row comparison on `(sortBy, id)` — the standard
+   * keyset form:
+   *   DESC: (sortVal, id) < (:cv, :idv)
+   *   ASC:  (sortVal, id) > (:cv, :idv)
+   *
+   * Row comparisons translate directly into an index range condition on
+   * the composite `("userId", "createdAt", "id")` index, so each page walks
+   * exactly `limit + 1` index entries regardless of depth. (The `OR`-based
+   * formulation is avoided: the planner treats it as a post-scan Filter
+   * rather than an Index Cond and ends up skipping rows as deep pages would.)
+   *
+   * Falls back to the legacy `createdAt` key when decoding an older cursor
+   * that only encoded `{ createdAt, id }` so already-issued cursors keep
+   * working after the sort column was made explicit.
+   *
+   * `sortBy` is validated by the DTO (`@IsEnum(SubmissionSortBy)`), so it is
+   * always a whitelisted column name and is safe to interpolate.
+   *
+   * @returns The WHERE clause + parameters, or null when the cursor does not
+   *          carry a usable sort value + id (treated as "start from the top").
+   */
+  private buildKeysetPredicate(
+    sortBy: SubmissionSortBy,
+    order: SortOrder,
+    decoded: Record<string, unknown> | null,
+  ): { clause: string; params: Record<string, unknown> } | null {
+    if (!decoded) return null;
+
+    const id = decoded.id;
+    if (typeof id !== 'string' || id.length === 0) return null;
+
+    // Newer cursors carry the sort value under the sort column key; older
+    // ones only carried `createdAt`.
+    const sortValue = decoded[sortBy] ?? decoded.createdAt;
+    if (sortValue === undefined || sortValue === null) return null;
+
+    const cmp = order === SortOrder.ASC ? '>' : '<';
+    return {
+      clause: `(submission.${sortBy}, submission.id) ${cmp} (:cv, :idv)`,
+      params: { cv: sortValue, idv: id },
+    };
   }
 }

@@ -16,6 +16,7 @@
 
 extern crate earn_quest;
 
+use earn_quest::errors::Error;
 use earn_quest::types::{BatchApprovalInput, BatchQuestInput};
 use earn_quest::validation;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
@@ -73,6 +74,22 @@ fn test_initialize_sets_admin_and_roles() {
 
     assert_eq!(client.get_admin(), admin);
     assert!(client.is_admin(&admin));
+}
+
+#[test]
+fn test_get_admin_before_initialization_returns_not_initialized() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register_contract(None, EarnQuestContract);
+    let client = EarnQuestContractClient::new(&env, &contract_id);
+
+    // Reading the admin before initialization must surface Error::NotInitialized
+    // instead of panicking on missing contract state.
+    assert!(matches!(
+        client.try_get_admin(),
+        Err(Ok(Error::NotInitialized))
+    ));
 }
 
 #[test]

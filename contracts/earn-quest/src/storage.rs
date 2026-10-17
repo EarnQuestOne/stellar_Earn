@@ -5,6 +5,7 @@ use crate::types::{
     Role, Submission, SubmissionStatus, UserBadges, UserCore, VerifierStake,
 };
 
+use crate::ttl;
 use crate::validation;
 use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
@@ -169,6 +170,12 @@ pub fn set_quest(env: &Env, id: &Symbol, quest: &Quest) {
     env.storage()
         .instance()
         .set(&DataKey::Quest(id.clone()), quest);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Quest(id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Checks if metadata exists for a quest.
@@ -297,6 +304,12 @@ pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submiss
         &DataKey::Submission(quest_id.clone(), submitter.clone()),
         submission,
     );
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Submission(quest_id.clone(), submitter.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 //================================================================================
@@ -323,6 +336,12 @@ pub fn set_user_stats(env: &Env, user: &Address, stats: &UserCore) {
     env.storage()
         .instance()
         .set(&DataKey::UserStats(user.clone()), stats);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::UserStats(user.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Retrieves user badges — cold path (loaded only for badge operations).
@@ -340,6 +359,12 @@ pub fn set_user_badges(env: &Env, user: &Address, badges: &UserBadges) {
     env.storage()
         .instance()
         .set(&DataKey::UserBadges(user.clone()), badges);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::UserBadges(user.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 //================================================================================
@@ -472,7 +497,10 @@ pub fn update_quest_status(env: &Env, id: &Symbol, status: QuestStatus) -> Resul
 /// * Type-safe increment operation
 pub fn increment_quest_claims(env: &Env, id: &Symbol) -> Result<(), Error> {
     let mut quest = get_quest(env, id)?;
-    quest.total_claims += 1;
+    quest.total_claims = quest
+        .total_claims
+        .checked_add(1)
+        .ok_or(Error::ArithmeticOverflow)?;
     set_quest(env, id, &quest);
     Ok(())
 }
@@ -709,17 +737,30 @@ pub fn set_oracle_addresses(env: &Env, addrs: &Vec<Address>) {
 
 pub fn add_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
     let mut addrs = get_oracle_addresses(env);
-    if !addrs.contains(&config.oracle_address) {
-        addrs.push_back(config.oracle_address.clone());
-        set_oracle_addresses(env, &addrs);
+    if addrs.contains(&config.oracle_address) {
+        return Err(Error::OracleAlreadyExists);
     }
+    // Cap the number of distinct registered oracles so aggregation cost
+    // (which iterates every config) stays bounded. Updating an already
+    // registered oracle is always allowed, even at the cap.
+    if addrs.len() >= crate::oracle::MAX_ORACLE_CONFIGS {
+        return Err(Error::OracleLimitReached);
+    }
+    addrs.push_back(config.oracle_address.clone());
+    set_oracle_addresses(env, &addrs);
     set_oracle_config(env, config);
     Ok(())
 }
 
 pub fn update_oracle_config(env: &Env, config: &OracleConfig) -> Result<(), Error> {
-    // Accept update even if address not yet tracked; keep list consistent.
-    add_oracle_config(env, config)
+    // Update is only valid for an already-registered oracle; it must not be
+    // used to register a brand-new address, and never affects the address index.
+    let addrs = get_oracle_addresses(env);
+    if !addrs.contains(&config.oracle_address) {
+        return Err(Error::OracleNotFound);
+    }
+    set_oracle_config(env, config);
+    Ok(())
 }
 
 pub fn remove_oracle_config(env: &Env, oracle_address: &Address) -> Result<(), Error> {
@@ -995,6 +1036,12 @@ pub fn set_escrow_balances(env: &Env, quest_id: &Symbol, balances: &EscrowBalanc
     env.storage()
         .instance()
         .set(&DataKey::Escrow(quest_id.clone()), balances);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::Escrow(quest_id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Get escrow cold-path metadata (depositor, token, created_at).
@@ -1011,6 +1058,12 @@ pub fn set_escrow_meta(env: &Env, quest_id: &Symbol, meta: &EscrowMeta) {
     env.storage()
         .instance()
         .set(&DataKey::EscrowMeta(quest_id.clone()), meta);
+    ttl::extend_entry_ttl(
+        env,
+        &DataKey::EscrowMeta(quest_id.clone()),
+        ttl::DEFAULT_TTL_THRESHOLD,
+        ttl::DEFAULT_TTL_EXTEND_TO,
+    );
 }
 
 /// Assemble full EscrowInfo view from the two split entries.
@@ -1087,11 +1140,11 @@ pub fn mark_initialized(env: &Env) {
     env.storage().instance().set(&DataKey::Initialized, &true);
 }
 
-pub fn get_admin(env: &Env) -> Address {
+pub fn get_admin(env: &Env) -> Result<Address, Error> {
     env.storage()
         .instance()
         .get(&DataKey::ContractAdmin)
-        .expect("Contract not initialized")
+        .ok_or(Error::NotInitialized)
 }
 
 pub fn set_contract_admin(env: &Env, address: &Address) {
@@ -1292,16 +1345,20 @@ pub fn inc_platform_rewards_claimed(env: &Env) {
 }
 
 /// Add to the rewards-distributed counter.
-pub fn add_platform_rewards_distributed(env: &Env, amount: u128) {
+///
+/// Returns [`Error::ArithmeticOverflow`] if the cumulative sum would exceed
+/// `u128::MAX` rather than silently saturating or panicking.
+pub fn add_platform_rewards_distributed(env: &Env, amount: u128) -> Result<(), Error> {
     let v: u128 = env
         .storage()
         .instance()
         .get(&DataKey::PlatformRewardsDistributed)
         .unwrap_or(0);
-    env.storage().instance().set(
-        &DataKey::PlatformRewardsDistributed,
-        &v.saturating_add(amount),
-    );
+    let updated = v.checked_add(amount).ok_or(Error::ArithmeticOverflow)?;
+    env.storage()
+        .instance()
+        .set(&DataKey::PlatformRewardsDistributed, &updated);
+    Ok(())
 }
 
 pub fn get_creator_stats(env: &Env, creator: &Address) -> CreatorStats {

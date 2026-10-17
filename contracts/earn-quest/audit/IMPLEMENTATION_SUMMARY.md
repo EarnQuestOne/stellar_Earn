@@ -22,7 +22,7 @@ audit/
 ├── AUDIT_CHECKLIST.md            # Verification checklist (800+ items)
 ├── TEST_EXECUTION_GUIDE.md       # Testing procedures (300+ lines)
 ├── tests/
-│   └── audit_tests.rs            # Test suite (700+ lines / placeholders)
+│   └── audit_tests.rs            # Test suite (700+ lines / 29 active invariant & security tests)
 └── documentation/                # Extensible docs folder
 ```
 
@@ -198,7 +198,7 @@ Contents:
 ---
 
 ### 8. **audit_tests.rs** - Comprehensive Test Suite
-**Size:** ~700 lines | **Purpose:** Audit-specific test templates
+**Size:** ~700 lines | **Purpose:** Audit invariant & security test suite (29 active tests)
 
 Contents:
 - **Invariant Tests** (10 test functions):

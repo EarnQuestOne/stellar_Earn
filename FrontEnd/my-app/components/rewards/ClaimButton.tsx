@@ -1,20 +1,43 @@
 'use client';
 
+import React, { useState, useRef } from 'react';
 import { ClaimStatus } from '@/lib/hooks/useClaim';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface ClaimButtonProps {
-  onClick: () => void;
+  onClick: () => void | Promise<void>;
   status: ClaimStatus;
   disabled?: boolean;
 }
 
 export function ClaimButton({ onClick, status, disabled }: ClaimButtonProps) {
-  const isLoading = status === 'pending';
+  const [isPending, setIsPending] = useState(false);
+  const inFlightRef = useRef(false);
+
+  const isLoading = status === 'pending' || isPending;
+
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (disabled || isLoading || inFlightRef.current) {
+      return;
+    }
+
+    inFlightRef.current = true;
+    setIsPending(true);
+
+    try {
+      await onClick();
+    } catch (err) {
+      // Error is handled by caller (e.g. useClaim status or toast)
+    } finally {
+      inFlightRef.current = false;
+      setIsPending(false);
+    }
+  };
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled || isLoading}
       className={`
         relative w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all

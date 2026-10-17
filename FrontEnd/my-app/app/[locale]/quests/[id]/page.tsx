@@ -6,20 +6,17 @@ import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { QuestDetail } from '@/components/quest/QuestDetail';
 import { SubmissionForm } from '@/components/submission/SubmissionForm';
-import { OfflineIndicator } from '@/components/quest/OfflineIndicator';
 import { RetryButton } from '@/components/quest/RetryButton';
 import { getQuestById } from '@/lib/api/quests';
 import type { Quest } from '@/lib/types/quest';
 import { useAnalytics } from '@/lib/hooks/useAnalytics';
-import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function QuestDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const questId = params.id as string;
-  const { isOnline } = useOnlineStatus();
+  const questId = params?.id as string;
 
   const [quest, setQuest] = useState<Quest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,9 +56,6 @@ export default function QuestDetailPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        {/* Offline Indicator */}
-        <OfflineIndicator isOffline={!isOnline} />
-
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {/* Back Button Skeleton */}
           <div className="mb-6">
@@ -98,9 +92,6 @@ export default function QuestDetailPage() {
   if (error) {
     return (
       <AppLayout>
-        {/* Offline Indicator */}
-        <OfflineIndicator isOffline={!isOnline} />
-
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {/* Back Button */}
           <Link
@@ -170,9 +161,6 @@ export default function QuestDetailPage() {
 
   return (
     <AppLayout>
-      {/* Offline Indicator */}
-      <OfflineIndicator isOffline={!isOnline} />
-
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Back Button */}
         <Link

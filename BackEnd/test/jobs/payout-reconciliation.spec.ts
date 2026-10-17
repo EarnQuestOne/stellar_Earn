@@ -1,17 +1,20 @@
-﻿import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PayoutReconciliationProcessor } from '#src/modules/jobs/processors/payout-reconciliation.processor';
 import { JobLogService } from '#src/modules/jobs/services/job-log.service';
+import { PayoutsService } from '#src/modules/payouts/payouts.service';
 import {
   Payout,
   PayoutStatus,
 } from '#src/modules/payouts/entities/payout.entity';
+import { PayoutOutbox } from '#src/modules/payouts/entities/payout-outbox.entity';
 
 describe('PayoutReconciliationProcessor', () => {
   let module: TestingModule;
   let processor: PayoutReconciliationProcessor;
   let payoutRepository: any;
+  let payoutsService: { forceResetPayout: jest.Mock };
 
   const mockPayouts: Partial<Payout>[] = [
     {
@@ -33,7 +36,7 @@ describe('PayoutReconciliationProcessor', () => {
     {
       id: 'payout-3',
       status: PayoutStatus.PROCESSING,
-      transactionHash: null, // No hash yet â€” should be skipped
+      transactionHash: null, // No hash yet — should be skipped
       stellarLedger: null,
       processedAt: null,
       settlementConfirmedAt: null,
@@ -41,9 +44,19 @@ describe('PayoutReconciliationProcessor', () => {
   ];
 
   beforeEach(async () => {
+    // Deep-clone so each test gets fresh data (processor mutates in place)
+    const freshPayouts = () => mockPayouts.map((p) => ({ ...p }));
+
     payoutRepository = {
-      find: jest.fn().mockResolvedValue(mockPayouts),
+      find: jest.fn().mockImplementation(() => Promise.resolve(freshPayouts())),
       save: jest.fn().mockImplementation((p) => Promise.resolve(p)),
+    };
+    payoutsService = {
+      forceResetPayout: jest
+        .fn()
+        .mockImplementation((_id: string) =>
+          Promise.resolve({ id: _id, status: PayoutStatus.PENDING }),
+        ),
     };
 
     module = await Test.createTestingModule({
@@ -52,6 +65,13 @@ describe('PayoutReconciliationProcessor', () => {
         {
           provide: getRepositoryToken(Payout),
           useValue: payoutRepository,
+        },
+        {
+          provide: getRepositoryToken(PayoutOutbox),
+          useValue: {
+            find: jest.fn(),
+            update: jest.fn(),
+          },
         },
         {
           provide: ConfigService,
@@ -68,6 +88,10 @@ describe('PayoutReconciliationProcessor', () => {
             createJobLog: jest.fn(),
             updateJobLog: jest.fn(),
           },
+        },
+        {
+          provide: PayoutsService,
+          useValue: payoutsService,
         },
       ],
     }).compile();
@@ -88,7 +112,7 @@ describe('PayoutReconciliationProcessor', () => {
 
     it('should skip payouts without a transaction hash', async () => {
       await processor.runReconciliation();
-      // payout-3 has no hash â€” save should only be called for payout-1 and payout-2
+      // payout-3 has no hash — save should only be called for payout-1 and payout-2
       const savedIds = payoutRepository.save.mock.calls.map(
         (call: any[]) => call[0].id,
       );
@@ -130,6 +154,108 @@ describe('PayoutReconciliationProcessor', () => {
       );
 
       await expect(processor.runReconciliation()).resolves.not.toThrow();
+    });
+  });
+
+  describe('recoverStuckPayouts', () => {
+    beforeEach(() => {
+      // Default: first call (stuck PROCESSING) returns two payouts,
+      // second call (overdue RETRY_SCHEDULED) returns one.
+      payoutRepository.find
+        .mockReset()
+        .mockResolvedValueOnce([
+          {
+            id: 'stuck-1',
+            status: PayoutStatus.PROCESSING,
+            transactionHash: null,
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          },
+          {
+            id: 'stuck-2',
+            status: PayoutStatus.PROCESSING,
+            transactionHash: null,
+            createdAt: new Date('2026-01-01T00:01:00Z'),
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'overdue-1',
+            status: PayoutStatus.RETRY_SCHEDULED,
+            nextRetryAt: new Date('2026-06-01T00:00:00Z'),
+          },
+        ]);
+    });
+
+    it('should reset stuck PROCESSING payouts via forceResetPayout', async () => {
+      await processor.recoverStuckPayouts();
+
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledWith('stuck-1');
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledWith('stuck-2');
+    });
+
+    it('should reset overdue RETRY_SCHEDULED payouts via forceResetPayout', async () => {
+      await processor.recoverStuckPayouts();
+
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledWith('overdue-1');
+    });
+
+    it('should attempt to recover all found stuck payouts', async () => {
+      await processor.recoverStuckPayouts();
+
+      // 3 total recovered (2 stuck + 1 overdue)
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledTimes(3);
+    });
+
+    it('should log nothing when there are no stuck payouts', async () => {
+      payoutRepository.find
+        .mockReset()
+        .mockResolvedValueOnce([]) // no stuck PROCESSING
+        .mockResolvedValueOnce([]); // no overdue RETRY_SCHEDULED
+
+      await processor.recoverStuckPayouts();
+
+      expect(payoutsService.forceResetPayout).not.toHaveBeenCalled();
+    });
+
+    it('should handle forceResetPayout errors gracefully', async () => {
+      payoutsService.forceResetPayout
+        .mockRejectedValueOnce(new Error('DB timeout'))
+        .mockResolvedValueOnce({ id: 'stuck-2', status: PayoutStatus.PENDING })
+        .mockResolvedValueOnce({
+          id: 'overdue-1',
+          status: PayoutStatus.PENDING,
+        });
+
+      await expect(processor.recoverStuckPayouts()).resolves.not.toThrow();
+
+      // Should still have tried to recover the second stuck payout
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle repository errors gracefully', async () => {
+      payoutRepository.find
+        .mockReset()
+        .mockRejectedValueOnce(new Error('Connection reset'));
+
+      await expect(processor.recoverStuckPayouts()).resolves.not.toThrow();
+    });
+
+    it('should respect maxRecoverPerCycle limit for overdue retries', async () => {
+      payoutRepository.find
+        .mockReset()
+        .mockResolvedValueOnce([]) // no stuck PROCESSING
+        .mockResolvedValueOnce(
+          Array.from({ length: 10 }, (_, i) => ({
+            id: `overdue-${i}`,
+            status: PayoutStatus.RETRY_SCHEDULED,
+            nextRetryAt: new Date(`2026-01-01T00:0${i}:00Z`),
+          })),
+        );
+
+      await processor.recoverStuckPayouts();
+
+      // maxRecoverPerCycle is 50, and all 10 should be recovered
+      expect(payoutsService.forceResetPayout).toHaveBeenCalledTimes(10);
     });
   });
 });

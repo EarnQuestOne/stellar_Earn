@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PooledHttpClientService, TIMEOUT_BUDGETS } from './http-client.service';
+import {
+  PooledHttpClientService,
+  TIMEOUT_BUDGETS,
+} from './http-client.service';
 import * as http from 'http';
 import * as https from 'https';
 

@@ -88,6 +88,53 @@ const eslintConfig = [
     },
   },
 
+  // ── Heavy date-library ban ────────────────────────────────────────────────
+  // All date parsing/formatting must go through the native-Intl utilities in
+  // lib/utils/date.ts and lib/utils/i18n-formatters.ts. Heavy date libraries
+  // (moment ≈ 72 KB min / ≈ 295 KB with locales, luxon ≈ 80 KB min) add
+  // significant client-bundle weight for functionality Intl provides for
+  // free. date-fns is the only sanctioned fallback (tree-shakeable, already
+  // covered by optimizePackageImports in next.config.ts) for needs Intl
+  // cannot cover (e.g. date arithmetic across DST boundaries).
+  {
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'moment',
+              message:
+                'moment is banned (≈72 KB min, not tree-shakeable). Use the Intl-based helpers in "@/lib/utils/date" or "@/lib/utils/i18n-formatters" instead.',
+            },
+            {
+              name: 'moment-timezone',
+              message:
+                'moment-timezone is banned. Use Intl.DateTimeFormat with the `timeZone` option — see "@/lib/utils/date" (parseZonedDateTime/formatZonedDateTime).',
+            },
+            {
+              name: 'dayjs',
+              message:
+                'dayjs is banned to keep a single date-handling standard. Use the Intl-based helpers in "@/lib/utils/date" or "@/lib/utils/i18n-formatters" instead.',
+            },
+            {
+              name: 'luxon',
+              message:
+                'luxon is banned (≈80 KB min). Use the Intl-based helpers in "@/lib/utils/date" or "@/lib/utils/i18n-formatters" instead.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['moment/*', 'moment-timezone/*', 'dayjs/*', 'luxon/*'],
+              message:
+                'Heavy date libraries are banned. Use the Intl-based helpers in "@/lib/utils/date" or "@/lib/utils/i18n-formatters" instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // ── Dead code & unreachable branch detection ──────────────────────────────
   {
     rules: {

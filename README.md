@@ -38,360 +38,212 @@ Learn more: [Stellar Developers](https://developers.stellar.org/) | [Soroban Doc
 
 ## Key Features
 
-- 🧭 **Quest management** - Create, assign, and track task progress
-- 🧩 **Flexible verification** - Off-chain attestations, API checks, or multi-sig approvals
-- 💸 **On-chain payouts** - Automatic rewards via Stellar assets (stablecoins or project tokens)
-- 🛡️ **Escrow & conditions** - Release rewards only when criteria are met
-- ⭐ **Reputation & levels** - XP, badges, and a provable on-chain record
-- 🌐 **Multi-network support** - Local sandbox, testnet, or mainnet-ready configs
+- 🧭 **Quest management** — create, assign, and track task progress
+- 🧩 **Flexible verification** — off-chain attestations, API checks, or multi-sig approvals
+- 💸 **On-chain payouts** — rewards via Stellar assets (stablecoins or project tokens)
+- 🛡️ **Escrow & conditions** — release rewards only when criteria are met
+- ⭐ **Reputation & levels** — XP, badges, and a provable on-chain record
+- 🌐 **Multi-network support** — local sandbox, testnet, or mainnet-ready configs
 
 ## Architecture
 
 ```
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│  Frontend       │      │   Backend        │      │  Stellar/       │
-│  Next.js        │◄────►│   NestJS         │◄────►│  Soroban        │
-│                 │      │                  │      │                 │
-│ • User Dashboard│      │ • REST/GraphQL   │      │ • Quest Contract│
-│ • Quest Browser │      │ • Auth & RBAC    │      │ • Reputation    │
-│ • Submissions   │      │ • Quest Service  │      │ • Asset/Reward  │
-│ • Wallet Connect│      │ • Payout Logic   │      │                 │
-└─────────────────┘      │ • Webhooks       │      └─────────────────┘
-                         │ • DB (Postgres)  │
-                         └──────────────────┘
+│  FrontEnd/my-app │      │   BackEnd        │      │  contracts/      │
+│  Next.js         │◄────►│   NestJS         │◄────►│  earn-quest      │
+│  (App Router)    │      │  (REST + TypeORM)│      │  Soroban (Rust)  │
+│ • Dashboard      │      │ • Auth & RBAC    │      │ • Quest registry │
+│ • Quest browser  │      │ • Quest/Payout   │      │ • Escrow/Payout  │
+│ • Submissions    │      │ • Webhooks/Jobs  │      │ • Reputation     │
+│ • Wallet connect │      │ • Postgres+Redis │      │ • Dispute/Oracle │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
+
+- **FrontEnd/my-app** — Next.js (App Router) web client; wallet connect, quest browsing, submissions, dashboards. Tested with Vitest + Playwright (a11y).
+- **BackEnd** — NestJS API using **TypeORM** (PostgreSQL) and **Redis/BullMQ** for background jobs; auth, quests, submissions, payouts, webhooks, notifications, moderation, analytics, etc. Tested with Jest.
+- **contracts/earn-quest** — the Soroban (Rust) smart contract: quest registry, escrow, payout, reputation, disputes, oracle. Tested with `cargo test`.
 
 ### High-Level Flow
 
-1. Admin creates a quest (API persists off-chain metadata; contract registers reward logic)
-2. Contributor submits proof; API verifies (webhooks/API checks) and calls the contract
-3. Contract releases/stores state; payouts executed in Stellar assets
-4. UI reflects on-chain state + off-chain metadata; users level up
+1. An admin creates a quest (the API persists off-chain metadata; the contract registers the reward logic and escrow).
+2. A contributor submits proof; the API verifies it (webhooks / API checks) and invokes the contract.
+3. The contract validates, transitions state, and releases the payout in Stellar assets.
+4. The UI reflects on-chain state + off-chain metadata; the contributor's reputation/XP updates.
 
 ## Repository Structure
 
 ```
-EarnQuestOnestellar_Earn/
-├── apps/
-│   ├── web/                    # Next.js frontend (App Router)
-│   │   ├── app/                # routes
-│   │   ├── components/
-│   │   ├── lib/                # wallet utils, API client
-│   │   ├── public/
-│   │   └── tests/
-│   └── api/                    # NestJS backend
-│       ├── src/
-│       │   ├── main.ts
-│       │   ├── app.module.ts
-│       │   └── modules/
-│       │       ├── quests/
-│       │       ├── users/
-│       │       ├── payouts/
-│       │       └── webhooks/
-│       ├── prisma/
-│       └── test/
-├── contracts/
-│   └── earn-quest/             # Soroban/Rust contract
-│       ├── src/
-│       │   └── lib.rs
-│       ├── Cargo.toml
-│       └── tests/
-├── infra/
-│   ├── docker-compose.yml
-│   └── migrations/
-├── scripts/
-├── .env.example
-├── package.json
-├── README.md
-└── LICENSE
+stellar_Earn/
+├── BackEnd/                     # NestJS API (TypeORM + PostgreSQL + Redis/BullMQ)
+│   ├── src/
+│   │   ├── main.ts
+│   │   ├── app.module.ts
+│   │   ├── common/             # logger, tracing, guards, interceptors, filters
+│   │   ├── database/
+│   │   │   ├── data-source.ts  # TypeORM DataSource (migrations CLI target)
+│   │   │   └── migrations/     # TypeORM migrations
+│   │   └── modules/            # auth, quests, submissions, payouts, stellar,
+│   │                           # webhooks, notifications, moderation, jobs, ...
+│   ├── test/                   # e2e / integration Jest configs
+│   ├── docker-compose.yml      # local Postgres 15 + Redis 7
+│   └── .env.example
+├── FrontEnd/my-app/            # Next.js (App Router) web client
+│   ├── app/                    # routes (locale-aware)
+│   ├── components/             # quest, submission, rewards, admin, wallet, ...
+│   ├── context/  lib/  store/  # wallet context, API client, hooks, state
+│   └── .env.example
+├── contracts/earn-quest/       # Soroban / Rust smart contract
+│   ├── src/                    # lib.rs, escrow.rs, payout.rs, dispute.rs, ...
+│   ├── tests/                  # integration tests
+│   ├── Makefile / Justfile     # build / test / deploy helpers
+│   └── Cargo.toml
+├── docs/                       # architecture, security, testing, API notes
+├── scripts/                    # repo-level scripts
+├── subgraph/                   # indexer
+└── .github/                    # CI workflows, issue/PR templates, CODEOWNERS
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js ≥ 18.x and npm or pnpm
-- Rust & Cargo (stable)
-- Soroban CLI (for building/deploying contracts)
-- Docker (optional; for Postgres and local services)
-- Git
+- **Node.js ≥ 20** (CI uses Node 20)
+- **Bun ≥ 1.1** — the backend's TypeORM/migration scripts invoke `bun run …`
+- **Rust (stable)** + the `wasm32-unknown-unknown` target, and the **Stellar CLI** (`stellar`) for the contract
+- **Docker** (for local PostgreSQL + Redis) and **Git**
 
-**Install Rust:**
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+> Package-manager note: the BackEnd currently contains multiple lockfiles (`bun.lock`, `package-lock.json`, `pnpm-lock.yaml`); its scripts standardize on **Bun**. The FrontEnd uses npm/pnpm. Consolidating to a single package manager per app is a tracked cleanup task.
 
-**Soroban CLI & Stellar tooling:** See [official docs](https://developers.stellar.org/docs/smart-contracts)
-
-### Installation
+### Quickstart
 
 ```bash
-# Clone the repository
-git clone https://github.com/<your-org>/EarnQuestOnestellar_Earn.git
-cd EarnQuestOnestellar_Earn
+# 1. Clone
+git clone https://github.com/EarnQuestOne/stellar_Earn.git
+cd stellar_Earn
 
-# Install dependencies
-cd apps/web && pnpm install
-cd ../api && pnpm install
-cd ../../
+# 2. Start local infrastructure (PostgreSQL :5432, Redis :6379)
+docker compose -f BackEnd/docker-compose.yml up -d
 
-# Build contract
-cd contracts/earn-quest && cargo build
-cd ../../
+# 3. Backend  →  http://localhost:3001
+cd BackEnd
+cp .env.example .env             # set DATABASE_URL to the compose Postgres
+bun install                      # (npm ci also works for install)
+bun run migration:run            # apply TypeORM migrations
+bun run start:dev
+
+# 4. Frontend  →  http://localhost:3000   (in a new terminal)
+cd FrontEnd/my-app
+cp .env.example .env.local       # set NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+npm install
+npm run dev
+
+# 5. Contract (in a new terminal)
+cd contracts/earn-quest
+cargo test                       # run the contract test suite
+stellar contract build           # build the wasm  (or: just build / make build)
 ```
+
+> These commands are derived from the projects' own `package.json` scripts, `docker-compose.yml`, and contract `Makefile`/`Justfile`. If a command drifts, those files are the source of truth — please open a PR to fix this section.
 
 ### Environment Variables
 
-Create `.env` files based on `.env.example`:
+Each app ships an `.env.example` that is the authoritative list — copy it and fill in values.
 
-**Root `.env`:**
+**Backend (`BackEnd/.env` from `BackEnd/.env.example`)** — key variables:
+
 ```bash
-# Network
-STELLAR_NETWORK=testnet
-SOROBAN_RPC_URL=https://<testnet-rpc>
-CONTRACT_ID=<set-after-deployment>
-
-# Wallet/Signing
-SOROBAN_SECRET_KEY=<server-key>
-ISSUER_PUBLIC_KEY=<reward-asset-issuer>
-
-# Database
-DATABASE_URL=postgres://user:pass@localhost:5432/earnquest
+NODE_ENV=development
+PORT=3001
+DATABASE_URL=postgres://user:password@localhost:5432/stellar_earn   # matches BackEnd/docker-compose.yml
+# plus optional: LOG_*, TRACING_* (OpenTelemetry), DB_POOL_*, FF_* feature flags
 ```
 
-**Frontend (`apps/web/.env.local`):**
+**Frontend (`FrontEnd/my-app/.env.local` from `FrontEnd/my-app/.env.example`)** — key variables:
+
 ```bash
 NEXT_PUBLIC_STELLAR_NETWORK=testnet
-NEXT_PUBLIC_SOROBAN_RPC_URL=
-NEXT_PUBLIC_CONTRACT_ID=
-API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_CONTRACT_ID=<deployed-contract-id>
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# optional: NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_ANALYTICS_ID
 ```
 
-**Backend (`apps/api/.env`):**
-```bash
-PORT=3001
-DATABASE_URL=postgres://user:pass@localhost:5432/earnquest
-STELLAR_NETWORK=testnet
-SOROBAN_RPC_URL=
-CONTRACT_ID=
-SOROBAN_SECRET_KEY=
-JWT_SECRET=your_jwt_secret
-```
+## Smart Contract
 
-### Running Locally
-
-**1. Start Postgres:**
-```bash
-docker compose -f infra/docker-compose.yml up -d
-```
-
-**2. Run database migrations:**
-```bash
-cd apps/api
-pnpm prisma migrate dev
-```
-
-**3. Start backend:**
-```bash
-cd apps/api
-pnpm start:dev
-```
-
-**4. Start frontend:**
-```bash
-cd apps/web
-pnpm dev
-# Access at http://localhost:3000
-```
-
-## Smart Contract Development
-
-### Contract Structure
-
-The Soroban smart contract includes these conceptual modules:
-
-- **QuestRegistry** - Create/update quests (reward asset, amount, verifier)
-- **Submission** - Submit proof; store status; emit event
-- **Verifier** - Check conditions (role-based, multi-sig, or data-driven)
-- **Payout** - Transfer asset to recipient upon approval
-- **Reputation** - Track XP/badges per address
-
-### Key Contract Functions
-
-```rust
-register_task(id, reward_asset, amount, verifier)
-submit_proof(id, proof_ref)
-approve(id, address, amount)
-claim_reward(id, amount)
-get_user_stats(address)
-get_task(id)
-```
-
-### Build & Test
+The Soroban contract lives in `contracts/earn-quest/`. Its authoritative public interface is `contracts/earn-quest/src/lib.rs` (quest registration, submission, approval, claim/payout, reputation, disputes, oracle) — see `contracts/earn-quest/docs/` for details.
 
 ```bash
 cd contracts/earn-quest
+cargo test                                   # tests
+cargo fmt --all -- --check                   # format check (CI-enforced)
+cargo clippy --all-targets --all-features -- -D warnings   # lints (CI-enforced)
+stellar contract build                       # build release wasm
 
-# Build
-cargo build --release
-
-# Run tests
-cargo test
-```
-
-### Deploy to Testnet
-
-```bash
-export STELLAR_NETWORK=testnet
-export SOROBAN_RPC_URL=<your-testnet-rpc>
-
-soroban contract deploy \
+# Deploy to testnet (requires funded key + RPC configured)
+stellar contract deploy \
   --wasm target/wasm32-unknown-unknown/release/earn_quest.wasm \
-  --network $STELLAR_NETWORK \
-  --secret-key $SOROBAN_SECRET_KEY \
-  --rpc-url $SOROBAN_RPC_URL
-
-# Save the CONTRACT_ID output to your .env files
+  --source <account> --network testnet
 ```
 
-### Invoke Contract
+`Makefile` / `Justfile` provide `build`, `test`, and `deploy` shortcuts.
 
-```bash
-# Register a quest
-soroban contract invoke \
-  --id $CONTRACT_ID \
-  --fn register_task \
-  --arg id=Q-001 --arg reward_asset=... --arg amount=100
+## API
 
-# Get user stats
-soroban contract invoke \
-  --id $CONTRACT_ID \
-  --fn get_user_stats \
-  --arg address=<stellar-address>
-```
-## Optional Make/Just task runner for contracts
-
-For convenience there are optional task runners in the contract folder to streamline common contract commands. You can use either `just` (preferred if installed) or plain `make`.
-
-- Files: [contracts/earn-quest](contracts/earn-quest)
-
-Using `just` (install from https://github.com/casey/just):
-
-```bash
-cd contracts/earn-quest
-just build      # build wasm target
-just test       # run contract tests
-SOROBAN_SECRET_KEY=... just deploy   # deploy using env variables
-```
-
-Using `make`:
-
-```bash
-cd contracts/earn-quest
-make build
-make test
-SOROBAN_SECRET_KEY=... make deploy
-```
-
-Notes:
-
-- The deploy steps expect `SOROBAN_SECRET_KEY`, `SOROBAN_RPC_URL` (or `STELLAR_NETWORK`) and `CONTRACT_ID` (for invoke helpers) to be set in your environment or `.env` files.
-- These runners are optional helpers — feel free to edit the invoke targets to include real arguments required by your deployment and invoke workflows.
+The backend exposes a REST API documented via OpenAPI/Swagger (generated in CI by the *OpenAPI Generation Check* workflow). Run the backend and browse the Swagger UI, or consult the generated OpenAPI spec, for the authoritative, always-current endpoint list — routes are intentionally not hardcoded here to avoid drift.
 
 ## Testing
 
-**Frontend:**
 ```bash
-cd apps/web
-pnpm test
-pnpm test:watch
-pnpm lint
-pnpm typecheck
+# Backend (Jest)
+cd BackEnd && bun run test           # unit
+bun run test:integration             # integration (needs Postgres/Redis)
+bun run test:e2e                     # e2e
+
+# Frontend (Vitest + Playwright)
+cd FrontEnd/my-app && npm run test   # unit/integration
+npm run typecheck                    # tsc --noEmit
+npm run test:a11y                    # accessibility (Playwright + axe)
+
+# Contract (Rust)
+cd contracts/earn-quest && cargo test
 ```
 
-**Backend:**
-```bash
-cd apps/api
-pnpm test
-pnpm test:e2e
-pnpm lint
-```
+## Continuous Integration
 
-**Contracts:**
-```bash
-cd contracts/earn-quest
-cargo test
-```
+GitHub Actions gate every PR (see `.github/workflows/`):
 
-## Networks & Configuration
-
-- **Local** - Fastest iteration; use sandbox RPC and fake keys
-- **Testnet** - Public test environment; faucet for test funds
-- **Mainnet** - Real assets and fees; ensure audits and monitoring
-
-### Switching Networks
-
-Update `STELLAR_NETWORK` and `SOROBAN_RPC_URL` in:
-- Contract deployment scripts
-- Backend `.env`
-- Frontend `.env.local`
-
-**Important:** Ensure reward assets exist and users have trustlines set before payouts.
-
-## API Endpoints
-
-### Quests
-- `POST /quests` - Create quest
-- `GET /quests` - List quests
-- `POST /quests/:id/submit` - Submit proof
-- `POST /quests/:id/approve` - Approve submission
-
-### Payouts
-- `POST /payouts/claim` - Claim rewards
-
-### Users
-- `GET /users/:address/stats` - Get reputation & earnings
+- **backend-ci / backend-lint / backend-integration** — build, lint, and integration tests for `BackEnd`
+- **backend-changelog** — enforces per-module `CHANGELOG.md` updates
+- **frontend-ci / frontend-vitest-cache / accessibility** — build, unit, and a11y tests for `FrontEnd/my-app`
+- **contract-ci** — `cargo build/test`, `fmt --check`, `clippy -D warnings`, and wasm build on Ubuntu + Windows
+- **secret-scan** — scans for committed secrets
+- **testnet-canary-deployment** — contract canary deploy to testnet
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
+We welcome contributions. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and use the issue and pull-request templates:
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Set up your environment using the installation steps
-4. Write tests and ensure they pass
-5. Lint and typecheck your code
-6. Open a pull request with a clear description
+- Issue templates: [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE) (architecture review, contract bug report, gas optimization)
+- PR template: [`.github/pull_request_template.md`](.github/pull_request_template.md)
+- Code ownership: [`.github/CODEOWNERS`](.github/CODEOWNERS)
 
-### Commit Convention
+Guidelines:
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `chore:` - Maintenance tasks
-- `refactor:` - Code refactoring
-- `test:` - Test updates
+1. Fork and create a feature branch: `git checkout -b feat/<short-name>`
+2. Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`)
+3. Add/keep tests passing and update the relevant module `CHANGELOG.md`
+4. Lint, typecheck, and run the affected app's test suite before opening a PR
 
-### Security
+## Security
 
-- Do not include secrets in pull requests
-- Report vulnerabilities privately (contact TBD)
+Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md). Do not open public issues for security problems and never commit secrets or key material.
 
-FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
 ## Resources
 
-- [Stellar Developers](https://developers.stellar.org/)
-- [Soroban Smart Contracts](https://developers.stellar.org/docs/smart-contracts)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [NestJS Documentation](https://docs.nestjs.com/)
-- [Rust & Cargo](https://www.rust-lang.org/)
-- [Script Inventory](docs/script-inventory.md)
+- [Stellar Developers](https://developers.stellar.org/) · [Soroban Docs](https://developers.stellar.org/docs/smart-contracts)
+- [Next.js](https://nextjs.org/docs) · [NestJS](https://docs.nestjs.com/) · [TypeORM](https://typeorm.io/) · [Rust](https://www.rust-lang.org/)
 
 ## License
 
-[MIT](LICENSE) (or specify your chosen license)
-
----
-
-**Questions or feedback?** Open an issue or reach out to the maintainers.
+Released under the [MIT License](LICENSE).

@@ -9,10 +9,13 @@ import { UserExperienceListener } from './events/user-experience.listener';
 import { DataExportService } from './data-export.service';
 import { DataExport } from './entities/data-export.entity';
 import { EmailModule } from '../email/email.module';
+import { Quest } from '../quests/entities/quest.entity';
+import { Submission } from '../submissions/entities/submission.entity';
+import { Payout } from '../payouts/entities/payout.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, DataExport]),
+    TypeOrmModule.forFeature([User, DataExport, Quest, Submission, Payout]),
     EventEmitterModule,
     EmailModule,
   ],

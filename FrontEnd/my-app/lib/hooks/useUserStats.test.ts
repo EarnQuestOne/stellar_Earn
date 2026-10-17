@@ -1,5 +1,7 @@
+import { createElement } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { useAuth } from '@/context/AuthContext';
 import { fetchDashboardData } from '@/lib/api/user';
@@ -12,6 +14,11 @@ vi.mock('@/context/AuthContext', () => ({
 
 vi.mock('@/lib/api/user', () => ({
   fetchDashboardData: vi.fn(),
+  fetchUserStats: vi.fn(),
+  fetchActiveQuests: vi.fn(),
+  fetchRecentSubmissions: vi.fn(),
+  fetchEarningsHistory: vi.fn(),
+  fetchBadges: vi.fn(),
 }));
 
 const mockUseAuth = vi.mocked(useAuth);
@@ -30,6 +37,15 @@ const mockDashboardData = {
   badges: [],
 };
 
+function makeWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    createElement(QueryClientProvider, { client }, children);
+  return Wrapper;
+}
+
 describe('useUserStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,7 +54,9 @@ describe('useUserStats', () => {
   it('skips dashboard fetching when there is no authenticated wallet', async () => {
     mockUseAuth.mockReturnValue({ user: null } as never);
 
-    const { result } = renderHook(() => useUserStats());
+    const { result } = renderHook(() => useUserStats(), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -53,7 +71,9 @@ describe('useUserStats', () => {
     mockUseAuth.mockReturnValue({ user: mockUser } as never);
     mockFetchDashboardData.mockResolvedValue(mockDashboardData as never);
 
-    const { result } = renderHook(() => useUserStats());
+    const { result } = renderHook(() => useUserStats(), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(mockFetchDashboardData).toHaveBeenCalledWith(
@@ -78,7 +98,9 @@ describe('useUserStats', () => {
       new Error('Failed to fetch dashboard data')
     );
 
-    const { result } = renderHook(() => useUserStats());
+    const { result } = renderHook(() => useUserStats(), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -92,13 +114,16 @@ describe('useUserStats', () => {
     mockUseAuth.mockReturnValue({ user: mockUser } as never);
     mockFetchDashboardData.mockResolvedValue(mockDashboardData as never);
 
-    const { result } = renderHook(() => useUserStats());
+    const { result } = renderHook(() => useUserStats(), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(mockFetchDashboardData).toHaveBeenCalledTimes(1);
     });
 
     mockFetchDashboardData.mockClear();
+    mockFetchDashboardData.mockResolvedValue(mockDashboardData as never);
 
     await act(async () => {
       await result.current.refetch();

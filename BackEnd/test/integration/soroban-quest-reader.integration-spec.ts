@@ -41,6 +41,7 @@ describe('SorobanQuestReaderService (integration)', () => {
             observeHistogram: jest.fn(),
             increment: jest.fn(),
             gauge: jest.fn(),
+            setGauge: jest.fn(),
             histogram: jest.fn(),
             getMetrics: jest.fn(),
             getMetricsJson: jest.fn(),

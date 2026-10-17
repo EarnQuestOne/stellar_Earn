@@ -11,6 +11,8 @@
  *   import { formatDate, formatReward } from '@/lib/utils/i18n-formatters';
  */
 
+import { formatRelativeTime } from './relative-time';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,9 +164,12 @@ export function formatDate(
     return date.toISOString();
   }
 
-  // Relative formatting via Intl.RelativeTimeFormat
+  // Relative formatting via the shared relative-time util
   if (style === 'relative') {
-    return formatRelativeDate(date, resolvedLocale);
+    return formatRelativeTime(date, {
+      locale: resolvedLocale,
+      now: Date.now(),
+    });
   }
 
   const intlOptions: Intl.DateTimeFormatOptions = {
@@ -173,31 +178,6 @@ export function formatDate(
   };
 
   return new Intl.DateTimeFormat(resolvedLocale, intlOptions).format(date);
-}
-
-/**
- * Internal helper: formats a date as a relative string (e.g. "3 days ago").
- * Uses second → minute → hour → day → week → month → year thresholds.
- */
-function formatRelativeDate(date: Date, locale: string): string {
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-  const now = Date.now();
-  const diffMs = date.getTime() - now;
-  const diffSec = Math.round(diffMs / 1_000);
-  const absSec = Math.abs(diffSec);
-
-  if (absSec < 60) return formatter.format(diffSec, 'second');
-  if (absSec < 3_600)
-    return formatter.format(Math.round(diffSec / 60), 'minute');
-  if (absSec < 86_400)
-    return formatter.format(Math.round(diffSec / 3_600), 'hour');
-  if (absSec < 604_800)
-    return formatter.format(Math.round(diffSec / 86_400), 'day');
-  if (absSec < 2_592_000)
-    return formatter.format(Math.round(diffSec / 604_800), 'week');
-  if (absSec < 31_536_000)
-    return formatter.format(Math.round(diffSec / 2_592_000), 'month');
-  return formatter.format(Math.round(diffSec / 31_536_000), 'year');
 }
 
 /**
@@ -234,7 +214,10 @@ export function formatDeadline(
     return expiredLabels[lang] ?? 'Expired';
   }
 
-  const relative = formatRelativeDate(date, resolvedLocale);
+  const relative = formatRelativeTime(date, {
+    locale: resolvedLocale,
+    now: Date.now(),
+  });
 
   // Prefix with "Ends " / locale equivalent
   const prefixes: Record<string, string> = {

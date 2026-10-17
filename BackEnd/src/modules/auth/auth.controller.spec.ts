@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshTokenDto } from './dto/auth.dto';
@@ -23,8 +24,9 @@ describe('AuthController', () => {
   /** Factory that builds a minimal Express Response mock. */
   const buildResMock = () => {
     const json = jest.fn();
+    const append = jest.fn();
     const status = jest.fn().mockReturnValue({ json });
-    return { json, status } as unknown as import('express').Response;
+    return { json, append, status } as unknown as import('express').Response;
   };
 
   beforeEach(async () => {
@@ -35,7 +37,14 @@ describe('AuthController', () => {
       }),
       verifyAndLogin: jest.fn().mockResolvedValue({
         accessToken: 'mock.access.token',
+        refreshToken: 'mock.refresh.token',
         expiresIn: 3600,
+        user: {
+          id: 'user-1',
+          stellarAddress:
+            'GBUQWP3BOUZX34ULNQG23RQ6F4YUSXHTQA5XPJMWRFT5GEVQA3I5UU4K',
+          role: 'USER',
+        },
       }),
       refreshTokens: jest.fn().mockResolvedValue({
         accessToken: 'new.access.token',
@@ -56,12 +65,20 @@ describe('AuthController', () => {
       }),
     };
 
+    const mockConfigService = {
+      get: jest.fn((_key: string, defaultValue?: any) => defaultValue),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     })
@@ -98,11 +115,8 @@ describe('AuthController', () => {
       expect(authService.verifyAndLogin).toHaveBeenCalledWith(loginDto);
     });
 
-    it('should respond with the token object returned by AuthService.verifyAndLogin', async () => {
+    it('should return a LoginResponseDto with the verified user', async () => {
       const stellarAddress = generateRandomStellarAddress();
-      const tokenResponse = { accessToken: 'jwt.token.value', expiresIn: 3600 };
-      authService.verifyAndLogin.mockResolvedValue(tokenResponse);
-
       const loginDto: LoginDto = {
         stellarAddress,
         signature: 'a'.repeat(20),
@@ -110,12 +124,20 @@ describe('AuthController', () => {
       };
       const res = buildResMock();
 
-      await controller.login(loginDto, res);
+      const response = await controller.login(loginDto, res);
 
-      expect(res.json).toHaveBeenCalledWith(tokenResponse);
+      expect(response).toEqual({
+        success: true,
+        user: {
+          stellarAddress:
+            'GBUQWP3BOUZX34ULNQG23RQ6F4YUSXHTQA5XPJMWRFT5GEVQA3I5UU4K',
+          role: 'USER',
+        },
+      });
+      expect(res.json).not.toHaveBeenCalled();
     });
 
-    it('should include accessToken and expiresIn in the response', async () => {
+    it('should set the session cookies on the response', async () => {
       const stellarAddress = generateRandomStellarAddress();
       const loginDto: LoginDto = {
         stellarAddress,
@@ -126,11 +148,11 @@ describe('AuthController', () => {
 
       await controller.login(loginDto, res);
 
-      const [responseBody] = (res.json as jest.Mock).mock.calls[0];
-      expect(responseBody).toHaveProperty('accessToken');
-      expect(responseBody).toHaveProperty('expiresIn');
-      expect(typeof responseBody.accessToken).toBe('string');
-      expect(typeof responseBody.expiresIn).toBe('number');
+      expect(res.append).toHaveBeenCalledTimes(2);
+      const setCookieCalls = (res.append as jest.Mock).mock.calls.filter(
+        ([header]) => header === 'Set-Cookie',
+      );
+      expect(setCookieCalls).toHaveLength(2);
     });
 
     it('should propagate errors thrown by AuthService.verifyAndLogin', async () => {
@@ -157,22 +179,25 @@ describe('AuthController', () => {
   describe('POST /auth/refresh', () => {
     it('should call AuthService.refreshTokens with the refreshToken from the DTO', async () => {
       const dto: RefreshTokenDto = { refreshToken: 'raw-refresh-token' };
+      const req = { headers: {} } as unknown as import('express').Request;
+      const res = buildResMock();
 
-      await controller.refresh(dto);
+      await controller.refresh(dto, req, res);
 
       expect(authService.refreshTokens).toHaveBeenCalledTimes(1);
       expect(authService.refreshTokens).toHaveBeenCalledWith(dto.refreshToken);
     });
 
-    it('should return the rotated token pair and user from the service', async () => {
+    it('should set the rotated session cookies and respond with success', async () => {
       const dto: RefreshTokenDto = { refreshToken: 'raw-refresh-token' };
+      const req = { headers: {} } as unknown as import('express').Request;
+      const res = buildResMock();
 
-      const result = await controller.refresh(dto);
+      const result = await controller.refresh(dto, req, res);
 
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
-      expect(result).toHaveProperty('expiresIn');
-      expect(result).toHaveProperty('user');
+      expect(res.append).toHaveBeenCalledTimes(2);
+      expect(res.json).toHaveBeenCalledWith({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should propagate UnauthorizedException for an invalid, revoked, or expired refresh token', async () => {
@@ -180,8 +205,10 @@ describe('AuthController', () => {
         new UnauthorizedException('Invalid refresh token'),
       );
       const dto: RefreshTokenDto = { refreshToken: 'bad-token' };
+      const req = { headers: {} } as unknown as import('express').Request;
+      const res = buildResMock();
 
-      await expect(controller.refresh(dto)).rejects.toThrow(
+      await expect(controller.refresh(dto, req, res)).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -235,8 +262,20 @@ describe('AuthController', () => {
               verifyAndLogin: jest.fn().mockResolvedValue({
                 accessToken: 'valid.token',
                 expiresIn: 3600,
+                user: {
+                  id: 'user-1',
+                  stellarAddress:
+                    'GBUQWP3BOUZX34ULNQG23RQ6F4YUSXHTQA5XPJMWRFT5GEVQA3I5UU4K',
+                  role: 'USER',
+                },
               }),
               validate: jest.fn(),
+            },
+          },
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((_key: string, defaultValue?: any) => defaultValue),
             },
           },
         ],
@@ -255,9 +294,11 @@ describe('AuthController', () => {
         challenge: 'b'.repeat(20),
       };
 
-      await authedController.login(loginDto, res);
+      const response = await authedController.login(loginDto, res);
 
-      expect(res.json).toHaveBeenCalled();
+      expect(response).toHaveProperty('success', true);
+      expect(res.append).toHaveBeenCalled();
+      expect(res.json).not.toHaveBeenCalled();
     });
   });
 

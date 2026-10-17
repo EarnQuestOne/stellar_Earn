@@ -138,6 +138,10 @@ Closes #42
 
 Keep PRs focused. If a PR touches more than ~400 lines (excluding migrations and generated files), consider splitting it. Large PRs take much longer to review and are more likely to introduce bugs.
 
+### Documentation Placement
+
+Backend documentation belongs under [`BackEnd/docs/`](./BackEnd/docs/INDEX.md). Do **not** commit ad-hoc status/report markdown files to the root of `BackEnd/` or the repository root — instead consolidate new content into an existing doc, create a topic-appropriate doc under `BackEnd/docs/`, or record the change in the relevant module `CHANGELOG.md`. One-off status reports that no longer reflect current state should not be committed at all.
+
 ## 10. Script Inventory
 
 Repository-maintained scripts are tracked in [docs/script-inventory.md](/Users/macbook/stellar/stellar_Earn/docs/script-inventory.md:1). When you add or change a script, update that inventory with:

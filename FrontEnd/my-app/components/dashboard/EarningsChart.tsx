@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { EarningsData } from '@/lib/types/dashboard';
 
 interface EarningsChartProps {
@@ -54,9 +55,20 @@ function formatDate(dateString: string): string {
 }
 
 export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
-  const maxAmount = Math.max(...earnings.map((e) => e.amount), 1);
-  const totalEarnings = earnings.reduce((sum, e) => sum + e.amount, 0);
-  const avgEarnings = earnings.length > 0 ? totalEarnings / earnings.length : 0;
+  // Derive all aggregates in a single pass, memoized on `earnings`, so they are
+  // not recomputed (previously several times) on every unrelated re-render.
+  const { maxAmount, totalEarnings, avgEarnings, highest, lowest } =
+    useMemo(() => {
+      const amounts = earnings.map((e) => e.amount);
+      const total = amounts.reduce((sum, amount) => sum + amount, 0);
+      return {
+        maxAmount: Math.max(...amounts, 1),
+        totalEarnings: total,
+        avgEarnings: amounts.length > 0 ? total / amounts.length : 0,
+        highest: amounts.length > 0 ? Math.max(...amounts) : 0,
+        lowest: amounts.length > 0 ? Math.min(...amounts) : 0,
+      };
+    }, [earnings]);
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
@@ -169,7 +181,7 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
                 Highest
               </dt>
               <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                {Math.max(...earnings.map((e) => e.amount))} XLM
+                {highest} XLM
               </dd>
             </div>
             <div className="text-center">
@@ -177,7 +189,7 @@ export function EarningsChart({ earnings, isLoading }: EarningsChartProps) {
                 Lowest
               </dt>
               <dd className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                {Math.min(...earnings.map((e) => e.amount))} XLM
+                {lowest} XLM
               </dd>
             </div>
             <div className="text-center">

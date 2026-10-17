@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { ModerationConfigSnapshot } from '../moderation-config-cache.service';
 
 export interface ImageModerationFlag {
   url: string;
@@ -11,21 +11,16 @@ export interface ImageModerationFlag {
 export class ImageModerationService {
   private readonly logger = new Logger(ImageModerationService.name);
 
-  constructor(private readonly configService: ConfigService) {}
-
-  private hostBlocklist(): Set<string> {
-    const list =
-      this.configService.get<string[]>('moderation.blockedImageHosts') || [];
-    return new Set(list.map((h) => h.toLowerCase()));
-  }
-
   /**
    * Local heuristics: scheme, host blocklist, suspicious patterns.
    * Optional remote API when MODERATION_IMAGE_API_URL is set.
    */
-  async moderateUrls(urls: string[]): Promise<ImageModerationFlag[]> {
+  async moderateUrls(
+    urls: string[],
+    config?: Readonly<ModerationConfigSnapshot>,
+  ): Promise<ImageModerationFlag[]> {
     const flags: ImageModerationFlag[] = [];
-    const blockedHosts = this.hostBlocklist();
+    const blockedHosts = new Set(config?.blockedImageHosts ?? []);
 
     for (const raw of urls) {
       const url = raw?.trim();
@@ -49,8 +44,8 @@ export class ImageModerationService {
       }
     }
 
-    const imageApi = this.configService.get<string>('moderation.imageApiUrl');
-    const imageKey = this.configService.get<string>('moderation.imageApiKey');
+    const imageApi = config?.imageApiUrl;
+    const imageKey = config?.imageApiKey;
     if (imageApi && urls.length) {
       try {
         await axios.post(

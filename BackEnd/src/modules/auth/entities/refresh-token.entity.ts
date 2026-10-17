@@ -26,6 +26,12 @@ export enum RefreshTokenRevokeReason {
   REUSE_DETECTED = 'reuse_detected',
 }
 
+@Index('idx_refresh_token_active_user', ['userId'], {
+  where: '"deletedAt" IS NULL',
+})
+@Index('idx_refresh_token_active_family', ['familyId'], {
+  where: '"deletedAt" IS NULL',
+})
 @Entity('refresh_tokens')
 export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')

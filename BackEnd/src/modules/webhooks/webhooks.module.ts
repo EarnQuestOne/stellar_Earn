@@ -11,6 +11,7 @@ import { MultiSigWallet } from '../stellar/multisig/entities/multisig-wallet.ent
 import { MultiSigModule } from '../stellar/multisig/multisig.module';
 import { TraceModule } from '../trace/trace.module';
 import { BulkheadService } from '../../common/services/bulkhead.service';
+import { MetricsService } from '../../common/services/metrics.service';
 import { FailedWebhookEvent } from './entities/failed-webhook-event.entity';
 import { FailedWebhookRetryScheduler } from './failed-webhook-retry.scheduler';
 
@@ -32,6 +33,7 @@ import { FailedWebhookRetryScheduler } from './failed-webhook-retry.scheduler';
     ApiHandler,
     MultiSigWebhookHandler,
     BulkheadService,
+    MetricsService,
     FailedWebhookRetryScheduler,
   ],
   exports: [WebhooksService],

@@ -1,0 +1,10 @@
+
+.hero-background-grid {
+  background-image: linear-gradient(rgba(34,211,238,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.hero-ambient-glow {
+  background: radial-gradient(ellipse, rgba(34,211,238,0.5) 0%, transparent 70%);
+}

@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 /**
  * Props for the pagination control used across lists and discovery screens.
  */

@@ -73,6 +73,13 @@ import { cn } from '@/lib/utils/cn';
  */
 interface OptimizedImageProps extends Omit<ImageProps, 'onLoadingComplete'> {
   /**
+   * Optional explicit aspect ratio to reserve layout space when the source
+   * dimensions are not known ahead of time (for example, a preview generated
+   * client-side). When width/height are provided, the wrapper derives the
+   * ratio automatically.
+   */
+  aspectRatio?: string;
+  /**
    * Extra classes applied to the wrapper element surrounding `<Image>`.
    * Useful for aspect-ratio containers or hover effects.
    */
@@ -102,6 +109,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   height,
   className,
   containerClassName,
+  aspectRatio,
   fallbackSrc = '/placeholder-image.png',
   disableBlurPlaceholder = false,
   placeholder,
@@ -129,6 +137,16 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     blurDataURL ??
     (resolvedPlaceholder === 'blur' ? DEFAULT_BLUR_DATA_URL : undefined);
 
+  const normalizedWidth = typeof width === 'number' ? width : Number(width);
+  const normalizedHeight = typeof height === 'number' ? height : Number(height);
+  const resolvedAspectRatio =
+    aspectRatio ??
+    (props.fill ||
+    Number.isNaN(normalizedWidth) ||
+    Number.isNaN(normalizedHeight)
+      ? undefined
+      : `${normalizedWidth} / ${normalizedHeight}`);
+
   return (
     <div
       className={cn(
@@ -136,6 +154,9 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         isLoading ? 'animate-pulse' : '',
         containerClassName
       )}
+      style={
+        resolvedAspectRatio ? { aspectRatio: resolvedAspectRatio } : undefined
+      }
     >
       <Image
         {...props}

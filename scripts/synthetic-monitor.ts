@@ -23,6 +23,7 @@ const TIMEOUT_MS  = 10_000;
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface CheckResult {
+  
   name: string;
   url: string;
   passed: boolean;

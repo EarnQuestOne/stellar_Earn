@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { notFound } from 'next/navigation';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { ErrorMessage } from '@/components/error/ErrorMessage';
 import { useErrorHandler } from '@/lib/hooks/useErrorHandler';
@@ -81,6 +82,11 @@ function TestWithErrorHandler() {
 
 // Main test page
 export default function ErrorHandlingTest() {
+  // Debug/test route — never publicly reachable in production (see #1922).
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   return (
     <div className="min-h-screen bg-zinc-900 p-8">
       <div className="max-w-4xl mx-auto">

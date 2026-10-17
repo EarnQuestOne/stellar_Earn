@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children, user }: AdminLayoutProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50">

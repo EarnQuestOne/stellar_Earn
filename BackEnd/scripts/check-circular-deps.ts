@@ -16,6 +16,7 @@ async function checkCircularDependencies() {
   const modules = [
     'app.module',
     'modules/auth/auth.module',
+    
     'modules/users/users.module',
     'modules/quests/quests.module',
     'modules/submissions/submissions.module',

@@ -24,6 +24,7 @@ export function WalletConnectionModal() {
     supportedWallets,
     connect,
     isConnecting,
+    isVerifyingWallet,
     error: walletError,
     address,
     isConnected,
@@ -49,20 +50,31 @@ export function WalletConnectionModal() {
     }
   }, [isModalOpen]);
 
-  // If wallet connects and we're not authenticated, move to sign step
+  // If wallet connects and we're not authenticated, move to sign step.
+  // Guard on !isVerifyingWallet to avoid triggering the sign flow for a
+  // persisted address that is still being verified against the extension.
   useEffect(() => {
     if (
       isConnected &&
       address &&
       !isAuthenticated &&
       step === 'select' &&
-      !isConnecting
+      !isConnecting &&
+      !isVerifyingWallet
     ) {
       handleGenerateChallenge(address);
     } else if (isConnected && isAuthenticated && isModalOpen) {
       closeModal();
     }
-  }, [isConnected, address, isAuthenticated, step, isConnecting, isModalOpen]);
+  }, [
+    isConnected,
+    address,
+    isAuthenticated,
+    step,
+    isConnecting,
+    isModalOpen,
+    isVerifyingWallet,
+  ]);
 
   const handleGenerateChallenge = async (addr: string) => {
     try {

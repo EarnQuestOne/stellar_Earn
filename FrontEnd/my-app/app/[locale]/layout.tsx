@@ -12,6 +12,7 @@ import { SkipToContent } from '@/components/a11y/SkipToContent';
 import PerformanceMonitor from '@/components/ui/PerformanceMonitor';
 import { EnvValidator } from '@/components/providers/EnvValidator';
 import { SWRegister } from '@/components/SWRegister';
+import { GlobalOfflineIndicator } from '@/components/quest/GlobalOfflineIndicator';
 import { createPageMetadata, getLocale } from '@/lib/seo';
 
 const geistSans = Geist({
@@ -65,14 +66,13 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Preload critical CSS for Hero section */}
+        <link rel="preload" href="/styles/HeroSection.css" as="style" />
+        <noscript>
+          <link rel="stylesheet" href="/styles/HeroSection.css" />
+        </noscript>
         {/* Render-blocking script prevents flash of unstyled theme on first paint */}
         <script src="/theme-init.js" nonce={nonce} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -82,6 +82,9 @@ export default async function RootLayout({
             <I18nProvider locale={locale}>
               <SkipToContent />
               <SWRegister />
+              {/* Global connectivity banner — covers every route so users get
+                  offline feedback on pages that do not render their own. */}
+              <GlobalOfflineIndicator />
               {children}
               <PerformanceMonitor />
               <ConsentBanner />

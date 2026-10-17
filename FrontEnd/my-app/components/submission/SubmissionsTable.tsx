@@ -1,9 +1,12 @@
 'use client';
 
-import { memo } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { StatusBadge } from './StatusBadge';
 import type { Submission } from '@/lib/types/submission';
 import { formatShortDate } from '@/lib/utils/date';
+import { Pagination } from '@/components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface SubmissionsTableProps {
   submissions: Submission[];
@@ -27,6 +30,21 @@ export const SubmissionsTable = memo(function SubmissionsTable({
   submissions,
   onSubmissionClick,
 }: SubmissionsTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(submissions.length / PAGE_SIZE));
+  const activePage = Math.min(currentPage, totalPages);
+  const visibleSubmissions = useMemo(() => {
+    const start = (activePage - 1) * PAGE_SIZE;
+    return submissions.slice(start, start + PAGE_SIZE);
+  }, [activePage, submissions]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [submissions]);
+
+  const startRow = (activePage - 1) * PAGE_SIZE + 1;
+  const endRow = Math.min(activePage * PAGE_SIZE, submissions.length);
+
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <table className="w-full divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -71,7 +89,7 @@ export const SubmissionsTable = memo(function SubmissionsTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
-          {submissions.map((submission) => {
+          {visibleSubmissions.map((submission) => {
             const proofDisplay = getProofDisplay(submission.proof);
             const hasProof = proofDisplay !== '-';
 
@@ -169,6 +187,22 @@ export const SubmissionsTable = memo(function SubmissionsTable({
           })}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <p
+            className="text-sm text-zinc-500 dark:text-zinc-400"
+            data-testid="submissions-table-range"
+          >
+            Showing {startRow}–{endRow} of {submissions.length}
+          </p>
+          <Pagination
+            currentPage={activePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   );
 });

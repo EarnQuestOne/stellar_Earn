@@ -3,6 +3,7 @@ import { DataSource, DataSourceOptions, Logger } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { AppLoggerService } from '../common/logger/logger.service';
+import { buildPoolExtra } from '../config/database-pool.config';
 
 import { RefreshToken } from '../modules/auth/entities/refresh-token.entity';
 
@@ -11,6 +12,7 @@ import { Submission } from '../modules/submissions/entities/submission.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { Notification } from '../modules/notifications/entities/notification.entity';
 import { Payout } from '../modules/payouts/entities/payout.entity';
+import { PayoutOutbox } from '../modules/payouts/entities/payout-outbox.entity';
 import { IdempotencyKey } from '../modules/payouts/entities/idempotency-key.entity';
 import { FeatureFlag } from '../modules/feature-flags/entities/feature-flag.entity';
 import { FeatureFlagAuditLog } from '../modules/feature-flags/entities/feature-flag-audit.entity';
@@ -19,6 +21,7 @@ import { QuotaUsage } from '../modules/quota/entities/quota-usage.entity';
 import { EventStore } from '../events/entities/event-store.entity';
 import { PoisonMessage } from '../events/entities/poison-message.entity';
 import { FailedWebhookEvent } from '../modules/webhooks/entities/failed-webhook-event.entity';
+import { Dispute } from '../modules/disputes/entities/dispute.entity';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -101,6 +104,7 @@ export const dataSourceOptions: DataSourceOptions = {
     Submission,
     Notification,
     Payout,
+    PayoutOutbox,
     IdempotencyKey,
     FeatureFlag,
     FeatureFlagAuditLog,
@@ -109,6 +113,7 @@ export const dataSourceOptions: DataSourceOptions = {
     EventStore,
     PoisonMessage,
     FailedWebhookEvent,
+    Dispute,
   ],
 
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
@@ -127,20 +132,7 @@ export const dataSourceOptions: DataSourceOptions = {
     10,
   ),
 
-  extra: {
-    max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
-    min: parseInt(process.env.DB_POOL_MIN ?? '2', 10),
-
-    connectionTimeoutMillis: parseInt(
-      process.env.DB_POOL_CONNECTION_TIMEOUT ?? '10000',
-      10,
-    ),
-
-    idleTimeoutMillis: parseInt(
-      process.env.DB_POOL_IDLE_TIMEOUT ?? '30000',
-      10,
-    ),
-  },
+  extra: buildPoolExtra(),
 };
 
 const AppDataSource = new DataSource(dataSourceOptions);

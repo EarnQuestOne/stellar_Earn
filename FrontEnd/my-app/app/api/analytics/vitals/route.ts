@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to process metric' },
-      { status: 400 },
+      { status: 400 }
     );
   }
 }

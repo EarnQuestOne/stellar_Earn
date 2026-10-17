@@ -3,8 +3,10 @@ import {
   Logger,
   OnModuleDestroy,
   OnModuleInit,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MetricsService } from '../../common/services/metrics.service';
 import {
   MemorySnapshot,
   CpuSnapshot,
@@ -21,11 +23,28 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
   private config!: ResourceLimitsConfig;
   private intervalHandle: ReturnType<typeof setInterval> | undefined;
   private lastCpuUsage = process.cpuUsage();
+  private lastMonitorTick = Date.now();
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() private readonly metricsService?: MetricsService,
+  ) {}
 
   onModuleInit(): void {
     this.config = this.loadConfig();
+    this.metricsService?.registerGauge(
+      'resource_event_loop_lag_ms',
+      'Observed event-loop lag for the resource monitor',
+    );
+    this.metricsService?.registerCounter(
+      'resource_gc_total',
+      'Total manual GC invocations',
+    );
+    this.metricsService?.registerHistogram(
+      'resource_gc_freed_mb',
+      'Estimated heap freed by manual GC',
+      [0, 1, 5, 10, 25, 50, 100, 250, 500],
+    );
     this.logger.log(
       `Resource limits active — heap warn: ${this.config.maxHeapUsedMb * (this.config.heapWarningPercent / 100)} MB, ` +
         `heap critical: ${this.config.maxHeapUsedMb * (this.config.heapCriticalPercent / 100)} MB, ` +
@@ -64,8 +83,9 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
       heapTotal: m.heapTotal,
       external: m.external,
       arrayBuffers: m.arrayBuffers,
-      heapUsedPercent:
-        this.config ? Math.round((m.heapUsed / (this.config.maxHeapUsedMb * MB)) * 100) : 0,
+      heapUsedPercent: this.config
+        ? Math.round((m.heapUsed / (this.config.maxHeapUsedMb * MB)) * 100)
+        : 0,
     };
   }
 
@@ -85,6 +105,8 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
       global.gc();
       const after = process.memoryUsage().heapUsed;
       const freed = Math.round((before - after) / MB);
+      this.metricsService?.incrementCounter('resource_gc_total');
+      this.metricsService?.observeHistogram('resource_gc_freed_mb', freed);
       this.logger.log(`Manual GC triggered — freed ~${freed} MB`);
       return {
         triggered: true,
@@ -93,20 +115,39 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
     }
     return {
       triggered: false,
-      message: 'GC not exposed. Start Node with --expose-gc to enable manual GC.',
+      message:
+        'GC not exposed. Start Node with --expose-gc to enable manual GC.',
     };
   }
 
   // ─── Private ─────────────────────────────────────────────────────────────
 
   private loadConfig(): ResourceLimitsConfig {
+    const rawInterval = this.configService.get<number>(
+      'RESOURCE_MONITOR_INTERVAL_MS',
+      60_000,
+    );
+    const monitorIntervalMs = Math.max(rawInterval, 10_000); // Minimum 10s to prevent CPU thrash
     return {
-      maxHeapUsedMb: this.configService.get<number>('RESOURCE_MAX_HEAP_MB', 512),
+      maxHeapUsedMb: this.configService.get<number>(
+        'RESOURCE_MAX_HEAP_MB',
+        512,
+      ),
       maxRssMb: this.configService.get<number>('RESOURCE_MAX_RSS_MB', 768),
-      heapWarningPercent: this.configService.get<number>('RESOURCE_HEAP_WARN_PERCENT', 75),
-      heapCriticalPercent: this.configService.get<number>('RESOURCE_HEAP_CRITICAL_PERCENT', 90),
-      exitOnHeapCritical: this.configService.get<string>('RESOURCE_EXIT_ON_HEAP_CRITICAL', 'false') === 'true',
-      monitorIntervalMs: this.configService.get<number>('RESOURCE_MONITOR_INTERVAL_MS', 30_000),
+      heapWarningPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_WARN_PERCENT',
+        75,
+      ),
+      heapCriticalPercent: this.configService.get<number>(
+        'RESOURCE_HEAP_CRITICAL_PERCENT',
+        90,
+      ),
+      exitOnHeapCritical:
+        this.configService.get<string>(
+          'RESOURCE_EXIT_ON_HEAP_CRITICAL',
+          'false',
+        ) === 'true',
+      monitorIntervalMs,
     };
   }
 
@@ -118,8 +159,21 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private checkAndEmitViolations(): void {
+    const callbackStart = performance.now();
+    const now = Date.now();
+    const expectedTick = this.lastMonitorTick + this.config.monitorIntervalMs;
+    const eventLoopLagMs = Math.max(0, now - expectedTick);
+    this.lastMonitorTick = now;
+    this.metricsService?.setGauge('resource_event_loop_lag_ms', eventLoopLagMs);
     const mem = this.getMemorySnapshot();
     const violations = this.evaluateViolations(mem);
+    const callbackDurationMs = performance.now() - callbackStart;
+
+    if (callbackDurationMs > 10) {
+      this.logger.warn(
+        `Resource monitor callback took ${callbackDurationMs.toFixed(1)}ms (>10ms overhead threshold)`,
+      );
+    }
 
     if (violations.length === 0) return;
 
@@ -138,8 +192,10 @@ export class ResourceLimitsService implements OnModuleInit, OnModuleDestroy {
 
   private evaluateViolations(mem: MemorySnapshot): ResourceViolation[] {
     const violations: ResourceViolation[] = [];
-    const warnThreshold = this.config.maxHeapUsedMb * (this.config.heapWarningPercent / 100);
-    const criticalThreshold = this.config.maxHeapUsedMb * (this.config.heapCriticalPercent / 100);
+    const warnThreshold =
+      this.config.maxHeapUsedMb * (this.config.heapWarningPercent / 100);
+    const criticalThreshold =
+      this.config.maxHeapUsedMb * (this.config.heapCriticalPercent / 100);
     const heapUsedMb = mem.heapUsed / MB;
     const rssMb = mem.rss / MB;
 

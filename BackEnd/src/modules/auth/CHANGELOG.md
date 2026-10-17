@@ -6,6 +6,19 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `AuthController.login` now returns a typed `LoginResponseDto` instead of writing the response body manually via `@Res().json()`, so Nest's serialization/interceptor pipeline applies to the login response. `@Res({ passthrough: true })` is kept for setting the session cookies. Closes #1894.
+- Applied code-style formatting to `auth.module.ts` import block (no logic change).
+- `AuthService.validateUser` now tolerates missing users by falling back to a default caller identity instead of bubbling `NotFoundException`.
+### Added
+
+- `LoginDto` accepts an optional `referralCode`; on first-time signup `AuthService.verifyAndLogin` records a pending referral attribution (invalid/self/circular/duplicate codes are ignored so signup never fails). Part of the referral program (#2357).
+- Partial indexes (`WHERE "deletedAt" IS NULL`) on `RefreshToken` for `userId` and `familyId` columns to speed up active-session queries (#2000).
+
+### Fixed
+
+- Removed duplicate `getProfile` method definition in `auth.controller.ts` that caused TypeScript compilation error (TS2393).
+
 ### Added
 
 - Restored `GET /auth/profile` endpoint and configured `PassportStrategy` for `JwtStrategy`.
@@ -28,3 +41,7 @@ and this module adheres to [Semantic Versioning](https://semver.org/).
 - `POST /auth/login` now requires a Stellar wallet signature (`signature` field) verified against the challenge issued by `POST /auth/challenge`; bare address-only tokens are no longer accepted.
 - Migrated JWT signing to RS256 with key rotation support via `getJwtPrivateKey`.
 - `AuthModule` imports `UsersModule` to support user lookup and OAuth user creation.
+
+### Security
+
+- Migrated JWT storage from `localStorage` to `httpOnly` cookies. Access and refresh tokens are now set as `httpOnly`, `SameSite`, `Secure` (in production) cookies with scoped `Path` attributes. `POST /auth/login` sets `Set-Cookie` headers via `res.append`; `POST /auth/refresh` reads refresh tokens from the `refresh_token` cookie with body fallback; new `POST /auth/logout` and `POST /auth/logout-all` endpoints clear cookies with matching `Path` values. Closes #1936.

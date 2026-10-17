@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import type { Badge } from '@/lib/types/reputation';
 
 interface BadgeGalleryProps {
@@ -16,14 +16,18 @@ const rarityColors = {
   legendary: 'border-yellow-400 dark:border-yellow-600',
 };
 
-function BadgeCard({
+// The card receives a stable `onClick` (the gallery passes one callback for all
+// cards) plus a primitive `isEarned` flag and the badge object itself, so
+// `memo` lets unchanged cards skip re-rendering when the gallery re-renders
+// (#2497).
+const BadgeCard = memo(function BadgeCard({
   badge,
   isEarned,
   onClick,
 }: {
   badge: Badge;
   isEarned: boolean;
-  onClick?: () => void;
+  onClick?: (badge: Badge) => void;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -35,7 +39,7 @@ function BadgeCard({
     >
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => onClick?.(badge)}
         aria-label={`View badge ${badge.name}`}
         className={`relative rounded-lg border-2 p-4 transition-all text-left ${
           isEarned
@@ -104,7 +108,12 @@ function BadgeCard({
       </button>
     </div>
   );
-}
+});
+
+BadgeCard.displayName = 'BadgeCard';
+
+// Exported for direct testing of the memoized presentation in isolation.
+export { BadgeCard };
 
 function EmptyState() {
   return (
@@ -138,24 +147,46 @@ export function BadgeGallery({
   earnedBadgeIds,
   onBadgeClick,
 }: BadgeGalleryProps) {
-  if (badges.length === 0) {
+  // O(1) membership checks instead of `Array.includes` inside the render loop.
+  const earnedBadgeIdSet = useMemo(
+    () => new Set(earnedBadgeIds),
+    [earnedBadgeIds]
+  );
+
+  // One stable callback for every card so memoized cards keep the same
+  // `onClick` reference and can skip re-rendering.
+  const handleBadgeClick = useCallback(
+    (badge: Badge) => {
+      onBadgeClick?.(badge);
+    },
+    [onBadgeClick]
+  );
+
+  // Recompute which badge is earned only when the inputs actually change.
+  const gridItems = useMemo(
+    () =>
+      badges.map((badge) => ({
+        badge,
+        isEarned: earnedBadgeIdSet.has(badge.id),
+      })),
+    [badges, earnedBadgeIdSet]
+  );
+
+  if (gridItems.length === 0) {
     return <EmptyState />;
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {badges.map((badge) => {
-        const isEarned = earnedBadgeIds.includes(badge.id);
-        return (
-          <div key={badge.id} className="relative group">
-            <BadgeCard
-              badge={badge}
-              isEarned={isEarned}
-              onClick={() => onBadgeClick?.(badge)}
-            />
-          </div>
-        );
-      })}
+      {gridItems.map(({ badge, isEarned }) => (
+        <div key={badge.id} className="relative group">
+          <BadgeCard
+            badge={badge}
+            isEarned={isEarned}
+            onClick={handleBadgeClick}
+          />
+        </div>
+      ))}
     </div>
   );
 }

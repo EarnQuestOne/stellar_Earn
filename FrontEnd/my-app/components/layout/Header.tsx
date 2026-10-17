@@ -1,5 +1,6 @@
 'use client';
 
+import React, { memo, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
@@ -19,9 +20,22 @@ interface HeaderProps {
   onOpenMobileMenu?: () => void;
 }
 
-export function Header({ onOpenMobileMenu }: HeaderProps) {
-  const pathname = usePathname();
+// The Header is mounted once by `AppLayout` and stays on screen for the whole
+// session, so it should only re-render when something it actually displays
+// changes: the active route or its own props. Wrapping it in `memo` (together
+// with the stable `onOpenMobileMenu` callback in `AppLayout`) prevents the
+// heavy subtree below — search, notifications, wallet, user menu — from
+// re-rendering when an ancestor re-renders for an unrelated reason (#2498).
+export const Header = memo(function Header({ onOpenMobileMenu }: HeaderProps) {
+  const pathname = usePathname()!;
   const { navigationItems } = useTranslatedNavigation();
+
+  // Only the first four items are shown in the desktop bar; derive that slice
+  // once per navigation change instead of on every render.
+  const primaryNavigationItems = useMemo(
+    () => navigationItems.slice(0, 4),
+    [navigationItems]
+  );
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60 dark:border-zinc-800 dark:bg-zinc-950/95 dark:supports-backdrop-filter:bg-zinc-900/60">
@@ -44,7 +58,7 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
         </button>
 
         <div className="hidden items-center gap-1 lg:flex">
-          {navigationItems.slice(0, 4).map((item) => {
+          {primaryNavigationItems.map((item) => {
             const active = isActiveRoute(pathname, item);
             return (
               <Link
@@ -88,4 +102,6 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
       <WalletModal />
     </header>
   );
-}
+});
+
+Header.displayName = 'Header';

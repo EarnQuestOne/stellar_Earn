@@ -642,6 +642,18 @@
                         "key": {
                           "vec": [
                             {
+                              "symbol": "LastUnpauseTimestamp"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 0
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
                               "symbol": "PlatformQuestsCreated"
                             }
                           ]
@@ -701,6 +713,12 @@
                               "val": {
                                 "u64": 10000
                               }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grace_period_seconds"
+                              },
+                              "val": "void"
                             },
                             {
                               "key": {
@@ -1012,7 +1030,7 @@
             },
             "ext": "v0"
           },
-          4095
+          2073600
         ]
       ],
       [
@@ -1442,7 +1460,7 @@
             },
             "ext": "v0"
           },
-          4095
+          2073600
         ]
       ]
     ]

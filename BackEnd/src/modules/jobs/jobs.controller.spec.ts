@@ -13,7 +13,9 @@ describe('JobsController', () => {
         {
           provide: JobsService,
           useValue: {
-            executeJob: jest.fn().mockResolvedValue({ success: true, jobId: 'job-123' }),
+            executeJob: jest
+              .fn()
+              .mockResolvedValue({ success: true, jobId: 'job-123' }),
           },
         },
       ],

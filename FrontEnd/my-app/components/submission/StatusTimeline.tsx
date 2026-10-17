@@ -8,95 +8,65 @@ interface StatusTimelineProps {
   submission: Submission;
 }
 
-interface TimelineStep {
-  status: SubmissionStatus | 'CREATED';
-  label: string;
-  timestamp?: string;
-  isCompleted: boolean;
-  isCurrent: boolean;
+/**
+ * Fix #2215: defines the canonical step order explicitly so the timeline
+ * always renders CREATED → PENDING → UNDER_REVIEW → APPROVED/REJECTED → PAID
+ * regardless of insertion order or status transitions.
+ */
+const STEP_ORDER: Array<SubmissionStatus | 'CREATED'> = [
+  'CREATED',
+  SubmissionStatus.PENDING,
+  SubmissionStatus.UNDER_REVIEW,
+  SubmissionStatus.APPROVED,
+  SubmissionStatus.REJECTED,
+  SubmissionStatus.PAID,
+];
+
+function buildSteps(submission: Submission) {
+  const statusRank = STEP_ORDER.indexOf(
+    submission.status as SubmissionStatus | 'CREATED'
+  );
+
+  return STEP_ORDER.filter((s) => {
+    // Always show CREATED and PENDING; show others only when reached
+    if (s === 'CREATED' || s === SubmissionStatus.PENDING) return true;
+    const rank = STEP_ORDER.indexOf(s);
+    // Skip the opposite terminal state
+    if (
+      s === SubmissionStatus.APPROVED &&
+      submission.status === SubmissionStatus.REJECTED
+    )
+      return false;
+    if (
+      s === SubmissionStatus.REJECTED &&
+      submission.status !== SubmissionStatus.REJECTED
+    )
+      return false;
+    return rank <= statusRank;
+  }).map((s) => ({
+    status: s,
+    label:
+      s === 'CREATED'
+        ? 'Submitted'
+        : s
+            .replace('_', ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
+    isCompleted: STEP_ORDER.indexOf(s) < statusRank,
+    isCurrent:
+      s === submission.status ||
+      (s === 'CREATED' && submission.status === SubmissionStatus.PENDING),
+    timestamp:
+      s === 'CREATED'
+        ? submission.createdAt
+        : s === submission.status
+          ? submission.updatedAt
+          : undefined,
+  }));
 }
 
 export function StatusTimeline({ submission }: StatusTimelineProps) {
-  const steps: TimelineStep[] = [
-    {
-      status: 'CREATED',
-      label: 'Submitted',
-      timestamp: submission.createdAt,
-      isCompleted: true,
-      isCurrent: false,
-    },
-    {
-      status: SubmissionStatus.PENDING,
-      label: 'Pending Review',
-      timestamp:
-        submission.status === SubmissionStatus.PENDING
-          ? submission.updatedAt
-          : undefined,
-      isCompleted:
-        submission.status !== SubmissionStatus.PENDING &&
-        submission.status !== SubmissionStatus.UNDER_REVIEW,
-      isCurrent: submission.status === SubmissionStatus.PENDING,
-    },
-  ];
-
-  // Add Under Review step if status is UNDER_REVIEW or beyond
-  if (
-    submission.status === SubmissionStatus.UNDER_REVIEW ||
-    submission.status === SubmissionStatus.APPROVED ||
-    submission.status === SubmissionStatus.REJECTED ||
-    submission.status === SubmissionStatus.PAID
-  ) {
-    steps.push({
-      status: SubmissionStatus.UNDER_REVIEW,
-      label: 'Under Review',
-      timestamp:
-        submission.status === SubmissionStatus.UNDER_REVIEW
-          ? submission.updatedAt
-          : undefined,
-      isCompleted: submission.status !== SubmissionStatus.UNDER_REVIEW,
-      isCurrent: submission.status === SubmissionStatus.UNDER_REVIEW,
-    });
-  }
-
-  // Add Approval/Rejection step
-  if (
-    submission.status === SubmissionStatus.APPROVED ||
-    submission.status === SubmissionStatus.REJECTED ||
-    submission.status === SubmissionStatus.PAID
-  ) {
-    steps.push({
-      status:
-        submission.status === SubmissionStatus.REJECTED
-          ? SubmissionStatus.REJECTED
-          : SubmissionStatus.APPROVED,
-      label:
-        submission.status === SubmissionStatus.REJECTED
-          ? 'Rejected'
-          : 'Approved',
-      timestamp: submission.updatedAt,
-      isCompleted: true,
-      isCurrent:
-        submission.status === SubmissionStatus.APPROVED ||
-        submission.status === SubmissionStatus.REJECTED,
-    });
-  }
-
-  // Add Paid step if approved or paid
-  if (
-    submission.status === SubmissionStatus.APPROVED ||
-    submission.status === SubmissionStatus.PAID
-  ) {
-    steps.push({
-      status: SubmissionStatus.PAID,
-      label: 'Paid',
-      timestamp:
-        submission.status === SubmissionStatus.PAID
-          ? submission.updatedAt
-          : undefined,
-      isCompleted: submission.status === SubmissionStatus.PAID,
-      isCurrent: submission.status === SubmissionStatus.PAID,
-    });
-  }
+  const steps = buildSteps(submission);
 
   return (
     <div className="space-y-4">
@@ -106,58 +76,24 @@ export function StatusTimeline({ submission }: StatusTimelineProps) {
       <div className="relative">
         {steps.map((step, index) => (
           <div key={step.status} className="relative flex gap-4 pb-6 last:pb-0">
-            {/* Timeline line */}
             {index < steps.length - 1 && (
               <div
-                className={`absolute left-[7px] top-6 h-full w-0.5 ${
-                  step.isCompleted
-                    ? 'bg-blue-600 dark:bg-blue-500'
-                    : 'bg-zinc-200 dark:bg-zinc-700'
-                }`}
+                className={`absolute left-[7px] top-6 h-full w-0.5 ${step.isCompleted ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                 aria-hidden="true"
               />
             )}
-
-            {/* Status dot */}
             <div
-              className={`relative z-10 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full ${
-                step.isCompleted
-                  ? 'bg-blue-600 dark:bg-blue-500'
-                  : step.isCurrent
-                    ? 'bg-blue-600 dark:bg-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/30'
-                    : 'bg-zinc-200 dark:bg-zinc-700'
-              }`}
-            >
-              {step.isCompleted && (
-                <svg
-                  className="h-2.5 w-2.5 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </div>
-
-            {/* Content */}
+              className={`relative z-10 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full ${step.isCompleted ? 'bg-blue-600' : step.isCurrent ? 'bg-blue-600 ring-4 ring-blue-100 dark:ring-blue-900/30' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <p
-                  className={`text-sm font-medium ${
-                    step.isCurrent || step.isCompleted
-                      ? 'text-zinc-900 dark:text-zinc-50'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  }`}
+                  className={`text-sm font-medium ${step.isCurrent || step.isCompleted ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500'}`}
                 >
                   {step.label}
                 </p>
                 {step.timestamp && (
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                  <span className="text-xs text-zinc-500 whitespace-nowrap">
                     {formatTimelineDate(step.timestamp)}
                   </span>
                 )}

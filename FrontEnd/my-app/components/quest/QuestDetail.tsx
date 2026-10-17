@@ -4,7 +4,7 @@ import { QuestHeader } from './QuestHeader';
 import { RequirementsList } from './RequirementsList';
 import { RewardDisplay } from './RewardDisplay';
 import { DeadlineTimer } from './DeadlineTimer';
-import { SubmissionForm } from './SubmissionForm';
+import { SubmissionForm } from '@/components/submission/SubmissionForm';
 import type { Quest } from '@/lib/types/quest';
 import { QuestStatus } from '@/lib/types/quest';
 import { useFormatter } from '@/lib/hooks/useFormatter';

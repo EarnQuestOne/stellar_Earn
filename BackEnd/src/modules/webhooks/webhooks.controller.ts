@@ -38,6 +38,7 @@ import {
   FailedWebhookEventResponseDto,
   RetryWebhookResponseDto,
 } from './dto/webhook-response.dto';
+import { WebhookPayloadDto } from './dto/webhook-event.dto';
 import { FailedWebhookStatus } from './entities/failed-webhook-event.entity';
 import { TraceService } from '../trace/trace.service';
 import { TraceIdUtil } from '../trace/trace-id.util';
@@ -50,8 +51,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
-
-import { WebhookPayloadDto } from './dto/webhook-event.dto';
 
 /** Explicit allowlist of supported generic webhook services and their secret env var keys. */
 const WEBHOOK_SERVICE_ALLOWLIST: Record<string, string> = {
@@ -76,9 +75,16 @@ export class WebhooksController {
    */
   @Post('github')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'Receive GitHub webhook events' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Webhook processed successfully',
@@ -90,7 +96,7 @@ export class WebhooksController {
     description: 'Unauthorized or invalid signature',
   })
   async handleGithubWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers('x-github-event') eventType: string,
     @Headers('x-github-delivery') deliveryId: string,
     @Headers('x-hub-signature-256') signature: string,
@@ -111,8 +117,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: deliveryId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -140,7 +146,6 @@ export class WebhooksController {
           throw new UnauthorizedException(response.message);
         }
 
-        // Link on-chain tx hash if the service returns one
         if (response.txHash) {
           await this.traceService.linkOnchain({
             traceId,
@@ -158,7 +163,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -182,9 +187,16 @@ export class WebhooksController {
    */
   @Post('api-verify')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'API verification webhook endpoint' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Verification processed',
@@ -196,7 +208,7 @@ export class WebhooksController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleApiVerificationWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers('x-event-type') eventType: string,
     @Headers('x-webhook-id') webhookId: string,
     @Headers('authorization') authHeader: string,
@@ -217,8 +229,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: webhookId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -268,7 +280,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -288,13 +300,19 @@ export class WebhooksController {
 
   /**
    * Generic webhook endpoint for other external services
-   * Note: This should be placed after specific routes to avoid conflicts
    */
   @Post('generic/:service')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   @ApiOperation({ summary: 'Generic webhook receiver for external services' })
   @ApiConsumes('application/json')
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: WebhookPayloadDto })
   @ApiResponse({
     status: 200,
     description: 'Webhook processed',
@@ -302,7 +320,7 @@ export class WebhooksController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async handleGenericWebhook(
-    @Body() payload: any,
+    @Body() payload: WebhookPayloadDto,
     @Headers() headers: any,
     @Headers('x-signature') signature: string,
     @Headers('x-event-type') eventType: string,
@@ -332,8 +350,8 @@ export class WebhooksController {
       await this.traceService.createTrace({
         traceId,
         webhookEventId: eventId,
-        questId: payload?.questId ?? 'unknown',
-        submitterAddress: payload?.submitterAddress ?? 'unknown',
+        questId: payload?.data?.transactionHash ?? 'unknown',
+        submitterAddress: payload?.data?.sourceAccount ?? 'unknown',
       });
 
       try {
@@ -375,7 +393,7 @@ export class WebhooksController {
         }
 
         return response;
-      } catch (error) {
+      } catch (error: any) {
         if (!(error instanceof UnauthorizedException)) {
           await this.traceService.appendEvent(
             traceId,
@@ -489,6 +507,7 @@ export class WebhooksController {
    * Generate unique event ID
    */
   private generateEventId(): string {
+
     return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
@@ -518,5 +537,6 @@ export class WebhooksController {
   )
   async handleWebhook(@Body() payload: WebhookPayloadDto) {
     return this.webhooksService.processEvent(payload);
+    return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

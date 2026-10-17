@@ -83,7 +83,11 @@ export class PayoutsController {
     description: 'Filter by status',
   })
   @ApiQuery({ name: 'type', required: false, description: 'Filter by type' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Opaque cursor returned as nextCursor by the previous page',
+  })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   async getMyPayoutHistory(
     @Query() query: PayoutQueryDto,
@@ -183,7 +187,11 @@ export class PayoutsController {
     description: 'Filter by status',
   })
   @ApiQuery({ name: 'type', required: false, description: 'Filter by type' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Opaque cursor returned as nextCursor by the previous page',
+  })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   async getAllPayouts(
     @Query() query: PayoutQueryDto,

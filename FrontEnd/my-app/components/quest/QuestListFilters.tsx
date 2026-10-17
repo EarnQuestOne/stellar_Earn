@@ -1,6 +1,9 @@
 'use client';
 
+import React, { useEffect, useMemo, useRef } from 'react';
 import { QuestStatus, QuestDifficulty } from '@/lib/types/quest';
+import { debounce } from '@/lib/utils/debounce';
+import { DEFAULT_FILTER_DEBOUNCE_MS } from '@/lib/hooks/useQuestFilter';
 
 const CATEGORIES = [
   'Security',
@@ -25,6 +28,13 @@ interface QuestListFiltersProps {
     max: number | undefined
   ) => void;
   onClearFilters: () => void;
+  /**
+   * Debounce window (ms) applied before a change is propagated to the parent.
+   * The parent turns these callbacks into URL updates, and every URL update
+   * triggers a quest fetch, so coalescing rapid changes avoids redundant
+   * requests. Defaults to `DEFAULT_FILTER_DEBOUNCE_MS`.
+   */
+  debounceMs?: number;
 }
 
 export function QuestListFilters({
@@ -38,6 +48,7 @@ export function QuestListFilters({
   onCategoryChange,
   onRewardRangeChange,
   onClearFilters,
+  debounceMs = DEFAULT_FILTER_DEBOUNCE_MS,
 }: QuestListFiltersProps) {
   const hasActiveFilters = !!(
     selectedStatus ||
@@ -45,6 +56,59 @@ export function QuestListFilters({
     selectedCategory ||
     minReward !== undefined ||
     maxReward !== undefined
+  );
+
+  // Keep the latest callbacks and current selection in refs so the debounced
+  // wrappers below can stay referentially stable without capturing stale
+  // props. The refs are updated after every render.
+  const latest = useRef({
+    onStatusChange,
+    onDifficultyChange,
+    onCategoryChange,
+    onRewardRangeChange,
+    minReward,
+    maxReward,
+  });
+
+  useEffect(() => {
+    latest.current = {
+      onStatusChange,
+      onDifficultyChange,
+      onCategoryChange,
+      onRewardRangeChange,
+      minReward,
+      maxReward,
+    };
+  }, [
+    onStatusChange,
+    onDifficultyChange,
+    onCategoryChange,
+    onRewardRangeChange,
+    minReward,
+    maxReward,
+  ]);
+
+  const emit = useMemo(
+    () => ({
+      // Debounce each control independently so that, e.g., typing into the
+      // reward inputs does not delay or cancel a status selection.
+      status: debounce((status: QuestStatus | undefined) => {
+        latest.current.onStatusChange(status);
+      }, debounceMs),
+      difficulty: debounce((difficulty: QuestDifficulty | undefined) => {
+        latest.current.onDifficultyChange(difficulty);
+      }, debounceMs),
+      category: debounce((category: string | undefined) => {
+        latest.current.onCategoryChange(category);
+      }, debounceMs),
+      rewardRange: debounce(
+        (min: number | undefined, max: number | undefined) => {
+          latest.current.onRewardRangeChange(min, max);
+        },
+        debounceMs
+      ),
+    }),
+    [debounceMs]
   );
 
   return (
@@ -65,7 +129,7 @@ export function QuestListFilters({
           id="filter-status"
           value={selectedStatus ?? ''}
           onChange={(e) =>
-            onStatusChange(
+            emit.status(
               e.target.value ? (e.target.value as QuestStatus) : undefined
             )
           }
@@ -92,7 +156,7 @@ export function QuestListFilters({
           id="filter-difficulty"
           value={selectedDifficulty ?? ''}
           onChange={(e) =>
-            onDifficultyChange(
+            emit.difficulty(
               e.target.value ? (e.target.value as QuestDifficulty) : undefined
             )
           }
@@ -118,7 +182,7 @@ export function QuestListFilters({
         <select
           id="filter-category"
           value={selectedCategory ?? ''}
-          onChange={(e) => onCategoryChange(e.target.value || undefined)}
+          onChange={(e) => emit.category(e.target.value || undefined)}
           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="">All Categories</option>
@@ -143,9 +207,9 @@ export function QuestListFilters({
             min={0}
             aria-label="Minimum reward in XLM"
             onChange={(e) =>
-              onRewardRangeChange(
+              emit.rewardRange(
                 e.target.value ? Number(e.target.value) : undefined,
-                maxReward
+                latest.current.maxReward
               )
             }
             className="w-24 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
@@ -160,8 +224,8 @@ export function QuestListFilters({
             min={0}
             aria-label="Maximum reward in XLM"
             onChange={(e) =>
-              onRewardRangeChange(
-                minReward,
+              emit.rewardRange(
+                latest.current.minReward,
                 e.target.value ? Number(e.target.value) : undefined
               )
             }
