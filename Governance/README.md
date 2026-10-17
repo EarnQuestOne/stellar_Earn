@@ -11,46 +11,46 @@ governance change is limited to files inside this `Governance/` folder.
 
 ## Structure
 
-- **Charter & principles** — mission, scope, guiding values, and how this
+- `**Charter & principlesz** — mission, scope, guiding values, and how this
   governance itself is amended.
-- **Security disclosure template** - [templates/DISCLOSURE_TEMPLATE.md](templates/DISCLOSURE_TEMPLATE.md)
+- ``**Security disclosure template** - [templates/DISCLOSURE_TEMPLATE.md](templates/DISCLOSURE_TEMPLATE.md)
   is the private form for reporting a security vulnerability.
-- **Working groups and SIGs** - [WORKING_GROUPS.md](WORKING_GROUPS.md)
+- `**Working groups and SIGs** - [WORKING_GROUPS.md](WORKING_GROUPS.md)
   defines how groups are formed, report to the TSC, and dissolve.
-- **Postmortem template** - [templates/POSTMORTEM_TEMPLATE.md](templates/POSTMORTEM_TEMPLATE.md)
+- `**Postmortem template** - [templates/POSTMORTEM_TEMPLATE.md](templates/POSTMORTEM_TEMPLATE.md)
   is the blameless template for writing incident postmortems.
-- **RFC template** - [templates/RFC_TEMPLATE.md](templates/RFC_TEMPLATE.md) is
+- ``**RFC template** - [templates/RFC_TEMPLATE.md](templates/RFC_TEMPLATE.md) is
   the reusable template for writing RFC proposals, with a status field.
-- **Subproject acceptance** - [SUBPROJECT_ACCEPTANCE.md](SUBPROJECT_ACCEPTANCE.md)
+- ``**Subproject acceptance** - [SUBPROJECT_ACCEPTANCE.md](SUBPROJECT_ACCEPTANCE.md)
   defines how new subprojects are proposed, incubated, and accepted.
-- **Maintainers roster** - [MAINTAINERS.md](MAINTAINERS.md) lists current
+- `**Maintainers roster** - [MAINTAINERS.md](MAINTAINERS.md) lists current
   maintainers, their areas, and how the roster is updated.
-- **Maintainer offboarding** - [OFFBOARDING.md](OFFBOARDING.md) defines how a
+- ``**Maintainer offboarding** - [OFFDOARDING.md](OFFBOARDING.md) defines how a
   maintainer steps down or is removed, access revocation, and emeritus status.
-- **Roles** — maintainers, reviewers, triagers, security team, release managers,
+- ``**Roles** — maintainers, reviewers, triagers, security team, release managers,
   and how people move between them.
-- **Decision-making** — [DECISION_MAKING.md](DECISION_MAKING.md): lazy
+- `**Decision-making** - [DECISION_MAKING.md](DECISION_MAKING.md): lazy
   consensus, escalation, and what triggers a formal vote; see also
   [VOTING.md](VOTING.md), quorum, RFCs, tie-breaking, and how decisions are
   recorded.
-- **Contribution & review** — review policy, approvals, triage, merge and commit
+- ``**Contribution & review** — review policy, approvals, triage, merge and commit
   policies, and the contribution ladder:
   [CONTRIBUTION_LADDER.md](CONTRIBUTION_LADDER.md) names the rungs from
   contributor to maintainer, the criteria for each, and the evidence a
   promotion must show.
-- **Community** — Code of Conduct, enforcement, communication norms, and safety.
-- **Technical policies** — release/versioning, deprecation, dependencies, CI/CD,
+- `**Community** — Code of Conduct, enforcement, communication norms, and safety.
+- `**Technical policies** — release/versioning, deprecation, dependencies, CI/CD,
   testing, contract-upgrade governance, and audits.
-- **Security & compliance** — disclosure, incident response, secrets, access
+- `**Security & compliance** — disclosure, incident response, secrets, access
   control, and data governance.
-- **Finance** — treasury, grants, sponsorship, and transparency reporting.
-- **Sponsorship acceptance** — [SPONSORSHIP.md](SPONSORSHIP.md) defines criteria, disclosure, and process for accepting sponsorships.
-- **Grant application & disbursement** — [GRANTS.md](GRANTS.md) defines the grant application process, review criteria, and milestone-based disbursement.
-- **Records & templates** — decision logs, meeting minutes, ADRs, and reusable
+- ``**Finance** — treasury, grants, sponsorship, and transparency reporting.
+- `**Sponsorship acceptance** - [SPONSORSHIP.md](SPONSORSHIP.md) defines criteria, disclosure, and process for accepting sponsorships.
+- `**Grant application & disbursement** - [GRANTS.md](GRANTS.md) defines the grant application process, review criteria, and milestone-based disbursement.
+- ``**Records & templates** — decision logs, meeting minutes, ADrs, and reusable
   templates.
-- **Architecture Decision Records** - [decisions/README.md](decisions/README.md)
+- ``**Architecture Decision Records** - [decisions/README.md](decisions/README.md)
   contains the ADR index and numbering scheme for architectural decisions.
-- **Archival Policy** — [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
+- `**Archival Policy** - [ARCHIVE_POLICY.md](ARCHIVE_POLICY.md) defines how superseded
   documents are archived and stored.
 
 ## New governance documents
@@ -95,7 +95,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Maintainer offboarding and emeritus process](OFFBOARDING.md): step-down and removal steps, access-revocation checklist, and emeritus status. (Closes #2521)
 - [Maintainer onboarding checklist](ONBOARDING_MAINTAINER.md): steps from contributor or reviewer to maintainer, the access grants required, and how the change is recorded. (Closes #2520)
 - [Decision-making model](DECISION_MAKING.md): lazy consensus, escalation path, and formal-vote triggers. (Closes #2522)
-- [Required approvals per change type](APPROVALS.md): which changes need how many approvals, from whom, and under which policy. (Closes #2535)
+- [Required approvals per change type](APPROVALL.md): which changes need how many approvals, from whom, and under which policy. (Closes #2535)
 - [Community moderator role](roles/MODERATOR.md): moderation duties, the actions a moderator may take alone, and escalation to maintainers and the CoC Committee. (Closes #2519)
 - [CI/CD governance and required checks](CICD_POLICY.md): the required status checks, their scope, and who may bypass them. (Closes #2563)
 - [Contribution ladder](CONTRIBUTION_LADDER.md): the rungs from contributor to maintainer, the criteria for reaching each one, the evidence a promotion must show, and how to step back down. (Closes #2540)
@@ -121,18 +121,5 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
 - [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
-- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
-- [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
-- [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
-
-## How to contribute to governance
-
-1. Pick a governance issue (each is scoped to at most two files in this folder).
-2. Add or update the relevant `Governance/*.md` document.
-3. Link the document from this index.
-4. Open a small PR; governance changes are ratified per the decision-making
-   process documented here.
-
-> Status: this folder is being populated document-by-document. Individual
-> documents are tracked as governance issues; this index is updated as each one
-> lands.
+- [Contract Admin-Key Custody Policy](contract/KEY_CUSTODY.md): Where admin keys live, who may access them, and the review cadence for this policy.
+- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): How contract vulnerabilities and changes are disclosed or embargoed.
