@@ -121,5 +121,25 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
-- [Backend Background-Worker Scaling Policy](backend/WORKER_SCALING.md): How background workers scale, how backpressure is handled, and the ownership and review cadence for this policy.
-- [Contract
+- [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
+- [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
+- [Contract Admin-Key Custody Policy](contract/KEY_CUSTODY.md): Where admin keys live, who may access them, and the review cadence for this policy.
+- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): How contract vulnerabilities and changes are disclosed or embargoed.
+- [Contract Storage-Key Namespace Governance](contract/STORAGE_KEYS.md): Naming and collision rules for contract storage keys, plus ownership and review cadence.
+- [Contract Disclosure and Embargo Policy](contract/DISCLOSURE_EMBARGO.md): Embargo handling for contract vulnerability reports.
+- [Contract Deployment Record and Provenance Policy](contract/DEPLOY_PROVENANCE.md): Deployment record and provenance requirements for on-chain contracts.
+- [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
+- [Contract Upgrade Authorization and Timelock Policy](contract/UPGRADE_AUTHORIZATION.md): Authorization, review, timelock, emergency, and verification requirements for contract upgrades.
+- [Contract deprecation and sunset policy](contract/CONTRACT_SUNSET.md): How contract versions are deprecated, wound down, and retired on chain. (Closes #2803)
+
+## How to contribute to governance
+
+1. Pick a governance issue (each is scoped to at most two files in this folder).
+2. Add or update the relevant `Governance/*.md` document.
+3. Link the document from this index.
+4. Open a small PR; governance changes are ratified per the decision-making
+   process documented here.
+
+> Status: this folder is being populated document-by-document. Individual
+> documents are tracked as governance issues; this index is updated as each one
+> lands.
