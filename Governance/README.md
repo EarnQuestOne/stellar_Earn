@@ -121,6 +121,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
+- [Backend Secrets Rotation Policy](backend/SECRETS_ROTATION.md): Rotation cadence for backend secrets and the procedure for compromised secrets. (Closes #2733)
 - [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
 - [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
 - [Contract Admin-Key Custody Policy](contract/KEY_CUSTODY.md): Where admin keys live, who may access them, and the review cadence for this policy.
