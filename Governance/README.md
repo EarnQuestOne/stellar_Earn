@@ -118,6 +118,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend API Documentation and OpenAPI Policy](backend/OPENAPI_POLICY.md): Endpoints must ship with OpenAPI documentation that is validated.
 - [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
 - [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
+- [Backend SLO and Error-Budget Policy](backend/SLO_POLICY.md): Service SLOs and how error budgets gate releases. (Closes #2737)
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
