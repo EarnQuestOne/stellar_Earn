@@ -113,6 +113,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
 - [Backend Bulk-Operation and Batching Policy](backend/BULK_OPERATIONS.md): Batch limits and partial-failure semantics.
 - [Backend Outbound-Request Allowlist Policy](backend/OUTBOUND_ALLOWLIST.md): Which external hosts backend services may call, and the approval flow.
+- [Backend Disaster-Recovery and Backup Policy](backend/DR_BACKUP.md): Backup frequency, storage, and recovery objectives (RTO/RPO). (Closes #2740)
 - [Contract Emergency Pause and Circuit-Breaker Policy](contract/EMERGENCY_PAUSE.md): Who may pause contracts and under what conditions.
 - [Contract Event and Storage Schema Compatibility Policy](contract/SCHEMA_COMPAT.md): Backward-compatibility rules for contract events and storage.
 - [Contract Parameter-Change Governance](contract/PARAMETER_CHANGE.md): How on-chain parameters are proposed, approved, and changed.
