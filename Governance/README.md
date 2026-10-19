@@ -139,6 +139,11 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Reproducible-Build and WASM-Checksum Policy](contract/REPRODUCIBLE_BUILD.md): How WASM builds are reproduced and checksums verified, plus ownership and review cadence.
 - [Backend Changelog and Release-Notes Policy](backend/CHANGELOG_BE.md): How backend changes are recorded for consumers, plus ownership and review cadence. (Closes #2773)
 
+- [Backend PII Handling and Classification Policy](backend/PII_CLASSIFICATION.md): sensitivity tiers, handling rules, and ownership for personal data. (Closes #2729)
+- [Backend Data Retention and Purging Policy](backend/DATA_RETENTION.md): retention windows per data class and the purge mechanism. (Closes #2728)
+- [Frontend Beta-Program Governance](frontend/BETA_PROGRAM.md): how beta features are gated, measured, and graduated to general release. (Closes #2723)
+- [Frontend CDN and Caching-Header Policy](frontend/CDN_CACHING.md): cache classes, response headers, and invalidation on deploy. (Closes #2721)
+
 ## How to contribute to governance
 
 1. Pick a governance issue (each is scoped to at most two files in this folder).
