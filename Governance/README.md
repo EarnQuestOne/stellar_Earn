@@ -136,6 +136,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Deployment Approval Policy](contract/DEPLOY_APPROVAL.md): The approvals required before any contract is deployed on-chain.
 - [Contract Upgrade Authorization and Timelock Policy](contract/UPGRADE_AUTHORIZATION.md): Authorization, review, timelock, emergency, and verification requirements for contract upgrades.
 - [Contract deprecation and sunset policy](contract/CONTRACT_SUNSET.md): How contract versions are deprecated, wound down, and retired on chain. (Closes #2803)
+- [Contract Reproducible-Build and WASM-Checksum Policy](contract/REPRODUCIBLE_BUILD.md): How WASM builds are reproduced and checksums verified, plus ownership and review cadence.
 - [Backend Changelog and Release-Notes Policy](backend/CHANGELOG_BE.md): How backend changes are recorded for consumers, plus ownership and review cadence. (Closes #2773)
 
 ## How to contribute to governance
