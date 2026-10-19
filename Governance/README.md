@@ -108,6 +108,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
 - [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
 - [Contract Post-Deployment Verification Policy](contract/POST_DEPLOY_VERIFY.md): Checks run immediately after a contract deployment.
+- [Frontend Build Reproducibility Policy](frontend/BUILD_REPRODUCIBILITY.md): how builds are pinned so output is reproducible across machines. (Closes #2720)
+- [Frontend Keyboard-Navigation and Focus Policy](frontend/KEYBOARD_NAV.md): focus order, skip links, and keyboard-trap requirements. (Closes #2716)
+- [Frontend Data-Fetching and Caching Convention](frontend/DATA_FETCHING.md): query keys, staleness, and revalidation conventions. (Closes #2714)
+- [Frontend API-Client Contract-Sync Policy](frontend/API_CLIENT_SYNC.md): how the client stays in sync with backend API changes. (Closes #2713)
 - [Backend Data-Export and Subject-Rights Request Policy](backend/DATA_EXPORT.md): How data-access and deletion requests are fulfilled.
 - [Backend Timezone and Datetime Handling Policy](backend/DATETIME_POLICY.md): UTC storage and formatting conventions across the API.
 - [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
