@@ -153,6 +153,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Upgrade Authorization and Timelock Policy](contract/UPGRADE_AUTHORIZATION.md): Authorization, review, timelock, emergency, and verification requirements for contract upgrades.
 - [Contract deprecation and sunset policy](contract/CONTRACT_SUNSET.md): How contract versions are deprecated, wound down, and retired on chain. (Closes #2803)
 - [Contract Reproducible-Build and WASM-Checksum Policy](contract/REPRODUCIBLE_BUILD.md): How WASM builds are reproduced and checksums verified, plus ownership and review cadence.
+- [Contract Dual-Control Code Review Policy](contract/DUAL_CONTROL.md): Requirement for two independent reviewers on contract code changes, ownership, and review cadence. (Closes #2798)
 - [Backend Changelog and Release-Notes Policy](backend/CHANGELOG_BE.md): How backend changes are recorded for consumers, plus ownership and review cadence. (Closes #2773)
 
 - [Backend PII Handling and Classification Policy](backend/PII_CLASSIFICATION.md): sensitivity tiers, handling rules, and ownership for personal data. (Closes #2729)
