@@ -119,6 +119,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Parameter-Change Governance](contract/PARAMETER_CHANGE.md): How on-chain parameters are proposed, approved, and changed.
 - [Backend API Documentation and OpenAPI Policy](backend/OPENAPI_POLICY.md): Endpoints must ship with OpenAPI documentation that is validated.
 - [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
+- [Backend Authentication and Session Policy](backend/AUTH_SESSION.md): token lifetimes, refresh rules, and session invalidation. (Closes #2731)
+- [Backend Schema-Change Approval Governance](backend/SCHEMA_CHANGE.md): who approves schema changes and the backward-compatibility requirement. (Closes #2727)
+- [Frontend Telemetry Opt-Out Governance](frontend/TELEMETRY_OPTOUT.md): how users opt out of telemetry and what the application honors. (Closes #2724)
+- [Frontend User-Feedback Triage Process](frontend/FEEDBACK_TRIAGE.md): how feedback is collected, labelled, and routed. (Closes #2722)
 - [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
 - [Backend SLO and Error-Budget Policy](backend/SLO_POLICY.md): Service SLOs and how error budgets gate releases. (Closes #2737)
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
