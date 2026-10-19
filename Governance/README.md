@@ -75,6 +75,10 @@ governance change is limited to files inside this `Governance/` folder.
 - [Leadership and council model](LEADERSHIP.md): how top-level leadership works and how it is held accountable. (Closes #2516)
 - [Issue lifecycle](ISSUE_LIFECYCLE.md): states, transitions, labels, and ownership.
 - [Pull request guidelines](PR_GUIDELINES.md): size, scope, and splitting guidance.
+- [Frontend Empty-State and Loading-State Policy](frontend/STATE_UX.md): required empty, loading, error, partial, offline, and unauthorized states. (Closes #2719)
+- [Frontend Animation and Motion-Reduction Policy](frontend/MOTION_POLICY.md): motion limits and prefers-reduced-motion handling. (Closes #2718)
+- [Frontend Color-Contrast and Palette Governance](frontend/COLOR_CONTRAST.md): minimum contrast ratios and how palette changes are approved. (Closes #2717)
+- [Frontend Offline and PWA Support Policy](frontend/PWA_POLICY.md): offline expectations and service-worker update rules. (Closes #2715)
 - [Maturity checklist](MATURITY_CHECKLIST.md): a scored governance self-audit.
 - [Hotfix policy](HOTFIX_POLICY.md): code-freeze and emergency-change controls.
 - [Emergency decision powers and constraints](EMERGENCY_POWERS.md): scope, hard limits, and retroactive ratification for urgent out-of-process decisions. (Closes #2527)
