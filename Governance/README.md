@@ -103,6 +103,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Webhook Delivery and Signing Policy](backend/WEBHOOK_POLICY.md): Signing, retry, and replay protection for outbound webhooks.
 - [Backend Pagination and Filtering Convention](backend/PAGINATION_CONVENTION.md): Pagination style and filter-parameter conventions.
 - [Backend Error-Response and Error-Code Standard](backend/ERROR_CODES.md): The error envelope and the stable error-code catalogue.
+- [Backend Alerting and On-Call Policy](backend/ONCALL_POLICY.md): Alert severities, escalation, and on-call responsibilities. (Closes #2738)
 - [Contract Mainnet Change-Freeze Policy](contract/CHANGE_FREEZE.md): Freeze windows during which no mainnet changes ship.
 - [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
 - [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
