@@ -103,6 +103,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Webhook Delivery and Signing Policy](backend/WEBHOOK_POLICY.md): Signing, retry, and replay protection for outbound webhooks.
 - [Backend Pagination and Filtering Convention](backend/PAGINATION_CONVENTION.md): Pagination style and filter-parameter conventions.
 - [Backend Error-Response and Error-Code Standard](backend/ERROR_CODES.md): The error envelope and the stable error-code catalogue.
+- [Backend Alerting and On-Call Policy](backend/ONCALL_POLICY.md): Alert severities, escalation, and on-call responsibilities. (Closes #2738)
 - [Contract Mainnet Change-Freeze Policy](contract/CHANGE_FREEZE.md): Freeze windows during which no mainnet changes ship.
 - [Contract On-Chain Monitoring and Alerting Policy](contract/CHAIN_MONITORING.md): On-chain signals to monitor and alert thresholds.
 - [Contract Key-Ceremony and Signing Runbook](contract/KEY_CEREMONY.md): Runbook for generating and using signing keys securely.
@@ -112,15 +113,19 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Payload-Size and Request-Limit Policy](backend/PAYLOAD_LIMITS.md): Maximum request sizes and the abuse-prevention response.
 - [Backend Bulk-Operation and Batching Policy](backend/BULK_OPERATIONS.md): Batch limits and partial-failure semantics.
 - [Backend Outbound-Request Allowlist Policy](backend/OUTBOUND_ALLOWLIST.md): Which external hosts backend services may call, and the approval flow.
+- [Backend Disaster-Recovery and Backup Policy](backend/DR_BACKUP.md): Backup frequency, storage, and recovery objectives (RTO/RPO). (Closes #2740)
 - [Contract Emergency Pause and Circuit-Breaker Policy](contract/EMERGENCY_PAUSE.md): Who may pause contracts and under what conditions.
 - [Contract Event and Storage Schema Compatibility Policy](contract/SCHEMA_COMPAT.md): Backward-compatibility rules for contract events and storage.
 - [Contract Parameter-Change Governance](contract/PARAMETER_CHANGE.md): How on-chain parameters are proposed, approved, and changed.
 - [Backend API Documentation and OpenAPI Policy](backend/OPENAPI_POLICY.md): Endpoints must ship with OpenAPI documentation that is validated.
 - [Backend Contract-Testing Policy](backend/CONTRACT_TESTING.md): Consumer/provider contract tests between services.
 - [Backend Money-Handling Precision Policy](backend/MONEY_PRECISION.md): Numeric types and rounding rules for monetary values.
+- [Backend SLO and Error-Budget Policy](backend/SLO_POLICY.md): Service SLOs and how error budgets gate releases. (Closes #2737)
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
+- [Backend Secrets Rotation Policy](backend/SECRETS_ROTATION.md): Rotation cadence for backend secrets and the procedure for compromised secrets. (Closes #2733)
+- [Backend Incident Classification Runbook](backend/INCIDENT_CLASSES.md): SEV1–SEV4 incident severities and the first-response actions for each. (Closes #2739)
 - [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
 - [Contract Fee and Treasury-Sweep Policy](contract/TREASURY_SWEEP.md): How collected contract fees are swept to the treasury and accounted for.
 - [Contract Admin-Key Custody Policy](contract/KEY_CUSTODY.md): Where admin keys live, who may access them, and the review cadence for this policy.
@@ -132,6 +137,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Contract Upgrade Authorization and Timelock Policy](contract/UPGRADE_AUTHORIZATION.md): Authorization, review, timelock, emergency, and verification requirements for contract upgrades.
 - [Contract deprecation and sunset policy](contract/CONTRACT_SUNSET.md): How contract versions are deprecated, wound down, and retired on chain. (Closes #2803)
 - [Contract Reproducible-Build and WASM-Checksum Policy](contract/REPRODUCIBLE_BUILD.md): How WASM builds are reproduced and checksums verified, plus ownership and review cadence.
+- [Backend Changelog and Release-Notes Policy](backend/CHANGELOG_BE.md): How backend changes are recorded for consumers, plus ownership and review cadence. (Closes #2773)
 
 ## How to contribute to governance
 
