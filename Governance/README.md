@@ -140,6 +140,7 @@ governance change is limited to files inside this `Governance/` folder.
 - [Backend Audit Logging for Sensitive Actions](backend/AUDIT_LOGGING.md): Which backend actions must emit audit logs, and the required fields.
 - [Backend Logging and Log-Retention Policy](backend/LOG_RETENTION.md): Log levels, retention windows, and what must never be logged.
 - [Backend Log-Redaction and Sensitive-Field Policy](backend/LOG_REDACTION.md): How sensitive fields must be redacted before logging. (Closes #2784)
+- [Backend Structured-Logging Standards](backend/STRUCTURED_LOGGING.md): Required log schema and correlation fields for backend services. (Closes #2735)
 - [Backend Secrets Rotation Policy](backend/SECRETS_ROTATION.md): Rotation cadence for backend secrets and the procedure for compromised secrets. (Closes #2733)
 - [Backend Incident Classification Runbook](backend/INCIDENT_CLASSES.md): SEV1–SEV4 incident severities and the first-response actions for each. (Closes #2739)
 - [Contract Oracle Integration and Trust Policy](contract/ORACLE_TRUST.md): Trust assumptions and validation rules for oracle inputs.
